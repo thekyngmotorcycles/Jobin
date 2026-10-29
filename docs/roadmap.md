@@ -6,7 +6,7 @@
 4. Conexiones: consentimiento independiente para profesionales, amistad y citas; likes privados; match mutuo transaccional, bloqueo, reportes y mensajería autorizada.
 5. Comunidades locales: membresías persistentes y moderación.
 6. Creación: plantillas de escenas, captura, subtítulos y publicación.
-7. Calendarios con OAuth y consultas por video; Expo para iOS y Android con dominio compartido.
+7. Calendarios con OAuth y consultas por video en la base universal Expo para iOS, Android y web.
 
 ## Entidades previstas
 profiles, private_profile_preferences, services, videos, guilds, guild_memberships, availability, bookings, connection_interests, matches, messages, blocks, reports y payment_events.

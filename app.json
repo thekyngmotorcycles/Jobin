@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Jobin",
+    "slug": "jobin",
+    "version": "0.2.0",
+    "scheme": "jobin",
+    "orientation": "default",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.thekyngmotorcycles.jobin"
+    },
+    "android": {
+      "package": "com.thekyngmotorcycles.jobin",
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "name": "Jobin",
+      "lang": "es"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

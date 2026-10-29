@@ -1,25 +1,42 @@
 {
-  "name": "professional-work",
-  "version": "0.1.0",
+  "name": "jobin",
+  "version": "0.2.0",
   "private": true,
+  "main": "expo-router/entry",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "start": "expo start",
+    "ios": "expo start --ios",
+    "android": "expo start --android",
+    "web": "expo start --web",
+    "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "export": "expo export --platform all",
+    "export:web": "expo export --platform web",
+    "check": "npm run lint && npm run typecheck && npm test && npm run export"
   },
   "dependencies": {
-    "next": "^16.0.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "@expo/metro-runtime": "~6.1.2",
+    "expo": "~54.0.0",
+    "expo-constants": "~18.0.14",
+    "expo-linking": "~8.0.12",
+    "expo-router": "~6.0.24",
+    "expo-status-bar": "~3.0.9",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.16.0",
+    "react-native-web": "~0.21.0"
   },
   "devDependencies": {
-    "typescript": "^5.9.0",
     "@types/node": "^22.0.0",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "eslint": "^9.0.0",
-    "eslint-config-next": "^16.0.0"
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2",
+    "eslint": "^9.25.0",
+    "eslint-config-expo": "~10.0.0"
   }
 }
