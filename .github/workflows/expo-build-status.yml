@@ -35,9 +35,9 @@ jobs:
           const {logFiles,...summary}=build||{};
           console.log(JSON.stringify(summary,null,2));
           for(const url of files.slice(-2)){
-            const logResponse=await fetch(url,{headers:{Range:"bytes=-16000"}});
+            const logResponse=await fetch(url);
             if(!logResponse.ok)continue;
-            const lines=(await logResponse.text()).split("\\n").filter(Boolean).slice(-12);
+            const lines=(await logResponse.text()).split(String.fromCharCode(10)).filter(Boolean).slice(-12);
             for(const line of lines){
               try{const row=JSON.parse(line);console.log(JSON.stringify({phase:row.phase,msg:typeof row.msg==="string"?row.msg.slice(0,500):undefined}));}catch{}
             }
