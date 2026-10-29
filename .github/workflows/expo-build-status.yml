@@ -1,0 +1,34 @@
+name: Expo build status
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/expo-build-status.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Read latest Expo build state
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          const response = await fetch("https://api.expo.dev/graphql", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + process.env.EXPO_TOKEN },
+            body: JSON.stringify({
+              query: "query JobinBuildStatus($appId: String!) { app { byId(appId: $appId) { builds(offset: 0, limit: 1) { id status platform buildProfile queuePosition estimatedWaitTimeLeftSeconds artifacts { buildUrl applicationArchiveUrl } error { message errorCode } } } } }",
+              variables: { appId: "a6befb1a-dc03-45a8-a18c-294643e99434" }
+            })
+          });
+          const result = await response.json();
+          if (!response.ok || result.errors) throw new Error(JSON.stringify(result.errors || response.status));
+          console.log(JSON.stringify(result.data.app.byId.builds, null, 2));
+          NODE
