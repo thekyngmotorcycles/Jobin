@@ -24,11 +24,22 @@ jobs:
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: "Bearer " + process.env.EXPO_TOKEN },
             body: JSON.stringify({
-              query: "query JobinBuildStatus($appId: String!) { app { byId(appId: $appId) { builds(offset: 0, limit: 1) { id status platform buildProfile queuePosition estimatedWaitTimeLeftSeconds artifacts { buildUrl applicationArchiveUrl } error { message errorCode } } } } }",
+              query: "query JobinBuildStatus($appId: String!) { app { byId(appId: $appId) { builds(offset: 0, limit: 1) { id status platform logFiles buildProfile queuePosition estimatedWaitTimeLeftSeconds artifacts { buildUrl applicationArchiveUrl } error { message errorCode } } } } }",
               variables: { appId: "a6befb1a-dc03-45a8-a18c-294643e99434" }
             })
           });
           const result = await response.json();
           if (!response.ok || result.errors) throw new Error(JSON.stringify(result.errors || response.status));
-          console.log(JSON.stringify(result.data.app.byId.builds, null, 2));
+          const build=result.data.app.byId.builds[0];
+          const files=build?.logFiles||[];
+          const {logFiles,...summary}=build||{};
+          console.log(JSON.stringify(summary,null,2));
+          for(const url of files.slice(-2)){
+            const logResponse=await fetch(url,{headers:{Range:"bytes=-16000"}});
+            if(!logResponse.ok)continue;
+            const lines=(await logResponse.text()).split("\\n").filter(Boolean).slice(-12);
+            for(const line of lines){
+              try{const row=JSON.parse(line);console.log(JSON.stringify({phase:row.phase,msg:typeof row.msg==="string"?row.msg.slice(0,500):undefined}));}catch{}
+            }
+          }
           NODE
