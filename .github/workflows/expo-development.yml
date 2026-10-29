@@ -1,0 +1,85 @@
+name: Expo development preview
+on:
+  push:
+    branches: [development]
+  workflow_dispatch:
+    inputs:
+      build:
+        description: Also create a new development build
+        type: boolean
+        default: true
+      platform:
+        description: Android device, iOS simulator, or both
+        type: choice
+        options: [android, ios, all]
+        default: android
+permissions:
+  contents: write
+concurrency:
+  group: expo-development
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/development'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PROJECT_ID: ${{ vars.EXPO_PROJECT_ID }}
+      EXPO_OWNER: ${{ vars.EXPO_OWNER }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: development
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check Expo authentication
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Missing EXPO_TOKEN repository secret."
+            exit 1
+          fi
+      - run: npm install --no-audit --no-fund
+      - run: npm install --global eas-cli@27.1.0
+      - name: Link or create the Expo project
+        run: npm run expo:configure
+      - name: Save real Expo project configuration and dependency lock
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.json package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Link Expo development project and lock dependencies"
+            git push origin HEAD:development
+          fi
+      - run: npx expo install --check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Publish update to EAS development branch
+        run: eas update --branch development --environment preview --platform all --message "Jobin development ${{ github.sha }}" --non-interactive --json > expo-update.json
+      - name: Route development channel to development branch
+        run: |
+          if ! eas channel:view development --json --non-interactive; then
+            eas channel:create development --non-interactive
+          fi
+          eas channel:edit development --branch development --non-interactive
+      - name: Build Android development app
+        if: (github.event_name == 'workflow_dispatch' && inputs.build) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[expo-build]'))
+        env:
+          BUILD_PLATFORM: ${{ inputs.platform || 'android' }}
+        run: eas build --profile development --platform "$BUILD_PLATFORM" --non-interactive --wait --json > expo-build.json
+      - name: Save Expo results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: expo-development-results
+          path: |
+            expo-update.json
+            expo-build.json
+          if-no-files-found: ignore
+      - name: Preview instructions
+        run: |
+          echo "Development update published. Download the build from Expo Builds and open the update using the development client." >> "$GITHUB_STEP_SUMMARY"
+          echo "Android builds install on devices. iOS builds use the simulator profile; iPhone distribution needs Apple provisioning." >> "$GITHUB_STEP_SUMMARY"

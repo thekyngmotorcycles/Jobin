@@ -16,7 +16,10 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "export": "expo export --platform all",
     "export:web": "expo export --platform web",
-    "check": "npm run lint && npm run typecheck && npm test && npm run export"
+    "check": "npm run lint && npm run typecheck && npm test && npm run export",
+    "expo:configure": "node scripts/configure-expo.mjs",
+    "update:development": "npx eas-cli@27.1.0 update --branch development --environment preview --platform all --non-interactive",
+    "build:preview": "npx eas-cli@27.1.0 build --profile preview --platform android"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
@@ -37,7 +40,9 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.57.0",
     "react-native-url-polyfill": "^2.0.0",
-    "@react-navigation/native": "^7.1.8"
+    "@react-navigation/native": "^7.1.8",
+    "expo-updates": "~29.0.20",
+    "expo-dev-client": "~6.0.21"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
