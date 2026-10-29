@@ -1,7 +1,6 @@
 import { useMemo, type ReactNode } from "react";
-import { Platform } from "react-native";
 import { useTheme } from "../state/ThemeProvider";
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useApp } from "../state/AppProvider";
 
@@ -53,7 +52,7 @@ export function Chips<T extends string>({ values, value, onChange, label }: {
       <Text style={[s.chipText, value === item && { color: colors.inverse }]}>{item}</Text>
     </Pressable>)}</View>;
 }
-export function Header({ title, subtitle }: { title: string; subtitle: string }) {
+export function Header({ title, subtitle, showCity = false }: { title: string; subtitle: string; showCity?: boolean }) {
   const {s} = useUi();
   const { city, setCity } = useApp();
   return <View style={s.header}>
@@ -61,7 +60,7 @@ export function Header({ title, subtitle }: { title: string; subtitle: string })
     <Text style={s.eyebrow}>PERSONAS REALES. TRABAJO REAL.</Text>
     <Text accessibilityRole="header" style={s.h1}>{title}</Text>
     <Text style={s.muted}>{subtitle}</Text>
-    <Chips values={["Todas", "Miami", "Orlando"]} value={city} onChange={setCity} label="Filtrar por ciudad" />
+    {showCity && <Chips values={["Todas", "Miami", "Orlando"]} value={city} onChange={setCity} label="Filtrar por ciudad" />}
   </View>;
 }
 export function Footer() {
@@ -70,11 +69,11 @@ export function Footer() {
     <Text style={s.muted}>Haz lo que amas. Conecta con quienes lo valoran.</Text>
     <Text style={s.muted}>Datos de ejemplo. Los cambios se reinician al cerrar o recargar la app.</Text></View>;
 }
-export function Screen({ children, title, subtitle }: { children: ReactNode; title: string; subtitle: string }) {
+export function Screen({ children, title, subtitle, showCity = false }: { children: ReactNode; title: string; subtitle: string; showCity?: boolean }) {
   const {s} = useUi();
   return <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>
-      <Header title={title} subtitle={subtitle} />{children}<Footer />
+      <Header title={title} subtitle={subtitle} showCity={showCity} />{children}<Footer />
     </ScrollView>
   </SafeAreaView>;
 }

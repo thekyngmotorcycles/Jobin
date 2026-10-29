@@ -12,7 +12,7 @@ export default function Services() {
   const { professional } = useLocalSearchParams<{ professional?: string }>();
   const [notice, setNotice] = useState("");
   const visible = filterByCity(professionals, city);
-  return <Screen title="Talento cerca de ti." subtitle="Servicios locales, con las personas detrás de cada trabajo.">
+  return <Screen showCity title="Talento cerca de ti." subtitle="Servicios locales, con las personas detrás de cada trabajo.">
     {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
     {professional && !visible.some(p => p.id === professional) &&
       <Text style={s.muted}>El servicio seleccionado está en otra ciudad. Selecciona Todas para verlo.</Text>}
