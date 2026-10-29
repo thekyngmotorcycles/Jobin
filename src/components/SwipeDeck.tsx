@@ -4,9 +4,10 @@ import type { Intent } from "../lib/data";
 import { professionals } from "../lib/data";
 import { filterByCity } from "../lib/domain";
 import { useApp } from "../state/AppProvider";
-import { Button, Notice, s } from "./ui";
+import { Button, Notice, useUi } from "./ui";
 
 export function SwipeDeck({ city, intent }: { city: string; intent: Intent }) {
+  const {s} = useUi();
   const { expressInterest } = useApp();
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [notice, setNotice] = useState("");

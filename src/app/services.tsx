@@ -1,12 +1,13 @@
 import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Text, View } from "react-native";
-import { Button, Grid, GridItem, Notice, Screen, s } from "../components/ui";
+import { Button, Grid, GridItem, Notice, Screen, useUi } from "../components/ui";
 import { professionals } from "../lib/data";
 import { filterByCity } from "../lib/domain";
 import { useApp } from "../state/AppProvider";
 
 export default function Services() {
+  const {s} = useUi();
   const { city } = useApp();
   const { professional } = useLocalSearchParams<{ professional?: string }>();
   const [notice, setNotice] = useState("");

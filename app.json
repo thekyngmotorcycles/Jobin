@@ -27,7 +27,16 @@
       "lang": "es"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite a Jobin seleccionar los videos de tu trabajo.",
+          "cameraPermission": "Permite a Jobin grabar tus videos profesionales.",
+          "microphonePermission": "Permite a Jobin grabar audio en tus videos."
+        }
+      ],
+      "expo-video"
     ]
   }
 }

@@ -1,27 +1,20 @@
-import { Tabs } from "expo-router";
+import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppProvider } from "../state/AppProvider";
-import { colors } from "../components/ui";
-
-const screens = [
-  { name: "index", title: "Descubrir", icon: "◈" },
-  { name: "services", title: "Servicios", icon: "▦" },
-  { name: "connect", title: "Conectar", icon: "♡" },
-  { name: "communities", title: "Comunidad", icon: "◎" },
-  { name: "profile", title: "Mi perfil", icon: "◉" },
-];
+import { ThemeProvider, useTheme } from "../state/ThemeProvider";
+function Navigation() {
+ const {theme,colors}=useTheme();
+ return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:colors.paper},headerTintColor:colors.ink,contentStyle:{backgroundColor:colors.paper}}}>
+ <Stack.Screen name="(tabs)" options={{headerShown:false}}/>
+ <Stack.Screen name="settings" options={{title:"Configuración"}}/>
+ <Stack.Screen name="account" options={{title:"Crear cuenta"}}/>
+ <Stack.Screen name="company" options={{title:"Compañía"}}/>
+ <Stack.Screen name="live" options={{title:"Live",presentation:"modal"}}/>
+ <Stack.Screen name="services" options={{title:"Servicios"}}/>
+ <Stack.Screen name="communities" options={{title:"Comunidades"}}/>
+ </Stack></>;
+}
 export default function RootLayout() {
-  return <SafeAreaProvider><AppProvider><StatusBar style="dark" />
-    <Tabs screenOptions={{
-      headerShown: false, tabBarActiveTintColor: colors.ink,
-      tabBarInactiveTintColor: colors.muted,
-      tabBarStyle: { backgroundColor: "#fff", borderTopColor: colors.line },
-      tabBarLabelStyle: { fontSize: 10 },
-    }}>{screens.map(screen => <Tabs.Screen key={screen.name} name={screen.name} options={{
-      title: screen.title,
-      tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 24 }}>{screen.icon}</Text>,
-    }} />)}</Tabs>
-  </AppProvider></SafeAreaProvider>;
+ return <SafeAreaProvider><ThemeProvider><AppProvider><Navigation/></AppProvider></ThemeProvider></SafeAreaProvider>;
 }

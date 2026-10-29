@@ -2,11 +2,12 @@ import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { professionals } from "../lib/data";
 import { useApp } from "../state/AppProvider";
-import { Button, s } from "./ui";
+import { Button, useUi } from "./ui";
 
 export function ProfessionalCard({ person }: { person: typeof professionals[number] }) {
+  const {s,colors} = useUi();
   const { likes, saved, toggleLike, toggleSaved } = useApp();
-  return <View style={styles.card}>
+  return <View style={[styles.card,{backgroundColor:colors.card,borderColor:colors.line}]}>
     <View style={[styles.visual, { backgroundColor: person.color }]}>
       <Text style={s.tag}>UN DÍA CON {person.name.split(" ")[0].toUpperCase()}</Text>
       <Text style={styles.initials} accessibilityElementsHidden importantForAccessibility="no">{person.initials}</Text>
