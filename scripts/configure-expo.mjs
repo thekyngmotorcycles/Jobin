@@ -1,12 +1,13 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import { stripVTControlCharacters } from "node:util";
 const path = new URL("../app.json", import.meta.url);
 let config = JSON.parse(readFileSync(path, "utf8"));
 let projectId = process.env.EXPO_PROJECT_ID || config.expo.extra?.eas?.projectId;
 let owner = process.env.EXPO_OWNER || config.expo.owner;
 if (!owner && !projectId) {
  const output=execFileSync("eas",["whoami"],{encoding:"utf8",stdio:["ignore","pipe","inherit"]});
- owner=output.split(/\r?\n/).map(line=>line.trim()).find(line=>/^[a-zA-Z0-9_-]+$/.test(line));
+ owner=output.split(/\r?\n/).map(line=>stripVTControlCharacters(line).replace(/\s+\(authenticated using EXPO_TOKEN\).*$/, "").trim()).find(line=>/^[a-zA-Z0-9_-]+$/.test(line));
  if(!owner)throw new Error("Cannot select the Expo account automatically. Set EXPO_OWNER to your account/organization.");
 }
 if(!projectId){
