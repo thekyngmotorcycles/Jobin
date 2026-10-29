@@ -1,15 +1,22 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { stripVTControlCharacters } from "node:util";
 const path = new URL("../app.json", import.meta.url);
 let config = JSON.parse(readFileSync(path, "utf8"));
 let projectId = process.env.EXPO_PROJECT_ID || config.expo.extra?.eas?.projectId;
 let owner = process.env.EXPO_OWNER || config.expo.owner;
 if (!owner && !projectId) {
- const output=execFileSync("eas",["whoami"],{encoding:"utf8",stdio:["ignore","pipe","inherit"]});
- owner=output.split(/\r?\n/).map(line=>stripVTControlCharacters(line).replace(/\s+\(authenticated using EXPO_TOKEN\).*$/, "").trim()).find(line=>/^[a-zA-Z0-9_-]+$/.test(line));
- if(!owner)throw new Error("Cannot select the Expo account automatically. Set EXPO_OWNER to your account/organization.");
+ const response=await fetch("https://api.expo.dev/graphql",{
+  method:"POST",
+  headers:{"Content-Type":"application/json",Authorization:"Bearer "+process.env.EXPO_TOKEN},
+  body:JSON.stringify({query:"query JobinAccount { meActor { accounts { name } ... on UserActor { primaryAccount { name } } } }"})
+ });
+ const result=await response.json();
+ if(!response.ok||result.errors)throw new Error("Expo account lookup failed: "+(result.errors?.map(e=>e.message).join("; ")||response.status));
+ const actor=result.data?.meActor;
+ owner=actor?.primaryAccount?.name||(actor?.accounts?.length===1?actor.accounts[0].name:null);
+ if(!owner)throw new Error("Several Expo accounts are available. Set EXPO_OWNER to the intended account.");
 }
+
 if(!projectId){
  execFileSync("eas",["init","--account",owner,"--non-interactive"],{stdio:"inherit"});
  config=JSON.parse(readFileSync(path,"utf8"));
