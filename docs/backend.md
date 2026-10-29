@@ -44,3 +44,10 @@ Never apply database-bootstrap.sql to a hosted database; it is a CI-only auth/st
 GitHub Actions runs the migration and transactional authorization tests on PostgreSQL 17. This checks SQL and role behavior but is not a full Supabase Auth/Storage end-to-end test.
 
 Configure EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY from the project settings. Never commit service-role keys or provider secrets.
+
+## Provisioned project
+JobIn · us-east-1 · project ref nwiimdmtddjquwxtjxmw.
+Dashboard: https://supabase.com/dashboard/project/nwiimdmtddjquwxtjxmw
+Both migrations have been applied to the hosted project. All 40 public and 3 private tables have RLS; all 3 attachment buckets are private.
+
+The security advisor flags the authenticated SECURITY DEFINER RPCs because they intentionally mediate privileged writes after checking the caller. Private administrative tables intentionally have no client policies (default deny). See https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable and https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy . These notices are expected for this design and are not a substitute for ongoing authorization tests and review.

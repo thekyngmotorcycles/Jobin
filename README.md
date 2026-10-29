@@ -28,10 +28,15 @@ The home screen plays publicly hosted sample clips, not user uploads. The editor
 
 Supabase migration includes 43 tables, RLS, narrow RPCs, private evidence storage, immutable employment audit, verified-hirer reviews, disputes, matching and booking collision prevention. See docs/backend.md for boundaries and server work still required. The presence of a table does not mean its complete product workflow is implemented.
 
+## Connected Supabase project
+JobIn is provisioned in us-east-1: https://supabase.com/dashboard/project/nwiimdmtddjquwxtjxmw
+
+The 43-table foundation and extension-schema migration are applied. The client uses the public URL and publishable key in src/lib/backend-config.ts; EXPO_PUBLIC_ variables can override these for another environment. Generated database types are in src/lib/database.types.ts. No service-role or database password is stored in the repository.
+
 ## Setup
 - Expo cloud registration: docs/expo-setup.md.
 - Supabase: docs/backend.md.
-- Copy .env.example to .env and set only public Supabase client configuration.
+- Supabase is configured with a public client key. Use .env.example only to override the project for another environment.
 - Private keys for payments, video and administrative decisions must remain server-side.
 
 ## Validate
