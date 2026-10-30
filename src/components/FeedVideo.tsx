@@ -72,10 +72,11 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  <View style={{position:"absolute",left:16,right:84,bottom:22,gap:9}}>
  {!!error&&<Text accessibilityLiveRegion="polite" style={{color:"#fff",backgroundColor:"#0009",padding:10,borderRadius:8}}>{error}</Text>}
  {!!shareError&&<Text accessibilityLiveRegion="polite" style={{color:"#fff",backgroundColor:"#0009",padding:8}}>{shareError}</Text>}
+ <View style={{flexDirection:"row",alignItems:"center",gap:6}}><View style={{backgroundColor:"#fff",borderRadius:4,paddingHorizontal:6,paddingVertical:2}}><Text style={{color:"#111",fontSize:10,fontWeight:"800",letterSpacing:1}}>POV</Text></View><Text style={[overlayStyles.shadowText,{color:"#fff",fontSize:11,fontWeight:"700",letterSpacing:1}]}>{clip.chapter.toUpperCase()} · {clip.time}</Text></View>
  <Pressable accessibilityRole="button" accessibilityLabel={"View @"+clip.handle} onPress={()=>setSheet("creator")}><Text style={[overlayStyles.shadowText,{fontSize:16,fontWeight:"800",color:"#fff"}]}>@{clip.handle}</Text></Pressable>
  <Pressable accessibilityRole="button" accessibilityLabel="Expand or collapse caption" onPress={()=>setExpanded(!expanded)}><Text numberOfLines={expanded?undefined:2} style={[overlayStyles.shadowText,{color:"#fff",fontSize:13,lineHeight:19}]}>{clip.caption}</Text></Pressable>
  <SoundLine text={clip.audio} active={playing}/>
- <Text style={{color:"#ffffffaa",fontSize:9,letterSpacing:1}}>DEMO CLIP · SAMPLE ENGAGEMENT</Text>
+ <Text style={{color:"#ffffffaa",fontSize:9,letterSpacing:1}}>DEMO · SAMPLE ENGAGEMENT</Text>
  </View>
  <BottomSheet visible={sheet==="comments"} title={formatCount(clip.comments+comments.length)+" comments"} onClose={()=>setSheet(null)}>
  <Text style={s.muted}>Sample discussion · your comments stay in this demo session.</Text>

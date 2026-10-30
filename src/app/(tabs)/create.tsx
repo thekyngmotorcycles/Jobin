@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Platform, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, Text, TextInput, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { Button, Notice, Screen, useUi } from "../../components/ui";
+import { CHAPTERS, CLIP_SECONDS, chapterAt, emptyClips, nextOpenSlot, type ChapterId, type SlotClips } from "../../lib/day";
 function Editor({asset}:{asset:ImagePicker.ImagePickerAsset}){
  const {s,colors}=useUi();const [title,setTitle]=useState("");const [start,setStart]=useState("0");
  const [end,setEnd]=useState(String(Math.min(180,(asset.duration??180000)/1000)));const [notice,setNotice]=useState("");
@@ -23,16 +24,30 @@ function Editor({asset}:{asset:ImagePicker.ImagePickerAsset}){
  </View>;
 }
 export default function Create(){
- const {s}=useUi();const [asset,setAsset]=useState<ImagePicker.ImagePickerAsset|null>(null);const [notice,setNotice]=useState("");
- async function choose(camera:boolean){try{
-  if(camera){const permission=await ImagePicker.requestCameraPermissionsAsync();if(!permission.granted){setNotice("Necesitamos permiso para abrir la cámara.");return;}}
-  const options:ImagePicker.ImagePickerOptions={mediaTypes:["videos"],allowsEditing:false,videoMaxDuration:180};
+ const {s,colors}=useUi();const [clips,setClips]=useState<SlotClips>(emptyClips());const [asset,setAsset]=useState<ImagePicker.ImagePickerAsset|null>(null);const [notice,setNotice]=useState("");
+ const chapter=chapterAt(new Date());const open=nextOpenSlot(clips[chapter.id]);const slot=open>=0?chapter.slots[open]:null;
+ async function record(camera:boolean){try{
+  if(open<0){setNotice(chapter.title+" is full. Remove a clip to re-record.");return;}
+  if(camera){const permission=await ImagePicker.requestCameraPermissionsAsync();if(!permission.granted){setNotice("Camera permission is needed to record your POV.");return;}}
+  const options:ImagePicker.ImagePickerOptions={mediaTypes:["videos"],allowsEditing:false,videoMaxDuration:CLIP_SECONDS};
   const result=camera?await ImagePicker.launchCameraAsync(options):await ImagePicker.launchImageLibraryAsync(options);
-  if(!result.canceled){setAsset(result.assets[0]);setNotice("");}
- }catch(error){setNotice(error instanceof Error?error.message:"No se pudo abrir el video.");}}
- return <Screen title="Lo que haces merece verse." subtitle="Crea un video de tu día de trabajo. Todas las cuentas pueden publicar clips de hasta 3 minutos.">
+  if(!result.canceled){const a=result.assets[0];setAsset(a);setClips(c=>({...c,[chapter.id]:c[chapter.id].map((x,i)=>i===open?a.uri:x)}));setNotice("");}
+ }catch(error){setNotice(error instanceof Error?error.message:"Could not open the video.");}}
+ function remove(id:ChapterId,index:number){setClips(c=>({...c,[id]:c[id].map((x,i)=>i===index?null:x)}));}
+ return <Screen title="A day in the life, POV." subtitle={"Film "+CLIP_SECONDS+"-second POV moments through your day. They are stitched into My Day, My Evening and My Night."}>
  {!!notice&&<Notice text={notice} onClose={()=>setNotice("")}/>}
- <View style={s.row}><Button title="Elegir video" onPress={()=>void choose(false)}/>{Platform.OS!=="web"&&<Button secondary title="Grabar" onPress={()=>void choose(true)}/>}</View>
- {asset?<Editor key={asset.uri} asset={asset}/>:<View style={s.panel}><Text style={s.h2}>Un día. Una historia.</Text><Text style={s.text}>1. Tu preparación\n2. El problema o proyecto\n3. El resultado y lo que aprendiste</Text><Text style={s.muted}>Elige un video para previsualizar y ajustar su duración.</Text></View>}
+ <View style={s.panel}>
+ <Text style={s.eyebrow}>{chapter.title.toUpperCase()} · PUBLISHES {chapter.publishLabel}</Text>
+ <Text style={s.h2}>{slot?slot.prompt:"All moments filmed"}</Text>
+ <View style={s.row}><Button title={slot?"Record POV":"Chapter full"} onPress={()=>void record(true)}/>{Platform.OS==="web"?null:<Button secondary title="From library" onPress={()=>void record(false)}/>}</View>
+ </View>
+ {CHAPTERS.map(ch=><View key={ch.id} style={s.panel}>
+ <Text style={s.eyebrow}>{ch.title.toUpperCase()}{ch.id==="night"?" · OPTIONAL":""} · {ch.publishLabel}</Text>
+ <View style={s.row}>{ch.slots.map((sl,i)=>{const filled=!!clips[ch.id][i];return <Pressable key={sl.label} accessibilityRole="button" accessibilityLabel={filled?"Remove "+sl.label+" clip":sl.label+" moment, empty"} onPress={()=>filled&&remove(ch.id,i)}
+  style={{width:72,height:96,borderRadius:10,borderWidth:1,borderStyle:filled?"solid":"dashed",borderColor:colors.line,backgroundColor:filled?colors.ink:colors.accent,alignItems:"center",justifyContent:"center",gap:4}}>
+  <Text style={{color:filled?colors.inverse:colors.muted,fontSize:11,fontWeight:"700"}}>{filled?"✓ "+CLIP_SECONDS+"s":sl.label}</Text>{filled&&<Text style={{color:colors.inverse,fontSize:10}}>{sl.label}</Text>}</Pressable>;})}</View>
+ </View>)}
+ <Text style={s.muted}>Tap a filled moment to remove it. Chapters publish automatically at their time; a chapter with no clips is not published. Demo only: nothing is uploaded.</Text>
+ {asset&&<Editor key={asset.uri} asset={asset}/>}
  </Screen>;
 }
