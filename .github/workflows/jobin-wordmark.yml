@@ -1,0 +1,103 @@
+name: Integrate Jobin wordmark
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/jobin-wordmark.yml]
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: jobin-wordmark
+  cancel-in-progress: false
+jobs:
+  wordmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: development
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install artwork tools
+        run: pip install fonttools cairosvg
+      - name: Create outlined artwork and integrate
+        run: |
+          python - <<'PY'
+          import json, pathlib, urllib.request
+          from fontTools.ttLib import TTFont
+          from fontTools.pens.svgPathPen import SVGPathPen
+          import cairosvg
+          
+          root=pathlib.Path("assets/images"); root.mkdir(parents=True,exist_ok=True)
+          base="https://raw.githubusercontent.com/google/fonts/main/ofl/lobster/"
+          fontpath=pathlib.Path("/tmp/Jobin-Lobster.ttf")
+          urllib.request.urlretrieve(base+"Lobster-Regular.ttf",fontpath)
+          license_dir=pathlib.Path("assets/licenses");license_dir.mkdir(parents=True,exist_ok=True)
+          urllib.request.urlretrieve(base+"OFL.txt",license_dir/"Lobster-OFL.txt")
+          font=TTFont(fontpath); glyphs=font.getGlyphSet(); cmap=font.getBestCmap()
+          cursor=0; parts=[]
+          for ch in "Jobin":
+           name=cmap[ord(ch)]; pen=SVGPathPen(glyphs);glyphs[name].draw(pen)
+           parts.append('<path transform="translate('+str(cursor)+' 0)" d="'+pen.getCommands()+'"/>')
+           cursor+=font["hmtx"][name][0]
+          # A fixed 3:1 canvas includes generous margins around the script ascenders/descenders.
+          scale=min(1000/cursor,0.27)
+          x=(1200-cursor*scale)/2
+          shape='<g transform="translate('+str(x)+' 287) scale('+str(scale)+' -'+str(scale)+')">'+"".join(parts)+'</g>'
+          defs='<defs><linearGradient id="volume" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".48" stop-color="#fff"/><stop offset="1" stop-color="#c9c9c9"/></linearGradient></defs>'
+          for variant,bg,fill in [("black",'<rect width="1200" height="400" fill="#000"/>',"url(#volume)"),("white","","url(#volume)"),("ink","","#111")]:
+           body=bg
+           if variant!="ink":
+            body+='<g fill="#000" opacity=".3" transform="translate(0 5)">'+shape+'</g>'
+            body+='<g fill="#777" transform="translate(0 2)">'+shape+'</g>'
+           body+='<g fill="'+fill+'">'+shape+'</g>'
+           svg='<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400">'+defs+body+'</svg>'
+           (root/("jobin-wordmark-"+variant+".svg")).write_text(svg)
+           cairosvg.svg2png(bytestring=svg.encode(),write_to=str(root/("jobin-wordmark-"+variant+".png")),output_width=1800,output_height=600)
+          pathlib.Path("src/components/JobinWordmark.tsx").write_text("import { Image, View, type StyleProp, type ViewStyle } from \"react-native\";\n\ntype Props = { width?: number; variant?: \"plaque\" | \"white\" | \"ink\"; style?: StyleProp<ViewStyle> };\nconst sources = {\n plaque: require(\"../../assets/images/jobin-wordmark-black.png\"),\n white: require(\"../../assets/images/jobin-wordmark-white.png\"),\n ink: require(\"../../assets/images/jobin-wordmark-ink.png\"),\n};\n/** Outlined artwork; no device font substitution or runtime font download. */\nexport function JobinWordmark({ width = 112, variant = \"plaque\", style }: Props) {\n return <View style={[{ width, maxWidth: \"100%\", aspectRatio: 3, alignSelf: \"center\" }, style]}>\n  <Image source={sources[variant]} accessibilityLabel=\"Jobin\" accessibilityRole=\"image\"\n   resizeMode=\"contain\" style={{ width: \"100%\", height: \"100%\" }} />\n </View>;\n}\n")
+          ui=pathlib.Path("src/components/ui.tsx")
+          s=ui.read_text()
+          s='import { JobinWordmark } from "./JobinWordmark";\n'+s
+          s=s.replace('<Text style={s.brand}>jobin.</Text>','<JobinWordmark width={120}/>')
+          ui.write_text(s)
+          layout=pathlib.Path("src/app/_layout.tsx");s=layout.read_text()
+          s='import { JobinWordmark } from "../components/JobinWordmark";\n'+s
+          s=s.replace('backgroundColor:colors.paper,alignItems:"center",justifyContent:"center",padding:30,gap:20','backgroundColor:"#000",alignItems:"center",justifyContent:"center",padding:30,gap:20')
+          s=s.replace('{error?<><Text','<JobinWordmark width={240}/>{error?<><Text')
+          s=s.replace('color:colors.ink,textAlign:"center"','color:"#fff",textAlign:"center"')
+          s=s.replace('<ActivityIndicator color={colors.ink}', '<ActivityIndicator color="#fff"')
+          layout.write_text(s)
+          streams=pathlib.Path("src/app/(tabs)/streams.tsx");s=streams.read_text()
+          s='import { JobinWordmark } from "../../components/JobinWordmark";\n'+s
+          s=s.replace('<View style={{flexDirection:"row",alignItems:"center",gap:10}}>','<View style={{alignItems:"center"}}><JobinWordmark width={126}/></View>\n <View style={{flexDirection:"row",alignItems:"center",gap:10}}>',1)
+          streams.write_text(s)
+          pathlib.Path("docs/wordmark.md").write_text("""# Jobin wordmark
+          Retro connected script, based on Lobster by Pablo Impallari (SIL Open Font License; see assets/licenses/Lobster-OFL.txt). The word is capitalized Jobin.
+          SVG contains glyph outlines: no external fonts, network request or fallback typography. PNG exports are 1800 x 600, with identical 3:1 canvases. White lettering has subtle offset depth and top lighting; transparent white and dark ink variants accompany the black plaque.
+          JobinWordmark uses contain sizing and a fixed aspect ratio. Shared screen headers, Live discovery and the app font-loading screen use the plaque. This is the React loading screen, not a replacement for the native OS launch screen. No native splash configuration or runtime dependencies changed; suitable for an OTA update.
+          """)
+          print("WORDMARK_GENERATED: outlined SVG and high-resolution PNG, three variants")
+          
+          PY
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run export
+      - name: Commit artwork and components
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets src docs/wordmark.md
+          git commit -m "Integrate retro embossed Jobin wordmark across headers and loading screen"
+          git push origin HEAD:development
+      - name: Publish development update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run expo-development.yml --ref development -f build=false -f platform=android
