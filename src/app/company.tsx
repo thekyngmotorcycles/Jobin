@@ -3,6 +3,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { Text, TextInput, View } from "react-native";
 import { Button, Notice, Screen, useUi } from "../components/ui";
 import { requireSupabase } from "../lib/supabase";
+import { DEMO_PROFILE, DEMO_HISTORY } from "../lib/me";
 export default function Company(){
  const {s,colors}=useUi();const [industry,setIndustry]=useState("");const [city,setCity]=useState("");const [state,setState]=useState("");
  const [notice,setNotice]=useState("");const [file,setFile]=useState<DocumentPicker.DocumentPickerAsset|null>(null);
@@ -23,7 +24,13 @@ export default function Company(){
  <TextInput accessibilityLabel="Estado" placeholder="Estado" placeholderTextColor={colors.muted} value={state} onChangeText={setState} style={input}/>
  <Button secondary title={file?file.name:"Adjuntar licencia o certificado"} onPress={()=>void pick()}/>
  <Button title="Preparar solicitud" onPress={()=>void request()}/></View>
- <View style={s.panel}><Text style={s.h2}>Personas verificadas · 0</Text><Text style={s.h3}>Trabajadores actuales</Text><Text style={s.muted}>Sin registros confirmados.</Text>
- <Text style={s.h3}>Trabajaron aquí</Text><Text style={s.muted}>Sin registros anteriores. Las relaciones laborales con consentimiento del trabajador y aprobación de la compañía conservarán su historial; no podrán eliminarse desde las cuentas.</Text></View>
- </Screen>;
+ <View style={s.panel}><Text style={s.h2}>Empleados actuales · 1</Text>
+ <View style={{flexDirection:"row",alignItems:"center",gap:12}}><Text style={s.h3}>{DEMO_PROFILE.name}</Text><Text style={s.tag}>Aprobado</Text></View>
+ <Text style={s.muted}>Puede transmitir en vivo en nombre de la empresa solo con tu aprobación.</Text>
+ <Text style={s.h2}>Ex empleados aprobados</Text>
+ {DEMO_HISTORY.filter(entry=>entry.status==="approved"&&entry.verifiedBy&&entry.to!==null).map(entry=><View key={entry.id} style={{gap:4}}>
+  <Text style={s.h3}>{DEMO_PROFILE.name} · {entry.role} ({entry.from}–{entry.to})</Text>
+  <Text style={s.muted}>Registro permanente: no puede eliminarse del perfil de la empresa.</Text></View>)}
+ </View>
+</Screen>;
 }

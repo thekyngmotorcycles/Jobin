@@ -8,7 +8,7 @@ import { visiblePosts } from "../lib/feed";
 import { browseStreams } from "../lib/streams";
 export default function Search(){
  const {mode}=useLocalSearchParams<{mode?:string}>();const {s,colors}=useUi();const [query,setQuery]=useState("");const [kind,setKind]=useState<"Videos"|"Live">(mode==="live"?"Live":"Videos");
- const posts=visiblePosts("For You",[],query),streams=browseStreams("Popular","Todas",query);
+ const posts=visiblePosts("Para ti",[],query),streams=browseStreams("Popular","Todas",query);
  return <SafeAreaView style={s.screen}>
  <View style={{flexDirection:"row",alignItems:"center",padding:12,gap:6}}><IconButton icon="arrow-back" label="Back" onPress={()=>router.canGoBack()?router.back():router.replace("/")}/>
  <TextInput accessibilityLabel="Search creators, videos and live streams" autoFocus placeholder="Search people, work, live…" placeholderTextColor={colors.muted} value={query} onChangeText={setQuery} returnKeyType="search" style={{flex:1,minHeight:46,borderRadius:24,backgroundColor:colors.accent,paddingHorizontal:18,color:colors.ink}}/>

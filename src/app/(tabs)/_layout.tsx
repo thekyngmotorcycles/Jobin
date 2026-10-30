@@ -1,21 +1,20 @@
 import { Tabs, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../state/ThemeProvider";
 
 const routes = [
-  { name: "index", title: "Home", icon: "play", outline: "play-outline" },
+  { name: "index", title: "Home", icon: "home", outline: "home-outline" },
   { name: "streams", title: "Live", icon: "radio", outline: "radio-outline" },
-  { name: "create", title: "Create", icon: "add-circle", outline: "add-circle-outline" },
-  { name: "inbox", title: "Inbox", icon: "mail", outline: "mail-outline" },
-  { name: "profile", title: "Me", icon: "person", outline: "person-outline" }
+  { name: "videos", title: "Videos", icon: "play-circle", outline: "play-circle-outline" },
+  { name: "inbox", title: "Mensajes", icon: "mail", outline: "mail-outline" },
+  { name: "profile", title: "Perfil", icon: "person", outline: "person-outline" }
 ] as const;
 export default function TabLayout() {
   const { colors } = useTheme();
   const pathname = usePathname();
   const inset = useSafeAreaInsets();
-  const dark = pathname === "/";
+  const dark = pathname === "/" || pathname === "/videos";
   const ink = dark ? "#fff" : colors.ink;
   const muted = dark ? "#a8a8a8" : colors.muted;
   const background = dark ? "#080808" : colors.card;
@@ -38,6 +37,7 @@ export default function TabLayout() {
         tabBarIconStyle: { height: 28 }
       }}
     >
+      <Tabs.Screen name="create" options={{ href: null }} />
       {routes.map(route => (
         <Tabs.Screen
           key={route.name}
@@ -45,23 +45,7 @@ export default function TabLayout() {
           options={{
             title: route.title,
             tabBarAccessibilityLabel: route.title,
-            tabBarIcon: ({ color, focused }) =>
-              route.name === "create" ? (
-                <View
-                  style={{
-                    width: 43,
-                    height: 29,
-                    borderRadius: 8,
-                    backgroundColor: ink,
-                    alignItems: "center",
-                    justifyContent: "center"
-                  }}
-                >
-                  <Ionicons name="add-circle" size={27} color={dark ? "#111" : colors.inverse} />
-                </View>
-              ) : (
-                <Ionicons name={focused ? route.icon : route.outline} size={25} color={color} />
-              )
+            tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? route.icon : route.outline} size={25} color={color} />
           }}
         />
       ))}

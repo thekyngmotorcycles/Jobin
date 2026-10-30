@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import type { FeedClip } from "../lib/feed";
 import { bindPlaybackLifecycle } from "../lib/playback-lifecycle";
 import { formatCount } from "../lib/feed";
+import { professionals } from "../lib/data";
 import { useSocial } from "../state/SocialProvider";
 import { useApp } from "../state/AppProvider";
 import { useTheme } from "../state/ThemeProvider";
@@ -36,7 +37,7 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  const [expanded,setExpanded]=useState(false);const disc=useRef(new Animated.Value(0)).current;
  const player=useVideoPlayer(clip.video,p=>{p.loop=true;p.muted=true;});
  const liked=social.likedPosts.includes(clip.postId),following=social.following.includes(clip.creatorId),saved=social.savedPosts.includes(clip.postId);
- const comments=social.comments[clip.postId]||[];const playing=active&&!paused&&!error&&!sheet;
+ const comments=social.comments[clip.postId]||[];const score=professionals.find(p=>p.id===clip.creatorId)?.rating??4.5;const playing=active&&!paused&&!error&&!sheet;
  useEffect(()=>{const listener=player.addListener("statusChange",event=>{
   if(event.status==="error")setError("Video unavailable. Swipe to the next clip.");
   if(event.status==="readyToPlay"&&player.duration>180){player.pause();setError("This clip exceeds the 3-minute limit.");}
@@ -56,11 +57,6 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  </Pressable>
  <View pointerEvents="none" style={{position:"absolute",left:0,right:0,bottom:0,height:210,backgroundColor:"#0003"}}/>
  <View style={{position:"absolute",right:8,bottom:16,alignItems:"center",gap:3,width:58}}>
- <View style={{marginBottom:7}}>
- <Pressable accessibilityRole="button" accessibilityLabel={"View "+clip.author} onPress={()=>setSheet("creator")} style={{borderWidth:2,borderColor:"#fff",borderRadius:29}}><Avatar uri={clip.avatar} name={clip.author} size={48}/></Pressable>
- <Pressable accessibilityRole="button" accessibilityLabel={following?"Unfollow "+clip.author:"Follow "+clip.author} accessibilityState={{selected:following}} onPress={()=>social.toggleFollow(clip.creatorId)}
- style={{position:"absolute",bottom:-10,left:13,width:26,height:26,borderRadius:13,backgroundColor:following?"#fff":colors.reaction,alignItems:"center",justifyContent:"center"}}><Ionicons name={following?"checkmark":"add"} size={18} color={following?"#111":"#fff"}/></Pressable>
- </View>
  <RailAction icon={liked?"heart":"heart-outline"} label={liked?"Unlike video":"Like video"} count={clip.likes+(liked?1:0)} selected={liked} color={liked?colors.reaction:"#fff"} onPress={()=>social.toggleLike(clip.postId)}/>
  <RailAction icon="chatbubble-ellipses" label="Open comments" count={clip.comments+comments.length} onPress={()=>setSheet("comments")}/>
  <RailAction icon="arrow-redo" label="Share video" count={clip.shares+(social.shares[clip.postId]||0)} onPress={()=>void share()}/>
@@ -73,6 +69,7 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  {!!error&&<Text accessibilityLiveRegion="polite" style={{color:"#fff",backgroundColor:"#0009",padding:10,borderRadius:8}}>{error}</Text>}
  {!!shareError&&<Text accessibilityLiveRegion="polite" style={{color:"#fff",backgroundColor:"#0009",padding:8}}>{shareError}</Text>}
  <View style={{flexDirection:"row",alignItems:"center",gap:6}}><View style={{backgroundColor:"#fff",borderRadius:4,paddingHorizontal:6,paddingVertical:2}}><Text style={{color:"#111",fontSize:10,fontWeight:"800",letterSpacing:1}}>POV</Text></View><Text style={[overlayStyles.shadowText,{color:"#fff",fontSize:11,fontWeight:"700",letterSpacing:1}]}>{clip.chapter.toUpperCase()} · {clip.time}</Text></View>
+ <View style={{flexDirection:"row",alignItems:"center",gap:10}}><Pressable accessibilityRole="button" accessibilityLabel={"View "+clip.author} onPress={()=>setSheet("creator")} style={{borderWidth:2,borderColor:"#fff",borderRadius:23}}><Avatar uri={clip.avatar} name={clip.author} size={40}/></Pressable><Text style={[overlayStyles.shadowText,{color:"#fff",fontSize:14,fontWeight:"800"}]}>★ {score.toFixed(1)}</Text></View>
  <Pressable accessibilityRole="button" accessibilityLabel={"View @"+clip.handle} onPress={()=>setSheet("creator")}><Text style={[overlayStyles.shadowText,{fontSize:16,fontWeight:"800",color:"#fff"}]}>@{clip.handle}</Text></Pressable>
  <Pressable accessibilityRole="button" accessibilityLabel="Expand or collapse caption" onPress={()=>setExpanded(!expanded)}><Text numberOfLines={expanded?undefined:2} style={[overlayStyles.shadowText,{color:"#fff",fontSize:13,lineHeight:19}]}>{clip.caption}</Text></Pressable>
  <SoundLine text={clip.audio} active={playing}/>

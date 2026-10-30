@@ -1,4 +1,4 @@
-export const FEED_TABS = ["Local", "For You"] as const;
+export const FEED_TABS = ["Local", "Para ti"] as const;
 export type FeedTab = typeof FEED_TABS[number];
 export interface FeedClip {
  id:string; postId:string; creatorId:string; video:string; avatar:string;
