@@ -32,6 +32,9 @@ work_activity records one local date per profile and distinguishes self_reported
 ## Payments and scheduling
 Confirmed/completed bookings exclude overlapping provider time ranges. Prices and completion states are server-controlled. Stripe event IDs are unique for idempotency; webhook signature validation and payout/refund state machines are still required. No escrow is implemented. OAuth secrets belong in a server vault, not calendar_connections.
 
+## Trust, Jobin Card and live rules
+Migration: supabase/migrations/20261030120000_jobin_card_trust_live.sql. It adds review authorizations (30 days, extended by 1/3/6-month requests that the worker accepts), a stricter jobin_submit_review, live start rules (work-only consent, employer approval, strike bans), moderator-decided impersonation strikes (two upheld strikes ban for 365 days), personal license approval, student programs, the jobin_card function for the public card, and photo posts. Server-side rules must not depend on the client; the app's mock rules live in src/lib/rules.ts.
+
 ## Apply and test
 Create a dedicated Jobin Supabase project, then:
 ```sh
