@@ -24,8 +24,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: true,
-        tabBarLabelPosition: "below-icon",
+        tabBarShowLabel: false,
         tabBarActiveTintColor: ink,
         tabBarInactiveTintColor: muted,
         tabBarHideOnKeyboard: true,
@@ -36,7 +35,6 @@ export default function TabLayout() {
           paddingTop: 5,
           paddingBottom: Math.max(5, inset.bottom)
         },
-        tabBarLabelStyle: { fontSize: 10, fontWeight: "600" },
         tabBarIconStyle: { height: 28 }
       }}
     >

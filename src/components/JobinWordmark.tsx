@@ -8,7 +8,7 @@ const sources = {
 };
 /** Outlined artwork; no device font substitution or runtime font download. */
 export function JobinWordmark({ width = 112, variant = "plaque", style }: Props) {
- return <View style={[{ width, maxWidth: "100%", aspectRatio: 3, alignSelf: "center" }, style]}>
+ return <View style={[{ width, maxWidth: "100%", aspectRatio: 2.14, alignSelf: "center" }, style]}>
   <Image source={sources[variant]} accessibilityLabel="Jobin" accessibilityRole="image"
    resizeMode="contain" style={{ width: "100%", height: "100%" }} />
  </View>;

@@ -3,8 +3,8 @@ import test from "node:test";
 import { FEED_POSTS,feedClip,formatCount,visiblePosts } from "../src/lib/feed.ts";
 import { browseStreams } from "../src/lib/streams.ts";
 test("Following includes only followed creators while For You remains discoverable",()=>{
- assert.equal(visiblePosts("Following",[]).length,0);
- const followed=visiblePosts("Following",["ana"]);
+ assert.equal(visiblePosts("Local",[]).length,0);
+ const followed=visiblePosts("Local",["ana"]);
  assert.ok(followed.length>0);
  assert.ok(followed.every(post=>post.creatorId==="ana"));
  assert.equal(visiblePosts("For You",["ana"]).length,FEED_POSTS.length);
