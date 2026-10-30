@@ -13,7 +13,7 @@ export default function Home() {
  const clips=useMemo(()=>Array.from({length:count},(_,index)=>feedClip(tab,index)),[tab,count]);
  function visible({viewableItems}:{viewableItems:ViewToken<FeedClip>[]}){if(viewableItems[0])setActive(viewableItems[0].index??0);}
  function changeTab(next:FeedTab){setTab(next);setActive(0);setCount(PAGE);}
- return <SafeAreaView style={[s.screen,{paddingBottom:fs(90)}]} edges={["top","left","right"]}>
+ return <SafeAreaView style={[s.screen,{paddingBottom:fs(80)}]} edges={["top","left","right"]}>
  <View style={{paddingHorizontal:20,paddingVertical:10,gap:10,borderBottomWidth:1,borderBottomColor:colors.line}}>
   <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
    <Text style={[s.h2,{fontSize:fs(32)}]}>jobin.</Text><Button title="● Live" onPress={()=>router.push("/live")}/></View>

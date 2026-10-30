@@ -78,8 +78,8 @@ export function Footer() {
     <Text style={s.muted}>Datos de ejemplo. Los cambios se reinician al cerrar o recargar la app.</Text></View>;
 }
 export function Screen({ children, title, subtitle, showCity = false }: { children: ReactNode; title: string; subtitle: string; showCity?: boolean }) {
-  const {s} = useUi();
-  return <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
+  const {s,fs} = useUi();
+  return <SafeAreaView edges={["top", "left", "right"]} style={[s.screen,{paddingBottom:fs(80)}]}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>
       <Header title={title} subtitle={subtitle} showCity={showCity} />{children}<Footer />
     </ScrollView>
