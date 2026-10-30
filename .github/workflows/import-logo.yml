@@ -27,11 +27,17 @@ jobs:
           if(bytes.length>10*1024*1024)throw new Error("Image exceeds 10 MB.");
           const png=bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
           const jpg=bytes[0]===255&&bytes[1]===216&&bytes[2]===255;
-          if(!png&&!jpg)throw new Error("Drive did not return a public PNG/JPG image. The file may require access permissions.");
-          const path="assets/images/jobin-logo."+(png?"png":"jpg");
+          const webp=bytes.toString("ascii",0,4)==="RIFF"&&bytes.toString("ascii",8,12)==="WEBP";
+          const gif=bytes.toString("ascii",0,3)==="GIF";
+          if(!png&&!jpg&&!webp&&!gif){
+            console.log(JSON.stringify({contentType:response.headers.get("content-type"),signature:bytes.subarray(0,16).toString("hex"),isHtml:bytes.toString("utf8",0,500).toLowerCase().includes("<!doctype html"),signInRequired:/accounts.google.com|ServiceLogin|You need access|Request access/.test(bytes.toString("utf8")),downloadConfirmation:/download-form|confirm=/.test(bytes.toString("utf8"))}));
+            throw new Error("The public download did not return an image.");
+          }
+          const extension=png?"png":jpg?"jpg":webp?"webp":"gif";
+          const path="assets/images/jobin-logo."+extension;
           mkdirSync("assets/images",{recursive:true});
           writeFileSync(path,bytes);
-          console.log(JSON.stringify({path,bytes:bytes.length,format:png?"png":"jpg",width:png?bytes.readUInt32BE(16):undefined,height:png?bytes.readUInt32BE(20):undefined}));
+          console.log(JSON.stringify({path,bytes:bytes.length,format:extension,width:png?bytes.readUInt32BE(16):undefined,height:png?bytes.readUInt32BE(20):undefined}));
           NODE
       - name: Save reference image in development
         run: |
