@@ -1,18 +1,19 @@
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import type { Intent } from "../lib/data";
 import { professionals } from "../lib/data";
 import { useApp } from "../state/AppProvider";
 import { Button, useUi } from "./ui";
 
-export function ProfessionalCard({ person }: { person: typeof professionals[number] }) {
-  const {s,colors} = useUi();
-  const { likes, saved, toggleLike, toggleSaved } = useApp();
+export function ProfessionalCard({ person, intent, onInterest }: { person: typeof professionals[number]; intent: Intent; onInterest: () => void }) {
+  const {s,colors,fs} = useUi();
+  const { likes, saved, interests, toggleLike, toggleSaved } = useApp();
+  const interested = interests.some(item => item.professionalId === person.id && item.intent === intent);
   return <View style={[styles.card,{backgroundColor:colors.card,borderColor:colors.line}]}>
     <View style={[styles.visual, { backgroundColor: person.color }]}>
-      <Text style={s.tag}>UN DÍA CON {person.name.split(" ")[0].toUpperCase()}</Text>
-      <Text style={styles.initials} accessibilityElementsHidden importantForAccessibility="no">{person.initials}</Text>
-      <View style={{ gap: 10 }}><Text style={styles.preview}>Portafolio ilustrado · video próximamente</Text>
-        <Text style={styles.headline}>{person.headline}</Text></View>
+      <View style={s.row}><Text style={s.tag}>★ {person.rating.toFixed(1)} · {person.reviews} reseñas de ejemplo</Text></View>
+      <Text style={[styles.initials,{fontSize:fs(88)}]} accessibilityElementsHidden importantForAccessibility="no">{person.initials}</Text>
+      <Text style={[styles.headline,{fontSize:fs(24)}]}>{person.headline}</Text>
     </View>
     <View style={styles.body}>
       <View style={s.row}><View style={[s.avatar, { backgroundColor: person.color }]}><Text style={s.text}>{person.initials}</Text></View>
@@ -22,15 +23,17 @@ export function ProfessionalCard({ person }: { person: typeof professionals[numb
         <Button secondary title={likes.includes(person.id) ? "♥ Me inspira" : "♡ Me inspira"} selected={likes.includes(person.id)} onPress={() => toggleLike(person.id)} />
         <Button secondary title={saved.includes(person.id) ? "★ Guardado" : "☆ Guardar"} selected={saved.includes(person.id)} onPress={() => toggleSaved(person.id)} />
       </View>
-      <Button title="Ver servicio ↗" onPress={() => router.navigate({ pathname: "/services", params: { professional: person.id } })} />
+      <View style={s.row}>
+        <Button title={interested ? "✓ Interés guardado" : "Me interesa"} selected={interested} onPress={() => { if (!interested) onInterest(); }} />
+        <Button secondary title="Ver servicio ↗" onPress={() => router.navigate({ pathname: "/services", params: { professional: person.id } })} />
+      </View>
     </View>
   </View>;
 }
 const styles = StyleSheet.create({
-  card: { borderRadius: 18, overflow: "hidden", borderWidth: 1, borderColor: "#dfe6dc", backgroundColor: "#fff", flex: 1 },
-  visual: { height: 340, padding: 22, justifyContent: "space-between", overflow: "hidden" },
-  initials: { position: "absolute", alignSelf: "center", top: 70, fontSize: 130, fontWeight: "900", color: "#ffffff40" },
-  preview: { fontSize: 10, color: "#fff", fontWeight: "600" },
-  headline: { fontSize: 30, fontWeight: "800", letterSpacing: -1, color: "#fff" },
-  body: { padding: 20, gap: 18 },
+  card: { borderRadius: 18, overflow: "hidden", borderWidth: 1, flex: 1 },
+  visual: { aspectRatio: 1.1, padding: 18, justifyContent: "space-between", overflow: "hidden" },
+  initials: { position: "absolute", alignSelf: "center", top: "28%", fontWeight: "900", color: "#ffffff40" },
+  headline: { fontWeight: "800", letterSpacing: -0.8, color: "#fff" },
+  body: { padding: 18, gap: 16 },
 });

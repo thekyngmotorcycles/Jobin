@@ -10,3 +10,6 @@ export function toggleItem(current: string[], id: string): string[] {
 export function filterByCity<T extends { city: string }>(items: T[], city: string): T[] {
   return city === "Todas" ? items : items.filter(item => item.city === city);
 }
+export function rankByRating<T extends { rating: number; reviews: number }>(items: T[]): T[] {
+  return [...items].sort((a, b) => b.rating - a.rating || b.reviews - a.reviews);
+}
