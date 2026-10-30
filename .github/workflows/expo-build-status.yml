@@ -1,0 +1,45 @@
+name: Expo build status
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/expo-build-status.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Read latest Expo build state
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          const response = await fetch("https://api.expo.dev/graphql", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + process.env.EXPO_TOKEN },
+            body: JSON.stringify({
+              query: "query JobinBuildStatus($appId: String!) { app { byId(appId: $appId) { builds(offset: 0, limit: 1) { id status platform logFiles buildProfile queuePosition estimatedWaitTimeLeftSeconds artifacts { buildUrl applicationArchiveUrl } error { message errorCode } } } } }",
+              variables: { appId: "a6befb1a-dc03-45a8-a18c-294643e99434" }
+            })
+          });
+          const result = await response.json();
+          if (!response.ok || result.errors) throw new Error(JSON.stringify(result.errors || response.status));
+          const build=result.data.app.byId.builds[0];
+          const files=build?.logFiles||[];
+          const {logFiles,...summary}=build||{};
+          console.log(JSON.stringify(summary,null,2));
+          for(const url of files.slice(-2)){
+            const logResponse=await fetch(url);
+            if(!logResponse.ok)continue;
+            const lines=(await logResponse.text()).split(String.fromCharCode(10)).filter(Boolean).slice(-12);
+            for(const line of lines){
+              try{const row=JSON.parse(line);console.log(JSON.stringify({phase:row.phase,msg:typeof row.msg==="string"?row.msg.slice(0,500):undefined}));}catch{}
+            }
+          }
+          NODE
