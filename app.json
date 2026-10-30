@@ -18,7 +18,11 @@
     },
     "android": {
       "package": "com.thekyngmotorcycles.jobin",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -37,6 +41,19 @@
         }
       ],
       "expo-video"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a6befb1a-dc03-45a8-a18c-294643e99434"
+      }
+    },
+    "owner": "proyect-dating",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a6befb1a-dc03-45a8-a18c-294643e99434"
+    }
   }
 }
