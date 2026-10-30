@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar,BottomSheet,IconButton } from "../../components/social-ui";
 import { Button,useUi } from "../../components/ui";
 import { LIVE_STREAMS } from "../../lib/streams";
+import { bindPlaybackLifecycle } from "../../lib/playback-lifecycle";
 import { formatCount } from "../../lib/feed";
 import { useSocial } from "../../state/SocialProvider";
 import { useApp } from "../../state/AppProvider";
@@ -23,7 +24,10 @@ function Room({room}:{room:typeof LIVE_STREAMS[number]}){
  const [hearts,setHearts]=useState<number[]>([]);const nextHeart=useRef(0);const chat=useRef<ScrollView>(null);
  const player=useVideoPlayer(room.video,p=>{p.loop=true;p.muted=true;});const [error,setError]=useState("");
  const following=social.following.includes(room.hostId);const messages=social.roomMessages[room.id]||[];
- useEffect(()=>{if(focused)player.play();else player.pause();const sub=AppState.addEventListener("change",state=>{if(state!=="active")player.pause();else if(focused)player.play();});return()=>{sub.remove();player.pause();};},[focused,player]);
+ useEffect(()=>bindPlaybackLifecycle(player,focused,AppState.currentState,listener=>{
+ const subscription=AppState.addEventListener("change",listener);
+ return()=>subscription.remove();
+ }),[focused,player]);
  useEffect(()=>{player.muted=muted;},[muted,player]);
  useEffect(()=>{const sub=player.addListener("statusChange",event=>{if(event.status==="error")setError("The preview video could not load.");});return()=>sub.remove();},[player]);
  function send(){if(!draft.trim())return;social.sendRoomMessage(room.id,name||"You",draft);setDraft("");setNotice("Your message is visible in this demo session only.");}

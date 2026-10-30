@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useVideoPlayer,VideoView } from "expo-video";
 import { router } from "expo-router";
 import type { FeedClip } from "../lib/feed";
+import { bindPlaybackLifecycle } from "../lib/playback-lifecycle";
 import { formatCount } from "../lib/feed";
 import { useSocial } from "../state/SocialProvider";
 import { useApp } from "../state/AppProvider";
@@ -40,9 +41,10 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
   if(event.status==="error")setError("Video unavailable. Swipe to the next clip.");
   if(event.status==="readyToPlay"&&player.duration>180){player.pause();setError("This clip exceeds the 3-minute limit.");}
  });return()=>listener.remove();},[player]);
- useEffect(()=>{if(playing)player.play();else player.pause();
- const listener=AppState.addEventListener("change",state=>{if(state!=="active")player.pause();else if(playing)player.play();});
- return()=>{listener.remove();player.pause();};},[playing,player]);
+ useEffect(()=>bindPlaybackLifecycle(player,playing,AppState.currentState,listener=>{
+ const subscription=AppState.addEventListener("change",listener);
+ return()=>subscription.remove();
+ }),[playing,player]);
  useEffect(()=>{player.muted=muted;},[player,muted]);
  useEffect(()=>{if(!playing)return;const animation=Animated.loop(Animated.timing(disc,{toValue:1,duration:8500,useNativeDriver:true,isInteraction:false}));animation.start();return()=>{animation.stop();disc.setValue(0);};},[playing,disc]);
  async function share(){try{const result=await Share.share({message:"A demo work story from @"+clip.handle+" on Jobin. "+clip.video});if(result.action===Share.sharedAction)social.addShare(clip.postId);}catch{setShareError("Sharing is unavailable here. Try opening Jobin on your phone.");}}
