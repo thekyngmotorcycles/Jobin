@@ -16,7 +16,10 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "export": "expo export --platform all",
     "export:web": "expo export --platform web",
-    "check": "npm run lint && npm run typecheck && npm test && npm run export"
+    "check": "npm run lint && npm run typecheck && npm test && npm run export",
+    "expo:configure": "node scripts/configure-expo.mjs",
+    "update:development": "npx eas-cli@27.1.0 update --branch development --environment preview --platform all --non-interactive",
+    "build:preview": "npx eas-cli@27.1.0 build --profile preview --platform android"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
@@ -39,7 +42,9 @@
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-url-polyfill": "^2.0.0",
-    "react-native-web": "~0.21.0"
+    "react-native-web": "~0.21.0",
+    "expo-dev-client": "~6.0.21",
+    "expo-font": "~14.0.12"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -61,3 +61,6 @@ npm run export:web
 Preview iOS targets a simulator. Production requires EAS registration, signing and store developer accounts.
 
 Video sample: Google's public gtv-videos-bucket/ForBiggerFun.mp4, used only to demonstrate playback.
+
+## Feed and live UI
+The second tab is now Live, replacing Meet People. Home uses an edge-to-edge video feed with social controls, captions, Following / For You and audio information. The live hub and preview rooms include local interactions and search. See docs/feed-and-live.md for implemented behaviors and demo boundaries.

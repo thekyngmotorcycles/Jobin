@@ -1,3 +1,4 @@
+import { JobinWordmark } from "./JobinWordmark";
 import { useCallback, useMemo, type ReactNode } from "react";
 import { useTheme } from "../state/ThemeProvider";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
@@ -64,7 +65,7 @@ export function Header({ title, subtitle, showCity = false }: { title: string; s
   const {s} = useUi();
   const { city, setCity } = useApp();
   return <View style={s.header}>
-    <View style={s.top}><Text style={s.brand}>jobin.</Text><Text style={s.tag}>DEMO</Text></View>
+    <View style={s.top}><JobinWordmark width={120}/><Text style={s.tag}>DEMO</Text></View>
     <Text style={s.eyebrow}>PERSONAS REALES. TRABAJO REAL.</Text>
     <Text accessibilityRole="header" style={s.h1}>{title}</Text>
     <Text style={s.muted}>{subtitle}</Text>
