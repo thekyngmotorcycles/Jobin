@@ -1,12 +1,27 @@
 import { Stack } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useFonts,loadAsync } from "expo-font";
+import { useState,type ReactNode } from "react";
+import { ActivityIndicator,Pressable,Text,View } from "react-native";
+import { SocialProvider } from "../state/SocialProvider";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppProvider } from "../state/AppProvider";
 import { ThemeProvider, useTheme } from "../state/ThemeProvider";
+function IconFontGate({children}:{children:ReactNode}){
+ const [loaded,error]=useFonts(Ionicons.font);const [recovered,setRecovered]=useState(false);const [retrying,setRetrying]=useState(false);const {colors}=useTheme();
+ if(loaded||recovered)return children;
+ return <View style={{flex:1,backgroundColor:colors.paper,alignItems:"center",justifyContent:"center",padding:30,gap:20}}>
+ {error?<><Text style={{color:colors.ink,textAlign:"center"}}>The navigation icons could not load.</Text><Pressable accessibilityRole="button" onPress={()=>{if(retrying)return;setRetrying(true);void loadAsync(Ionicons.font).then(()=>setRecovered(true)).catch(()=>{}).finally(()=>setRetrying(false));}} style={{padding:16,backgroundColor:colors.accent,borderRadius:12}}><Text style={{color:colors.ink}}>{retrying?"Loading…":"Try again"}</Text></Pressable></>:<ActivityIndicator color={colors.ink} accessibilityLabel="Loading navigation"/>}
+ </View>;
+}
 function Navigation() {
  const {theme,colors}=useTheme();
  return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:colors.paper},headerTintColor:colors.ink,contentStyle:{backgroundColor:colors.paper}}}>
  <Stack.Screen name="(tabs)" options={{headerShown:false}}/>
+ <Stack.Screen name="search" options={{headerShown:false}}/>
+ <Stack.Screen name="stream/[id]" options={{headerShown:false}}/>
+ <Stack.Screen name="connect" options={{headerShown:false}}/>
  <Stack.Screen name="settings" options={{title:"Configuración"}}/>
  <Stack.Screen name="account" options={{title:"Crear cuenta"}}/>
  <Stack.Screen name="company" options={{title:"Compañía"}}/>
@@ -16,5 +31,5 @@ function Navigation() {
  </Stack></>;
 }
 export default function RootLayout() {
- return <SafeAreaProvider><ThemeProvider><AppProvider><Navigation/></AppProvider></ThemeProvider></SafeAreaProvider>;
+ return <SafeAreaProvider><ThemeProvider><AppProvider><SocialProvider><IconFontGate><Navigation/></IconFontGate></SocialProvider></AppProvider></ThemeProvider></SafeAreaProvider>;
 }
