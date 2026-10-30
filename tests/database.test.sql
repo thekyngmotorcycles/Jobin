@@ -13,6 +13,7 @@ select pg_temp.assert_ok((select count(*)=1 from public.companies),'company type
 select pg_temp.assert_ok(not exists(select 1 from pg_tables where schemaname='public' and not rowsecurity),'every public table has RLS');
 insert into public.bookings(id,client_id,provider_id,starts_at,ends_at,status,amount_minor,completed_at) values
  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','22222222-2222-4222-8222-222222222222','11111111-1111-4111-8111-111111111111',now()-interval '2 hours',now()-interval '1 hour','completed',5000,now());
+insert into public.review_authorizations(worker_id,client_id,expires_at) values('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222',now()+interval '30 days');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','44444444-4444-4444-8444-444444444444',true);
 select pg_temp.assert_ok((select count(*)=0 from public.bookings),'stranger cannot read bookings');
@@ -75,4 +76,32 @@ do $$ begin
  raise exception 'Expected reward rejection'; exception when insufficient_privilege then null; end;
 end $$;
 reset role;
+reset role;
+select pg_temp.assert_ok(exists(select 1 from public.review_authorizations where worker_id='11111111-1111-4111-8111-111111111111' and client_id='22222222-2222-4222-8222-222222222222'),'authorization fixture exists');
+insert into public.review_authorizations(worker_id,client_id,granted_at,expires_at) values('11111111-1111-4111-8111-111111111111','44444444-4444-4444-8444-444444444444',now()-interval '60 days',now()-interval '1 day');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','44444444-4444-4444-8444-444444444444',true);
+do $$ begin
+ begin perform public.jobin_submit_review('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',null,5::smallint,'Expired authorization should not allow reviews.',array[]::text[]);
+ raise exception 'Expected expired authorization rejection'; exception when raise_exception then if sqlerrm='Expected expired authorization rejection' then raise; end if; end;
+end $$;
+select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+do $$ begin
+ begin perform public.jobin_start_live('Work floor','public','daily_work',false);
+ raise exception 'Expected consent rejection'; exception when raise_exception then if sqlerrm='Expected consent rejection' then raise; end if; end;
+ perform public.jobin_start_live('Work floor','public','daily_work',true);
+end $$;
+select set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',true);
+do $$ begin
+ begin perform public.jobin_start_live('Interview','public','interview',true);
+ raise exception 'Expected public purpose rejection'; exception when raise_exception then if sqlerrm='Expected public purpose rejection' then raise; end if; end;
+end $$;
+reset role;
+insert into private.user_strikes(user_id,strikes,banned_until) values('11111111-1111-4111-8111-111111111111',2,now()+interval '365 days');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+do $$ begin
+ begin perform public.jobin_start_live('Work floor','public','daily_work',true);
+ raise exception 'Expected ban rejection'; exception when raise_exception then if sqlerrm='Expected ban rejection' then raise; end if; end;
+end $$;
 rollback;
