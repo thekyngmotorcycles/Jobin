@@ -1,3 +1,4 @@
+import { JobinWordmark } from "../../components/JobinWordmark";
 import { useState } from "react";
 import { Pressable,ScrollView,Text,View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,6 +13,7 @@ export default function Streams(){
  const rooms=browseStreams(category,city);
  return <SafeAreaView edges={["top","left","right"]} style={s.screen}>
  <ScrollView contentContainerStyle={{paddingHorizontal:20,paddingTop:12,paddingBottom:24,gap:24}} showsVerticalScrollIndicator={false}>
+ <View style={{alignItems:"center"}}><JobinWordmark width={126}/></View>
  <View style={{flexDirection:"row",alignItems:"center",gap:10}}>
  <Pressable accessibilityRole="button" accessibilityLabel="My profile" onPress={()=>router.navigate("/profile")}><Avatar name={name||"You"} size={43}/></Pressable>
  <View style={{flex:1,minWidth:0}}><Text style={s.muted}>Welcome back,</Text><Text numberOfLines={1} style={s.h3}>{name||"Explorer"}</Text></View>

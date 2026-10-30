@@ -1,3 +1,4 @@
+import { JobinWordmark } from "../components/JobinWordmark";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts,loadAsync } from "expo-font";
@@ -11,8 +12,8 @@ import { ThemeProvider, useTheme } from "../state/ThemeProvider";
 function IconFontGate({children}:{children:ReactNode}){
  const [loaded,error]=useFonts(Ionicons.font);const [recovered,setRecovered]=useState(false);const [retrying,setRetrying]=useState(false);const {colors}=useTheme();
  if(loaded||recovered)return children;
- return <View style={{flex:1,backgroundColor:colors.paper,alignItems:"center",justifyContent:"center",padding:30,gap:20}}>
- {error?<><Text style={{color:colors.ink,textAlign:"center"}}>The navigation icons could not load.</Text><Pressable accessibilityRole="button" onPress={()=>{if(retrying)return;setRetrying(true);void loadAsync(Ionicons.font).then(()=>setRecovered(true)).catch(()=>{}).finally(()=>setRetrying(false));}} style={{padding:16,backgroundColor:colors.accent,borderRadius:12}}><Text style={{color:colors.ink}}>{retrying?"Loading…":"Try again"}</Text></Pressable></>:<ActivityIndicator color={colors.ink} accessibilityLabel="Loading navigation"/>}
+ return <View style={{flex:1,backgroundColor:"#000",alignItems:"center",justifyContent:"center",padding:30,gap:20}}>
+ <JobinWordmark width={240}/>{error?<><Text style={{color:"#fff",textAlign:"center"}}>The navigation icons could not load.</Text><Pressable accessibilityRole="button" onPress={()=>{if(retrying)return;setRetrying(true);void loadAsync(Ionicons.font).then(()=>setRecovered(true)).catch(()=>{}).finally(()=>setRetrying(false));}} style={{padding:16,backgroundColor:colors.accent,borderRadius:12}}><Text style={{color:colors.ink}}>{retrying?"Loading…":"Try again"}</Text></Pressable></>:<ActivityIndicator color="#fff" accessibilityLabel="Loading navigation"/>}
  </View>;
 }
 function Navigation() {
