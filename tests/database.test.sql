@@ -105,3 +105,4 @@ do $$ begin
  raise exception 'Expected ban rejection'; exception when raise_exception then if sqlerrm='Expected ban rejection' then raise; end if; end;
 end $$;
 rollback;
+\ir jcard-verification.test.sql
