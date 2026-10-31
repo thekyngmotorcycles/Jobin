@@ -10,10 +10,10 @@ export default function CreatorProfile(){
  const {id}=useLocalSearchParams<{id:string}>();
  const {s,colors}=useUi();const social=useSocial();
  const clip=FEED_POSTS.find(p=>p.creatorId===id);
- if(!clip)return <Screen title="Perfil"><Text style={s.muted}>Perfil no disponible.</Text></Screen>;
+ if(!clip)return <Screen title="Perfil" subtitle="Creador"><Text style={s.muted}>Perfil no disponible.</Text></Screen>;
  const following=social.following.includes(clip.creatorId);
  const rating=professionals.find(p=>p.id===clip.creatorId)?.rating;
- return <Screen title="Perfil del creador">
+ return <Screen title="Perfil del creador" subtitle="Información del creador">
   <View style={{alignItems:"center",gap:12,padding:20}}>
    <Avatar uri={clip.avatar} name={clip.author} size={96}/>
    <Text style={s.h2}>{clip.author}</Text>
