@@ -1,5 +1,5 @@
-import { themeTokens } from "./palettes";
-import { composite,opacity,contrastRatio,readableInk,secondaryText } from "./color";
+import { themeTokens } from "./palettes.ts";
+import { composite,opacity,contrastRatio,readableInk,secondaryText } from "./color.ts";
 import type { ThemeName } from "../state/ThemeProvider";
 import type { JCardTier } from "../lib/jcard";
 

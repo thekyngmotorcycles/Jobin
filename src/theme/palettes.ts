@@ -1,4 +1,4 @@
-import { composite,contrastRatio,opacity,secondaryText } from "./color";
+import { composite,contrastRatio,opacity,secondaryText } from "./color.ts";
 export const CAMEL_FOREGROUND="#5B4A47"; // Single reference swatch; change Camel here.
 export const THEMES=[
  {id:"light",label:"Light"},{id:"dark",label:"Dark"},{id:"pink",label:"Pink"},
