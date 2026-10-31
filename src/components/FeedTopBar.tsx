@@ -11,7 +11,7 @@ export function FeedTopBar({tab,onTab,onPlus,plusLabel,onSearch,overlay=false}:{
 }){
  const {colors}=useUi();const {unreadActivity}=useJobinNotices();
  const ink=colors.navIcon;
- function icon(name:"add"|"storefront-outline"|"notifications-outline"|"search-outline",label:string,onPress:()=>void,badge=false){
+ function icon(name:"add"|"notifications-outline"|"search-outline",label:string,onPress:()=>void,badge=false){
   return <Pressable key={name} accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={{width:40,height:48,alignItems:"center",justifyContent:"center"}}>
    <Ionicons name={name} size={27} color={ink}/>
    {badge&&<View accessibilityLabel="Actividad sin leer" style={{position:"absolute",right:2,top:2}}><Ionicons name="heart" size={13} color={colors.reaction}/></View>}
@@ -21,7 +21,6 @@ export function FeedTopBar({tab,onTab,onPlus,plusLabel,onSearch,overlay=false}:{
   <TopNavigationFade/>
   <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:8}}>
    {icon("add",plusLabel,onPlus)}
-   {icon("storefront-outline","JShop marketplace",()=>router.push("/jshop"))}
    {icon("notifications-outline","Notificaciones",()=>router.push("/notifications"),unreadActivity>0)}
    <View style={{flex:1,flexDirection:"row",justifyContent:"center",gap:12}}>
     {FEED_TABS.map(item=><Pressable key={item} accessibilityRole="tab" accessibilityState={{selected:tab===item}} onPress={()=>onTab(item)} style={{minHeight:44,justifyContent:"center",borderBottomWidth:tab===item?2:0,borderBottomColor:ink}}>
