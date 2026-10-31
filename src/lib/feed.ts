@@ -1,4 +1,4 @@
-export const FEED_TABS = ["Local", "Para ti"] as const;
+export const FEED_TABS = ["Following", "Local", "Para ti"] as const;
 export type FeedTab = typeof FEED_TABS[number];
 export interface FeedClip {
  id:string; postId:string; creatorId:string; video:string; avatar:string;
@@ -20,7 +20,7 @@ export function feedClip(tab:FeedTab,index:number):FeedClip {
 }
 export function visiblePosts(tab:FeedTab,following:string[],query=""):Omit<FeedClip,"id">[] {
  const q=query.trim().toLowerCase();
- return FEED_POSTS.filter(p=>(tab!=="Local"||following.includes(p.creatorId))&&(!q||(p.author+" "+p.handle+" "+p.caption+" "+p.role).toLowerCase().includes(q)));
+ return FEED_POSTS.filter(p=>((tab!=="Local"&&tab!=="Following")||following.includes(p.creatorId))&&(!q||(p.author+" "+p.handle+" "+p.caption+" "+p.role).toLowerCase().includes(q)));
 }
 export function formatCount(value:number):string{
  const n=Number.isFinite(value)?Math.max(0,Math.floor(value)):0;

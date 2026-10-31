@@ -10,6 +10,7 @@ const routes=[
  {name:"index",title:"Home",icon:"home",outline:"home-outline"},
  {name:"streams",title:"Live",icon:"radio",outline:"radio-outline"},
  {name:"videos",title:"Videos",icon:"play-circle",outline:"play-circle-outline"},
+ {name:"shop",title:"JShop",icon:"storefront",outline:"storefront-outline"},
  {name:"inbox",title:"Mensajes",icon:"mail",outline:"mail-outline"},
  {name:"profile",title:"Perfil",icon:"person",outline:"person-outline"},
 ] as const;

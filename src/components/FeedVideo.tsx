@@ -28,7 +28,7 @@ function SoundLine({text,active}:{text:string;active:boolean}){
 }
 function RailAction({icon,label,count,onPress,selected=false,color}:{icon:IconName;label:string;count?:number;onPress:()=>void;selected?:boolean;color?:string}){
  const {colors}=useTheme();const overlayStyles=useOverlayStyles();
- return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected}} onPress={onPress} style={({pressed})=>({alignItems:"center",justifyContent:"center",minHeight:52,minWidth:48,borderRadius:24,backgroundColor:colors.mediaControl,opacity:pressed?0.65:1})}>
+ return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected}} onPress={onPress} style={({pressed})=>({alignItems:"center",justifyContent:"center",minHeight:52,minWidth:48,borderRadius:24,backgroundColor:colors.transparent,opacity:pressed?0.65:1})}>
  <Ionicons name={icon} size={31} color={color??colors.mediaText} style={{textShadowColor:colors.mediaShadow,textShadowRadius:5,textShadowOffset:{width:0,height:1}}}/>
  {count!==undefined&&<Text style={[overlayStyles.shadowText,{color:colors.mediaText,fontSize:11,fontWeight:"700",marginTop:2}]}>{formatCount(count)}</Text>}
  </Pressable>;
@@ -37,7 +37,9 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  const {colors}=useTheme();const overlayStyles=useOverlayStyles();const {barHeight}=useTabClearance();const {s}=useUi();const {name}=useApp();const social=useSocial();
  const [error,setError]=useState("");const [muted,setMuted]=useState(true);const [paused,setPaused]=useState(false);
  const [sheet,setSheet]=useState<"comments"|"creator"|null>(null);const [draft,setDraft]=useState("");const [shareError,setShareError]=useState("");
- const [expanded,setExpanded]=useState(false);const disc=useRef(new Animated.Value(0)).current;
+ const [expanded,setExpanded]=useState(false);
+ const caption=clip.caption.trim().slice(0,200);
+ const shortCaption=caption.split(/\s+/).slice(0,5).join(" ")+(caption.split(/\s+/).length>5?"…":"");const disc=useRef(new Animated.Value(0)).current;
  const player=useVideoPlayer(clip.video,p=>{p.loop=true;p.muted=true;});
  const liked=social.likedPosts.includes(clip.postId),following=social.following.includes(clip.creatorId),saved=social.savedPosts.includes(clip.postId);
  const comments=social.comments[clip.postId]||[];const score=professionals.find(p=>p.id===clip.creatorId)?.rating??4.5;const playing=active&&!paused&&!error&&!sheet;
@@ -58,8 +60,12 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  <Pressable style={{position:"absolute",inset:0}} accessibilityRole="button" accessibilityLabel={paused?"Play video":"Pause video"} onPress={()=>setPaused(!paused)}>
  {paused&&<View style={{flex:1,justifyContent:"center",alignItems:"center"}}><Ionicons name="play" size={56} color={colors.mediaPlay}/></View>}
  </Pressable>
- <View pointerEvents="none" style={{position:"absolute",left:0,right:0,bottom:0,height:210+barHeight,backgroundColor:colors.mediaTint}}/>
- <View style={{position:"absolute",right:8,bottom:barHeight+16,alignItems:"center",gap:3,width:58}}>
+ <View pointerEvents="none" style={{position:"absolute",left:0,right:0,bottom:0,height:170+barHeight,backgroundColor:colors.mediaTint}}/>
+ <View style={{position:"absolute",right:8,bottom:barHeight+12,alignItems:"center",gap:1,width:58}}>
+ <Pressable accessibilityRole="button" accessibilityLabel={"Ver perfil de "+clip.author} onPress={()=>router.push({pathname:"/creator/[id]",params:{id:clip.creatorId}})} style={{alignItems:"center",marginBottom:2}}>
+  <Avatar uri={clip.avatar} name={clip.author} size={52}/>
+  <View style={{marginTop:-9,backgroundColor:colors.mediaControl,borderRadius:12,paddingHorizontal:6,paddingVertical:1}}><Text style={{fontSize:11,fontWeight:"800",color:colors.mediaText}}>★ {score.toFixed(1)}</Text></View>
+ </Pressable>
  <RailAction icon={liked?"heart":"heart-outline"} label={liked?"Unlike video":"Like video"} count={clip.likes+(liked?1:0)} selected={liked} color={liked?colors.reaction:colors.mediaText} onPress={()=>social.toggleLike(clip.postId)}/>
  <RailAction icon="chatbubble-ellipses" label="Open comments" count={clip.comments+comments.length} onPress={()=>setSheet("comments")}/>
  <RailAction icon="arrow-redo" label="Share video" count={clip.shares+(social.shares[clip.postId]||0)} onPress={()=>void share()}/>
@@ -68,13 +74,21 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  <Animated.View style={{width:40,height:40,borderRadius:20,borderWidth:7,borderColor:colors.mediaDiscLine,backgroundColor:colors.mediaDisc,alignItems:"center",justifyContent:"center",transform:[{rotate:disc.interpolate({inputRange:[0,1],outputRange:["0deg","360deg"]})}]}}><Ionicons name={muted?"volume-mute":"musical-note"} color={colors.mediaText} size={15}/></Animated.View>
  </Pressable>
  </View>
- <View style={{position:"absolute",left:16,right:84,bottom:barHeight+22,gap:9,backgroundColor:colors.mediaCaption,borderRadius:10,padding:10}}>
- {!!error&&<Text accessibilityLiveRegion="polite" style={{color:colors.mediaText,backgroundColor:colors.mediaNotice,padding:10,borderRadius:8}}>{error}</Text>}
+ <View style={{position:"absolute",left:16,right:83,bottom:barHeight+14,gap:5,paddingVertical:5}}>
+ {!!error&&<Text accessibilityLiveRegion="polite" style={{color:colors.mediaText,backgroundColor:colors.mediaNotice,padding:8,borderRadius:8}}>{error}</Text>}
  {!!shareError&&<Text accessibilityLiveRegion="polite" style={{color:colors.mediaText,backgroundColor:colors.mediaNotice,padding:8}}>{shareError}</Text>}
- <View style={{flexDirection:"row",alignItems:"center",gap:6}}><View style={{backgroundColor:colors.mediaPovBackground,borderRadius:4,paddingHorizontal:6,paddingVertical:2}}><Text style={{color:colors.mediaPovText,fontSize:10,fontWeight:"800",letterSpacing:1}}>POV</Text></View><Text style={[overlayStyles.shadowText,{color:colors.mediaText,fontSize:11,fontWeight:"700",letterSpacing:1}]}>{clip.chapter.toUpperCase()} · {clip.time}</Text></View>
- <View style={{flexDirection:"row",alignItems:"center",gap:10}}><Pressable accessibilityRole="button" accessibilityLabel={"View "+clip.author} onPress={()=>setSheet("creator")} style={{borderWidth:2,borderColor:colors.mediaText,borderRadius:23}}><Avatar uri={clip.avatar} name={clip.author} size={40}/></Pressable><Text style={[overlayStyles.shadowText,{color:colors.mediaText,fontSize:14,fontWeight:"800"}]}>★ {score.toFixed(1)}</Text></View>
- <Pressable accessibilityRole="button" accessibilityLabel={"View @"+clip.handle} onPress={()=>setSheet("creator")}><Text style={[overlayStyles.shadowText,{fontSize:16,fontWeight:"800",color:colors.mediaText}]}>@{clip.handle}</Text></Pressable>
- <Pressable accessibilityRole="button" accessibilityLabel="Expand or collapse caption" onPress={()=>setExpanded(!expanded)}><Text numberOfLines={expanded?undefined:2} style={[overlayStyles.shadowText,{color:colors.mediaText,fontSize:13,lineHeight:19}]}>{clip.caption}</Text></Pressable>
+ <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
+  <Pressable accessibilityRole="button" accessibilityLabel={"Ver perfil de @"+clip.handle} onPress={()=>router.push({pathname:"/creator/[id]",params:{id:clip.creatorId}})} style={{flexShrink:1}}>
+   <Text numberOfLines={1} style={[overlayStyles.shadowText,{fontSize:16,fontWeight:"800",color:colors.mediaText}]}>@{clip.handle}</Text>
+  </Pressable>
+  <Pressable accessibilityRole="button" accessibilityLabel={following?"Siguiendo a "+clip.handle:"Seguir a "+clip.handle} accessibilityState={{selected:following}} onPress={()=>social.toggleFollow(clip.creatorId)} style={{width:29,height:29,borderRadius:15,backgroundColor:colors.reaction,alignItems:"center",justifyContent:"center"}}>
+   <Ionicons name={following?"checkmark-done":"checkmark"} size={19} color={colors.qrPaper}/>
+  </Pressable>
+ </View>
+ {!!caption&&<Pressable accessibilityRole="button" accessibilityLabel={expanded?"Contraer descripción":"Expandir descripción"} onPress={()=>setExpanded(value=>!value)} style={{maxHeight:expanded?Math.max(55,height*.25):undefined}}>
+  {expanded?<ScrollView nestedScrollEnabled style={{maxHeight:Math.max(55,height*.25)}}><Text style={[overlayStyles.shadowText,{color:colors.mediaText,fontSize:13,lineHeight:19}]}>{caption}</Text></ScrollView>
+  :<Text numberOfLines={1} style={[overlayStyles.shadowText,{color:colors.mediaText,fontSize:13,lineHeight:19}]}>{shortCaption}</Text>}
+ </Pressable>}
  <SoundLine text={clip.audio} active={playing}/>
  <Text style={{color:colors.mediaQuiet,fontSize:9,letterSpacing:1}}>DEMO · SAMPLE ENGAGEMENT</Text>
  </View>

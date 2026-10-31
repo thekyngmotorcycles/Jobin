@@ -33,9 +33,9 @@ export default function Videos() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
-      {focused && <StatusBar style={theme==="dark"?"light":"dark"} />}
+      {focused && <StatusBar translucent backgroundColor={colors.transparent} style={theme==="dark"?"light":"dark"} />}
       <View style={{ position: "absolute", top: inset.top + 4, left: 8, right: 8, zIndex: 20 }}>
-        <FeedTopBar overlay tab={tab} onTab={changeTab} plusLabel="Subir video" onPlus={() => router.navigate("/create")} onSearch={() => router.push("/search")} />
+        <FeedTopBar overlay videoMode tab={tab} onTab={changeTab} plusLabel="Subir video" onPlus={() => router.navigate("/create")} onSearch={() => router.push("/search")} />
       </View>
       <View style={{ flex: 1 }} onLayout={e => setHeight(Math.max(1, e.nativeEvent.layout.height))}>
         <FlatList key={tab + Math.round(height) + (post || "")} data={clips} keyExtractor={clip => clip.id}
