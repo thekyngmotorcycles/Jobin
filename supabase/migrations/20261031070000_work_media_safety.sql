@@ -1,3 +1,15 @@
+create or replace function private.jcard_signup_profession() returns trigger language plpgsql security definer set search_path='' as $$
+ declare selected_profession text:=new.raw_user_meta_data->>'profession_code'; training text:=coalesce(new.raw_user_meta_data->>'training_status','graduado');
+ begin
+ if new.raw_user_meta_data->>'organization_kind' is not null and new.raw_user_meta_data->>'organization_kind' not in ('company','education','government') then raise exception 'Invalid organization kind'; end if;
+ if selected_profession is not null and new.raw_user_meta_data->>'account_type' is distinct from 'company' then
+ if training not in ('in_academy','graduado') or not exists(select 1 from public.profession_catalog p join public.profession_categories c on c.code=p.category where p.code=selected_profession and p.active and c.active) then raise exception 'Invalid profession or training status'; end if;
+ insert into public.person_professions(worker_id,profession_code,training_status,primary_profession) values(new.id,selected_profession,training,true);
+ insert into public.profession_seals(worker_id,profession_code,status,origin) values(new.id,selected_profession,'sin_verificar','certificado');
+ end if;
+ return new;
+ end $$;
+
 -- Phase 3: work-only publishing, real-provider moderation, independent sanctions and appeals.
 create table private.media_safety_config(
  id boolean primary key default true check(id), moderation_ready boolean not null default false,
@@ -614,3 +626,16 @@ end $$;
 grant execute on function private.work_media_visible(uuid) to anon,authenticated;
 grant execute on function public.jobin_public_trust_mark(uuid),public.jobin_work_media(uuid),public.jobin_published_work_media() to anon,authenticated;
 notify pgrst,'reload schema';
+
+-- Service-only callback correlation and asynchronous vendor job handoff.
+create function public.jobin_moderation_job_waiting(job uuid,token uuid,provider_job text) returns void language plpgsql security definer set search_path='' as $$
+ begin
+ update private.moderation_jobs set status='waiting',provider_job_id=provider_job,lease_until=null where id=job and lease_token=token and status='leased' and kind='scan_video';
+ if not found then raise exception 'Valid leased moderation job required'; end if;
+ end $$;
+create function public.jobin_moderation_target(job uuid) returns jsonb language sql stable security definer set search_path='' as $$
+ select jsonb_build_object('kind',m.kind,'assetId',m.provider_asset_id,'status',m.status,'leaseUntil',m.safety_lease_until)
+ from private.moderation_jobs j join public.work_media m on m.id=j.media_id where j.id=job;
+$$;
+revoke all on function public.jobin_moderation_job_waiting(uuid,uuid,text),public.jobin_moderation_target(uuid) from public,anon,authenticated;
+grant execute on function public.jobin_moderation_job_waiting(uuid,uuid,text),public.jobin_moderation_target(uuid) to service_role;
