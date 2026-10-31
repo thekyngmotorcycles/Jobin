@@ -13,7 +13,7 @@ export default function Safety(){
   {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
   <View style={s.panel}><Text style={s.h2}>{status.permanent?"Cuenta bloqueada permanentemente":status.accountBlocked?"Cuenta suspendida":status.mediaBlocked?"Publicación restringida":"Sin restricciones activas"}</Text>
    <Text style={s.h3}>Contenido · {status.contentCount} strikes confirmados</Text>
-   <Text style={s.text}>{status.permanent?"Bloqueo permanente. Los identificadores verificados quedan protegidos mediante hashes.":status.contentUntil?"Restricción de Lives y subida de videos hasta "+safetyEnd(status.contentUntil):"Sin restricción por este contador."}</Text>
+   <Text style={s.text}>{status.permanent?"Bloqueo permanente. No podrás registrar otra cuenta con el mismo correo o teléfono verificado.":status.contentUntil?"Restricción de Lives y subida de videos hasta "+safetyEnd(status.contentUntil):"Sin restricción por este contador."}</Text>
    <Text style={s.muted}>1.º: 30 días · 2.º: 6 meses calendario · 3.º: bloqueo permanente.</Text>
    <Text style={s.h3}>Suplantación de empleador · {status.employerCount}</Text>
    <Text style={s.text}>{status.employerUntil?"Suspensión de cuenta hasta "+safetyEnd(status.employerUntil):"El primer caso queda registrado; a partir del segundo se suspende la cuenta por un año."}</Text>

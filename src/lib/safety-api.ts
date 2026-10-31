@@ -15,7 +15,7 @@ export interface SafetyQueue {
  held:{id:string;creator_id:string;title:string;kind:string}[];
 }
 type F=Database["public"]["Functions"];
-type Mutation="jobin_request_work_live"|"jobin_submit_work_video"|"jobin_end_work_live"|"jobin_report_employer"|"jobin_review_employer_report"|"jobin_appeal_safety"|"jobin_review_safety_appeal"|"jobin_confirm_held_media";
+type Mutation="jobin_clear_held_media"|"jobin_request_work_live"|"jobin_submit_work_video"|"jobin_end_work_live"|"jobin_report_employer"|"jobin_review_employer_report"|"jobin_appeal_safety"|"jobin_review_safety_appeal"|"jobin_confirm_held_media";
 export async function safetyMutation<N extends Mutation>(name:N,args:F[N]["Args"]){
  const {data,error}=await requireSupabase().rpc(name,args);if(error)throw new Error(error.message);return data;
 }

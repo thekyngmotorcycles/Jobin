@@ -54,6 +54,16 @@ create table private.moderation_events(
  coverage text[] not null, findings jsonb not null, observed_at timestamptz not null,
  created_at timestamptz not null default now()
 );
+create table private.safety_manual_decisions(
+ id uuid primary key default gen_random_uuid(),media_id uuid not null references public.work_media(id),
+ reviewer_id uuid not null references auth.users(id),decision text not null check(decision in ('clear','violation')),
+ reason text not null check(length(trim(reason)) between 10 and 2000),created_at timestamptz not null default now()
+);
+alter table private.safety_manual_decisions enable row level security;
+revoke all on private.safety_manual_decisions from public,anon,authenticated;
+grant all on private.safety_manual_decisions to service_role;
+create trigger manual_safety_audit before update or delete on private.safety_manual_decisions for each row execute function public.jobin_immutable_event();
+
 create table private.media_publisher_access(
  media_id uuid primary key references public.work_media(id), publisher_url text not null check(publisher_url like 'https://%')
 );
@@ -472,6 +482,7 @@ create function public.jobin_confirm_held_media(media uuid,category text,reason 
  if not private.active_safety_moderator() then raise exception 'Moderators only'; end if;
  select * into m from public.work_media where id=media and status='held' for update;
  if m.id is null or m.creator_id=auth.uid() or category not in ('nudity','sexual_content','minors','blood','violence') or length(trim(reason)) not between 10 and 2000 then raise exception 'Independent documented content decision required'; end if;
+ insert into private.safety_manual_decisions(media_id,reviewer_id,decision,reason) values(media,auth.uid(),'violation',reason);
  perform private.stop_work_media(media,reason);
  perform private.issue_safety_incident(m.creator_id,'content',category,media,reason,null,null);
  end $$;
@@ -689,3 +700,20 @@ revoke all on function public.jobin_work_options() from public,anon,authenticate
 grant execute on function public.jobin_work_options() to authenticated,service_role;
 
 grant execute on function private.active_safety_moderator() to authenticated;
+
+create function public.jobin_clear_held_media(media uuid,reviewed_all boolean,reason text) returns void language plpgsql security definer set search_path='' as $$
+ declare m public.work_media;
+ begin
+ if not private.active_safety_moderator() then raise exception 'Moderators only'; end if;
+ select * into m from public.work_media where id=media and status='held' for update;
+ if m.id is null or m.creator_id=auth.uid() or reviewed_all is not true or reason is null or length(trim(reason)) not between 10 and 2000 then raise exception 'Independent review of all five categories and a documented reason are required'; end if;
+ if m.kind='video' and (not private.safety_ready(false) or not private.safety_can_publish(m.creator_id)) then raise exception 'Publication remains unavailable until provider and account restrictions are resolved'; end if;
+ insert into private.safety_manual_decisions(media_id,reviewer_id,decision,reason) values(media,auth.uid(),'clear',reason);
+ if m.kind='live' then update public.work_media set status='ended' where id=media;
+ else
+ update public.work_media set status='moderating',safety_checked_at=now() where id=media;
+ insert into private.moderation_jobs(media_id,kind) values(media,'publish_video') on conflict(media_id,kind) do nothing;
+ end if;
+ end $$;
+revoke all on function public.jobin_clear_held_media(uuid,boolean,text) from public,anon,authenticated;
+grant execute on function public.jobin_clear_held_media(uuid,boolean,text) to authenticated,service_role;

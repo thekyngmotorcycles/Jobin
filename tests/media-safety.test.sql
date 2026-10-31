@@ -151,4 +151,12 @@ select public.jobin_moderation_job_failed(
  'CI provider is temporarily unavailable');
 select pg_temp.safety_assert((select status='pending' and available_at>now() from private.moderation_jobs where media_id=current_setting('test.live')::uuid and kind='stop_live'),'provider cutoff retries never exhaust permanently');
 
+-- A real independent human review is audited separately; it never fabricates a provider result.
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000004',true);
+select pg_temp.safety_error($q$select public.jobin_clear_held_media(current_setting('test.low_confidence')::uuid,false,'Attempt to clear without reviewing all prohibited categories.')$q$,'all five');
+select public.jobin_clear_held_media(current_setting('test.low_confidence')::uuid,true,'Independent human review confirms no prohibited content in the complete video.');
+select pg_temp.safety_assert(exists(select 1 from private.safety_manual_decisions where media_id=current_setting('test.low_confidence')::uuid and decision='clear'),'manual clearance has its own audit event');
+select pg_temp.safety_assert(not exists(select 1 from public.videos where work_media_id=current_setting('test.low_confidence')::uuid),'human clearance still waits for actual video provider publication');
+select set_config('request.jwt.claim.sub','',true);
+
 rollback;

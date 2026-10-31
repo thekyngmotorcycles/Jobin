@@ -2590,6 +2590,7 @@ export type Database = {
       }
     }
     Functions: {
+      jobin_clear_held_media: {Args:{media:string;reviewed_all:boolean;reason:string};Returns:undefined}
       jobin_work_options: {Args:Record<string,never>;Returns:Json}
       jobin_safety_status: { Args:Record<string, never>;Returns:Json }
       jobin_public_trust_mark: { Args:{worker:string};Returns:Json }
