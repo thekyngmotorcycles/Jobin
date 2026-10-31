@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps,ReactNode } from "react";
-import { Image,KeyboardAvoidingView,Modal,Platform,Pressable,StyleSheet,Text,View } from "react-native";
+import { Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,StyleSheet,Text,View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTheme } from "../state/ThemeProvider";
