@@ -1,4 +1,4 @@
-name: Check main and publish Navigation and Jobin Card
+name: Check main and publish Jobin development
 on:
   workflow_dispatch:
   push:
@@ -28,7 +28,7 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           test -n "$EXPO_TOKEN" || { echo "::error::EXPO_TOKEN repository secret is missing"; exit 1; }
-          npx eas-cli@27.1.0 update --branch development --environment preview --platform all --non-interactive --message "Navigation and Jobin Card" --json > navigation-card-update.json
+          npx eas-cli@27.1.0 update --branch development --environment preview --platform all --non-interactive --message "Jobin JCard, verification and media safety" --json > navigation-card-update.json
       - name: Report update IDs
         run: |
           node - <<'JS'
