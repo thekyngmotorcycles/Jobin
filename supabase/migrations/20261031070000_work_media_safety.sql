@@ -39,12 +39,13 @@ alter table public.videos add column work_media_id uuid unique references public
 alter table public.impersonation_reports add column work_media_id uuid references public.work_media(id);
 alter table public.impersonation_reports add column video_id uuid references public.videos(id);
 alter table public.impersonation_reports add column description text;
+alter table public.impersonation_reports add column incident_at timestamptz;
 create unique index impersonation_one_media_company on public.impersonation_reports(company_id,work_media_id) where work_media_id is not null;
 create table private.moderation_jobs(
  id uuid primary key default gen_random_uuid(), media_id uuid not null references public.work_media(id),
  kind text not null check(kind in ('prepare_video','scan_video','prepare_live','publish_video','stop_live','disable_video')),
  status text not null default 'pending' check(status in ('pending','leased','waiting','done','error')),
- attempts integer not null default 0, lease_token uuid, lease_until timestamptz,
+ attempts integer not null default 0, available_at timestamptz not null default now(), lease_token uuid, lease_until timestamptz,
  provider_job_id text, last_error text, created_at timestamptz not null default now(), unique(media_id,kind)
 );
 create table private.moderation_events(
@@ -282,7 +283,7 @@ create function public.jobin_claim_moderation_jobs() returns jsonb language plpg
  begin
  with picked as (
  select j.id from private.moderation_jobs j where
- ((j.status='pending' or (j.status='leased' and j.lease_until<now())) and j.attempts<8)
+ (((j.status='pending' and j.available_at<=now()) or (j.status='leased' and j.lease_until<now())) and (j.attempts<8 or j.kind in ('stop_live','disable_video')))
  and (j.kind in ('stop_live','disable_video') or private.safety_ready(j.kind='prepare_live'))
  order by case when j.kind in ('stop_live','disable_video') then 0 else 1 end,j.created_at for update skip locked limit 5
  ), leased as (
@@ -292,9 +293,12 @@ create function public.jobin_claim_moderation_jobs() returns jsonb language plpg
  return result;
  end $$;
 create function public.jobin_moderation_job_failed(job uuid,token uuid,reason text) returns void language plpgsql security definer set search_path='' as $$
+ declare j private.moderation_jobs;
  begin
- update private.moderation_jobs set status=case when attempts>=8 then 'error' else 'pending' end,last_error=left(reason,500),lease_until=null
- where id=job and lease_token=token and status='leased';
+ update private.moderation_jobs set status=case when attempts>=8 and kind not in ('stop_live','disable_video') then 'error' else 'pending' end,
+ last_error=left(reason,500),lease_until=null,available_at=now()+make_interval(secs=>least(300,power(2,least(attempts,8))::integer))
+ where id=job and lease_token=token and status='leased' returning * into j;
+ if j.status='error' then update public.work_media set status='failed' where id=j.media_id and status in ('pending','processing','moderating'); end if;
  end $$;
 create function public.jobin_complete_media_preparation(job uuid,token uuid,asset text,playback text,duration_ms integer default null,publisher_url text default null,watch_id text default null) returns void
  language plpgsql security definer set search_path='' as $$
@@ -412,8 +416,8 @@ create function public.jobin_report_employer(media uuid,path text,description te
  values(auth.uid(),m.creator_id,(select id from public.live_sessions where work_media_id=m.id),(select id from public.videos where work_media_id=m.id),m.id,path,trim(description)) returning id into result;
  return result;
  end $$;
-create function public.jobin_review_employer_report(report uuid,uphold boolean,reason text) returns void language plpgsql security definer set search_path='' as $$
- declare r public.impersonation_reports; m public.work_media;
+create function public.jobin_review_employer_report(report uuid,uphold boolean,reason text,incident_time timestamptz default null) returns void language plpgsql security definer set search_path='' as $$
+ declare r public.impersonation_reports; m public.work_media; evidence_at timestamptz;
  begin
  if not private.active_safety_moderator() then raise exception 'Moderators only'; end if;
  if uphold is null or reason is null or length(trim(reason)) not between 10 and 2000 then raise exception 'A documented moderation decision is required'; end if;
@@ -421,11 +425,16 @@ create function public.jobin_review_employer_report(report uuid,uphold boolean,r
  if r.id is null or r.work_media_id is null then raise exception 'A pending report linked to a real media item is required'; end if;
  if auth.uid() in (r.company_id,r.accused_id) then raise exception 'Cannot decide your own case'; end if;
  select * into m from public.work_media where id=r.work_media_id;
+ evidence_at:=case when m.kind='live' then coalesce((select started_at from public.live_sessions where work_media_id=m.id),m.created_at) else incident_time end;
+ if uphold and (evidence_at is null or evidence_at>m.created_at+interval '5 minutes') then raise exception 'Verify the recording time from the video evidence before upholding this report'; end if;
+ if uphold and exists(select 1 from public.employment_records e where e.company_id=r.company_id and e.worker_id=r.accused_id
+ and e.company_approved_at is not null and e.worker_consented_at is not null and e.started_on<=evidence_at::date
+ and (e.ended_on is null or e.ended_on>=evidence_at::date)) then raise exception 'Verified employment history covers the recording time'; end if;
  if uphold and exists(select 1 from jsonb_array_elements(m.employment_snapshot) e where (e->>'company')::uuid=r.company_id
  and e->>'approved_at' is not null and (e->>'approved_at')::timestamptz<=m.created_at
  and e->>'consented_at' is not null and (e->>'consented_at')::timestamptz<=m.created_at
  and (e->>'started_on')::date<=m.created_at::date and (e->>'ended_on' is null or (e->>'ended_on')::date>=m.created_at::date)) then raise exception 'The worker was approved by this employer at the time of the media'; end if;
- update public.impersonation_reports set status=case when uphold then 'upheld' else 'dismissed' end,decided_at=now(),decided_by=auth.uid(),description=coalesce(description,'')||E'\nDecision: '||reason where id=r.id;
+ update public.impersonation_reports set status=case when uphold then 'upheld' else 'dismissed' end,decided_at=now(),decided_by=auth.uid(),incident_at=evidence_at,description=coalesce(description,'')||E'\nDecision: '||reason where id=r.id;
  if uphold then
  perform private.stop_work_media(m.id,'Employer impersonation upheld');
  perform private.issue_safety_incident(r.accused_id,'employer','employer_impersonation',m.id,reason,null,r.id);

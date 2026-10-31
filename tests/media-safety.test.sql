@@ -92,7 +92,7 @@ do $$ declare n integer; m uuid; rid uuid; begin
  rid:=public.jobin_report_employer(m,'30000000-0000-4000-8000-000000000003/report-'||n||'.png','This user falsely claimed to work for our company.');
  perform pg_temp.safety_assert((private.safety_state('30000000-0000-4000-8000-000000000002')->>'employerCount')::int=n-1,'report alone never creates a strike');
  perform set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000004',true);
- perform public.jobin_review_employer_report(rid,true,'Independent review confirms this unsupported employer claim.');
+ perform public.jobin_review_employer_report(rid,true,'Independent review confirms this unsupported employer claim.',now());
  perform set_config('request.jwt.claim.sub','',true);
  end loop;
 end $$;
@@ -134,7 +134,7 @@ select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000003'
 select public.jobin_report_employer(current_setting('test.approved_media')::uuid,'30000000-0000-4000-8000-000000000003/approved-worker.png','This allegation conflicts with our own approval at that moment.');
 select set_config('test.approved_report',(select id::text from public.impersonation_reports where work_media_id=current_setting('test.approved_media')::uuid),true);
 select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000004',true);
-select pg_temp.safety_error($q$select public.jobin_review_employer_report(current_setting('test.approved_report')::uuid,true,'Attempt to uphold contrary to timestamped employment proof.')$q$,'was approved');
+select pg_temp.safety_error($q$select public.jobin_review_employer_report(current_setting('test.approved_report')::uuid,true,'Attempt to uphold contrary to timestamped employment proof.',now())$q$,'employment history');
 reset role;
 select set_config('request.jwt.claim.sub','',true);
 select set_config('test.low_confidence',pg_temp.fixture_media('30000000-0000-4000-8000-000000000006')::text,true);

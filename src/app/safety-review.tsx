@@ -7,18 +7,20 @@ import { loadSafetyQueue,moderationPreview,reportEvidencePreview,safetyMutation,
 import { useProfessionalAction,useProfessionalData } from "../state/useProfessionalData";
 export default function SafetyReview(){
  const {s,colors}=useUi();const resource=useProfessionalData(loadSafetyQueue);const action=useProfessionalAction(resource.reload);
- const [reason,setReason]=useState("");const [category,setCategory]=useState("violence");
+ const [reason,setReason]=useState("");const [incidentTime,setIncidentTime]=useState("");const [category,setCategory]=useState("violence");
  return <Screen title="Revisión de seguridad." subtitle="Decisiones independientes, documentadas y verificadas en el servidor.">
  {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
  {!resource.data?<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>:<>
   <View style={s.panel}><Text style={s.h3}>Motivo documentado de la decisión</Text><TextInput accessibilityLabel="Motivo de decisión de moderación" value={reason} onChangeText={setReason} multiline style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:12,minHeight:90,borderRadius:10}}/>
+  <TextInput accessibilityLabel="Momento de grabación verificado para el video" placeholder="Grabación verificada: YYYY-MM-DDTHH:mm:ssZ" placeholderTextColor={colors.muted} value={incidentTime} onChangeText={setIncidentTime} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:12,borderRadius:10}}/>
+  <Text style={s.muted}>Para videos, verifica cuándo se grabaron: publicar después de salir de una empresa no demuestra suplantación. La ausencia de un registro tampoco prueba por sí sola que no existió empleo.</Text>
   <Text style={s.muted}>Una denuncia no demuestra suplantación. Revisa las pruebas y la aprobación laboral en el momento del contenido. No puedes resolver tu propio caso.</Text></View>
   <Text style={s.h2}>Denuncias de empleador</Text>
   {resource.data.reports.map(r=><View key={r.id} style={s.panel}>
    <Text style={s.text}>{r.description}</Text>
    <Button secondary title="Abrir prueba privada" onPress={()=>void action.run(async()=>{await Linking.openURL(await reportEvidencePreview(r.evidence_path));},"Prueba abierta con acceso temporal.")}/>
    <Button secondary title="Ver contenido" onPress={()=>router.push({pathname:"/work-media/[id]",params:{id:r.work_media_id}})}/>
-   <Button title="Confirmar suplantación" onPress={()=>void action.run(()=>safetyMutation("jobin_review_employer_report",{report:r.id,uphold:true,reason}),"Decisión registrada.")}/>
+   <Button title="Confirmar suplantación" onPress={()=>void action.run(()=>safetyMutation("jobin_review_employer_report",{report:r.id,uphold:true,reason,incident_time:incidentTime.trim()?new Date(incidentTime).toISOString():undefined}),"Decisión registrada.")}/>
    <Button secondary title="Desestimar denuncia" onPress={()=>void action.run(()=>safetyMutation("jobin_review_employer_report",{report:r.id,uphold:false,reason}),"Denuncia desestimada.")}/>
   </View>)}
   {!resource.data.reports.length&&<Text style={s.muted}>Sin denuncias pendientes.</Text>}

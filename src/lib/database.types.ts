@@ -2597,7 +2597,7 @@ export type Database = {
       jobin_submit_work_video: { Args:{title:string;profession:string;activity:string;path:string;start_ms:number;end_ms:number;employer?:string;consent?:boolean};Returns:string }
       jobin_end_work_live: { Args:{media:string};Returns:undefined }
       jobin_report_employer: { Args:{media:string;path:string;description:string};Returns:string }
-      jobin_review_employer_report: { Args:{report:string;uphold:boolean;reason:string};Returns:undefined }
+      jobin_review_employer_report: { Args:{report:string;uphold:boolean;reason:string;incident_time?:string};Returns:undefined }
       jobin_appeal_safety: { Args:{incident:string;reason:string};Returns:string }
       jobin_review_safety_appeal: { Args:{appeal:string;accept:boolean;reason:string};Returns:undefined }
       jobin_confirm_held_media: { Args:{media:string;category:string;reason:string};Returns:undefined }
