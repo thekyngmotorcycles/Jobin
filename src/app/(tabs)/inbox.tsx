@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useJobinNotices } from "../../state/NoticeProvider";
 import { router } from "expo-router";
 import { useTabClearance } from "../../theme/navigation";
 import { useState } from "react";
@@ -22,6 +24,8 @@ const INITIAL: Thread[] = [
 ];
 
 export default function Messages() {
+  const {markInboxRead}=useJobinNotices();
+  useEffect(()=>{markInboxRead();},[]);
   const { s, colors } = useUi();const {contentBottom}=useTabClearance();
   const [threads, setThreads] = useState<Thread[]>(INITIAL);
   function decide(id: string, status: "accepted" | "rejected") {
