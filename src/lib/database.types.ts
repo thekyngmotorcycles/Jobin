@@ -14,6 +14,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      usernames: {
+        Row: { user_id: string; username: string; created_at: string }
+        Insert: { user_id: string; username: string; created_at?: string }
+        Update: { user_id?: string; username?: string; created_at?: string }
+        Relationships: []
+      }
       account_preferences: {
         Row: {
           birth_date: string | null
