@@ -625,7 +625,7 @@ create function public.jobin_respond_career(contact uuid,decision text) returns 
  else raise exception 'Not allowed to decide this contact'; end if;
  end $$;
 
-create function private.jcard_signup_profession() returns trigger language plpgsql security definer set search_path='' as $
+create function private.jcard_signup_profession() returns trigger language plpgsql security definer set search_path='' as $$
  declare code text:=new.raw_user_meta_data->>'profession_code'; training text:=coalesce(new.raw_user_meta_data->>'training_status','graduado');
  begin
  if new.raw_user_meta_data->>'organization_kind' is not null and new.raw_user_meta_data->>'organization_kind' not in ('company','education','government') then raise exception 'Invalid organization kind'; end if;
@@ -635,7 +635,7 @@ create function private.jcard_signup_profession() returns trigger language plpgs
  insert into public.profession_seals(worker_id,profession_code,status,origin) values(new.id,code,'sin_verificar','certificado');
  end if;
  return new;
- end $;
+ end $$;
 create trigger zz_jcard_signup_profession after insert on auth.users for each row execute function private.jcard_signup_profession();
 
 -- All new tables deny direct client writes. Writes only use the narrow RPCs.
