@@ -1,0 +1,85 @@
+# Auditoría inicial de colores
+
+Se buscaron hexadecimales, rgb/rgba y nombres de colores en src antes de modificar código. Resultados originales (incluyen identificadores de dominio que no son colores):
+
+- `src/app/(tabs)/_layout.tsx:18` — `const ink = dark ? "#fff" : colors.ink;`
+- `src/app/(tabs)/_layout.tsx:19` — `const muted = dark ? "#a8a8a8" : colors.muted;`
+- `src/app/(tabs)/_layout.tsx:20` — `const background = dark ? "#080808" : colors.card;`
+- `src/app/(tabs)/_layout.tsx:32` — `borderTopColor: dark ? "#222" : colors.line,`
+- `src/app/(tabs)/profile.tsx:58` — `style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: active ? colors.ink : "transparent" }}>`
+- `src/app/(tabs)/profile.tsx:59` — `<Ionicons name={icon} size={22} color={value === "live" ? (p.streamingNow ? "#22c55e" : "#555") : active ? colors.inverse : colors.ink} />`
+- `src/app/(tabs)/videos.tsx:33` — `<View style={{ flex: 1, backgroundColor: "#080808" }}>`
+- `src/app/_layout.tsx:16` — `return <View style={{flex:1,backgroundColor:"#000",alignItems:"center",justifyContent:"center",padding:30,gap:20}}>`
+- `src/app/_layout.tsx:17` — `<JobinWordmark width={240}/>{error?<><Text style={{color:"#fff",textAlign:"center"}}>The navigation icons could not load.</Text><Pressable accessibilityRole="button" onPress={()=>{if(retrying)return;setRetrying(true);void loadAsync(Ionicons.font).then(()=>setRecovered(true)).catch(()=>{}).finally(()=>setRetrying(false));}} style={{padding:16,backgroundColor:colors.accent,border`
+- `src/app/services.tsx:20` — `<View style={[s.panel, professional === person.id && { borderColor: "#173a32", borderWidth: 2 }]}>`
+- `src/app/settings.tsx:9` — `<Chips<ThemeName> values={["light","dark","pink"]} value={theme} onChange={setTheme} label="Tema de la aplicación"/>`
+- `src/app/stream/[id].tsx:36` — `return <KeyboardAvoidingView style={{flex:1,backgroundColor:"#080808"}} behavior={Platform.OS==="ios"?"padding":undefined}>`
+- `src/app/stream/[id].tsx:40` — `<View pointerEvents="none" style={{position:"absolute",inset:0,backgroundColor:"#0003"}}/>`
+- `src/app/stream/[id].tsx:42` — `<View style={{flexDirection:"row",alignItems:"center",gap:8,backgroundColor:"#0006",borderRadius:28,padding:5,paddingRight:10,flex:1}}>`
+- `src/app/stream/[id].tsx:43` — `<Avatar uri={room.avatar} name={room.host} size={36}/><View style={{flex:1}}><Text numberOfLines={1} style={{color:"#fff",fontSize:12,fontWeight:"700"}}>{room.host}</Text><Text style={{color:"#ddd",fontSize:10}}>{formatCount(room.viewers)} sample viewers</Text></View>`
+- `src/app/stream/[id].tsx:44` — `<IconButton icon={following?"checkmark":"add"} label={following?"Unfollow host":"Follow host"} onPress={()=>social.toggleFollow(room.hostId)} size={20} color="#fff" background="#ffffff26"/>`
+- `src/app/stream/[id].tsx:46` — `<IconButton icon={muted?"volume-mute-outline":"volume-high-outline"} label={muted?"Unmute stream":"Mute stream"} onPress={()=>setMuted(!muted)} color="#fff"/>`
+- `src/app/stream/[id].tsx:47` — `<IconButton icon="close" label="Leave live room" onPress={()=>router.canGoBack()?router.back():router.replace("/streams")} color="#fff"/>`
+- `src/app/stream/[id].tsx:49` — `<View style={{position:"absolute",top:inset.top+79,left:18,right:18,gap:6}}><Text style={{fontSize:10,color:"#fff",letterSpacing:1,fontWeight:"800"}}>DEMO ROOM · RECORDED PREVIEW</Text><Text numberOfLines={2} style={{fontSize:19,color:"#fff",fontWeight:"700"}}>{room.title}</Text>{!!error&&<Text style={{color:"#fff",backgroundColor:"#0008",padding:10}}>{error}</Text>}</View>`
+- `src/app/stream/[id].tsx:51` — `{!!notice&&<Text accessibilityLiveRegion="polite" style={{color:"#fff",fontSize:11,lineHeight:16,backgroundColor:"#0008",padding:9,borderRadius:10}}>{notice}</Text>}`
+- `src/app/stream/[id].tsx:53` — `<Text style={{alignSelf:"flex-start",color:"#eee",fontSize:11,padding:9,backgroundColor:"#ffffff20",borderRadius:15}}>Welcome to {room.host.split(" ")[0]}’s preview room.</Text>`
+- `src/app/stream/[id].tsx:54` — `{[{id:"demo-1",author:"Jobin",text:"A look inside the process. This is a sample discussion."},{id:"demo-2",author:"Community preview",text:"What would you like to learn about this work?"},...messages].map(message=><View key={message.id} style={{paddingVertical:7,paddingHorizontal:10,backgroundColor:"#0007",borderRadius:12}}><Text style={{fontSize:12,lineHeight:18,color:"#fff"}}`
+- `src/app/stream/[id].tsx:58` — `<TextInput accessibilityLabel="Comment in preview room" placeholder="Comment…" placeholderTextColor="#ddd" value={draft} onChangeText={setDraft} maxLength={500} onSubmitEditing={send} returnKeyType="send" style={{flex:1,minWidth:60,minHeight:46,borderRadius:25,paddingHorizontal:15,backgroundColor:"#ffffff24",color:"#fff",borderWidth:1,borderColor:"#ffffff35"}}/>`
+- `src/app/stream/[id].tsx:59` — `{!!draft.trim()&&<IconButton icon="send" label="Send comment" color="#fff" onPress={send}/>}`
+- `src/app/stream/[id].tsx:61` — `<IconButton icon="arrow-redo-outline" label="Share room" color="#fff" onPress={()=>void share()}/>`
+- `src/app/stream/[id].tsx:62` — `<View style={{alignItems:"center"}}><IconButton icon="heart" label="Send a heart" color={colors.reaction} onPress={heart}/><Text style={{color:"#fff",fontSize:9,position:"absolute",bottom:-4}}>{social.roomHearts[room.id]||0}</Text></View>`
+- `src/components/FeedTopBar.tsx:10` — `const ink = overlay ? "#fff" : colors.ink;`
+- `src/components/FeedTopBar.tsx:12` — `<View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 8, gap: 2, backgroundColor: overlay ? "transparent" : colors.paper }}>`
+- `src/components/FeedTopBar.tsx:18` — `<Text style={{ color: tab === item ? ink : overlay ? "#ffffffb3" : colors.muted, fontSize: 15, fontWeight: tab === item ? "800" : "500" }}>{item}</Text>`
+- `src/components/FeedVideo.tsx:21` — `<Ionicons name="musical-notes" size={14} color="#fff"/><View style={{flex:1,overflow:"hidden"}} onLayout={e=>setWidth(e.nativeEvent.layout.width)}>`
+- `src/components/FeedVideo.tsx:23` — `<Text onLayout={e=>setTextWidth(e.nativeEvent.layout.width)} style={{flexShrink:0,color:"#fff",fontSize:12,marginRight:28}}>{text}</Text>`
+- `src/components/FeedVideo.tsx:24` — `{moving&&<Text accessibilityElementsHidden style={{flexShrink:0,color:"#fff",fontSize:12}}>{text}</Text>}`
+- `src/components/FeedVideo.tsx:27` — `function RailAction({icon,label,count,onPress,selected=false,color="#fff"}:{icon:IconName;label:string;count?:number;onPress:()=>void;selected?:boolean;color?:string}){`
+- `src/components/FeedVideo.tsx:29` — `<Ionicons name={icon} size={31} color={color} style={{textShadowColor:"#0007",textShadowRadius:5,textShadowOffset:{width:0,height:1}}}/>`
+- `src/components/FeedVideo.tsx:30` — `{count!==undefined&&<Text style={[overlayStyles.shadowText,{color:"#fff",fontSize:11,fontWeight:"700",marginTop:2}]}>{formatCount(count)}</Text>}`
+- `src/components/FeedVideo.tsx:53` — `return <View style={{height,width:"100%",backgroundColor:"#080808",overflow:"hidden"}}>`
+- `src/components/FeedVideo.tsx:56` — `{paused&&<View style={{flex:1,justifyContent:"center",alignItems:"center"}}><Ionicons name="play" size={56} color="#ffffffbd"/></View>}`
+- `src/components/FeedVideo.tsx:58` — `<View pointerEvents="none" style={{position:"absolute",left:0,right:0,bottom:0,height:210,backgroundColor:"#0003"}}/>`
+- `src/components/FeedVideo.tsx:60` — `<RailAction icon={liked?"heart":"heart-outline"} label={liked?"Unlike video":"Like video"} count={clip.likes+(liked?1:0)} selected={liked} color={liked?colors.reaction:"#fff"} onPress={()=>social.toggleLike(clip.postId)}/>`
+- `src/components/FeedVideo.tsx:65` — `<Animated.View style={{width:40,height:40,borderRadius:20,borderWidth:7,borderColor:"#232323",backgroundColor:"#555",alignItems:"center",justifyContent:"center",transform:[{rotate:disc.interpolate({inputRange:[0,1],outputRange:["0deg","360deg"]})}]}}><Ionicons name={muted?"volume-mute":"musical-note"} color="#fff" size={15}/></Animated.View>`
+- `src/components/FeedVideo.tsx:69` — `{!!error&&<Text accessibilityLiveRegion="polite" style={{color:"#fff",backgroundColor:"#0009",padding:10,borderRadius:8}}>{error}</Text>}`
+- `src/components/FeedVideo.tsx:70` — `{!!shareError&&<Text accessibilityLiveRegion="polite" style={{color:"#fff",backgroundColor:"#0009",padding:8}}>{shareError}</Text>}`
+- `src/components/FeedVideo.tsx:71` — `<View style={{flexDirection:"row",alignItems:"center",gap:6}}><View style={{backgroundColor:"#fff",borderRadius:4,paddingHorizontal:6,paddingVertical:2}}><Text style={{color:"#111",fontSize:10,fontWeight:"800",letterSpacing:1}}>POV</Text></View><Text style={[overlayStyles.shadowText,{color:"#fff",fontSize:11,fontWeight:"700",letterSpacing:1}]}>{clip.chapter.toUpperCase()} · {cl`
+- `src/components/FeedVideo.tsx:72` — `<View style={{flexDirection:"row",alignItems:"center",gap:10}}><Pressable accessibilityRole="button" accessibilityLabel={"View "+clip.author} onPress={()=>setSheet("creator")} style={{borderWidth:2,borderColor:"#fff",borderRadius:23}}><Avatar uri={clip.avatar} name={clip.author} size={40}/></Pressable><Text style={[overlayStyles.shadowText,{color:"#fff",fontSize:14,fontWeight:"`
+- `src/components/FeedVideo.tsx:73` — `<Pressable accessibilityRole="button" accessibilityLabel={"View @"+clip.handle} onPress={()=>setSheet("creator")}><Text style={[overlayStyles.shadowText,{fontSize:16,fontWeight:"800",color:"#fff"}]}>@{clip.handle}</Text></Pressable>`
+- `src/components/FeedVideo.tsx:74` — `<Pressable accessibilityRole="button" accessibilityLabel="Expand or collapse caption" onPress={()=>setExpanded(!expanded)}><Text numberOfLines={expanded?undefined:2} style={[overlayStyles.shadowText,{color:"#fff",fontSize:13,lineHeight:19}]}>{clip.caption}</Text></Pressable>`
+- `src/components/FeedVideo.tsx:76` — `<Text style={{color:"#ffffffaa",fontSize:9,letterSpacing:1}}>DEMO · SAMPLE ENGAGEMENT</Text>`
+- `src/components/JobinWordmark.tsx:3` — `type Props = { width?: number; variant?: "plaque" | "white" | "ink"; style?: StyleProp<ViewStyle> };`
+- `src/components/PostCard.tsx:38` — `<Ionicons name="play-circle" size={56} color="#ffffffd9" style={{ position: "absolute" }} />`
+- `src/components/StreamGrid.tsx:14` — `<View style={{position:"absolute",inset:0,backgroundColor:"#0003"}}/>`
+- `src/components/StreamGrid.tsx:16` — `<View style={{flexDirection:"row",gap:4,alignItems:"center",backgroundColor:"#0009",paddingVertical:5,paddingHorizontal:7,borderRadius:12}}><Ionicons name="eye-outline" color="#fff" size={12}/><Text style={{color:"#fff",fontSize:10,fontWeight:"700"}}>{formatCount(room.viewers)}</Text></View>`
+- `src/components/StreamGrid.tsx:19` — `<View style={{position:"absolute",bottom:0,left:0,right:0,padding:12,gap:7,backgroundColor:"#0005"}}>`
+- `src/components/StreamGrid.tsx:20` — `<Text numberOfLines={2} style={{color:"#fff",fontSize:16,fontWeight:"700",lineHeight:21}}>{room.title}</Text><Text numberOfLines={1} style={{color:"#fff",fontSize:11}}>{room.host} · {room.city}</Text>`
+- `src/components/social-ui.tsx:8` — `export function IconButton({icon,label,onPress,color,size=25,background="transparent",selected=false}:{icon:IconName;label:string;onPress:()=>void;color?:string;size?:number;background?:string;selected?:boolean}){`
+- `src/components/social-ui.tsx:24` — `<Pressable accessibilityRole="button" accessibilityLabel="Close panel" onPress={onClose} style={{flex:1,backgroundColor:"#0008"}}/>`
+- `src/components/social-ui.tsx:31` — `shadowText:{textShadowColor:"#0009",textShadowOffset:{width:0,height:1},textShadowRadius:4},`
+- `src/lib/data.ts:5` — `{id:"ana",name:"Ana Rivera",role:"Diseñadora de interiores",city:"Miami",initials:"AR",color:"#d0ac8d",headline:"Espacios pequeños. Grandes posibilidades.",description:"Te enseño cómo transformamos este estudio en un hogar lleno de luz.",service:"Consulta de diseño",price:85,tags:["Diseño","Hogar"],rating:4.9,reviews:132},`
+- `src/lib/data.ts:6` — `{id:"marcos",name:"Marcos Díaz",role:"Barbero · Studio 305",city:"Miami",initials:"MD",color:"#8b9f92",headline:"Los detalles hacen la diferencia.",description:"Un día en el estudio: técnica, conversación y un buen corte.",service:"Corte y barba",price:45,tags:["Barbería","Estilo"],rating:4.7,reviews:86},`
+- `src/lib/data.ts:7` — `{id:"sofia",name:"Sofía Torres",role:"Entrenadora personal",city:"Orlando",initials:"ST",color:"#9b9eb5",headline:"Un poco más fuerte, cada día.",description:"Así preparo una sesión de fuerza para alguien que empieza de cero.",service:"Sesión personal",price:60,tags:["Fitness","Bienestar"],rating:4.8,reviews:54}`
+- `src/lib/jcard.ts:3` — `export type JCardTier = "base" | "silver" | "gold";`
+- `src/lib/jcard.ts:33` — `return rounded === null || rounded <= 3.5 ? "base" : rounded <= 4.5 ? "silver" : "gold";`
+- `src/state/ThemeProvider.tsx:3` — `export type ThemeName = "light" | "dark" | "pink";`
+- `src/state/ThemeProvider.tsx:5` — `light: { ink: "#161616", muted: "#696969", paper: "#ffffff", line: "#dedede", accent: "#f0f0f0", card: "#ffffff", inverse: "#ffffff", reaction: "#e34f7f" },`
+- `src/state/ThemeProvider.tsx:6` — `dark: { ink: "#fafafa", muted: "#b5b5b5", paper: "#090909", line: "#343434", accent: "#252525", card: "#151515", inverse: "#090909", reaction: "#ff7ba4" },`
+- `src/state/ThemeProvider.tsx:7` — `pink: { ink: "#54243a", muted: "#80566a", paper: "#fce5ef", line: "#e5b5cb", accent: "#f7cddd", card: "#fff6fa", inverse: "#ffffff", reaction: "#b7386c" },`
+- `src/state/ThemeProvider.tsx:14` — `if(mounted && (value==="light"||value==="dark"||value==="pink")) setTheme(value);`
+- `src/theme/jcard.ts:6` — `start: "#161616", end: "#161616", text: "#ffffff", secondary: "#d5d5d5",`
+- `src/theme/jcard.ts:7` — `line: "#656565", sealFill: "#343434", sealText: "#ffffff",`
+- `src/theme/jcard.ts:8` — `pendingText: "#bcbcbc", pendingLine: "#858585", pendingFill: "#161616",`
+- `src/theme/jcard.ts:11` — `start: "#fafafa", end: "#fafafa", text: "#111111", secondary: "#494949",`
+- `src/theme/jcard.ts:12` — `line: "#999999", sealFill: "#dedede", sealText: "#111111",`
+- `src/theme/jcard.ts:13` — `pendingText: "#606060", pendingLine: "#777777", pendingFill: "#fafafa",`
+- `src/theme/jcard.ts:16` — `start: "#454950", end: "#555a62", text: "#ffffff", secondary: "#eeeeee",`
+- `src/theme/jcard.ts:17` — `line: "#989ca3", sealFill: "#33373d", sealText: "#ffffff",`
+- `src/theme/jcard.ts:18` — `pendingText: "#e0e0e0", pendingLine: "#b8bbc0", pendingFill: "#4a4f56",`
+- `src/theme/jcard.ts:21` — `start: "#a47b36", end: "#b78e48", text: "#111111", secondary: "#111111",`
+- `src/theme/jcard.ts:22` — `line: "#644718", sealFill: "#302519", sealText: "#ffffff",`
+- `src/theme/jcard.ts:23` — `pendingText: "#24201a", pendingLine: "#49371f", pendingFill: "#ac833e",`
+- `src/theme/jcard.ts:35` — `scrim: "#000000aa", qrPaper: "#ffffff", qrInk: "#111111",`
+
+Después: cero colores literales en src fuera de src/theme, comprobado por tests/theme.test.ts. Los valores de paleta, metales de JCard y colores semánticos viven únicamente en src/theme. No se consideran los identificadores de temas o categorías como colores inline.
