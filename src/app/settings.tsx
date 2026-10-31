@@ -11,6 +11,8 @@ export default function Settings(){
  <View style={s.panel}><Button secondary title="Editar mi perfil" onPress={()=>router.navigate("/profile")}/>
  <Button secondary title="Cuenta personal o compañía" onPress={()=>router.push("/account")}/>
  <Button secondary title="Mi compañía e historial laboral" onPress={()=>router.push("/company")}/>
+ <Button secondary title="Seguridad, sanciones y apelaciones" onPress={()=>router.push("/safety")}/>
+ <Button secondary title="Términos y Condiciones · Borrador" onPress={()=>router.push("/terms")}/>
  <Button secondary title="Servicios" onPress={()=>router.push("/services")}/>
  <Button secondary title="Comunidades" onPress={()=>router.push("/communities")}/></View>
  </Screen>;

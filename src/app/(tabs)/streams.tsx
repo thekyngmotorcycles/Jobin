@@ -1,3 +1,4 @@
+import { PublishedWorkMedia } from "../../components/PublishedWorkMedia";
 import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";

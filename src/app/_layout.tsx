@@ -1,3 +1,4 @@
+import { SafetyAccountGate } from "../components/SafetyAccountGate";
 import { JobinWordmark } from "../components/JobinWordmark";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -31,11 +32,15 @@ function Navigation() {
  <Stack.Screen name="credential-review" options={{title:"Revisión de acreditaciones"}}/>
  <Stack.Screen name="opportunities" options={{title:"Oportunidades profesionales"}}/>
  <Stack.Screen name="jcard" options={{title:"JCard"}}/>
+ <Stack.Screen name="safety" options={{title:"Seguridad y apelaciones"}}/>
+ <Stack.Screen name="safety-review" options={{title:"Revisión de seguridad"}}/>
+ <Stack.Screen name="terms" options={{title:"Términos · Borrador"}}/>
+ <Stack.Screen name="work-media/[id]" options={{title:"Trabajo profesional"}}/>
  <Stack.Screen name="live" options={{title:"Live",presentation:"modal"}}/>
  <Stack.Screen name="services" options={{title:"Servicios"}}/>
  <Stack.Screen name="communities" options={{title:"Comunidades"}}/>
  </Stack></>;
 }
 export default function RootLayout() {
- return <SafeAreaProvider><ThemeProvider><AppProvider><SocialProvider><IconFontGate><Navigation/></IconFontGate></SocialProvider></AppProvider></ThemeProvider></SafeAreaProvider>;
+ return <SafeAreaProvider><ThemeProvider><AppProvider><SocialProvider><IconFontGate><SafetyAccountGate><Navigation/></SafetyAccountGate></IconFontGate></SocialProvider></AppProvider></ThemeProvider></SafeAreaProvider>;
 }

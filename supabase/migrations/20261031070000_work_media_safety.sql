@@ -123,6 +123,9 @@ create function private.safety_state(worker uuid) returns jsonb language sql sta
  'reason',(select reason from ranked order by issued_at desc limit 1)) from summary;
 $$;
 
+create function private.active_safety_moderator() returns boolean language sql stable security definer set search_path='' as $$
+ select private.is_moderator() and not (private.safety_state(auth.uid())->>'accountBlocked')::boolean;
+$$;
 create function private.capture_verified_identities(worker uuid) returns void language plpgsql security definer set search_path='' as $$
  declare u jsonb; d text;
  begin
@@ -179,19 +182,21 @@ create function private.safety_ready(live boolean) returns boolean language sql 
  and (not live or live_lease_supported) from private.media_safety_config where id),false);
 $$;
 create function private.assert_work_context(worker uuid,profession text,activity text,employer uuid,live boolean) returns void language plpgsql security definer set search_path='' as $$
- declare pp public.person_professions;
+ declare pp public.person_professions; organization boolean;
  begin
  if not private.safety_can_publish(worker) then raise exception 'Publishing restricted; see your sanctions and appeal options'; end if;
  select * into pp from public.person_professions where worker_id=worker and profession_code=profession;
- if pp.id is null or not exists(select 1 from public.profession_catalog p join public.profession_categories c on c.code=p.category where p.code=profession and p.active and c.active) then raise exception 'Choose one of your registered professional trades'; end if;
+ select exists(select 1 from public.organizations where profile_id=worker) into organization;
+ if (pp.id is null and not exists(select 1 from public.organization_scopes where organization_id=worker and profession_code=profession and active)) or not exists(select 1 from public.profession_catalog p join public.profession_categories c on c.code=p.category where p.code=profession and p.active and c.active) then raise exception 'Choose one of your registered professional trades'; end if;
  if activity is null or activity not in ('work','artist_performance','academy','film_set','consultation','office_calls','security_outside','interview') then raise exception 'Only your own professional activity is allowed'; end if;
+ if profession='actor' and pp.id is null then raise exception 'Actors broadcast using their personal training profile'; end if;
  if activity<>'interview' and profession='actor' and ((pp.training_status='in_academy' and (activity<>'academy' or pp.verified_at is null or not exists(
  select 1 from public.organizations o join public.organization_scopes os on os.organization_id=o.profile_id
  where o.profile_id=pp.institution_id and o.kind='education' and os.profession_code=profession and os.active)))
  or (pp.training_status='graduado' and activity<>'film_set')) then raise exception 'Actors: confirmed academy enrollment, or graduated and working on a film set'; end if;
  if activity<>'interview' and profession in ('musico','cantante','dj') and activity<>'artist_performance' then raise exception 'Artists must be performing their own professional work'; end if;
  if activity<>'interview' and profession in ('guardia_de_seguridad','vigilador') and activity<>'security_outside' then raise exception 'Security guards may broadcast outside the venue only'; end if;
- if activity='academy' and (pp.training_status<>'in_academy' or pp.verified_at is null) then raise exception 'Confirmed enrollment required for academy activity'; end if;
+ if activity='academy' and (organization or pp.training_status<>'in_academy' or pp.verified_at is null) then raise exception 'Confirmed enrollment required for academy activity'; end if;
  if activity='office_calls' and employer is null then raise exception 'Office calls require an approved employer'; end if;
  if exists(select 1 from public.employment_records where worker_id=worker and ended_on is null and company_approved_at is null) then raise exception 'Your declared current employer must approve your employment first'; end if;
  if employer is not null then
@@ -410,7 +415,7 @@ create function public.jobin_report_employer(media uuid,path text,description te
 create function public.jobin_review_employer_report(report uuid,uphold boolean,reason text) returns void language plpgsql security definer set search_path='' as $$
  declare r public.impersonation_reports; m public.work_media;
  begin
- if not private.is_moderator() then raise exception 'Moderators only'; end if;
+ if not private.active_safety_moderator() then raise exception 'Moderators only'; end if;
  if uphold is null or reason is null or length(trim(reason)) not between 10 and 2000 then raise exception 'A documented moderation decision is required'; end if;
  select * into r from public.impersonation_reports where id=report and status='open' for update;
  if r.id is null or r.work_media_id is null then raise exception 'A pending report linked to a real media item is required'; end if;
@@ -443,7 +448,7 @@ create function public.jobin_appeal_safety(incident uuid,reason text) returns uu
 create function public.jobin_review_safety_appeal(appeal uuid,accept boolean,reason text) returns void language plpgsql security definer set search_path='' as $$
  declare a public.safety_appeals;
  begin
- if not private.is_moderator() then raise exception 'Moderators only'; end if;
+ if not private.active_safety_moderator() then raise exception 'Moderators only'; end if;
  select * into a from public.safety_appeals where id=appeal and status='pending' for update;
  if a.id is null or a.user_id=auth.uid() or accept is null or reason is null or length(trim(reason)) not between 10 and 2000 then raise exception 'Independent documented appeal decision required'; end if;
  perform 1 from public.jcard_profiles where profile_id=a.user_id for update;
@@ -455,7 +460,7 @@ create function public.jobin_review_safety_appeal(appeal uuid,accept boolean,rea
 create function public.jobin_confirm_held_media(media uuid,category text,reason text) returns void language plpgsql security definer set search_path='' as $$
  declare m public.work_media;
  begin
- if not private.is_moderator() then raise exception 'Moderators only'; end if;
+ if not private.active_safety_moderator() then raise exception 'Moderators only'; end if;
  select * into m from public.work_media where id=media and status='held' for update;
  if m.id is null or m.creator_id=auth.uid() or category not in ('nudity','sexual_content','minors','blood','violence') or length(trim(reason)) not between 10 and 2000 then raise exception 'Independent documented content decision required'; end if;
  perform private.stop_work_media(media,reason);
@@ -470,13 +475,13 @@ create function public.jobin_safety_status() returns jsonb language plpgsql stab
  begin
  if auth.uid() is null then raise exception 'Sign in first'; end if;
  return private.safety_state(auth.uid())||jsonb_build_object(
- 'moderator',private.is_moderator(),'providersReady',private.safety_ready(true),
+ 'moderator',private.active_safety_moderator(),'providersReady',private.safety_ready(true),
  'incidents',coalesce((select jsonb_agg(to_jsonb(i) order by i.issued_at desc) from public.safety_incidents i where user_id=auth.uid()),'[]'),
  'appeals',coalesce((select jsonb_agg(to_jsonb(a) order by a.created_at desc) from public.safety_appeals a where user_id=auth.uid()),'[]'));
  end $$;
 create function public.jobin_safety_review_queue() returns jsonb language plpgsql stable security definer set search_path='' as $$
  begin
- if not private.is_moderator() then raise exception 'Moderators only'; end if;
+ if not private.active_safety_moderator() then raise exception 'Moderators only'; end if;
  return jsonb_build_object(
  'reports',coalesce((select jsonb_agg(to_jsonb(r)) from (select * from public.impersonation_reports where status='open' and work_media_id is not null order by created_at limit 100) r),'[]'),
  'appeals',coalesce((select jsonb_agg(to_jsonb(a)) from (select * from public.safety_appeals where status='pending' order by created_at limit 100) a),'[]'),
@@ -494,7 +499,7 @@ create function public.jobin_work_media(media uuid) returns jsonb language sql s
  select jsonb_build_object('id',m.id,'creatorId',m.creator_id,'author',p.display_name,'title',m.title,'kind',m.kind,'status',m.status,'employerId',m.employer_id,
  'playbackUrl',case when (m.status='published' or (m.status='live' and m.safety_lease_until>now() and private.safety_ready(true))) then m.playback_url else null end)
  from public.work_media m join public.profiles p on p.id=m.creator_id where m.id=media and p.deactivated_at is null
- and (m.visibility='public' or m.creator_id=auth.uid() or private.is_moderator() or exists(
+ and (m.visibility='public' or m.creator_id=auth.uid() or private.active_safety_moderator() or exists(
  select 1 from public.live_sessions ls join public.live_participants lp on lp.session_id=ls.id where ls.work_media_id=m.id and lp.profile_id=auth.uid() and lp.accepted_at is not null));
 $$;
 create function public.jobin_published_work_media() returns jsonb language sql stable security definer set search_path='' as $$
@@ -569,7 +574,7 @@ create policy employer_evidence_upload on storage.objects for insert to authenti
  bucket_id='employer-report-evidence' and split_part(name,'/',1)=(select auth.uid())::text
  and exists(select 1 from public.companies where profile_id=(select auth.uid())));
 create policy employer_evidence_read on storage.objects for select to authenticated using(
- bucket_id='employer-report-evidence' and (split_part(name,'/',1)=(select auth.uid())::text or private.is_moderator()));
+ bucket_id='employer-report-evidence' and (split_part(name,'/',1)=(select auth.uid())::text or private.active_safety_moderator()));
 
 do $$ declare t text; begin
  foreach t in array array['work_media','safety_incidents','safety_appeals'] loop
@@ -584,9 +589,9 @@ do $$ declare t text; begin
  execute format('grant all on private.%I to service_role',t);
  end loop;
 end $$;
-create policy work_media_owner on public.work_media for select to authenticated using(creator_id=(select auth.uid()) or private.is_moderator());
-create policy safety_incidents_owner on public.safety_incidents for select to authenticated using(user_id=(select auth.uid()) or private.is_moderator());
-create policy safety_appeals_owner on public.safety_appeals for select to authenticated using(user_id=(select auth.uid()) or private.is_moderator());
+create policy work_media_owner on public.work_media for select to authenticated using(creator_id=(select auth.uid()) or private.active_safety_moderator());
+create policy safety_incidents_owner on public.safety_incidents for select to authenticated using(user_id=(select auth.uid()) or private.active_safety_moderator());
+create policy safety_appeals_owner on public.safety_appeals for select to authenticated using(user_id=(select auth.uid()) or private.active_safety_moderator());
 create index work_media_creator_time on public.work_media(creator_id,created_at desc);
 create index work_media_employer on public.work_media(employer_id);
 create index work_media_profession on public.work_media(profession_code);
@@ -600,7 +605,7 @@ create index moderation_pending on private.moderation_jobs(status,created_at);
 do $$ declare f record; begin
  for f in select n.nspname,p.proname,p.oid::regprocedure signature from pg_proc p join pg_namespace n on n.oid=p.pronamespace
  where (n.nspname='private' and p.proname in (
- 'identity_digest','safety_state','capture_verified_identities','refresh_identity_blocks','block_banned_identity','remember_verified_identity',
+ 'active_safety_moderator','identity_digest','safety_state','capture_verified_identities','refresh_identity_blocks','block_banned_identity','remember_verified_identity',
  'safety_can_publish','safety_ready','assert_work_context','work_snapshot','stop_work_media','issue_safety_incident',
  'require_moderated_video','require_supervised_live','guard_suspended_account_write','guard_media_upload',
  'guard_media_identity','guard_incident_audit','work_media_visible'))
@@ -654,8 +659,24 @@ grant execute on function public.jobin_finish_video_publish(uuid,uuid) to servic
 
 create function public.jobin_moderation_review_artifact(media uuid) returns jsonb language plpgsql stable security definer set search_path='' as $$
  begin
- if not private.is_moderator() then raise exception 'Moderators only'; end if;
+ if not private.active_safety_moderator() then raise exception 'Moderators only'; end if;
  return (select jsonb_build_object('assetId',provider_asset_id,'kind',kind) from public.work_media where id=media);
  end $$;
 revoke all on function public.jobin_moderation_review_artifact(uuid) from public,anon,authenticated;
 grant execute on function public.jobin_moderation_review_artifact(uuid) to authenticated,service_role;
+
+create function public.jobin_work_options() returns jsonb language plpgsql stable security definer set search_path='' as $$
+ begin
+ if auth.uid() is null then raise exception 'Sign in first'; end if;
+ return jsonb_build_object(
+ 'professions',coalesce((select jsonb_agg(jsonb_build_object('code',pc.code,'label',pc.label) order by pc.label)
+ from public.profession_catalog pc where pc.active and (exists(select 1 from public.person_professions pp where pp.worker_id=auth.uid() and pp.profession_code=pc.code)
+ or exists(select 1 from public.organization_scopes os where os.organization_id=auth.uid() and os.profession_code=pc.code and os.active))),'[]'),
+ 'employers',coalesce((select jsonb_agg(jsonb_build_object('id',e.company_id,'name',c.legal_name,'approved',e.company_approved_at is not null,'representative',coalesce(r.can_represent,false)))
+ from public.employment_records e join public.companies c on c.profile_id=e.company_id left join public.organization_representatives r on r.employment_id=e.id
+ where e.worker_id=auth.uid() and e.ended_on is null),'[]'));
+ end $$;
+revoke all on function public.jobin_work_options() from public,anon,authenticated;
+grant execute on function public.jobin_work_options() to authenticated,service_role;
+
+grant execute on function private.active_safety_moderator() to authenticated;

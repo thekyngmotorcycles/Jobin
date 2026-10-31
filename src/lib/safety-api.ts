@@ -62,3 +62,21 @@ export const WORK_ACTIVITIES=[
 ] as const;
 export const SAFETY_LABELS:Record<string,string>={nudity:"Desnudos",sexual_content:"Material sexual",minors:"Menores de edad",blood:"Sangre",violence:"Violencia",employer_impersonation:"Suplantación de empleador"};
 export function safetyEnd(value:string|null){return value?new Date(value).toLocaleString():"Sin restricción temporal";}
+
+export interface WorkOptions {professions:{code:string;label:string}[];employers:{id:string;name:string;approved:boolean;representative:boolean}[]}
+export async function loadWorkOptions():Promise<WorkOptions|null>{
+ const client=requireSupabase();const {data:{session}}=await client.auth.getSession();if(!session)return null;
+ const {data,error}=await client.rpc("jobin_work_options");return decode<WorkOptions>(data,error);
+}
+export async function moderationPreview(media:string):Promise<string>{
+ const base=process.env.EXPO_PUBLIC_SAFETY_API_URL;
+ if(!base)throw new Error("El servicio privado de revisión está pendiente de configuración.");
+ const client=requireSupabase();const {data:{session}}=await client.auth.getSession();if(!session)throw new Error("Inicia sesión.");
+ const response=await fetch(base.replace(/\/$/,"")+"/moderation/review-url",{method:"POST",headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({media})});
+ if(!response.ok)throw new Error("No se pudo autorizar la vista privada del contenido.");
+ const value=await response.json();if(typeof value.url!=="string"||!value.url.startsWith("https://"))throw new Error("Enlace de revisión inválido.");return value.url;
+}
+export async function reportEvidencePreview(path:string):Promise<string>{
+ const {data,error}=await requireSupabase().storage.from("employer-report-evidence").createSignedUrl(path,120);
+ if(error)throw new Error(error.message);return data.signedUrl;
+}

@@ -2590,6 +2590,7 @@ export type Database = {
       }
     }
     Functions: {
+      jobin_work_options: {Args:Record<string,never>;Returns:Json}
       jobin_safety_status: { Args:Record<string, never>;Returns:Json }
       jobin_public_trust_mark: { Args:{worker:string};Returns:Json }
       jobin_request_work_live: { Args:{title:string;profession:string;activity:string;employer?:string;visibility?:string;consent?:boolean};Returns:string }

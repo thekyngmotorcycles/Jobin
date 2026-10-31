@@ -1,3 +1,4 @@
+import { PublishedWorkMedia } from "../../components/PublishedWorkMedia";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SocialHeader } from "../../components/SocialHeader";
@@ -18,6 +19,7 @@ export default function Home() {
     <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
       <ScrollView contentContainerStyle={{ paddingBottom: 24, gap: 24 }} showsVerticalScrollIndicator={false}>
         <SocialHeader />
+        <PublishedWorkMedia kind="video"/>
         {cards.map(card => (
           <View key={card.key}>
             {card.kind === "video" ? (

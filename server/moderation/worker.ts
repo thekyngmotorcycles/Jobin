@@ -67,6 +67,11 @@ export async function startSafetyWorker(env:NodeJS.ProcessEnv=process.env){
   }
  }
  const server=createServer(async(req,res)=>{
+  const origin=req.headers.origin;
+  if(origin){if(!(env.SAFETY_WEB_ORIGINS??"").split(",").map(v=>v.trim()).includes(origin)){res.writeHead(403);res.end();return;}
+   res.setHeader("Access-Control-Allow-Origin",origin);res.setHeader("Vary","Origin");res.setHeader("Access-Control-Allow-Headers","Authorization,Content-Type");res.setHeader("Access-Control-Allow-Methods","GET,POST,OPTIONS");
+  }
+  if(req.method==="OPTIONS"){res.writeHead(204);res.end();return;}
   if(req.method==="GET"&&req.url==="/health"){res.writeHead(200,{"Content-Type":"application/json"});res.end(JSON.stringify({configured}));return;}
   if(req.method!=="POST"||!["/moderation/webhook","/moderation/review-url"].includes(req.url??"")){res.writeHead(404);res.end();return;}
   const chunks:Buffer[]=[];let size=0;

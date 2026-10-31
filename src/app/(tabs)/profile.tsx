@@ -1,3 +1,4 @@
+import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import { ProfessionalStatus } from "../../components/ProfessionalStatus";
 import { loadWorkspace } from "../../lib/professional-api";
 import { useProfessionalData } from "../../state/useProfessionalData";
@@ -73,6 +74,7 @@ export default function Profile() {
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
           <JobinCard card={workspace.data.card}/>
+          <ProfessionalTrustMark worker={workspace.data.card.id}/>
           <View style={{width:"100%",maxWidth:520,alignSelf:"center",gap:8}}>
             <Button secondary title="Editar JCard y formación" onPress={()=>router.push("/professional")}/>
             <Button secondary title="Certificados y sellos" onPress={()=>router.push("/certificates")}/>

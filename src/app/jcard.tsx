@@ -1,3 +1,4 @@
+import { ProfessionalTrustMark } from "../components/ProfessionalTrustMark";
 import { useCallback } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { View } from "react-native";
@@ -13,6 +14,6 @@ export default function PublicJCard(){
   return loadPublicCard(user);
  },[user]));
  return <Screen title="JCard." subtitle="Identidad profesional pública.">
-  {resource.data?<View><JobinCard card={resource.data}/></View>:<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>}
+  {resource.data?<View><JobinCard card={resource.data}/><ProfessionalTrustMark worker={resource.data.id}/></View>:<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>}
  </Screen>;
 }
