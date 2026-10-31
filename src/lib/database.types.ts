@@ -948,10 +948,14 @@ export type Database = {
           created_at: string
           decided_at: string | null
           decided_by: string | null
+          description: string | null
           evidence_path: string
           id: string
+          incident_at: string | null
           live_id: string | null
           status: string
+          video_id: string | null
+          work_media_id: string | null
         }
         Insert: {
           accused_id: string
@@ -959,10 +963,14 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
+          description?: string | null
           evidence_path: string
           id?: string
+          incident_at?: string | null
           live_id?: string | null
           status?: string
+          video_id?: string | null
+          work_media_id?: string | null
         }
         Update: {
           accused_id?: string
@@ -970,10 +978,14 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
+          description?: string | null
           evidence_path?: string
           id?: string
+          incident_at?: string | null
           live_id?: string | null
           status?: string
+          video_id?: string | null
+          work_media_id?: string | null
         }
         Relationships: [
           {
@@ -995,6 +1007,20 @@ export type Database = {
             columns: ["live_id"]
             isOneToOne: false
             referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impersonation_reports_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impersonation_reports_work_media_id_fkey"
+            columns: ["work_media_id"]
+            isOneToOne: false
+            referencedRelation: "work_media"
             referencedColumns: ["id"]
           },
         ]
@@ -1126,6 +1152,7 @@ export type Database = {
           title: string
           visibility: string
           work_consent_at: string | null
+          work_media_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1140,6 +1167,7 @@ export type Database = {
           title: string
           visibility: string
           work_consent_at?: string | null
+          work_media_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1154,6 +1182,7 @@ export type Database = {
           title?: string
           visibility?: string
           work_consent_at?: string | null
+          work_media_id?: string | null
         }
         Relationships: [
           {
@@ -1161,6 +1190,13 @@ export type Database = {
             columns: ["host_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_sessions_work_media_id_fkey"
+            columns: ["work_media_id"]
+            isOneToOne: true
+            referencedRelation: "work_media"
             referencedColumns: ["id"]
           },
         ]
@@ -2171,6 +2207,124 @@ export type Database = {
           },
         ]
       }
+      safety_appeals: {
+        Row: {
+          created_at: string
+          decision_reason: string | null
+          id: string
+          incident_id: string
+          reason: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decision_reason?: string | null
+          id?: string
+          incident_id: string
+          reason: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          decision_reason?: string | null
+          id?: string
+          incident_id?: string
+          reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_appeals_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "safety_incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_appeals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safety_incidents: {
+        Row: {
+          category: string
+          counter: string
+          event_id: string | null
+          id: string
+          issued_at: string
+          media_id: string | null
+          reason: string
+          report_id: string | null
+          user_id: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        Insert: {
+          category: string
+          counter: string
+          event_id?: string | null
+          id?: string
+          issued_at?: string
+          media_id?: string | null
+          reason: string
+          report_id?: string | null
+          user_id: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Update: {
+          category?: string
+          counter?: string
+          event_id?: string | null
+          id?: string
+          issued_at?: string
+          media_id?: string | null
+          reason?: string
+          report_id?: string | null
+          user_id?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_incidents_media_id_fkey"
+            columns: ["media_id"]
+            isOneToOne: false
+            referencedRelation: "work_media"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_incidents_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: true
+            referencedRelation: "impersonation_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_incidents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           active: boolean
@@ -2439,6 +2593,7 @@ export type Database = {
           removed_at: string | null
           thumbnail_url: string | null
           visibility: string
+          work_media_id: string | null
         }
         Insert: {
           caption?: string
@@ -2453,6 +2608,7 @@ export type Database = {
           removed_at?: string | null
           thumbnail_url?: string | null
           visibility?: string
+          work_media_id?: string | null
         }
         Update: {
           caption?: string
@@ -2467,6 +2623,7 @@ export type Database = {
           removed_at?: string | null
           thumbnail_url?: string | null
           visibility?: string
+          work_media_id?: string | null
         }
         Relationships: [
           {
@@ -2481,6 +2638,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: true
             referencedRelation: "video_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "videos_work_media_id_fkey"
+            columns: ["work_media_id"]
+            isOneToOne: true
+            referencedRelation: "work_media"
             referencedColumns: ["id"]
           },
         ]
@@ -2540,6 +2704,100 @@ export type Database = {
           },
         ]
       }
+      work_media: {
+        Row: {
+          activity: string
+          consent_at: string
+          consent_version: string
+          created_at: string
+          creator_id: string
+          duration_ms: number | null
+          employer_id: string | null
+          employment_snapshot: Json
+          id: string
+          kind: string
+          playback_url: string | null
+          profession_code: string
+          provider_asset_id: string | null
+          safety_checked_at: string | null
+          safety_lease_until: string | null
+          status: string
+          storage_path: string | null
+          title: string
+          trim_end_ms: number | null
+          trim_start_ms: number | null
+          visibility: string
+        }
+        Insert: {
+          activity: string
+          consent_at?: string
+          consent_version: string
+          created_at?: string
+          creator_id: string
+          duration_ms?: number | null
+          employer_id?: string | null
+          employment_snapshot: Json
+          id?: string
+          kind: string
+          playback_url?: string | null
+          profession_code: string
+          provider_asset_id?: string | null
+          safety_checked_at?: string | null
+          safety_lease_until?: string | null
+          status?: string
+          storage_path?: string | null
+          title: string
+          trim_end_ms?: number | null
+          trim_start_ms?: number | null
+          visibility?: string
+        }
+        Update: {
+          activity?: string
+          consent_at?: string
+          consent_version?: string
+          created_at?: string
+          creator_id?: string
+          duration_ms?: number | null
+          employer_id?: string | null
+          employment_snapshot?: Json
+          id?: string
+          kind?: string
+          playback_url?: string | null
+          profession_code?: string
+          provider_asset_id?: string | null
+          safety_checked_at?: string | null
+          safety_lease_until?: string | null
+          status?: string
+          storage_path?: string | null
+          title?: string
+          trim_end_ms?: number | null
+          trim_start_ms?: number | null
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_media_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_media_employer_id_fkey"
+            columns: ["employer_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "work_media_profession_code_fkey"
+            columns: ["profession_code"]
+            isOneToOne: false
+            referencedRelation: "profession_catalog"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
     }
     Views: {
       company_workforce: {
@@ -2590,22 +2848,10 @@ export type Database = {
       }
     }
     Functions: {
-      jobin_clear_held_media: {Args:{media:string;reviewed_all:boolean;reason:string};Returns:undefined}
-      jobin_work_options: {Args:Record<string,never>;Returns:Json}
-      jobin_safety_status: { Args:Record<string, never>;Returns:Json }
-      jobin_public_trust_mark: { Args:{worker:string};Returns:Json }
-      jobin_request_work_live: { Args:{title:string;profession:string;activity:string;employer?:string;visibility?:string;consent?:boolean};Returns:string }
-      jobin_submit_work_video: { Args:{title:string;profession:string;activity:string;path:string;start_ms:number;end_ms:number;employer?:string;consent?:boolean};Returns:string }
-      jobin_end_work_live: { Args:{media:string};Returns:undefined }
-      jobin_report_employer: { Args:{media:string;path:string;description:string};Returns:string }
-      jobin_review_employer_report: { Args:{report:string;uphold:boolean;reason:string;incident_time?:string};Returns:undefined }
-      jobin_appeal_safety: { Args:{incident:string;reason:string};Returns:string }
-      jobin_review_safety_appeal: { Args:{appeal:string;accept:boolean;reason:string};Returns:undefined }
-      jobin_confirm_held_media: { Args:{media:string;category:string;reason:string};Returns:undefined }
-      jobin_safety_review_queue: { Args:Record<string, never>;Returns:Json }
-      jobin_my_work_media: { Args:Record<string, never>;Returns:Json }
-      jobin_work_media: { Args:{media:string};Returns:Json }
-      jobin_published_work_media: { Args:Record<string, never>;Returns:Json }
+      jobin_appeal_safety: {
+        Args: { incident: string; reason: string }
+        Returns: string
+      }
       jobin_approve_employment: { Args: { record: string }; Returns: undefined }
       jobin_attach_company_document: {
         Args: {
@@ -2641,6 +2887,36 @@ export type Database = {
       jobin_claim_employment: {
         Args: { company: string; start_date: string; title: string }
         Returns: string
+      }
+      jobin_claim_moderation_jobs: { Args: never; Returns: Json }
+      jobin_clear_held_media: {
+        Args: { media: string; reason: string; reviewed_all: boolean }
+        Returns: undefined
+      }
+      jobin_complete_media_preparation: {
+        Args: {
+          asset: string
+          duration_ms?: number
+          job: string
+          playback: string
+          publisher_url?: string
+          token: string
+          watch_id?: string
+        }
+        Returns: undefined
+      }
+      jobin_configure_safety: {
+        Args: {
+          coverage: string[]
+          live_lease_supported: boolean
+          moderation_ready: boolean
+          video_ready: boolean
+        }
+        Returns: undefined
+      }
+      jobin_confirm_held_media: {
+        Args: { category: string; media: string; reason: string }
+        Returns: undefined
       }
       jobin_contact_career: {
         Args: {
@@ -2689,21 +2965,62 @@ export type Database = {
         Args: { end_date: string; record: string }
         Returns: undefined
       }
+      jobin_end_work_live: { Args: { media: string }; Returns: undefined }
+      jobin_expire_live_leases: { Args: never; Returns: undefined }
       jobin_express_interest: {
         Args: { mode: string; target: string }
         Returns: string
+      }
+      jobin_finish_media_stop: {
+        Args: { job: string; token: string }
+        Returns: undefined
+      }
+      jobin_finish_video_publish: {
+        Args: { job: string; token: string }
+        Returns: undefined
       }
       jobin_grant_rank: {
         Args: { rank: string; worker: string }
         Returns: undefined
       }
       jobin_jcard_data: { Args: { target?: string }; Returns: Json }
+      jobin_moderation_job_failed: {
+        Args: { job: string; reason: string; token: string }
+        Returns: undefined
+      }
+      jobin_moderation_job_waiting: {
+        Args: { job: string; provider_job: string; token: string }
+        Returns: undefined
+      }
+      jobin_moderation_review_artifact: {
+        Args: { media: string }
+        Returns: Json
+      }
+      jobin_moderation_target: { Args: { job: string }; Returns: Json }
+      jobin_my_work_media: { Args: never; Returns: Json }
       jobin_organization_data: { Args: { target?: string }; Returns: Json }
       jobin_professional_catalog: { Args: never; Returns: Json }
       jobin_professional_workspace: { Args: never; Returns: Json }
+      jobin_public_trust_mark: { Args: { worker: string }; Returns: Json }
+      jobin_published_work_media: { Args: never; Returns: Json }
+      jobin_record_moderation_result: {
+        Args: {
+          asset: string
+          coverage: string[]
+          event_key: string
+          findings: Json
+          job: string
+          observed_at: string
+        }
+        Returns: undefined
+      }
       jobin_remove_unverified_profession: {
         Args: { profession: string }
         Returns: undefined
+      }
+      jobin_report_employer: {
+        Args: { description: string; media: string; path: string }
+        Returns: string
       }
       jobin_report_impersonation: {
         Args: { accused: string; evidence: string; live: string }
@@ -2717,6 +3034,17 @@ export type Database = {
         Args: { industry: string; municipality: string; state: string }
         Returns: string
       }
+      jobin_request_work_live: {
+        Args: {
+          activity: string
+          consent?: boolean
+          employer?: string
+          profession: string
+          title: string
+          visibility?: string
+        }
+        Returns: string
+      }
       jobin_respond_career: {
         Args: { contact: string; decision: string }
         Returns: undefined
@@ -2725,6 +3053,21 @@ export type Database = {
         Args: { accept: boolean; request: string }
         Returns: undefined
       }
+      jobin_review_employer_report: {
+        Args: {
+          incident_time?: string
+          reason: string
+          report: string
+          uphold: boolean
+        }
+        Returns: undefined
+      }
+      jobin_review_safety_appeal: {
+        Args: { accept: boolean; appeal: string; reason: string }
+        Returns: undefined
+      }
+      jobin_safety_review_queue: { Args: never; Returns: Json }
+      jobin_safety_status: { Args: never; Returns: Json }
       jobin_save_jcard: {
         Args: {
           availability: string
@@ -2785,10 +3128,25 @@ export type Database = {
         }
         Returns: string
       }
+      jobin_submit_work_video: {
+        Args: {
+          activity: string
+          consent?: boolean
+          employer?: string
+          end_ms: number
+          path: string
+          profession: string
+          start_ms: number
+          title: string
+        }
+        Returns: string
+      }
       jobin_verify_training: {
         Args: { approve: boolean; person_profession: string }
         Returns: undefined
       }
+      jobin_work_media: { Args: { media: string }; Returns: Json }
+      jobin_work_options: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never

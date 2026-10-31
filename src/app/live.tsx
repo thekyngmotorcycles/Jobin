@@ -9,7 +9,7 @@ import { useProfessionalAction,useProfessionalData } from "../state/useProfessio
 export default function Live(){
  const {s,colors}=useUi();const [visibility,setVisibility]=useState<"public"|"private">("public");const [title,setTitle]=useState("");
  const draft=useWorkDraft();const safety=useProfessionalData(loadSafety);const action=useProfessionalAction(safety.reload);
- return <Screen title="Tu trabajo, en vivo." subtitle="Hacer Live es opcional. Comparte tu labor profesional con supervisión activa.">
+ return <Screen demo={false} title="Tu trabajo, en vivo." subtitle="Hacer Live es opcional. Comparte tu labor profesional con supervisión activa.">
   {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
   <View style={s.panel}>
    <TextInput accessibilityLabel="Título del Live" placeholder="¿En qué estás trabajando?" placeholderTextColor={colors.muted} value={title} onChangeText={setTitle} style={{color:colors.ink,padding:12,borderColor:colors.line,borderWidth:1,borderRadius:10}}/>

@@ -13,7 +13,7 @@ export default function PublicJCard(){
   if(!user||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user))return Promise.reject(new Error("Enlace de JCard inválido."));
   return loadPublicCard(user);
  },[user]));
- return <Screen title="JCard." subtitle="Identidad profesional pública.">
+ return <Screen demo={false} title="JCard." subtitle="Identidad profesional pública.">
   {resource.data?<View><JobinCard card={resource.data}/><ProfessionalTrustMark worker={resource.data.id}/></View>:<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>}
  </Screen>;
 }

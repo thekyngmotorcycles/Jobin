@@ -61,28 +61,28 @@ export function Chips<T extends string>({ values, value, onChange, label }: {
       <Text style={[s.chipText, value === item && { color: colors.inverse }]}>{item}</Text>
     </Pressable>)}</View>;
 }
-export function Header({ title, subtitle, showCity = false }: { title: string; subtitle: string; showCity?: boolean }) {
+export function Header({ title, subtitle, showCity = false, demo = true }: { title: string; subtitle: string; showCity?: boolean; demo?: boolean }) {
   const {s} = useUi();
   const { city, setCity } = useApp();
   return <View style={s.header}>
-    <View style={s.top}><JobinWordmark width={120}/><Text style={s.tag}>DEMO</Text></View>
+    <View style={s.top}><JobinWordmark width={120}/><Text style={s.tag}>{demo ? "DEMO" : "JOBIN"}</Text></View>
     <Text style={s.eyebrow}>PERSONAS REALES. TRABAJO REAL.</Text>
     <Text accessibilityRole="header" style={s.h1}>{title}</Text>
     <Text style={s.muted}>{subtitle}</Text>
     {showCity && <Chips values={["Todas", "Miami", "Orlando"]} value={city} onChange={setCity} label="Filtrar por ciudad" />}
   </View>;
 }
-export function Footer() {
+export function Footer({ demo = true }: { demo?: boolean } = {}) {
   const {s} = useUi();
   return <View style={s.footer}><Text style={s.eyebrow}>PROFESSIONAL WORK</Text>
     <Text style={s.muted}>Haz lo que amas. Conecta con quienes lo valoran.</Text>
-    <Text style={s.muted}>Datos de ejemplo. Los cambios se reinician al cerrar o recargar la app.</Text></View>;
+    {demo && <Text style={s.muted}>Datos de ejemplo. Los cambios se reinician al cerrar o recargar la app.</Text>}</View>;
 }
-export function Screen({ children, title, subtitle, showCity = false }: { children: ReactNode; title: string; subtitle: string; showCity?: boolean }) {
+export function Screen({ children, title, subtitle, showCity = false, demo = true }: { children: ReactNode; title: string; subtitle: string; showCity?: boolean; demo?: boolean }) {
   const {s} = useUi();
   return <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>
-      <Header title={title} subtitle={subtitle} showCity={showCity} />{children}<Footer />
+      <Header title={title} subtitle={subtitle} showCity={showCity} demo={demo} />{children}<Footer demo={demo} />
     </ScrollView>
   </SafeAreaView>;
 }

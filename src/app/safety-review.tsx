@@ -8,7 +8,7 @@ import { useProfessionalAction,useProfessionalData } from "../state/useProfessio
 export default function SafetyReview(){
  const {s,colors}=useUi();const resource=useProfessionalData(loadSafetyQueue);const action=useProfessionalAction(resource.reload);
  const [reviewedAll,setReviewedAll]=useState<Record<string,boolean>>({});const [reason,setReason]=useState("");const [incidentTime,setIncidentTime]=useState("");const [category,setCategory]=useState("violence");
- return <Screen title="Revisión de seguridad." subtitle="Decisiones independientes, documentadas y verificadas en el servidor.">
+ return <Screen demo={false} title="Revisión de seguridad." subtitle="Decisiones independientes, documentadas y verificadas en el servidor.">
  {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
  {!resource.data?<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>:<>
   <View style={s.panel}><Text style={s.h3}>Motivo documentado de la decisión</Text><TextInput accessibilityLabel="Motivo de decisión de moderación" value={reason} onChangeText={setReason} multiline style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:12,minHeight:90,borderRadius:10}}/>

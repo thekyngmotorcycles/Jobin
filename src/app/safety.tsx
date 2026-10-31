@@ -8,7 +8,7 @@ import { useProfessionalAction,useProfessionalData } from "../state/useProfessio
 export default function Safety(){
  const {s,colors}=useUi();const resource=useProfessionalData(loadSafety);const action=useProfessionalAction(resource.reload);
  const [incident,setIncident]=useState("");const [reason,setReason]=useState("");const status=resource.data;
- return <Screen title="Seguridad y apelaciones." subtitle="Motivos, duración y estado de tus restricciones.">
+ return <Screen demo={false} title="Seguridad y apelaciones." subtitle="Motivos, duración y estado de tus restricciones.">
  {!status?<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>:<>
   {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
   <View style={s.panel}><Text style={s.h2}>{status.permanent?"Cuenta bloqueada permanentemente":status.accountBlocked?"Cuenta suspendida":status.mediaBlocked?"Publicación restringida":"Sin restricciones activas"}</Text>

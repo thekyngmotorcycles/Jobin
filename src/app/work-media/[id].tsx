@@ -21,7 +21,7 @@ export default function WorkMediaRoom(){
   void refresh();const timer=setInterval(()=>void refresh(),2000);
   return()=>{current=false;clearInterval(timer);};
  },[id,focused]);
- return <Screen title={media?.title??"Trabajo profesional."} subtitle={media?.author??"Contenido con controles de seguridad."}>
+ return <Screen demo={false} title={media?.title??"Trabajo profesional."} subtitle={media?.author??"Contenido con controles de seguridad."}>
   {media?.playbackUrl?<Playback key={id+media.playbackUrl} url={media.playbackUrl}/>:<View style={s.notice}><Text style={s.text}>{loading?"Consultando estado de publicación…":error||"Este contenido no está disponible para reproducir. Puede estar pendiente, finalizado o retirado."}</Text></View>}
   {media&&<EmployerReportButton mediaId={media.id} creatorId={media.creatorId}/>}
   <Button secondary title="Volver" onPress={()=>router.canGoBack()?router.back():router.replace("/streams")}/>
