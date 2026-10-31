@@ -82,7 +82,7 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
    <Text numberOfLines={1} style={[overlayStyles.shadowText,{fontSize:16,fontWeight:"800",color:colors.mediaText}]}>@{clip.handle}</Text>
   </Pressable>
   <Pressable accessibilityRole="button" accessibilityLabel={following?"Siguiendo a "+clip.handle:"Seguir a "+clip.handle} accessibilityState={{selected:following}} onPress={()=>social.toggleFollow(clip.creatorId)} style={{width:29,height:29,borderRadius:15,backgroundColor:colors.reaction,alignItems:"center",justifyContent:"center"}}>
-   <Ionicons name={following?"checkmark-done":"checkmark"} size={19} color="#ffffff"/>
+   <Ionicons name={following?"checkmark-done":"checkmark"} size={19} color={colors.qrPaper}/>
   </Pressable>
  </View>
  {!!caption&&<Pressable accessibilityRole="button" accessibilityLabel={expanded?"Contraer descripción":"Expandir descripción"} onPress={()=>setExpanded(value=>!value)} style={{maxHeight:expanded?Math.max(55,height*.25):undefined}}>
