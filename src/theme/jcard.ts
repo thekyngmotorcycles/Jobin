@@ -41,6 +41,8 @@ export const jcardLayout = {
 export const jcardCommon = {
   scrim: "#000000aa", qrPaper: "#ffffff", qrInk: "#111111",
 };
-export function jcardTokens(theme: ThemeName, tier: JCardTier) {
-  return finishes[theme][tier];
+export function jcardTokens(theme: ThemeName, _tier: JCardTier) {
+  // JCard remains monochrome regardless of rating or the selected appearance.
+  // Light appearances use black; the dark appearance uses white.
+  return theme === "dark" ? finishes.dark.base : finishes.light.base;
 }
