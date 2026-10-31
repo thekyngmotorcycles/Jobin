@@ -1,3 +1,4 @@
+import { endJobinSession } from "../components/AuthGate";
 import { THEMES } from "../theme/palettes";
 import { router } from "expo-router";
 import { Text, View } from "react-native";
@@ -15,6 +16,7 @@ export default function Settings(){
  <Button secondary title="Seguridad, sanciones y apelaciones" onPress={()=>router.push("/safety")}/>
  <Button secondary title="Términos y Condiciones · Borrador" onPress={()=>router.push("/terms")}/>
  <Button secondary title="Servicios" onPress={()=>router.push("/services")}/>
- <Button secondary title="Comunidades" onPress={()=>router.push("/communities")}/></View>
+ <Button secondary title="Comunidades" onPress={()=>router.push("/communities")}/>
+ <Button title="Log out · Cerrar sesión" onPress={()=>{void endJobinSession().then(()=>router.replace("/login"));}}/></View>
  </Screen>;
 }
