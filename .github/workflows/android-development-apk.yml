@@ -1,0 +1,46 @@
+name: Build Jobin Android development APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/android-development-apk.yml]
+permissions:
+  contents: read
+concurrency:
+  group: jobin-android-apk
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx expo install --check
+      - name: Build Android with current native dependencies
+        run: |
+          test -n "$EXPO_TOKEN" || { echo "::error::Missing EXPO_TOKEN repository secret"; exit 1; }
+          npx eas-cli@27.1.0 build --profile development --platform android --non-interactive --wait --json > android-apk-build.json
+      - name: Report APK
+        run: |
+          node - <<'JS'
+          const fs=require('node:fs');
+          const payload=JSON.parse(fs.readFileSync('android-apk-build.json','utf8'));
+          for(const b of (Array.isArray(payload)?payload:[payload])) {
+            const summary={id:b.id,status:b.status,platform:b.platform,runtimeVersion:b.runtimeVersion,gitCommitHash:b.gitCommitHash,artifacts:b.artifacts};
+            console.log('JOBIN_ANDROID_APK '+JSON.stringify(summary));
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,JSON.stringify(summary)+'\n\n');
+          }
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jobin-android-apk-build
+          path: android-apk-build.json
+          if-no-files-found: ignore
