@@ -41,8 +41,10 @@ export const jcardLayout = {
 export const jcardCommon = {
   scrim: "#000000aa", qrPaper: "#ffffff", qrInk: "#111111",
 };
-export function jcardTokens(theme: ThemeName, _tier: JCardTier) {
-  // JCard remains monochrome regardless of rating or the selected appearance.
-  // Light appearances use black; the dark appearance uses white.
+export function jcardTokens(theme: ThemeName, tier: JCardTier) {
+  // Rating-based silver and gold finishes remain unchanged in every appearance.
+  if (tier === "silver") return silver;
+  if (tier === "gold") return gold;
+  // Only the unrated/base card switches between black and white.
   return theme === "dark" ? finishes.dark.base : finishes.light.base;
 }
