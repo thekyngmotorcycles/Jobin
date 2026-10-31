@@ -14,7 +14,7 @@ export default function Live(){
  const {s}=useUi();const {contentBottom}=useTabClearance();const {city}=useApp();const [tab,setTab]=useState<FeedTab>("Local");
  const rooms=browseStreams(tab==="Local"?"Nearby":"Popular",city);
  return <SafeAreaView edges={["top","left","right"]} style={s.screen}>
-  <FeedTopBar tab={tab} onTab={setTab} plusLabel="Iniciar live" onPlus={()=>router.push("/live")} onSearch={()=>router.push({pathname:"/search",params:{mode:"live"}})}/>
+  <FeedTopBar videoMode tab={tab} onTab={setTab} plusLabel="Iniciar live" onPlus={()=>router.push("/live")} onSearch={()=>router.push({pathname:"/search",params:{mode:"live"}})}/>
   <ScrollView contentContainerStyle={{padding:16,gap:16,paddingBottom:contentBottom}} showsVerticalScrollIndicator={false}>
    <PublishedWorkMedia kind="live"/>
    <Text style={s.muted}>Vistas de ejemplo · No son transmisiones reales.</Text>
