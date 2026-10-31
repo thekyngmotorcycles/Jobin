@@ -25,7 +25,12 @@ function Navigation() {
  <Stack.Screen name="connect" options={{headerShown:false}}/>
  <Stack.Screen name="settings" options={{title:"Configuración"}}/>
  <Stack.Screen name="account" options={{title:"Crear cuenta"}}/>
- <Stack.Screen name="company" options={{title:"Compañía"}}/>
+ <Stack.Screen name="company" options={{title:"Empresa o institución"}}/>
+ <Stack.Screen name="professional" options={{title:"Mi JCard"}}/>
+ <Stack.Screen name="certificates" options={{title:"Certificados"}}/>
+ <Stack.Screen name="credential-review" options={{title:"Revisión de acreditaciones"}}/>
+ <Stack.Screen name="opportunities" options={{title:"Oportunidades profesionales"}}/>
+ <Stack.Screen name="jcard" options={{title:"JCard"}}/>
  <Stack.Screen name="live" options={{title:"Live",presentation:"modal"}}/>
  <Stack.Screen name="services" options={{title:"Servicios"}}/>
  <Stack.Screen name="communities" options={{title:"Comunidades"}}/>

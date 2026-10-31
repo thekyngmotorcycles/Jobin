@@ -21,7 +21,7 @@ function CardFace({ card, theme, expanded = false }: { card: CardData; theme: Th
   const rating = displayedRating(card.rating, card.reviewCount);
   const rows = sealRows(card.seals);
   const columns = Math.max(1, ...rows.map(row => row.length));
-  const sealWidth = Math.max(jcardLayout.minimumSealWidth * fontScale, (contentWidth - (columns - 1) * jcardLayout.gap) / columns);
+  const sealWidth = Math.max(Math.max(jcardLayout.minimumSealWidth, ...card.seals.map(seal => seal.label.length * 6 + 8)) * fontScale, (contentWidth - (columns - 1) * jcardLayout.gap) / columns);
   const bodySize = Math.max(12, fs(expanded ? 14 : 13));
   const lineStyle = { color:finish.text, fontSize:bodySize, lineHeight:bodySize * 1.5 };
   return <View style={[s.panel, { padding:0, gap:0, borderRadius:jcardLayout.radius, borderColor:finish.line, backgroundColor:finish.start, overflow:"hidden" }]}>
@@ -42,7 +42,7 @@ function CardFace({ card, theme, expanded = false }: { card: CardData; theme: Th
             </Text>
           </View>
         </View>
-        <View accessible accessibilityRole="image" accessibilityLabel="QR del perfil de ejemplo" style={{ backgroundColor:jcardCommon.qrPaper, padding:jcardLayout.qrQuietZone, borderRadius:6 }}>
+        <View accessible accessibilityRole="image" accessibilityLabel="QR del perfil" style={{ backgroundColor:jcardCommon.qrPaper, padding:jcardLayout.qrQuietZone, borderRadius:6 }}>
           <QRCode value={card.profileUrl} size={jcardLayout.qr} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
         </View>
       </View>
@@ -52,7 +52,7 @@ function CardFace({ card, theme, expanded = false }: { card: CardData; theme: Th
           {card.name} - @{card.handle}
         </Text>
         <Text style={{ color:finish.text, fontWeight:"700", fontSize:11, letterSpacing:1.2 }}>{card.status}</Text>
-        <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>{card.role}{card.inAcademy ? " - In academy" : ""}</Text>
+        <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>{card.role}{card.inAcademy ? " - In academy" : ""}{card.inAcademy && card.trainingVerified ? " ✓" : ""}</Text>
         {!card.inAcademy && <Text style={lineStyle}>{card.years} años de experiencia</Text>}
         {card.status === "ACTIVE" && card.employer && <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>Working in @{card.employer}</Text>}
         <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[lineStyle, { color:finish.secondary }]}>
@@ -64,7 +64,7 @@ function CardFace({ card, theme, expanded = false }: { card: CardData; theme: Th
         <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityLabel="Sellos de ejemplo; desliza horizontalmente si necesitas más espacio" contentContainerStyle={{ minWidth:"100%" }}>
           <View style={{ gap:jcardLayout.gap }}>
             {rows.map((row, index) => <View key={index} style={{ flexDirection:"row", gap:jcardLayout.gap }}>
-              {row.map(seal => <View key={seal.id} accessible accessibilityLabel={seal.profession + (seal.verified ? ", verificado (ejemplo)" : ", sin verificar (ejemplo)")}
+              {row.map(seal => <View key={seal.id} accessible accessibilityLabel={seal.profession + (seal.verified ? ", verificado" : ", sin verificar")}
                 style={{ width:sealWidth, minHeight:43, paddingVertical:5, paddingHorizontal:2, gap:3, alignItems:"center", justifyContent:"center", borderRadius:7, borderWidth:1, borderStyle:seal.verified ? "solid" : "dashed", borderColor:seal.verified ? finish.sealFill : finish.pendingLine, backgroundColor:seal.verified ? finish.sealFill : finish.pendingFill }}>
                 <View style={{ flexDirection:"row", alignItems:"center", gap:2 }}>
                   <Ionicons name={seal.icon} size={12} color={seal.verified ? finish.sealText : finish.pendingText}/>
@@ -98,7 +98,7 @@ export function JobinCard({ card, previewTheme }: { card: CardData; previewTheme
           <View accessibilityViewIsModal style={{ width:"100%", maxWidth:680, gap:16 }}>
             <CardFace card={card} theme={cardTheme} expanded/>
             <View style={{ padding:12, borderRadius:12, backgroundColor:jcardCommon.qrPaper, gap:12 }}>
-              <Text style={[s.muted, { color:jcardCommon.qrInk, textAlign:"center" }]}>Datos de ejemplo · QR de demostración</Text>
+              <Text style={[s.muted, { color:jcardCommon.qrInk, textAlign:"center" }]}>Escanea el QR para ver la JCard profesional.</Text>
               <Button title="Cerrar JCard" secondary onPress={() => setOpen(false)}/>
             </View>
           </View>

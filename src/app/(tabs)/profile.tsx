@@ -1,5 +1,6 @@
-import { mockJCard, JCARD_RATING_EXAMPLES, JCARD_THEME_EXAMPLES, JCARD_STATUS_EXAMPLES, JCARD_ACADEMY_EXAMPLES, type RatingExample, type ThemeExample } from "../../mocks/jcard";
-import type { JCardStatus } from "../../lib/jcard";
+import { ProfessionalStatus } from "../../components/ProfessionalStatus";
+import { loadWorkspace } from "../../lib/professional-api";
+import { useProfessionalData } from "../../state/useProfessionalData";
 import { useState } from "react";
 import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,7 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomSheet } from "../../components/social-ui";
 import { JobinWordmark } from "../../components/JobinWordmark";
 import { JobinCard } from "../../components/JobinCard";
-import { Button, Chips, Notice, useUi } from "../../components/ui";
+import { Button, Notice, useUi } from "../../components/ui";
 import { canSendHistory } from "../../lib/rules";
 import { DEMO_HISTORY, DEMO_PROFILE, DEMO_REQUESTING_COMPANIES, DEMO_VIDEOS, type EmploymentEntry } from "../../lib/me";
 
@@ -22,13 +23,8 @@ export default function Profile() {
   const [addOpen, setAddOpen] = useState(false);
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "" });
   const [notice, setNotice] = useState("");
-  const [examplesOpen, setExamplesOpen] = useState(false);
-  const [cardRating, setCardRating] = useState<RatingExample>("3.6–4.5 ★");
-  const [cardStatus, setCardStatus] = useState<JCardStatus>("ACTIVE");
-  const [cardAcademy, setCardAcademy] = useState<typeof JCARD_ACADEMY_EXAMPLES[number]>("Profesional");
-  const [cardTheme, setCardTheme] = useState<ThemeExample>("Actual");
+  const workspace = useProfessionalData(loadWorkspace);
   const p = DEMO_PROFILE;
-  const card = mockJCard(cardRating, cardStatus, cardAcademy === "In academy");
 
   function openLive() {
     if (p.streamingNow) router.push({ pathname: "/stream/[id]", params: { id: p.streamId } });
@@ -75,26 +71,17 @@ export default function Profile() {
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
-        <View style={{ gap:10 }}>
-          <JobinCard card={card} previewTheme={cardTheme === "Actual" ? undefined : cardTheme === "Claro" ? "light" : "dark"} />
-          <View style={{ width:"100%", maxWidth:520, alignSelf:"center", gap:12 }}>
-            <Text style={s.muted}>JCard de ejemplo · Toca la tarjeta para ampliarla.</Text>
-            <Pressable accessibilityRole="button" accessibilityState={{expanded:examplesOpen}} onPress={() => setExamplesOpen(value => !value)} style={{minHeight:44, justifyContent:"center"}}>
-              <Text style={[s.text, {fontWeight:"600"}]}>{examplesOpen ? "Ocultar estados de ejemplo" : "Ver estados de ejemplo"}</Text>
-            </Pressable>
-            {examplesOpen && <View style={[s.panel, {gap:14}]}>
-              <Text style={s.muted}>Vista previa local. Todos los datos y sellos son ficticios.</Text>
-              <Text style={s.h3}>Tema de la JCard</Text>
-              <Chips values={JCARD_THEME_EXAMPLES} value={cardTheme} onChange={setCardTheme} label="Tema de ejemplo de la JCard"/>
-              <Text style={s.h3}>Puntuación</Text>
-              <Chips values={JCARD_RATING_EXAMPLES} value={cardRating} onChange={setCardRating} label="Puntuación de ejemplo"/>
-              <Text style={s.h3}>Estado laboral</Text>
-              <Chips values={JCARD_STATUS_EXAMPLES} value={cardStatus} onChange={setCardStatus} label="Estado laboral de ejemplo"/>
-              <Text style={s.h3}>Formación</Text>
-              <Chips values={JCARD_ACADEMY_EXAMPLES} value={cardAcademy} onChange={setCardAcademy} label="Formación de ejemplo"/>
-            </View>}
+        {workspace.data?.card ? <View style={{gap:10}}>
+          <JobinCard card={workspace.data.card}/>
+          <View style={{width:"100%",maxWidth:520,alignSelf:"center",gap:8}}>
+            <Button secondary title="Editar JCard y formación" onPress={()=>router.push("/professional")}/>
+            <Button secondary title="Certificados y sellos" onPress={()=>router.push("/certificates")}/>
+            <Button secondary title="Oportunidades por ciudad y profesión" onPress={()=>router.push("/opportunities")}/>
+            {!!workspace.data.organization&&<Button secondary title="Mi empresa o institución" onPress={()=>router.push("/company")}/>}
+            {workspace.data.reviewer&&<Button secondary title="Revisar acreditaciones" onPress={()=>router.push("/credential-review")}/>}
           </View>
-        </View>
+        </View> : <ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>}
+
 
         {mode === "cv" && (
           <View style={{ gap: 14 }}>

@@ -1792,6 +1792,26 @@ export type Database = {
       }
     }
     Functions: {
+      jobin_professional_catalog: { Args: Record<string, never>; Returns: Json }
+      jobin_jcard_data: { Args: { target?: string | null }; Returns: Json }
+      jobin_professional_workspace: { Args: Record<string, never>; Returns: Json }
+      jobin_save_jcard: { Args: { legal_name:string; handle:string; languages:Json; availability:string; city:string; region:string }; Returns: undefined }
+      jobin_set_profession: { Args: { profession:string; training:string; institution?:string|null; make_primary?:boolean }; Returns: string }
+      jobin_remove_unverified_profession: { Args: { profession:string }; Returns: undefined }
+      jobin_set_organization_kind: { Args: { kind:string }; Returns: undefined }
+      jobin_submit_credential: { Args: { profession:string; path:string }; Returns: string }
+      jobin_decide_credential: { Args: { request:string; approve:boolean; reason:string }; Returns: undefined }
+      jobin_set_scope_active: { Args: { organization:string; profession:string; enabled:boolean }; Returns: undefined }
+      jobin_verify_training: { Args: { person_profession:string; approve:boolean }; Returns: undefined }
+      jobin_define_rank: { Args: { profession:string; label:string; short_label:string; ordinal:number }; Returns: string }
+      jobin_grant_rank: { Args: { worker:string; rank:string }; Returns: undefined }
+      jobin_set_representative: { Args: { employment:string; approved:boolean }; Returns: undefined }
+      jobin_credential_queue: { Args: Record<string, never>; Returns: Json }
+      jobin_education_options: { Args: { profession:string }; Returns: Json }
+      jobin_organization_data: { Args: { target?:string|null }; Returns: Json }
+      jobin_career_search: { Args: { profession:string; city:string; mode:string }; Returns: Json }
+      jobin_contact_career: { Args: { target:string; profession:string; kind:string; message:string }; Returns: string }
+      jobin_respond_career: { Args: { contact:string; decision:string }; Returns: undefined }
       jobin_approve_employment: { Args: { record: string }; Returns: undefined }
       jobin_attach_company_document: {
         Args: {

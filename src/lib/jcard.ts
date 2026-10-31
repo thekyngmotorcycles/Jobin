@@ -18,6 +18,7 @@ export interface CardData {
   rating: number | null;
   reviewCount: number;
   inAcademy: boolean;
+  trainingVerified?: boolean;
   avatar?: string;
   profileUrl: string;
   languages: readonly { name: string; fluency: number }[];
