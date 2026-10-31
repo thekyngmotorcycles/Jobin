@@ -143,4 +143,12 @@ select pg_temp.safety_assert((select status='held' from public.work_media where 
 select pg_temp.safety_assert((private.safety_state('30000000-0000-4000-8000-000000000006')->>'contentCount')::int=0,'low confidence never creates an automatic strike');
 select pg_temp.safety_error($q$update public.work_media set employment_snapshot='[]' where id=current_setting('test.approved_media')::uuid$q$,'identity and proof');
 
+-- Withdrawal is safety-critical: retries remain pending even after many provider failures.
+update private.moderation_jobs set status='leased',attempts=20,lease_token=gen_random_uuid(),lease_until=now()+interval '2 minutes' where media_id=current_setting('test.live')::uuid and kind='stop_live';
+select public.jobin_moderation_job_failed(
+ (select id from private.moderation_jobs where media_id=current_setting('test.live')::uuid and kind='stop_live'),
+ (select lease_token from private.moderation_jobs where media_id=current_setting('test.live')::uuid and kind='stop_live'),
+ 'CI provider is temporarily unavailable');
+select pg_temp.safety_assert((select status='pending' and available_at>now() from private.moderation_jobs where media_id=current_setting('test.live')::uuid and kind='stop_live'),'provider cutoff retries never exhaust permanently');
+
 rollback;

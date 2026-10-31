@@ -426,14 +426,14 @@ create function public.jobin_review_employer_report(report uuid,uphold boolean,r
  if auth.uid() in (r.company_id,r.accused_id) then raise exception 'Cannot decide your own case'; end if;
  select * into m from public.work_media where id=r.work_media_id;
  evidence_at:=case when m.kind='live' then coalesce((select started_at from public.live_sessions where work_media_id=m.id),m.created_at) else incident_time end;
- if uphold and (evidence_at is null or evidence_at>m.created_at+interval '5 minutes') then raise exception 'Verify the recording time from the video evidence before upholding this report'; end if;
+ if uphold and (evidence_at is null or evidence_at>now()+interval '30 seconds' or (m.kind='video' and evidence_at>m.created_at+interval '5 minutes')) then raise exception 'Verify the recording time from the video evidence before upholding this report'; end if;
  if uphold and exists(select 1 from public.employment_records e where e.company_id=r.company_id and e.worker_id=r.accused_id
  and e.company_approved_at is not null and e.worker_consented_at is not null and e.started_on<=evidence_at::date
  and (e.ended_on is null or e.ended_on>=evidence_at::date)) then raise exception 'Verified employment history covers the recording time'; end if;
  if uphold and exists(select 1 from jsonb_array_elements(m.employment_snapshot) e where (e->>'company')::uuid=r.company_id
  and e->>'approved_at' is not null and (e->>'approved_at')::timestamptz<=m.created_at
  and e->>'consented_at' is not null and (e->>'consented_at')::timestamptz<=m.created_at
- and (e->>'started_on')::date<=m.created_at::date and (e->>'ended_on' is null or (e->>'ended_on')::date>=m.created_at::date)) then raise exception 'The worker was approved by this employer at the time of the media'; end if;
+ and (e->>'started_on')::date<=evidence_at::date and (e->>'ended_on' is null or (e->>'ended_on')::date>=evidence_at::date)) then raise exception 'The worker was approved by this employer at the time of the media'; end if;
  update public.impersonation_reports set status=case when uphold then 'upheld' else 'dismissed' end,decided_at=now(),decided_by=auth.uid(),incident_at=evidence_at,description=coalesce(description,'')||E'\nDecision: '||reason where id=r.id;
  if uphold then
  perform private.stop_work_media(m.id,'Employer impersonation upheld');
