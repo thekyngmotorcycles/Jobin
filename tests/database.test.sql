@@ -89,7 +89,8 @@ select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111'
 do $$ begin
  begin perform public.jobin_start_live('Work floor','public','daily_work',false);
  raise exception 'Expected consent rejection'; exception when raise_exception then if sqlerrm='Expected consent rejection' then raise; end if; end;
- perform public.jobin_start_live('Work floor','public','daily_work',true);
+ begin perform public.jobin_start_live('Work floor','public','daily_work',true);
+ raise exception 'Expected unconfigured provider rejection'; exception when raise_exception then if sqlerrm='Expected unconfigured provider rejection' then raise; end if; end;
 end $$;
 select set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',true);
 do $$ begin
@@ -106,3 +107,4 @@ do $$ begin
 end $$;
 rollback;
 \ir jcard-verification.test.sql
+\ir media-safety.test.sql
