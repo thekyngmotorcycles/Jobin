@@ -7,6 +7,10 @@ export class SafetyBackend {
   if(!response.ok){const body=await response.json().catch(()=>({}));throw new Error(typeof body.message==="string"?body.message:"Safety backend request failed");}
   if(response.status===204)return null;return response.json();
  }
+ async reviewerArtifact(media:string,jwt:string):Promise<unknown>{
+  const response=await fetch(this.url+"/rest/v1/rpc/jobin_moderation_review_artifact",{method:"POST",headers:{apikey:this.key,Authorization:"Bearer "+jwt,"Content-Type":"application/json"},body:JSON.stringify({media}),signal:AbortSignal.timeout(30000)});
+  if(!response.ok)throw new Error("Moderator authorization required");return response.json();
+ }
  async sourceUrl(path:string):Promise<string>{
   const encoded=path.split("/").map(encodeURIComponent).join("/");
   const response=await fetch(this.url+"/storage/v1/object/sign/video-originals/"+encoded,{method:"POST",headers:{apikey:this.key,Authorization:"Bearer "+this.key,"Content-Type":"application/json"},body:JSON.stringify({expiresIn:300}),signal:AbortSignal.timeout(30000)});

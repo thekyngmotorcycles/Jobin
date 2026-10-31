@@ -68,10 +68,17 @@ export async function startSafetyWorker(env:NodeJS.ProcessEnv=process.env){
  }
  const server=createServer(async(req,res)=>{
   if(req.method==="GET"&&req.url==="/health"){res.writeHead(200,{"Content-Type":"application/json"});res.end(JSON.stringify({configured}));return;}
-  if(req.method!=="POST"||req.url!=="/moderation/webhook"){res.writeHead(404);res.end();return;}
+  if(req.method!=="POST"||!["/moderation/webhook","/moderation/review-url"].includes(req.url??"")){res.writeHead(404);res.end();return;}
   const chunks:Buffer[]=[];let size=0;
   try {
    for await(const chunk of req){const bytes=Buffer.isBuffer(chunk)?chunk:Buffer.from(chunk);size+=bytes.length;if(size>65536)throw new Error("Payload too large");chunks.push(bytes);}
+   if(req.url==="/moderation/review-url"){
+    const authorization=req.headers.authorization;if(!authorization?.startsWith("Bearer ")||!video)throw new Error("Moderator service unavailable");
+    const body=record(JSON.parse(Buffer.concat(chunks).toString("utf8")));
+    const artifact=record(await backend.reviewerArtifact(requiredText(body.media,"media ID",36),authorization.slice(7)));
+    const url=await video.reviewUrl(requiredText(artifact.assetId,"asset ID"),120);
+    res.writeHead(200,{"Content-Type":"application/json","Cache-Control":"no-store"});res.end(JSON.stringify({url}));return;
+   }
    const timestamp=req.headers["x-jobin-timestamp"];const signature=req.headers["x-jobin-signature"];
    const parsed=verifyWebhook(Buffer.concat(chunks),typeof timestamp==="string"?timestamp:undefined,typeof signature==="string"?signature:undefined,env.MODERATION_WEBHOOK_SECRET??"");
    await result(parsed);res.writeHead(204);res.end();

@@ -447,8 +447,8 @@ create function public.jobin_review_safety_appeal(appeal uuid,accept boolean,rea
  select * into a from public.safety_appeals where id=appeal and status='pending' for update;
  if a.id is null or a.user_id=auth.uid() or accept is null or reason is null or length(trim(reason)) not between 10 and 2000 then raise exception 'Independent documented appeal decision required'; end if;
  perform 1 from public.jcard_profiles where profile_id=a.user_id for update;
- update public.safety_appeals set status=case when accept then 'accepted' else 'rejected' end,decision_reason=trim(reason),reviewed_by=auth.uid(),reviewed_at=now() where id=a.id;
- if accept then update public.safety_incidents set voided_at=now(),voided_by=auth.uid(),void_reason=reason where id=a.incident_id and voided_at is null;
+ update public.safety_appeals set status=case when accept then 'accepted' else 'rejected' end,decision_reason=trim(jobin_review_safety_appeal.reason),reviewed_by=auth.uid(),reviewed_at=now() where id=a.id;
+ if accept then update public.safety_incidents set voided_at=now(),voided_by=auth.uid(),void_reason=jobin_review_safety_appeal.reason where id=a.incident_id and voided_at is null;
  perform private.refresh_identity_blocks(a.user_id); end if;
  -- Never auto-republish the video or restart an ended live on appeal.
  end $$;
@@ -651,3 +651,11 @@ create function public.jobin_finish_video_publish(job uuid,token uuid) returns v
  end $$;
 revoke all on function public.jobin_finish_video_publish(uuid,uuid) from public,anon,authenticated;
 grant execute on function public.jobin_finish_video_publish(uuid,uuid) to service_role;
+
+create function public.jobin_moderation_review_artifact(media uuid) returns jsonb language plpgsql stable security definer set search_path='' as $$
+ begin
+ if not private.is_moderator() then raise exception 'Moderators only'; end if;
+ return (select jsonb_build_object('assetId',provider_asset_id,'kind',kind) from public.work_media where id=media);
+ end $$;
+revoke all on function public.jobin_moderation_review_artifact(uuid) from public,anon,authenticated;
+grant execute on function public.jobin_moderation_review_artifact(uuid) to authenticated,service_role;

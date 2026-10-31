@@ -17,6 +17,7 @@ export interface VideoProvider {
  prepareLive(input:{mediaId:string;visibility:string;staging:true;maximumUnsupervisedSeconds:15}):Promise<PreparedLive>;
  renewLiveLease(assetId:string,expiresAt:string):Promise<void>;
  stopLive(assetId:string):Promise<void>;
+ reviewUrl(assetId:string,expiresIn:number):Promise<string>;
  publishVideo(assetId:string):Promise<void>;
  disableVideo(assetId:string):Promise<void>;
 }

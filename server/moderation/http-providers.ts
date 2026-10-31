@@ -32,6 +32,7 @@ export class HttpVideoProvider extends HttpProvider implements VideoProvider {
  }
  async renewLiveLease(assetId:string,expiresAt:string){await this.call("/live/lease",{assetId,expiresAt});}
  async stopLive(assetId:string){await this.call("/live/stop",{assetId});}
+ async reviewUrl(assetId:string,expiresIn:number){const r=record(await this.call("/media/review-url",{assetId,expiresIn}));return secureUrl(r.url);}
  async publishVideo(assetId:string){await this.call("/video/publish",{assetId});}
  async disableVideo(assetId:string){await this.call("/video/disable",{assetId});}
 }
