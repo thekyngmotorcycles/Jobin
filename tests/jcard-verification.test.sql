@@ -74,6 +74,41 @@ reset role;
 insert into public.employment_records(company_id,worker_id,job_title,started_on,worker_consented_at,company_approved_at) values
  ('10000000-0000-4000-8000-000000000003','10000000-0000-4000-8000-000000000001','Carpenter again',current_date,now(),now());
 select pg_temp.assert_ok(not exists(select 1 from public.profession_seals where worker_id='10000000-0000-4000-8000-000000000001' and profession_code='carpintero' and revoked_at is null),'company badge cannot be reacquired through rehiring');
+-- Organization approvals go through the same actual private-document review workflow.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
+select public.jobin_set_profession('actor','in_academy','10000000-0000-4000-8000-000000000004');
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
+select public.jobin_save_jcard('Company','Company_One','[]','ACTIVE','Miami','FL');
+insert into storage.objects(bucket_id,name) values('professional-certificates','10000000-0000-4000-8000-000000000003/company-actor.pdf');
+select public.jobin_submit_credential('actor','10000000-0000-4000-8000-000000000003/company-actor.pdf');
+select pg_temp.expect_error($q$select public.jobin_set_organization_kind('education')$q$,'locked');
+select pg_temp.expect_error($q$select public.jobin_define_rank('policia','Sargento','Sarg.',1)$q$,'preapproved police');
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000006',true);
+select public.jobin_decide_credential((select id from public.credential_requests where owner_id='10000000-0000-4000-8000-000000000003'),true,'Organization scope and issuer checked');
+select pg_temp.assert_ok(exists(select 1 from public.organization_scopes where organization_id='10000000-0000-4000-8000-000000000003' and profession_code='actor' and active),'review preapproves only the requested organization profession');
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',true);
+select pg_temp.assert_ok(jsonb_array_length(public.jobin_career_search('actor','Miami','students'))=1,'company discovers academy students in its city');
+select public.jobin_contact_career('10000000-0000-4000-8000-000000000001','actor','invitation','We offer a professional acting apprenticeship.');
+select set_config('test.career_contact',(select id::text from public.career_contacts where kind='invitation'),true);
+select public.jobin_set_representative((select id from public.employment_records where company_id=auth.uid() and ended_on is null),true);
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000002',true);
+select pg_temp.assert_ok((select count(*)=0 from public.career_contacts),'career contacts are private to their parties');
+select pg_temp.expect_error($q$select public.jobin_respond_career(current_setting('test.career_contact')::uuid,'accepted')$q$,'not allowed');
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
+select pg_temp.assert_ok(jsonb_array_length(public.jobin_career_search('actor','Miami','companies'))=1,'student finds an organization with matching scope');
+select public.jobin_respond_career(current_setting('test.career_contact')::uuid,'accepted');
+select public.jobin_save_jcard('Worker','Worker_One','[]','AVAILABLE','Orlando','FL');
+select pg_temp.expect_error($q$select public.jobin_contact_career('10000000-0000-4000-8000-000000000003','actor','application','I am applying before graduation.')$q$,'share a city');
+select public.jobin_save_jcard('Worker','Worker_One','[]','AVAILABLE','Miami','FL');
+select public.jobin_contact_career('10000000-0000-4000-8000-000000000003','actor','application','I am applying before graduation.');
+select pg_temp.expect_error($q$select public.jobin_contact_career('10000000-0000-4000-8000-000000000003','actor','application','Duplicate application must not create a second contact.')$q$,'duplicate key');
+select public.jobin_end_employment((select id from public.employment_records where worker_id=auth.uid() and company_id='10000000-0000-4000-8000-000000000003' and ended_on is null),current_date);
+reset role;
+select pg_temp.assert_ok(not exists(select 1 from public.organization_representatives where can_represent),'ending employment clears representation permission');
+select pg_temp.assert_ok((select count(*)=2 from public.employment_records where worker_id='10000000-0000-4000-8000-000000000001'),'career contacts never create employment');
+select pg_temp.expect_error($q$delete from private.company_seal_exits$q$,'append-only');
+
 -- Fill verified capacity, including an institution-origin rank.
 insert into public.person_professions(worker_id,profession_code,training_status)
  values('10000000-0000-4000-8000-000000000001','policia','graduado');

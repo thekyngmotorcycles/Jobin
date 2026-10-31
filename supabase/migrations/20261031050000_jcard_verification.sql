@@ -211,6 +211,8 @@ create table private.company_seal_exits (
  employment_id uuid not null references public.employment_records(id), ended_at timestamptz not null default now(),
  primary key(worker_id,profession_code)
 );
+create trigger company_seal_exits_immutable before update or delete on private.company_seal_exits
+ for each row execute function public.jobin_immutable_event();
 create table public.organization_representatives (
  employment_id uuid primary key references public.employment_records(id) on delete restrict,
  approved_by uuid not null references public.organizations(profile_id),
@@ -298,7 +300,9 @@ create function private.jcard_sync_company_seals(worker uuid) returns void langu
  end loop;
  end $$;
 create function private.jcard_employment_changed() returns trigger language plpgsql security definer set search_path='' as $$
- begin perform private.jcard_sync_company_seals(new.worker_id); return new; end $$;
+ begin
+ if new.ended_on is not null then update public.organization_representatives set can_represent=false where employment_id=new.id; end if;
+ perform private.jcard_sync_company_seals(new.worker_id); return new; end $$;
 -- Derivative synchronization only. Existing immutable employment triggers and RPCs stay intact.
 create trigger jcard_company_seals after insert or update on public.employment_records for each row execute function private.jcard_employment_changed();
 create function private.jcard_scope_changed() returns trigger language plpgsql security definer set search_path='' as $$
@@ -440,7 +444,7 @@ create function public.jobin_verify_training(person_profession uuid,approve bool
  declare pp public.person_professions;
  begin
  select * into pp from public.person_professions where id=person_profession for update;
- if pp.id is null or approve is null or pp.institution_id is distinct from auth.uid() or not exists(
+ if pp.id is null or pp.training_status<>'in_academy' or approve is null or pp.institution_id is distinct from auth.uid() or not exists(
  select 1 from public.organizations o join public.organization_scopes os on os.organization_id=o.profile_id
  where o.profile_id=auth.uid() and o.kind='education' and os.active and os.profession_code=pp.profession_code) then raise exception 'Only the requested, preapproved school can verify training'; end if;
  if pp.worker_id=auth.uid() then raise exception 'Cannot self-verify'; end if;
@@ -532,7 +536,7 @@ create function public.jobin_professional_workspace() returns jsonb language plp
  'profile',(select jsonb_build_object('city',city,'region',region) from public.profiles where id=auth.uid()),
  'reviewer',private.is_credential_reviewer(),
  'organization',(select to_jsonb(o) from public.organizations o where profile_id=auth.uid()),
- 'professions',coalesce((select jsonb_agg(to_jsonb(pp)||jsonb_build_object('label',pc.label,'school',school.legal_name) order by pp.primary_profession desc,pc.label)
+ 'professions',coalesce((select jsonb_agg(to_jsonb(pp)||jsonb_build_object('label',pc.label,'school',school.legal_name,'verified',pp.verified_at is not null and (pp.training_status='graduado' or exists(select 1 from public.organization_scopes vos join public.organizations vo on vo.profile_id=vos.organization_id where vos.organization_id=pp.institution_id and vos.profession_code=pp.profession_code and vos.active and vo.kind='education'))) order by pp.primary_profession desc,pc.label)
  from public.person_professions pp join public.profession_catalog pc on pc.code=pp.profession_code
  left join public.companies school on school.profile_id=pp.institution_id where pp.worker_id=auth.uid()),'[]'),
  'requests',coalesce((select jsonb_agg(to_jsonb(r)||jsonb_build_object('label',pc.label) order by r.created_at desc)
@@ -567,7 +571,7 @@ create function public.jobin_organization_data(target uuid default null) returns
  from public.employment_records e join public.profiles wp on wp.id=e.worker_id join public.jcard_profiles wj on wj.profile_id=e.worker_id
  left join public.organization_representatives rep on rep.employment_id=e.id
  where e.company_id=o.profile_id and ((e.company_approved_at is not null and e.worker_consented_at is not null) or o.profile_id=auth.uid())),'[]'),
- 'students',case when o.profile_id=auth.uid() and o.kind='education' then coalesce((select jsonb_agg(to_jsonb(pp)||jsonb_build_object('name',wp.display_name,'label',pc.label) order by wp.display_name)
+ 'students',case when o.profile_id=auth.uid() and o.kind='education' then coalesce((select jsonb_agg(to_jsonb(pp)||jsonb_build_object('name',wp.display_name,'label',pc.label,'verified',pp.verified_at is not null and (pp.training_status='graduado' or exists(select 1 from public.organization_scopes vos join public.organizations vo on vo.profile_id=vos.organization_id where vos.organization_id=pp.institution_id and vos.profession_code=pp.profession_code and vos.active and vo.kind='education'))) order by wp.display_name)
  from public.person_professions pp join public.profiles wp on wp.id=pp.worker_id join public.profession_catalog pc on pc.code=pp.profession_code
  where pp.institution_id=o.profile_id),'[]') else '[]'::jsonb end)
  from public.organizations o join public.profiles p on p.id=o.profile_id join public.jcard_profiles jp on jp.profile_id=o.profile_id
@@ -581,7 +585,7 @@ create function public.jobin_career_search(profession text,city text,mode text) 
  if mode='students' then
  if not exists(select 1 from public.organizations where profile_id=auth.uid() and kind='company') then raise exception 'Company account required'; end if;
  return coalesce((select jsonb_agg(to_jsonb(result)) from (
- select p.id,p.display_name as name,jp.handle,p.city,pp.training_status,pp.verified_at is not null as verified
+ select p.id,p.display_name as name,jp.handle,p.city,pp.training_status,(pp.verified_at is not null and (pp.training_status='graduado' or exists(select 1 from public.organization_scopes vos join public.organizations vo on vo.profile_id=vos.organization_id where vos.organization_id=pp.institution_id and vos.profession_code=pp.profession_code and vos.active and vo.kind='education'))) as verified
  from public.person_professions pp join public.profiles p on p.id=pp.worker_id join public.jcard_profiles jp on jp.profile_id=p.id
  where pp.profession_code=profession and pp.training_status='in_academy' and lower(trim(p.city))=lower(trim(jobin_career_search.city))
  and p.deactivated_at is null and not private.is_blocked(p.id,auth.uid()) order by p.display_name,p.id limit 100) result),'[]');

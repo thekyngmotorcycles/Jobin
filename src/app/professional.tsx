@@ -48,7 +48,7 @@ export default function Professional() {
     <Text style={s.muted}>Hasta 10 sellos verificados y 1 sin verificar. Un certificado no se aprueba automáticamente al subirlo.</Text>
     {w.professions.map(p=><View key={p.id} style={{gap:8}}>
      <Text style={s.h3}>{p.label}{p.primary_profession?" · Principal":""}</Text>
-     <Text style={s.muted}>{p.training_status==="in_academy"?"In academy":"Graduado/Recibido"} · {p.verified_at?"Formación confirmada":"Sin confirmar"}{p.school?" · "+p.school:""}</Text>
+     <Text style={s.muted}>{p.training_status==="in_academy"?"In academy":"Graduado/Recibido"} · {p.verified?"Formación confirmada":"Sin confirmar"}{p.school?" · "+p.school:""}</Text>
      <Button secondary title="Editar esta profesión" onPress={()=>choose(p.profession_code)}/>
      <Button secondary title="Quitar profesión sin verificar" onPress={()=>void action.run(()=>professionalMutation("jobin_remove_unverified_profession",{profession:p.profession_code}),"Profesión retirada.")}/>
     </View>)}

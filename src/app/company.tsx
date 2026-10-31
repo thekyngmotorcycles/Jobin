@@ -48,8 +48,8 @@ export default function Company(){
    {owner&&o.kind==="education"&&<View style={s.panel}><Text style={s.h2}>Solicitudes de formación</Text>
     {o.students.length===0&&<Text style={s.muted}>Nadie ha solicitado confirmación a esta institución.</Text>}
     {o.students.map(student=><View key={student.id} style={{gap:8}}>
-     <Text style={s.h3}>{student.name} · {student.label}</Text><Text style={s.muted}>{student.training_status==="in_academy"?"In academy":"Graduado/Recibido"} · {student.verified_at?"Confirmado":"Sin confirmar"}</Text>
-     <Button title={student.verified_at?"Retirar confirmación":"Confirmar formación"} onPress={()=>void action.run(()=>professionalMutation("jobin_verify_training",{person_profession:student.id,approve:!student.verified_at}),"Estado de formación actualizado.")}/>
+     <Text style={s.h3}>{student.name} · {student.label}</Text><Text style={s.muted}>{student.training_status==="in_academy"?"In academy":"Graduado/Recibido"} · {student.verified?"Confirmado":"Sin confirmar"}</Text>
+     {student.training_status==="in_academy"&&<Button title={student.verified?"Retirar confirmación":"Confirmar formación"} onPress={()=>void action.run(()=>professionalMutation("jobin_verify_training",{person_profession:student.id,approve:!student.verified}),"Estado de formación actualizado.")}/> }
     </View>)}
    </View>}
    {!!o.ranks.length&&<View style={s.panel}><Text style={s.h2}>Rangos de la institución</Text>{o.ranks.map(r=><Text key={r.id} style={s.text}>{r.ordinal}. {r.label} ({r.short_label})</Text>)}</View>}

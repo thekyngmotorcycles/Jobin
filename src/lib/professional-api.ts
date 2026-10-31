@@ -29,7 +29,9 @@ export async function loadWorkspace():Promise<ProfessionalWorkspace|null> {
  if(authError)throw new Error(authError.message);
  if(!user)return null;
  const {data,error}=await client.rpc("jobin_professional_workspace");
- return decode<ProfessionalWorkspace>(data,error);
+ const result=decode<ProfessionalWorkspace>(data,error);
+ if(!result.card)throw new Error("El perfil no está disponible.");
+ return result;
 }
 export async function loadPublicCard(id:string):Promise<RealCard> {
  const {data,error}=await requireSupabase().rpc("jobin_jcard_data",{target:id});

@@ -5,7 +5,7 @@ export type OrganizationKind="company"|"education"|"government";
 export interface RealCard extends CardData { id:string; accountType:"personal"|"company" }
 export interface PersonProfession {
  id:string; profession_code:string; label:string; training_status:"in_academy"|"graduado";
- institution_id:string|null; school:string|null; verified_at:string|null; primary_profession:boolean;
+ institution_id:string|null; school:string|null; verified_at:string|null; verified:boolean; primary_profession:boolean;
 }
 export interface CredentialRequest {
  id:string; owner_id:string; owner?:string; profession_code:string; label:string; storage_path:string;
