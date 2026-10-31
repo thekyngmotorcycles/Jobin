@@ -1,10 +1,10 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { Pressable, Text, View } from "react-native";
-import { Avatar } from "../components/social-ui";
-import { Screen, useUi } from "../components/ui";
-import { FEED_POSTS } from "../lib/feed";
-import { professionals } from "../lib/data";
-import { useSocial } from "../state/SocialProvider";
+import { Avatar } from "../../components/social-ui";
+import { Screen, useUi } from "../../components/ui";
+import { FEED_POSTS } from "../../lib/feed";
+import { professionals } from "../../lib/data";
+import { useSocial } from "../../state/SocialProvider";
 
 export default function CreatorProfile(){
  const {id}=useLocalSearchParams<{id:string}>();
