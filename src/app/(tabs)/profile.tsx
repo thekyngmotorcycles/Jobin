@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTabClearance } from "../../theme/navigation";
 import { MediaThumbnail } from "../../components/MediaThumbnail";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
@@ -14,7 +15,7 @@ import { JobinWordmark } from "../../components/JobinWordmark";
 import { JobinCard } from "../../components/JobinCard";
 import { Button, Notice, useUi } from "../../components/ui";
 import { canSendHistory } from "../../lib/rules";
-import { DEMO_HISTORY, DEMO_PROFILE, DEMO_REQUESTING_COMPANIES, DEMO_VIDEOS, type EmploymentEntry } from "../../lib/me";
+import { DEMO_PROFILE, DEMO_REQUESTING_COMPANIES, DEMO_VIDEOS, type EmploymentEntry } from "../../lib/me";
 
 type Mode = "grid" | "cv" | "videos";
 
@@ -22,7 +23,10 @@ export default function Profile() {
   const { s, colors } = useUi();const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
   const [mode, setMode] = useState<Mode>("grid");
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
-  const [history, setHistory] = useState<EmploymentEntry[]>(DEMO_HISTORY);
+  const [history, setHistory] = useState<EmploymentEntry[]>([]);
+  const [historyLoaded,setHistoryLoaded] = useState(false);
+  useEffect(()=>{let active=true;AsyncStorage.getItem("jobin.professional.history.v1").then(raw=>{if(active&&raw){const parsed:unknown=JSON.parse(raw);if(Array.isArray(parsed))setHistory(parsed as EmploymentEntry[]);}}).catch(()=>{}).finally(()=>{if(active)setHistoryLoaded(true);});return()=>{active=false;};},[]);
+  useEffect(()=>{if(historyLoaded)void AsyncStorage.setItem("jobin.professional.history.v1",JSON.stringify(history)).catch(()=>setNotice("No se pudo guardar el historial en este dispositivo."));},[history,historyLoaded]);
   const [sendOpen, setSendOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "" });
@@ -45,7 +49,8 @@ export default function Profile() {
 
   function add() {
     const from = Number(draft.from), to = draft.to ? Number(draft.to) : null;
-    if (!draft.company.trim() || !draft.role.trim() || !Number.isFinite(from) || from < 1950) {
+    const currentYear=new Date().getFullYear();
+    if (!draft.company.trim() || !draft.role.trim() || !draft.from.trim() || !Number.isInteger(from) || from < 1950 || from > currentYear || (to!==null&&(!Number.isInteger(to)||to<from||to>currentYear))) {
       setNotice("Completa empresa, cargo y año de inicio.");
       return;
     }
@@ -80,6 +85,7 @@ export default function Profile() {
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
           <View style={{width:"100%",maxWidth:520,alignSelf:"center",gap:8}}>
             <Button secondary title="Editar JCard y formación" onPress={()=>router.push("/professional")}/>
+            <Button title="Mi historial profesional · Agregar empleo" onPress={()=>{setMode("cv");setAddOpen(true);}}/>
             <Button secondary title="Certificados y sellos" onPress={()=>router.push("/certificates")}/>
             <Button secondary title="Oportunidades por ciudad y profesión" onPress={()=>router.push("/opportunities")}/>
             {!!workspace.data.organization&&<Button secondary title="Mi empresa o institución" onPress={()=>router.push("/company")}/>}
@@ -91,7 +97,8 @@ export default function Profile() {
         {mode === "cv" && (
           <View style={{ gap: 14 }}>
             <Text style={s.h2}>Historial profesional</Text>
-            <Text style={s.muted}>Solo tú puedes ver este historial.</Text>
+            <Text style={s.muted}>Agrega cada empresa, el cargo y los años trabajados. Los datos se guardan en este dispositivo; la verificación por la empresa aún no está conectada.</Text>
+            {history.length===0&&<Text style={s.muted}>Todavía no agregaste empleos. Pulsa Agregar para comenzar.</Text>}
             {history.map(entry => (
               <View key={entry.id} style={[s.panel, { flexDirection: "row", gap: 12, alignItems: "center" }]}>
                 <View style={{ flex: 1, gap: 4 }}>
