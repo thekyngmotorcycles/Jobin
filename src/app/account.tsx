@@ -1,3 +1,4 @@
+import { authSilver } from "../theme/auth-silver";
 import { ProfessionPicker } from "../components/ProfessionPicker";
 import { loadCatalog } from "../lib/professional-api";
 import { useProfessionalData } from "../state/useProfessionalData";
@@ -61,15 +62,15 @@ export default function Account() {
   finally{setBusy(false);}
  }
  return <AuthShell title="Sign up" footer={<AuthAction secondary label="¿Ya tienes cuenta? Log in" onPress={()=>router.replace("/login")}/>}>
-  <Text style={{fontSize:13,color:"#414750",textAlign:"center"}}>Crea tu identidad profesional en Jobin.</Text>
-  <Text style={{fontWeight:"700",color:"#242A32"}}>Tipo de cuenta</Text>
+  <Text style={{fontSize:13,color:authSilver.tone1,textAlign:"center"}}>Crea tu identidad profesional en Jobin.</Text>
+  <Text style={{fontWeight:"700",color:authSilver.tone2}}>Tipo de cuenta</Text>
   <Chips values={["personal","company"] as const} value={kind} onChange={setKind} label="Tipo de cuenta"/>
   {kind==="company"?<View style={{gap:8}}>
-   <Text style={{fontWeight:"700",color:"#242A32"}}>Tipo de organización</Text>
+   <Text style={{fontWeight:"700",color:authSilver.tone2}}>Tipo de organización</Text>
    {(["company","education","government"] as const).map(value=><AuthAction key={value} secondary label={(value===organizationKind?"✓ ":"")+ORGANIZATION_LABELS[value]} onPress={()=>setOrganizationKind(value)}/>)}
   </View>:<View style={{gap:8}}>
-   <Text style={{fontWeight:"700",color:"#242A32"}}>Profesión</Text>
-   {!!catalog.error&&<Text style={{color:"#9B2932"}}>{catalog.error}</Text>}
+   <Text style={{fontWeight:"700",color:authSilver.tone2}}>Profesión</Text>
+   {!!catalog.error&&<Text style={{color:authSilver.tone3}}>{catalog.error}</Text>}
    <ProfessionPicker catalog={catalog.data} value={profession} onChange={setProfession}/>
    <Chips values={["graduado","in_academy"] as const} value={training} onChange={setTraining} label="Formación"/>
   </View>}
@@ -78,7 +79,7 @@ export default function Account() {
   <AuthField label="Email" placeholder="Tu correo" value={email} onChangeText={setEmail} keyboardType="email-address"/>
   <AuthField label="Contraseña" placeholder="Mínimo 8 caracteres" value={password} onChangeText={setPassword} secure/>
   <AuthField label="Confirmar contraseña" placeholder="Repite tu contraseña" value={confirmPassword} onChangeText={setConfirmPassword} secure/>
-  {!!notice&&<Text accessibilityLiveRegion="polite" style={{color:"#9B2932"}}>{notice}</Text>}
+  {!!notice&&<Text accessibilityLiveRegion="polite" style={{color:authSilver.tone3}}>{notice}</Text>}
   <AuthAction label={busy?"CREANDO…":"SIGN UP"} onPress={()=>void submit()} disabled={busy}/>
  </AuthShell>;
 }
