@@ -325,7 +325,7 @@ create function public.jobin_save_jcard(legal_name text,handle text,languages js
  or (x->>'fluency')::numeric<>trunc((x->>'fluency')::numeric)) then raise exception 'Language fluency must be an integer from 0 to 100'; end if;
  if (select count(*)<>count(distinct lower(trim(x->>'name'))) from jsonb_array_elements(languages) x) then raise exception 'Duplicate language'; end if;
  if length(coalesce(city,''))>100 or length(coalesce(region,''))>100 then raise exception 'City or region too long'; end if;
- update public.profiles set display_name=trim(legal_name),city=nullif(trim(city),''),region=nullif(trim(region),'') where id=auth.uid() and deactivated_at is null;
+ update public.profiles set display_name=trim(legal_name),city=nullif(trim(jobin_save_jcard.city),''),region=nullif(trim(jobin_save_jcard.region),'') where id=auth.uid() and deactivated_at is null;
  if not found then raise exception 'Active profile required'; end if;
  update public.jcard_profiles set handle=jobin_save_jcard.handle,languages=jobin_save_jcard.languages,availability=jobin_save_jcard.availability where profile_id=auth.uid();
  end $$;
