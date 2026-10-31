@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState, type ReactNode } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, AppState, View } from "react-native";
 import { router, usePathname } from "expo-router";
 import { supabase } from "../lib/supabase";
 
@@ -40,11 +40,12 @@ export function AuthGate({ children }: { children: ReactNode }) {
    finally { if (active) setReady(true); }
   }
   void check();
+  const appSubscription = AppState.addEventListener("change", state => { if(state==="active") void check(); });
   const subscription = supabase?.auth.onAuthStateChange((event) => {
    if (event === "SIGNED_OUT") { void AsyncStorage.removeItem(KEY); if (active) setSignedIn(false); }
    if (event === "SIGNED_IN") { if (active) setSignedIn(true); }
   });
-  return () => { active = false; subscription?.data.subscription.unsubscribe(); };
+  return () => { active = false; subscription?.data.subscription.unsubscribe(); appSubscription.remove(); };
  }, []);
  useEffect(() => {
   if (!ready) return;
