@@ -412,6 +412,7 @@ create function public.jobin_decide_credential(request uuid,approve boolean,reas
  if r.id is null or r.status<>'pending' then raise exception 'Request is not pending'; end if;
  if r.owner_id=auth.uid() then raise exception 'Reviewers cannot approve or reject their own credentials'; end if;
  if approve and r.request_kind='person' then
+ if exists(select 1 from private.company_seal_exits x where x.worker_id=r.owner_id and x.profession_code=r.profession_code and r.created_at<=x.ended_at) then raise exception 'Submit new personal evidence after leaving the company'; end if;
  perform 1 from public.jcard_profiles where profile_id=r.owner_id for update;
  select id into existing from public.profession_seals where worker_id=r.owner_id and profession_code=r.profession_code and rank_id is null and revoked_at is null;
  if existing is null then
@@ -546,11 +547,13 @@ create function public.jobin_professional_workspace() returns jsonb language plp
  join public.profession_catalog pc on pc.code=c.profession_code where auth.uid() in (c.student_id,c.organization_id)),'[]'));
  end $$;
 
-create function public.jobin_credential_queue() returns jsonb language plpgsql stable security definer set search_path='' as $$
+create function public.jobin_credential_queue(status_filter text default 'pending') returns jsonb language plpgsql stable security definer set search_path='' as $$
  begin
  if not private.is_credential_reviewer() then raise exception 'Credential reviewers only'; end if;
+ if status_filter is null or status_filter not in ('pending','approved','rejected') then raise exception 'Invalid queue status'; end if;
  return coalesce((select jsonb_agg(to_jsonb(r)||jsonb_build_object('owner',p.display_name,'label',pc.label) order by r.created_at)
- from public.credential_requests r join public.profiles p on p.id=r.owner_id join public.profession_catalog pc on pc.code=r.profession_code),'[]');
+ from (select * from public.credential_requests where status=status_filter order by created_at,id limit 200) r
+ join public.profiles p on p.id=r.owner_id join public.profession_catalog pc on pc.code=r.profession_code),'[]');
  end $$;
 
 create function public.jobin_education_options(profession text) returns jsonb language sql stable security definer set search_path='' as $$

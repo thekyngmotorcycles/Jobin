@@ -41,8 +41,8 @@ export async function loadOrganization(id?:string):Promise<OrganizationData> {
  const {data,error}=await requireSupabase().rpc("jobin_organization_data",id?{target:id}:{});
  return decode<OrganizationData>(data,error);
 }
-export async function loadQueue():Promise<CredentialRequest[]> {
- const {data,error}=await requireSupabase().rpc("jobin_credential_queue");
+export async function loadQueue(status:"pending"|"approved"|"rejected"="pending"):Promise<CredentialRequest[]> {
+ const {data,error}=await requireSupabase().rpc("jobin_credential_queue",{status_filter:status});
  return decode<CredentialRequest[]>(data,error);
 }
 export async function loadEducation(profession:string):Promise<EducationOption[]> {

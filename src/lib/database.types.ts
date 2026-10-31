@@ -1806,7 +1806,7 @@ export type Database = {
       jobin_define_rank: { Args: { profession:string; label:string; short_label:string; ordinal:number }; Returns: string }
       jobin_grant_rank: { Args: { worker:string; rank:string }; Returns: undefined }
       jobin_set_representative: { Args: { employment:string; approved:boolean }; Returns: undefined }
-      jobin_credential_queue: { Args: Record<string, never>; Returns: Json }
+      jobin_credential_queue: { Args: { status_filter?:string }; Returns: Json }
       jobin_education_options: { Args: { profession:string }; Returns: Json }
       jobin_organization_data: { Args: { target?:string|null }; Returns: Json }
       jobin_career_search: { Args: { profession:string; city:string; mode:string }; Returns: Json }

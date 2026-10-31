@@ -10,7 +10,7 @@ The profile JCard now reads the authenticated Supabase identity and public ratin
 - `profession_seals`: certificate, company or institution origin; verified/unverified; issuer, evidence and dates. Ranges count toward the same ten verified seals, not an extra quota.
 - Verified school enrollment is distinct from a license to practice: it produces a training check, not an automatic license.
 - Approved personal document seals persist after employment ends.
-- Company-origin seals require an approved, consenting current employment, a selected profession and a matching platform-preapproved organization scope. Derivative triggers never rewrite employment/audit records. On leaving, the company badge is revoked and an immutable exclusion prevents reclaiming the same profession through rehiring; a new personal certificate can restore that seal.
+- Company-origin seals require an approved, consenting current employment, a selected profession and a matching platform-preapproved organization scope. Derivative triggers never rewrite employment/audit records. On leaving, the company badge is revoked and an immutable exclusion prevents reclaiming the same profession through rehiring; a new personal certificate submitted after leaving can restore that seal. An older pending request cannot be reused to restore it.
 - When all ten verified slots are occupied, company automation does not break employment approval. Eligible professions remain unverified/queued by capacity; synchronization re-evaluates them when employment or scope changes or the person edits a profession.
 - All issuers use the same per-person row lock and seal-capacity trigger. Direct client writes are denied, even for credential reviewers.
 
@@ -20,7 +20,7 @@ Current and former approved employees are read from the existing immutable emplo
 
 ## Documents and review
 Documents use the private `professional-certificates` bucket: PDF/JPEG/PNG, maximum 10 MB enforced by Supabase Storage. Clients can upload in their own directory and cannot replace/delete uploaded files. Signed preview links last 120 seconds and require owner or credential reviewer access.
-Request state transitions are pending → approved/rejected; decisions require a reason, cannot be repeated and cannot be made on the reviewer's own request. No OCR or automated authenticity claim is made. The reviewer must actually validate the document, issuing authority and organization type/scope.
+The reviewer queue is filtered on the server and bounded to 200 requests per state, in arrival order. Request state transitions are pending → approved/rejected; decisions require a reason, cannot be repeated and cannot be made on the reviewer's own request. No OCR or automated authenticity claim is made. The reviewer must actually validate the document, issuing authority and organization type/scope.
 
 Provisioning reviewers is intentionally privileged: add the real reviewer's auth UUID to `private.credential_reviewers` using a trusted database administration session. There is no public self-assignment route. This role does not grant moderation or strike powers.
 
