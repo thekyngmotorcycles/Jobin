@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { router } from "expo-router";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,7 +13,7 @@ import { jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
 
 export type { CardData } from "../lib/jcard";
 
-function CardFace({ card, theme, expanded = false }: { card: CardData; theme: ThemeName; expanded?: boolean }) {
+function CardFace({ card, theme, expanded = false, onEdit }: { card: CardData; theme: ThemeName; expanded?: boolean; onEdit?: () => void }) {
   const { s, fs } = useUi();
   const { fontScale } = useWindowDimensions();
   const [contentWidth, setContentWidth] = useState(0);
@@ -42,8 +43,13 @@ function CardFace({ card, theme, expanded = false }: { card: CardData; theme: Th
             </Text>
           </View>
         </View>
-        <View accessible accessibilityRole="image" accessibilityLabel="QR del perfil" style={{ backgroundColor:jcardCommon.qrPaper, padding:jcardLayout.qrQuietZone, borderRadius:6 }}>
-          <QRCode value={card.profileUrl} size={jcardLayout.qr} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
+        <View style={{alignItems:"center",gap:7}}>
+          <View accessible accessibilityRole="image" accessibilityLabel="QR del perfil" style={{ backgroundColor:jcardCommon.qrPaper, padding:jcardLayout.qrQuietZone, borderRadius:6 }}>
+            <QRCode value={card.profileUrl} size={jcardLayout.qr} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
+          </View>
+          {!!onEdit&&<Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={event=>{event.stopPropagation();onEdit();}} style={{width:44,height:34,alignItems:"center",justifyContent:"center",borderRadius:10,backgroundColor:jcardCommon.editBackground}}>
+            <Ionicons name="create-outline" size={21} color={jcardCommon.editInk}/>
+          </Pressable>}
         </View>
       </View>
 
@@ -89,7 +95,7 @@ export function JobinCard({ card, previewTheme }: { card: CardData; previewTheme
     <Pressable accessibilityRole="button" accessibilityLabel={"Ampliar JCard de " + card.name}
       accessibilityHint="Muestra los mismos datos y el código QR en una vista ampliada"
       onPress={() => setOpen(true)} style={({pressed}) => ({ width:"100%", maxWidth:520, alignSelf:"center", opacity:pressed ? 0.9 : 1 })}>
-      <CardFace card={card} theme={cardTheme}/>
+      <CardFace card={card} theme={cardTheme} onEdit={()=>router.push("/professional")}/>
     </Pressable>
     <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
       <SafeAreaView style={{ flex:1, backgroundColor:jcardCommon.scrim }}>
