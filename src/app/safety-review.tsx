@@ -7,7 +7,7 @@ import { loadSafetyQueue,moderationPreview,reportEvidencePreview,safetyMutation,
 import { useProfessionalAction,useProfessionalData } from "../state/useProfessionalData";
 export default function SafetyReview(){
  const {s,colors}=useUi();const resource=useProfessionalData(loadSafetyQueue);const action=useProfessionalAction(resource.reload);
- const [reviewedAll,setReviewedAll]=useState(false);const [reason,setReason]=useState("");const [incidentTime,setIncidentTime]=useState("");const [category,setCategory]=useState("violence");
+ const [reviewedAll,setReviewedAll]=useState<Record<string,boolean>>({});const [reason,setReason]=useState("");const [incidentTime,setIncidentTime]=useState("");const [category,setCategory]=useState("violence");
  return <Screen title="Revisión de seguridad." subtitle="Decisiones independientes, documentadas y verificadas en el servidor.">
  {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
  {!resource.data?<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>:<>
@@ -35,8 +35,8 @@ export default function SafetyReview(){
   {resource.data.held.map(m=><View key={m.id} style={s.panel}><Text style={s.h3}>{m.title}</Text>
    <Button secondary title="Abrir contenido para revisión privada" onPress={()=>void action.run(async()=>{await Linking.openURL(await moderationPreview(m.id));},"Vista privada abierta.")}/>
    {["nudity","sexual_content","minors","blood","violence"].map(c=><Button key={c} secondary title={(category===c?"✓ ":"")+SAFETY_LABELS[c]} onPress={()=>setCategory(c)}/>)}
-   <Pressable accessibilityRole="checkbox" accessibilityState={{checked:reviewedAll}} onPress={()=>setReviewedAll(!reviewedAll)} style={{minHeight:44,justifyContent:"center"}}><Text style={s.text}>{reviewedAll?"☑":"☐"} Revisé el contenido completo y las cinco categorías prohibidas.</Text></Pressable>
-   <Button secondary title="Descartar hallazgo tras revisión humana" onPress={()=>void action.run(()=>safetyMutation("jobin_clear_held_media",{media:m.id,reviewed_all:reviewedAll,reason}),"Revisión humana registrada. Un Live no se reinicia; el video aún requiere confirmación del proveedor.")}/>
+   <Pressable accessibilityRole="checkbox" accessibilityState={{checked:!!reviewedAll[m.id]}} onPress={()=>setReviewedAll(values=>({...values,[m.id]:!values[m.id]}))} style={{minHeight:44,justifyContent:"center"}}><Text style={s.text}>{reviewedAll[m.id]?"☑":"☐"} Revisé el contenido completo y las cinco categorías prohibidas.</Text></Pressable>
+   <Button secondary title="Descartar hallazgo tras revisión humana" onPress={()=>void action.run(()=>safetyMutation("jobin_clear_held_media",{media:m.id,reviewed_all:!!reviewedAll[m.id],reason}),"Revisión humana registrada. Un Live no se reinicia; el video aún requiere confirmación del proveedor.")}/>
    <Button title="Confirmar infracción tras revisar las pruebas" onPress={()=>void action.run(()=>safetyMutation("jobin_confirm_held_media",{media:m.id,category,reason}),"Infracción confirmada.")}/>
   </View>)}
  </>}

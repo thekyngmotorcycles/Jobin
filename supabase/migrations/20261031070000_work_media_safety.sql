@@ -435,6 +435,7 @@ create function public.jobin_review_employer_report(report uuid,uphold boolean,r
  if r.id is null or r.work_media_id is null then raise exception 'A pending report linked to a real media item is required'; end if;
  if auth.uid() in (r.company_id,r.accused_id) then raise exception 'Cannot decide your own case'; end if;
  select * into m from public.work_media where id=r.work_media_id;
+ if uphold and not private.is_verified_company(r.company_id) and not exists(select 1 from public.organization_scopes where organization_id=r.company_id and active) then raise exception 'The reporting organization must be platform-approved before a sanction'; end if;
  evidence_at:=case when m.kind='live' then coalesce((select started_at from public.live_sessions where work_media_id=m.id),m.created_at) else incident_time end;
  if uphold and (evidence_at is null or evidence_at>now()+interval '30 seconds' or (m.kind='video' and evidence_at>m.created_at+interval '5 minutes')) then raise exception 'Verify the recording time from the video evidence before upholding this report'; end if;
  if uphold and exists(select 1 from public.employment_records e where e.company_id=r.company_id and e.worker_id=r.accused_id

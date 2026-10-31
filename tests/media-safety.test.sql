@@ -13,6 +13,7 @@ insert into auth.users(id,email,phone,email_confirmed_at,phone_confirmed_at,raw_
  ('30000000-0000-4000-8000-000000000004','moderator@safety.test',null,now(),null,'{"display_name":"Moderator","account_type":"personal"}'),
  ('30000000-0000-4000-8000-000000000005','stranger@safety.test',null,now(),null,'{"display_name":"Stranger","account_type":"personal"}');
 insert into private.moderators(user_id) values('30000000-0000-4000-8000-000000000004');
+insert into public.organization_scopes(organization_id,profession_code,approved_by) values('30000000-0000-4000-8000-000000000003','electricista','30000000-0000-4000-8000-000000000004');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000001',true);
 select pg_temp.safety_error($q$select public.jobin_request_work_live('Work','electricista','work',null,'public',false)$q$,'accept');
