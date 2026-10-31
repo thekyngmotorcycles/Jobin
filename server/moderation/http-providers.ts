@@ -2,7 +2,8 @@ import { parseCoverage,parseModerationResult,record,requiredText,secureUrl,type 
 type Fetcher=typeof fetch;
 /** Adapter contract only. Configure a real vendor bridge; this class never invents findings. */
 class HttpProvider {
- constructor(readonly base:string,private readonly key:string,private readonly request:Fetcher=fetch){secureUrl(base);}
+ readonly base:string;private readonly key:string;private readonly request:Fetcher;
+ constructor(base:string,key:string,request:Fetcher=fetch){secureUrl(base);this.base=base;this.key=key;this.request=request;}
  async call(path:string,body?:unknown):Promise<unknown>{
   const response=await this.request(this.base.replace(/\/$/,"")+path,{method:body===undefined?"GET":"POST",headers:{"Authorization":"Bearer "+this.key,"Content-Type":"application/json"},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(30000)});
   if(!response.ok)throw new Error("Provider request failed ("+response.status+")");
