@@ -33,7 +33,7 @@ export default function Videos() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
-      {focused && <StatusBar translucent backgroundColor="transparent" style={theme==="dark"?"light":"dark"} />}
+      {focused && <StatusBar translucent backgroundColor={colors.transparent} style={theme==="dark"?"light":"dark"} />}
       <View style={{ position: "absolute", top: inset.top + 4, left: 8, right: 8, zIndex: 20 }}>
         <FeedTopBar overlay videoMode tab={tab} onTab={changeTab} plusLabel="Subir video" onPlus={() => router.navigate("/create")} onSearch={() => router.push("/search")} />
       </View>
