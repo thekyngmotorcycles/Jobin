@@ -1,3 +1,4 @@
+import { authSilver } from "../theme/auth-silver";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Text } from "react-native";
@@ -28,7 +29,7 @@ export default function Login() {
  return <AuthShell title="Log in" footer={<AuthAction secondary label="¿No tienes cuenta? Sign up" onPress={()=>router.replace("/account")}/>}>
   <AuthField label="Email" placeholder="Tu correo electrónico" value={email} onChangeText={setEmail} keyboardType="email-address"/>
   <AuthField label="Password" placeholder="Tu contraseña" value={password} onChangeText={setPassword} secure/>
-  {!!error&&<Text accessibilityLiveRegion="polite" style={{color:"#9B2932"}}>{error}</Text>}
+  {!!error&&<Text accessibilityLiveRegion="polite" style={{color:authSilver.tone3}}>{error}</Text>}
   <AuthAction label={busy?"ENTRANDO…":"LOG IN"} disabled={busy} onPress={()=>void submit()}/>
  </AuthShell>;
 }
