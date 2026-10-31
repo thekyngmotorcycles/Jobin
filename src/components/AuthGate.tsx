@@ -51,7 +51,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   if (!ready) return;
   if (!signedIn && !AUTH_ROUTES.includes(pathname)) router.replace("/login");
   if (signedIn && AUTH_ROUTES.includes(pathname)) router.replace("/videos");
-  if (signedIn && pathname === "/") router.replace("/videos");
+
  }, [ready, signedIn, pathname]);
  if (!ready) return <View style={{ flex: 1, justifyContent: "center" }}><ActivityIndicator /></View>;
  return children;

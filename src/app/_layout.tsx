@@ -1,3 +1,4 @@
+import { NoticeProvider } from "../state/NoticeProvider";
 import { AuthGate } from "../components/AuthGate";
 import { SafetyAccountGate } from "../components/SafetyAccountGate";
 import { JobinWordmark } from "../components/JobinWordmark";
@@ -22,6 +23,8 @@ function Navigation() {
  const {theme,colors}=useTheme();
  return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:colors.paper},headerTintColor:colors.ink,contentStyle:{backgroundColor:colors.paper}}}>
  <Stack.Screen name="(tabs)" options={{headerShown:false}}/>
+ <Stack.Screen name="jshop" options={{title:"JShop"}}/>
+ <Stack.Screen name="notifications" options={{title:"Notificaciones"}}/>
  <Stack.Screen name="search" options={{headerShown:false}}/>
  <Stack.Screen name="stream/[id]" options={{headerShown:false}}/>
  <Stack.Screen name="connect" options={{headerShown:false}}/>
@@ -44,5 +47,5 @@ function Navigation() {
  </Stack></>;
 }
 export default function RootLayout() {
- return <SafeAreaProvider><ThemeProvider><AppProvider><SocialProvider><IconFontGate><AuthGate><SafetyAccountGate><Navigation/></SafetyAccountGate></AuthGate></IconFontGate></SocialProvider></AppProvider></ThemeProvider></SafeAreaProvider>;
+ return <SafeAreaProvider><ThemeProvider><AppProvider><SocialProvider><NoticeProvider><IconFontGate><AuthGate><SafetyAccountGate><Navigation/></SafetyAccountGate></AuthGate></IconFontGate></NoticeProvider></SocialProvider></AppProvider></ThemeProvider></SafeAreaProvider>;
 }
