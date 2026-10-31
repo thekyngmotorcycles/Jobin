@@ -29,6 +29,13 @@ export default function Profile() {
   useEffect(()=>{if(historyLoaded)void AsyncStorage.setItem("jobin.professional.history.v1",JSON.stringify(history)).catch(()=>setNotice("No se pudo guardar el historial en este dispositivo."));},[history,historyLoaded]);
   const [sendOpen, setSendOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [editingId,setEditingId] = useState<string|null>(null);
+  const [formError,setFormError] = useState("");
+  function openEmployment(entry?:EmploymentEntry){
+    setEditingId(entry?.id??null);
+    setDraft(entry?{company:entry.company,role:entry.role,from:String(entry.from),to:entry.to===null?"":String(entry.to)}:{company:"",role:"",from:"",to:""});
+    setFormError("");setAddOpen(true);
+  }
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "" });
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace);
@@ -51,13 +58,14 @@ export default function Profile() {
     const from = Number(draft.from), to = draft.to ? Number(draft.to) : null;
     const currentYear=new Date().getFullYear();
     if (!draft.company.trim() || !draft.role.trim() || !draft.from.trim() || !Number.isInteger(from) || from < 1950 || from > currentYear || (to!==null&&(!Number.isInteger(to)||to<from||to>currentYear))) {
-      setNotice("Completa empresa, cargo y año de inicio.");
+      setFormError("Completa empresa, cargo y años válidos (el final no puede ser anterior al inicio).");
       return;
     }
-    setHistory(items => [...items, { id: Date.now() + "", company: draft.company.trim(), role: draft.role.trim(), from, to, status: "pending", verifiedBy: null }]);
+    const updated:EmploymentEntry={id:editingId??Date.now()+"",company:draft.company.trim(),role:draft.role.trim(),from,to,status:"pending",verifiedBy:null};
+    setHistory(items=>editingId?items.map(entry=>entry.id===editingId?updated:entry):[...items,updated]);
     setDraft({ company: "", role: "", from: "", to: "" });
-    setAddOpen(false);
-    setNotice("Experiencia agregada. Quedará sin verificar hasta que la empresa la confirme.");
+    setAddOpen(false);setEditingId(null);setFormError("");
+    setNotice("Experiencia guardada. Cualquier cambio requiere una nueva verificación de la empresa.");
   }
 
   const tabIcon = (icon: keyof typeof Ionicons.glyphMap, label: string, value: Mode | "live", active: boolean) => (
@@ -84,8 +92,7 @@ export default function Profile() {
           <JobinCard card={workspace.data.card}/>
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
           <View style={{width:"100%",maxWidth:520,alignSelf:"center",gap:8}}>
-            <Button secondary title="Editar JCard y formación" onPress={()=>router.push("/professional")}/>
-            <Button title="Mi historial profesional · Agregar empleo" onPress={()=>{setMode("cv");setAddOpen(true);}}/>
+            <Button title="Mi historial profesional · Agregar empleo" onPress={()=>{setMode("cv");openEmployment();}}/>
             <Button secondary title="Certificados y sellos" onPress={()=>router.push("/certificates")}/>
             <Button secondary title="Oportunidades por ciudad y profesión" onPress={()=>router.push("/opportunities")}/>
             {!!workspace.data.organization&&<Button secondary title="Mi empresa o institución" onPress={()=>router.push("/company")}/>}
@@ -105,6 +112,7 @@ export default function Profile() {
                   <Text style={s.h3}>{entry.company} ({entry.from}–{entry.to ?? "actual"})</Text>
                   <Text style={s.muted}>{entry.role}</Text>
                 </View>
+                <Pressable accessibilityRole="button" accessibilityLabel={"Editar empleo en "+entry.company} onPress={()=>openEmployment(entry)} style={{padding:8}}><Ionicons name="create-outline" size={22} color={colors.ink}/></Pressable>
                 <View accessibilityLabel={entry.verifiedBy ? "Verificado por " + entry.verifiedBy : "No verificada"} style={{ alignItems: "center", gap: 2 }}>
                   <Ionicons name={entry.verifiedBy ? "checkmark-circle" : "ellipse-outline"} size={22} color={colors.ink} />
                   <Text style={[s.muted, { fontSize: 9 }]}>{entry.verifiedBy ? "Verificado" : "No verificada"}</Text>
@@ -113,7 +121,7 @@ export default function Profile() {
             ))}
             <View style={s.row}>
               <Button secondary title="Enviar" onPress={() => setSendOpen(true)} />
-              <Button title="Agregar" onPress={() => setAddOpen(true)} />
+              <Button title="Agregar" onPress={() => openEmployment()} />
             </View>
           </View>
         )}
@@ -154,7 +162,7 @@ export default function Profile() {
         </View>
       </BottomSheet>
 
-      <BottomSheet visible={addOpen} onClose={() => setAddOpen(false)} title="Agregar experiencia">
+      <BottomSheet visible={addOpen} onClose={() => setAddOpen(false)} title={editingId?"Editar experiencia":"Agregar experiencia"}>
         <View style={{ gap: 12, paddingVertical: 16 }}>
           {(["company", "role", "from", "to"] as const).map(key => (
             <TextInput key={key} accessibilityLabel={({ company: "Empresa", role: "Cargo", from: "Año de inicio", to: "Año de término (opcional)" })[key]}
@@ -163,7 +171,8 @@ export default function Profile() {
               keyboardType={key === "from" || key === "to" ? "number-pad" : "default"}
               style={{ color: colors.ink, borderColor: colors.line, borderWidth: 1, padding: 14, borderRadius: 10 }} />
           ))}
-          <Text style={s.muted}>Las entradas nuevas quedan sin verificar hasta que la empresa las confirme.</Text>
+          {!!formError&&<Text accessibilityRole="alert" style={{color:colors.reaction}}>{formError}</Text>}
+          <Text style={s.muted}>Puedes editar estos datos cuando quieras. Al modificarlos se reinicia la verificación de la empresa.</Text>
           <Button title="Guardar" onPress={add} />
         </View>
       </BottomSheet>
