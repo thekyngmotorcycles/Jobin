@@ -3,35 +3,82 @@ import { loadCatalog } from "../lib/professional-api";
 import { useProfessionalData } from "../state/useProfessionalData";
 import { ORGANIZATION_LABELS, type OrganizationKind } from "../lib/professional-types";
 import { useState } from "react";
-import { Text, TextInput, View } from "react-native";
-import { Button, Chips, Notice, Screen, useUi } from "../components/ui";
+import { Text, View } from "react-native";
+import { router } from "expo-router";
+import { AuthAction, AuthField, AuthShell } from "../components/AuthForms";
+import { startJobinSession } from "../components/AuthGate";
+import { Chips, useUi } from "../components/ui";
 import { requireSupabase } from "../lib/supabase";
-export default function Account(){
- const {s,colors}=useUi();const [kind,setKind]=useState<"personal"|"company">("personal");
- const [name,setName]=useState("");const [email,setEmail]=useState("");const [password,setPassword]=useState("");const [confirmPassword,setConfirmPassword]=useState("");
- const catalog=useProfessionalData(loadCatalog);const [profession,setProfession]=useState("");const [training,setTraining]=useState<"graduado"|"in_academy">("graduado");const [organizationKind,setOrganizationKind]=useState<OrganizationKind>("company");
- const [notice,setNotice]=useState("");const [busy,setBusy]=useState(false);
- async function submit(login:boolean){if(busy)return;setBusy(true);try{
-  const client=requireSupabase();
-  if(!email.trim()||password.length<8||(!login&&!name.trim()))throw new Error("Completa el nombre, email y una contraseña de al menos 8 caracteres.");
-  if(!login && password!==confirmPassword)throw new Error("Las contraseñas no coinciden. Vuelve a escribirlas.");
-  if(!login && kind==="personal"&&!profession)throw new Error("Selecciona tu profesión en el catálogo.");
-  const result=login?await client.auth.signInWithPassword({email:email.trim(),password}):await client.auth.signUp({email:email.trim(),password,options:{data:{display_name:name.trim(),account_type:kind,profession_code:kind==="personal"?profession:null,training_status:training,organization_kind:kind==="company"?organizationKind:null}}});
-  if(result.error)throw result.error;
-  setPassword("");setConfirmPassword("");setNotice(login?"Sesión iniciada.":result.data.session?"Cuenta creada correctamente. Ya puedes usar Jobin.":"Cuenta creada, pero todavía no hay una sesión activa. Revisa la configuración de autenticación de Supabase.");
- }catch(error){setNotice(error instanceof Error?error.message:"No se pudo completar la operación.");}finally{setBusy(false);}}
- const input={borderWidth:1,borderColor:colors.line,color:colors.ink,padding:14,borderRadius:10,minHeight:48};
- return <Screen title="Empieza con tu historia." subtitle="Elige cómo participarás en Jobin.">
- {!!notice&&<Notice text={notice} onClose={()=>setNotice("")}/>}
- <View style={s.panel}><Text style={s.h2}>Tipo de cuenta</Text><Chips values={["personal","company"] as const} value={kind} onChange={setKind} label="Tipo de cuenta"/>
- <Text style={s.muted}>{kind==="personal"?"Personal: muestra tus habilidades, experiencia y servicios.":"Compañía: publica tu trabajo, acredita empleados y solicita verificación con tus licencias."}</Text>
- {kind==="company"?<View style={{gap:10}}><Text style={s.h3}>Tipo de organización</Text>{(["company","education","government"] as const).map(value=><Button key={value} secondary title={(value===organizationKind?"✓ ":"")+ORGANIZATION_LABELS[value]} onPress={()=>setOrganizationKind(value)}/>)}</View>:<View style={{gap:10}}><Text style={s.h3}>Profesión</Text>{!!catalog.error&&<Text style={s.muted}>{catalog.error}</Text>}<ProfessionPicker catalog={catalog.data} value={profession} onChange={setProfession}/><Chips values={["graduado","in_academy"] as const} value={training} onChange={setTraining} label="Formación: Graduado/Recibido o In academy"/></View>}
- <TextInput style={input} accessibilityLabel="Nombre personal o compañía" value={name} onChangeText={setName} placeholder="Nombre o razón social" placeholderTextColor={colors.muted} autoComplete="name"/>
- <TextInput style={input} accessibilityLabel="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" placeholder="Email" placeholderTextColor={colors.muted}/>
- <TextInput style={input} accessibilityLabel="Contraseña" value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" placeholder="Contraseña" placeholderTextColor={colors.muted}/>
- <TextInput style={input} accessibilityLabel="Confirmar contraseña" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry autoComplete="new-password" placeholder="Confirmar contraseña" placeholderTextColor={colors.muted}/>
- <Button title={busy?"Procesando…":"Crear cuenta"} onPress={()=>void submit(false)}/>
- <Button secondary title="Ya tengo cuenta · Entrar" onPress={()=>void submit(true)}/>
- <Button secondary title="Cerrar sesión" onPress={()=>{void (async()=>{try{const {error}=await requireSupabase().auth.signOut();setNotice(error?error.message:"Sesión cerrada.");}catch(error){setNotice(String(error));}})();}}/>
- </View></Screen>;
+
+const VALID_USERNAME = /^[a-z][a-z0-9_]{2,29}$/;
+export default function Account() {
+ const {colors,s}=useUi();
+ const [kind,setKind]=useState<"personal"|"company">("personal");
+ const [name,setName]=useState("");
+ const [username,setUsername]=useState("");
+ const [email,setEmail]=useState("");
+ const [password,setPassword]=useState("");
+ const [confirmPassword,setConfirmPassword]=useState("");
+ const [profession,setProfession]=useState("");
+ const [training,setTraining]=useState<"graduado"|"in_academy">("graduado");
+ const [organizationKind,setOrganizationKind]=useState<OrganizationKind>("company");
+ const catalog=useProfessionalData(loadCatalog);
+ const [notice,setNotice]=useState("");
+ const [busy,setBusy]=useState(false);
+ async function submit(){
+  if(busy)return;
+  setNotice("");
+  const handle=username.trim().replace(/^@/,"").toLowerCase();
+  if(!name.trim()||!email.trim()||password.length<8){setNotice("Completa nombre, email y contraseña de al menos 8 caracteres.");return;}
+  if(!VALID_USERNAME.test(handle)){setNotice("El usuario debe tener 3 a 30 caracteres: letras minúsculas, números o guiones bajos; comienza con una letra.");return;}
+  if(password!==confirmPassword){setNotice("Las contraseñas no coinciden.");return;}
+  if(kind==="personal"&&!profession){setNotice("Selecciona tu profesión en el catálogo.");return;}
+  setBusy(true);
+  try{
+   const client=requireSupabase();
+   const {data:existing,error:lookupError}=await client.from("usernames").select("username").eq("username",handle).maybeSingle();
+   if(lookupError)throw lookupError;
+   if(existing){setNotice("Ese nombre de usuario ya está en uso. Elige otro.");return;}
+   const {data,error}=await client.auth.signUp({email:email.trim().toLowerCase(),password,options:{data:{display_name:name.trim(),username:handle,account_type:kind,profession_code:kind==="personal"?profession:null,training_status:training,organization_kind:kind==="company"?organizationKind:null}}});
+   if(error)throw error;
+   if(!data.user)throw new Error("No se pudo crear la cuenta.");
+   let session=data.session;
+   if(!session){
+    const signed=await client.auth.signInWithPassword({email:email.trim().toLowerCase(),password});
+    if(signed.error||!signed.data.session)throw new Error("La cuenta fue registrada, pero no se pudo iniciar sesión. Intenta entrar desde Log in.");
+    session=signed.data.session;
+   }
+   const {error:claimError}=await client.from("usernames").insert({user_id:session.user.id,username:handle});
+   if(claimError && claimError.code!=="23505")throw claimError;
+   if(claimError) {
+    const {data:owned}=await client.from("usernames").select("username").eq("user_id",session.user.id).maybeSingle();
+    if(owned?.username!==handle)throw new Error("El nombre de usuario ya está ocupado. Cambia tu usuario desde el perfil.");
+   }
+   await startJobinSession();
+   setPassword("");setConfirmPassword("");
+   router.replace("/videos");
+  }catch(error){setNotice(error instanceof Error?error.message:"No se pudo completar el registro.");}
+  finally{setBusy(false);}
+ }
+ return <AuthShell title="Sign up" footer={<AuthAction secondary label="¿Ya tienes cuenta? Log in" onPress={()=>router.replace("/login")}/>}>
+  <Text style={{fontSize:13,color:"#414750",textAlign:"center"}}>Crea tu identidad profesional en Jobin.</Text>
+  <Text style={{fontWeight:"700",color:"#242A32"}}>Tipo de cuenta</Text>
+  <Chips values={["personal","company"] as const} value={kind} onChange={setKind} label="Tipo de cuenta"/>
+  {kind==="company"?<View style={{gap:8}}>
+   <Text style={{fontWeight:"700",color:"#242A32"}}>Tipo de organización</Text>
+   {(["company","education","government"] as const).map(value=><AuthAction key={value} secondary label={(value===organizationKind?"✓ ":"")+ORGANIZATION_LABELS[value]} onPress={()=>setOrganizationKind(value)}/>)}
+  </View>:<View style={{gap:8}}>
+   <Text style={{fontWeight:"700",color:"#242A32"}}>Profesión</Text>
+   {!!catalog.error&&<Text style={{color:"#9B2932"}}>{catalog.error}</Text>}
+   <ProfessionPicker catalog={catalog.data} value={profession} onChange={setProfession}/>
+   <Chips values={["graduado","in_academy"] as const} value={training} onChange={setTraining} label="Formación"/>
+  </View>}
+  <AuthField label="Nombre completo / empresa" placeholder="Tu nombre" value={name} onChangeText={setName} autoCapitalize="words"/>
+  <AuthField label="Nombre de usuario" placeholder="@usuario_en_minusculas" value={username} onChangeText={value=>setUsername(value.toLowerCase().replace(/[^a-z0-9_@]/g,""))}/>
+  <AuthField label="Email" placeholder="Tu correo" value={email} onChangeText={setEmail} keyboardType="email-address"/>
+  <AuthField label="Contraseña" placeholder="Mínimo 8 caracteres" value={password} onChangeText={setPassword} secure/>
+  <AuthField label="Confirmar contraseña" placeholder="Repite tu contraseña" value={confirmPassword} onChangeText={setConfirmPassword} secure/>
+  {!!notice&&<Text accessibilityLiveRegion="polite" style={{color:"#9B2932"}}>{notice}</Text>}
+  <AuthAction label={busy?"CREANDO…":"SIGN UP"} onPress={()=>void submit()} disabled={busy}/>
+ </AuthShell>;
 }
