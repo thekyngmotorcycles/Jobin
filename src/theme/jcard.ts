@@ -1,3 +1,5 @@
+import { themeTokens } from "./palettes";
+import { composite,opacity,contrastRatio,readableInk,secondaryText } from "./color";
 import type { ThemeName } from "../state/ThemeProvider";
 import type { JCardTier } from "../lib/jcard";
 
@@ -6,11 +8,6 @@ const darkBase = {
   start: "#161616", end: "#161616", text: "#ffffff", secondary: "#d5d5d5",
   line: "#656565", sealFill: "#343434", sealText: "#ffffff",
   pendingText: "#bcbcbc", pendingLine: "#858585", pendingFill: "#161616",
-};
-const lightBase = {
-  start: "#fafafa", end: "#fafafa", text: "#111111", secondary: "#494949",
-  line: "#999999", sealFill: "#dedede", sealText: "#111111",
-  pendingText: "#606060", pendingLine: "#777777", pendingFill: "#fafafa",
 };
 const silver = {
   start: "#454950", end: "#555a62", text: "#ffffff", secondary: "#eeeeee",
@@ -22,10 +19,20 @@ const gold = {
   line: "#644718", sealFill: "#302519", sealText: "#ffffff",
   pendingText: "#24201a", pendingLine: "#49371f", pendingFill: "#ac833e",
 };
+function inverted(theme:ThemeName){
+ const p=themeTokens(theme);const fill=composite(opacity(p.paper,.12),p.ink);
+ return {start:p.ink,end:p.ink,text:p.paper,secondary:secondaryText(p.paper,[p.ink]),line:opacity(p.paper,.3),sealFill:fill,sealText:p.paper,pendingText:secondaryText(p.paper,[p.ink]),pendingLine:opacity(p.paper,.5),pendingFill:p.ink};
+}
+function finish(theme:ThemeName,metal:typeof silver){
+ const p=themeTokens(theme);const backgrounds=[metal.start,metal.end];
+ const text=backgrounds.every(bg=>contrastRatio(p.ink,bg)>=4.5)?p.ink:backgrounds.every(bg=>contrastRatio(p.paper,bg)>=4.5)?p.paper:readableInk(p.ink,backgrounds);
+ return {...metal,text,secondary:secondaryText(text,backgrounds)};
+}
 const finishes = {
-  light: { base: darkBase, silver, gold },
-  dark: { base: lightBase, silver, gold },
-  pink: { base: darkBase, silver, gold },
+ light:{base:inverted("light"),silver,gold},dark:{base:inverted("dark"),silver,gold},
+ pink:{base:darkBase,silver,gold},
+ "navy-green":{base:inverted("navy-green"),silver:finish("navy-green",silver),gold:finish("navy-green",gold)},
+ camel:{base:inverted("camel"),silver:finish("camel",silver),gold:finish("camel",gold)},
 };
 export const jcardLayout = {
   avatar: 64, qr: 72, qrQuietZone: 4, radius: 18, padding: 14,

@@ -1,11 +1,13 @@
+import { useTabClearance } from "../../theme/navigation";
+import { MediaThumbnail } from "../../components/MediaThumbnail";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import { ProfessionalStatus } from "../../components/ProfessionalStatus";
 import { loadWorkspace } from "../../lib/professional-api";
 import { useProfessionalData } from "../../state/useProfessionalData";
-import { useState } from "react";
+import { useEffect,useState } from "react";
 import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router,useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheet } from "../../components/social-ui";
 import { JobinWordmark } from "../../components/JobinWordmark";
@@ -17,8 +19,9 @@ import { DEMO_HISTORY, DEMO_PROFILE, DEMO_REQUESTING_COMPANIES, DEMO_VIDEOS, typ
 type Mode = "grid" | "cv" | "videos";
 
 export default function Profile() {
-  const { s, colors } = useUi();
+  const { s, colors } = useUi();const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
   const [mode, setMode] = useState<Mode>("grid");
+  useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
   const [history, setHistory] = useState<EmploymentEntry[]>(DEMO_HISTORY);
   const [sendOpen, setSendOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -55,22 +58,22 @@ export default function Profile() {
   const tabIcon = (icon: keyof typeof Ionicons.glyphMap, label: string, value: Mode | "live", active: boolean) => (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected: active }}
       onPress={() => (value === "live" ? openLive() : setMode(value))}
-      style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: active ? colors.ink : "transparent" }}>
-      <Ionicons name={icon} size={22} color={value === "live" ? (p.streamingNow ? "#22c55e" : "#555") : active ? colors.inverse : colors.ink} />
+      style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: active ? colors.ink : colors.transparent }}>
+      <Ionicons name={icon} size={22} color={value === "live" ? (p.streamingNow ? colors.statusLive : colors.statusInactive) : active ? colors.inverse : colors.ink} />
     </Pressable>
   );
 
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8 }}>
-        <JobinWordmark variant="ink" width={92} style={{ alignSelf: "flex-start" }} />
+        <JobinWordmark width={92} style={{ alignSelf: "flex-start" }} />
         <View style={{ flexDirection: "row", gap: 4 }}>
           {tabIcon("school-outline", "Historial profesional", "cv", mode === "cv")}
           {tabIcon("play-outline", "Videos", "videos", mode === "videos")}
           {tabIcon("radio-outline", p.streamingNow ? "Live now" : "Not live", "live", false)}
         </View>
       </View>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
           <JobinCard card={workspace.data.card}/>
@@ -127,14 +130,11 @@ export default function Profile() {
             <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
               {DEMO_VIDEOS.map(video => (
                 <View key={video.id} style={{ width: "33.33%", aspectRatio: 3 / 4, padding: 1 }}>
-                  <Image source={{ uri: video.thumbnail }} accessibilityLabel={video.title} style={{ flex: 1, backgroundColor: colors.accent }} />
+                  <MediaThumbnail uri={video.thumbnail} label={video.title}/>
                 </View>
               ))}
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Asistente de IA (próximamente)"
-              style={{ position: "absolute", right: 8, bottom: 8, width: 44, height: 44, borderRadius: 22, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center" }}>
-              <Ionicons name="sparkles-outline" size={20} color={colors.inverse} />
-            </Pressable>
+
           </View>
         )}
       </ScrollView>

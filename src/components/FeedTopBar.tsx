@@ -1,3 +1,4 @@
+import { JobinWordmark } from "./JobinWordmark";
 import { Pressable, Text, View } from "react-native";
 import { IconButton } from "./social-ui";
 import { FEED_TABS, type FeedTab } from "../lib/feed";
@@ -7,15 +8,16 @@ export function FeedTopBar({ tab, onTab, onPlus, plusLabel, onSearch, overlay = 
   tab: FeedTab; onTab: (tab: FeedTab) => void; onPlus: () => void; plusLabel: string; onSearch: () => void; overlay?: boolean;
 }) {
   const { colors } = useUi();
-  const ink = overlay ? "#fff" : colors.ink;
+  const ink = colors.icon;
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 8, gap: 2, backgroundColor: overlay ? "transparent" : colors.paper }}>
+    <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 8, gap: 2, backgroundColor: overlay ? colors.mediaControl : colors.paper }}>
       <IconButton icon="add" label={plusLabel} color={ink} onPress={onPlus} size={30} />
+      <JobinWordmark width={62}/>
       <View style={{ flex: 1, flexDirection: "row", justifyContent: "center", gap: 18 }}>
         {FEED_TABS.map(item => (
           <Pressable key={item} accessibilityRole="tab" accessibilityState={{ selected: tab === item }} onPress={() => onTab(item)}
             style={{ minHeight: 44, justifyContent: "center", borderBottomWidth: tab === item ? 2 : 0, borderBottomColor: ink }}>
-            <Text style={{ color: tab === item ? ink : overlay ? "#ffffffb3" : colors.muted, fontSize: 15, fontWeight: tab === item ? "800" : "500" }}>{item}</Text>
+            <Text style={{ color: tab === item ? ink : colors.muted, fontSize: 15, fontWeight: tab === item ? "800" : "500" }}>{item}</Text>
           </Pressable>
         ))}
       </View>

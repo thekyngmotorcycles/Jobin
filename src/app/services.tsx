@@ -7,7 +7,7 @@ import { filterByCity } from "../lib/domain";
 import { useApp } from "../state/AppProvider";
 
 export default function Services() {
-  const {s} = useUi();
+  const {s,colors} = useUi();
   const { city } = useApp();
   const { professional } = useLocalSearchParams<{ professional?: string }>();
   const [notice, setNotice] = useState("");
@@ -17,7 +17,7 @@ export default function Services() {
     {professional && !visible.some(p => p.id === professional) &&
       <Text style={s.muted}>El servicio seleccionado está en otra ciudad. Selecciona Todas para verlo.</Text>}
     <Grid>{visible.map(person => <GridItem key={person.id}>
-      <View style={[s.panel, professional === person.id && { borderColor: "#173a32", borderWidth: 2 }]}>
+      <View style={[s.panel, professional === person.id && { borderColor: colors.ink, borderWidth: 2 }]}>
         <Text style={s.tag}>{person.tags[0]}{professional === person.id ? " · Seleccionado" : ""}</Text>
         <Text style={s.h2}>{person.service}</Text>
         <Text style={s.muted}>{person.name} · {person.city}</Text>

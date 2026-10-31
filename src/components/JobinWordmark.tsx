@@ -1,15 +1,10 @@
-import { Image, View, type StyleProp, type ViewStyle } from "react-native";
-
-type Props = { width?: number; variant?: "plaque" | "white" | "ink"; style?: StyleProp<ViewStyle> };
-const sources = {
- plaque: require("../../assets/images/jobin-wordmark-black.png"),
- white: require("../../assets/images/jobin-wordmark-white.png"),
- ink: require("../../assets/images/jobin-wordmark-ink.png"),
-};
-/** Outlined artwork; no device font substitution or runtime font download. */
-export function JobinWordmark({ width = 112, variant = "plaque", style }: Props) {
- return <View style={[{ width, maxWidth: "100%", aspectRatio: 2.14, alignSelf: "center" }, style]}>
-  <Image source={sources[variant]} accessibilityLabel="Jobin" accessibilityRole="image"
-   resizeMode="contain" style={{ width: "100%", height: "100%" }} />
+import { View,type StyleProp,type ViewStyle } from "react-native";
+import { SvgXml } from "react-native-svg";
+import { useTheme } from "../state/ThemeProvider";
+import { WORDMARK_ASPECT,WORDMARK_XML } from "../theme/wordmark";
+export function JobinWordmark({width=112,style}:{width?:number;style?:StyleProp<ViewStyle>}){
+ const {colors}=useTheme();
+ return <View testID="jobin-wordmark" accessible accessibilityLabel="Jobin" accessibilityRole="image" style={[{width,maxWidth:"100%",aspectRatio:WORDMARK_ASPECT,alignSelf:"center",backgroundColor:colors.transparent},style]}>
+  <SvgXml xml={WORDMARK_XML} width="100%" height="100%" color={colors.wordmark} accessible={false}/>
  </View>;
 }

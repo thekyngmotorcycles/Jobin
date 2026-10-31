@@ -35,7 +35,7 @@ export function VideoCard({ id, poster, author, handle, avatar, caption, likes, 
     <View style={{ gap: 10 }}>
       <Pressable accessibilityRole="button" accessibilityLabel={"Abrir video de " + author} onPress={onOpen} style={{ alignItems: "center", justifyContent: "center" }}>
         <Image source={{ uri: poster }} style={{ width: "100%", aspectRatio: 9 / 12, backgroundColor: colors.accent }} />
-        <Ionicons name="play-circle" size={56} color="#ffffffd9" style={{ position: "absolute" }} />
+        <Ionicons name="play-circle" size={56} color={colors.mediaPosterPlay} style={{ position: "absolute",backgroundColor:colors.mediaControl,borderRadius:28 }} />
       </Pressable>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16 }}>
         <Avatar uri={avatar} name={author} size={34} />

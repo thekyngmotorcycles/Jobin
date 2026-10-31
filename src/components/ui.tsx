@@ -50,24 +50,24 @@ export function Button({ title, onPress, secondary = false, selected, label }: {
     <Text style={[s.buttonText, secondary && s.secondaryText]}>{title}</Text>
   </Pressable>;
 }
-export function Chips<T extends string>({ values, value, onChange, label }: {
-  values: readonly T[]; value: T; onChange: (value: T) => void; label: string;
+export function Chips<T extends string>({ values, value, onChange, label, getLabel = (item:T) => String(item) }: {
+  values: readonly T[]; value: T; onChange: (value: T) => void; label: string; getLabel?: (item:T) => string;
 }) {
   const {s,colors} = useUi();
   return <View style={s.row} accessibilityLabel={label}>{values.map(item =>
-    <Pressable key={item} accessibilityRole="button" accessibilityLabel={item}
+    <Pressable key={item} accessibilityRole="button" accessibilityLabel={getLabel(item)}
       accessibilityState={{ selected: value === item }} onPress={() => onChange(item)}
       style={({ pressed }) => [s.chip, value === item && s.chipSelected, pressed && s.pressed]}>
-      <Text style={[s.chipText, value === item && { color: colors.inverse }]}>{item}</Text>
+      <Text style={[s.chipText, value === item && { color: colors.inverse }]}>{getLabel(item)}</Text>
     </Pressable>)}</View>;
 }
-export function Header({ title, subtitle, showCity = false, demo = true }: { title: string; subtitle: string; showCity?: boolean; demo?: boolean }) {
-  const {s} = useUi();
+export function Header({ title, subtitle, showCity = false, demo = true, plainHeading = false, showBadge = true }: { title: string; subtitle: string; showCity?: boolean; demo?: boolean; plainHeading?:boolean; showBadge?:boolean }) {
+  const {s,fs} = useUi();
   const { city, setCity } = useApp();
   return <View style={s.header}>
-    <View style={s.top}><JobinWordmark width={120}/><Text style={s.tag}>{demo ? "DEMO" : "JOBIN"}</Text></View>
+    <View style={s.top}><JobinWordmark width={120}/>{showBadge&&<Text style={s.tag}>{demo ? "DEMO" : "JOBIN"}</Text>}</View>
     <Text style={s.eyebrow}>PERSONAS REALES. TRABAJO REAL.</Text>
-    <Text accessibilityRole="header" style={s.h1}>{title}</Text>
+    <Text accessibilityRole="header" style={plainHeading?[s.h3,{fontSize:fs(34),letterSpacing:-1}]:s.h1}>{title}</Text>
     <Text style={s.muted}>{subtitle}</Text>
     {showCity && <Chips values={["Todas", "Miami", "Orlando"]} value={city} onChange={setCity} label="Filtrar por ciudad" />}
   </View>;
@@ -78,11 +78,11 @@ export function Footer({ demo = true }: { demo?: boolean } = {}) {
     <Text style={s.muted}>Haz lo que amas. Conecta con quienes lo valoran.</Text>
     {demo && <Text style={s.muted}>Datos de ejemplo. Los cambios se reinician al cerrar o recargar la app.</Text>}</View>;
 }
-export function Screen({ children, title, subtitle, showCity = false, demo = true }: { children: ReactNode; title: string; subtitle: string; showCity?: boolean; demo?: boolean }) {
+export function Screen({ children, title, subtitle, showCity = false, demo = true, plainHeading = false, showBadge = true, bottomPadding }: { children: ReactNode; title: string; subtitle: string; showCity?: boolean; demo?: boolean; plainHeading?:boolean; showBadge?:boolean; bottomPadding?:number }) {
   const {s} = useUi();
   return <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>
-      <Header title={title} subtitle={subtitle} showCity={showCity} demo={demo} />{children}<Footer demo={demo} />
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[s.content,bottomPadding!==undefined&&{paddingBottom:bottomPadding}]}>
+      <Header title={title} subtitle={subtitle} showCity={showCity} demo={demo} plainHeading={plainHeading} showBadge={showBadge} />{children}<Footer demo={demo} />
     </ScrollView>
   </SafeAreaView>;
 }

@@ -1,3 +1,4 @@
+import { useTheme } from "../../state/ThemeProvider";
 import { useMemo, useRef, useState } from "react";
 import { FlatList, View, type ViewToken } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
@@ -12,6 +13,7 @@ import { useSocial } from "../../state/SocialProvider";
 const PAGE = 6;
 
 export default function Videos() {
+  const {theme,colors}=useTheme();
   const { following } = useSocial();
   const focused = useIsFocused();
   const inset = useSafeAreaInsets();
@@ -30,8 +32,8 @@ export default function Videos() {
   function changeTab(next: FeedTab) { setTab(next); setActive(0); setCount(PAGE); }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#080808" }}>
-      {focused && <StatusBar style="light" />}
+    <View style={{ flex: 1, backgroundColor: colors.paper }}>
+      {focused && <StatusBar style={theme==="dark"?"light":"dark"} />}
       <View style={{ position: "absolute", top: inset.top + 4, left: 8, right: 8, zIndex: 20 }}>
         <FeedTopBar overlay tab={tab} onTab={changeTab} plusLabel="Subir video" onPlus={() => router.navigate("/create")} onSearch={() => router.push("/search")} />
       </View>

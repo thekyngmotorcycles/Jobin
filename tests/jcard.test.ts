@@ -1,23 +1,12 @@
+import { contrastRatio,composite,opacity } from "../src/theme/color.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { displayedRating, jcardTier, sealRows } from "../src/lib/jcard.ts";
 import { jcardTokens } from "../src/theme/jcard.ts";
 import { JCARD_RATING_EXAMPLES, mockJCard } from "../src/mocks/jcard.ts";
 
-function luminance(hex: string) {
-  const channels = hex.slice(1).match(/../g)!.map(value => {
-    const c = parseInt(value, 16) / 255;
-    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  });
-  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
-}
-function contrast(a: string, b: string) {
-  const x = luminance(a), y = luminance(b);
-  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
-}
-function mix(a: string, b: string, fraction: number) {
-  return "#" + [1,3,5].map(i => Math.round(parseInt(a.slice(i,i+2),16) * (1-fraction) + parseInt(b.slice(i,i+2),16) * fraction).toString(16).padStart(2,"0")).join("");
-}
+function contrast(a:string,b:string){return contrastRatio(a,b);}
+function mix(a:string,b:string,fraction:number){return composite(opacity(b,fraction),a);}
 
 test("JCard selects its finish from the displayed one-decimal rating", () => {
   for (const [rating, expected] of [[1,"base"],[3.5,"base"],[3.549,"base"],[3.55,"silver"],[3.6,"silver"],[4.5,"silver"],[4.549,"silver"],[4.55,"gold"],[4.6,"gold"],[5,"gold"]] as const) {
@@ -30,7 +19,7 @@ test("JCard selects its finish from the displayed one-decimal rating", () => {
 });
 
 test("JCard small text meets WCAG AA across every gradient and seal surface", () => {
-  for (const theme of ["light","dark","pink"] as const) {
+  for (const theme of ["light","dark","pink","navy-green","camel"] as const) {
     for (const tier of ["base","silver","gold"] as const) {
       const t = jcardTokens(theme, tier);
       for (let step=0; step<=20; step++) {

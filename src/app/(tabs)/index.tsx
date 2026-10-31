@@ -1,3 +1,8 @@
+import { useState } from "react";
+import { useIsFocused } from "@react-navigation/native";
+import { useWindowDimensions } from "react-native";
+import { DraggableAssistant } from "../../components/DraggableAssistant";
+import { useTabClearance } from "../../theme/navigation";
 import { PublishedWorkMedia } from "../../components/PublishedWorkMedia";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,15 +14,15 @@ import { router } from "expo-router";
 import { useUi } from "../../components/ui";
 
 export default function Home() {
-  const { s } = useUi();
+  const { s } = useUi();const focused=useIsFocused();const window=useWindowDimensions();const [viewport,setViewport]=useState({width:window.width,height:window.height});const {contentBottom}=useTabClearance();
   const cards = [
     ...FEED_POSTS.slice(0, 2).map(p => ({ kind: "video" as const, key: p.postId, post: p })),
     ...PHOTO_POSTS.map(p => ({ kind: "photo" as const, key: p.id, post: p })),
     ...FEED_POSTS.slice(2).map(p => ({ kind: "video" as const, key: p.postId, post: p })),
   ];
   return (
-    <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 24, gap: 24 }} showsVerticalScrollIndicator={false}>
+    <SafeAreaView edges={["top", "left", "right"]} style={s.screen} onLayout={event=>setViewport(event.nativeEvent.layout)}>
+      <ScrollView contentContainerStyle={{ paddingBottom: contentBottom, gap: 24 }} showsVerticalScrollIndicator={false}>
         <SocialHeader />
         <PublishedWorkMedia kind="video"/>
         {cards.map(card => (
@@ -32,6 +37,7 @@ export default function Home() {
           </View>
         ))}
       </ScrollView>
+      {focused&&<DraggableAssistant width={viewport.width} height={viewport.height}/>}
     </SafeAreaView>
   );
 }

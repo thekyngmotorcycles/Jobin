@@ -1,3 +1,4 @@
+import { useTabClearance } from "../../theme/navigation";
 import { WorkRulesFields,useWorkDraft } from "../../components/WorkRulesFields";
 import { MyWorkMedia } from "../../components/MyWorkMedia";
 import { uploadWorkVideo } from "../../lib/safety-api";
@@ -34,6 +35,7 @@ function Editor({asset}:{asset:ImagePicker.ImagePickerAsset}){
  </View>;
 }
 export default function Create(){
+ const {contentBottom}=useTabClearance();
  const {s,colors}=useUi();const [clips,setClips]=useState<SlotClips>(emptyClips());const [asset,setAsset]=useState<ImagePicker.ImagePickerAsset|null>(null);const [notice,setNotice]=useState("");
  const chapter=chapterAt(new Date());const open=nextOpenSlot(clips[chapter.id]);const slot=open>=0?chapter.slots[open]:null;
  async function record(camera:boolean){try{
@@ -44,7 +46,7 @@ export default function Create(){
   if(!result.canceled){const a=result.assets[0];setAsset(a);setClips(c=>({...c,[chapter.id]:c[chapter.id].map((x,i)=>i===open?a.uri:x)}));setNotice("");}
  }catch(error){setNotice(error instanceof Error?error.message:"Could not open the video.");}}
  function remove(id:ChapterId,index:number){setClips(c=>({...c,[id]:c[id].map((x,i)=>i===index?null:x)}));}
- return <Screen demo={false} title="A day in the life, POV." subtitle={"Film "+CLIP_SECONDS+"-second POV moments through your day. They are stitched into My Day, My Evening and My Night."}>
+ return <Screen bottomPadding={contentBottom} demo={false} title="A day in the life, POV." subtitle={"Film "+CLIP_SECONDS+"-second POV moments through your day. They are stitched into My Day, My Evening and My Night."}>
  {!!notice&&<Notice text={notice} onClose={()=>setNotice("")}/>}
  <View style={s.panel}>
  <Text style={s.eyebrow}>{chapter.title.toUpperCase()} · HORARIO SUGERIDO {chapter.publishLabel}</Text>
