@@ -39,7 +39,7 @@ export const jcardLayout = {
   gap: 5, minimumSealWidth: 38,
 };
 export const jcardCommon = {
-  scrim: "#000000aa", qrPaper: "#ffffff", qrInk: "#111111",
+  scrim: "#000000aa", qrPaper: "#ffffff", qrInk: "#111111", editBackground: "#e5e5e5", editInk: "#555555",
 };
 export function jcardTokens(theme: ThemeName, tier: JCardTier) {
   // Rating-based silver and gold finishes remain unchanged in every appearance.
