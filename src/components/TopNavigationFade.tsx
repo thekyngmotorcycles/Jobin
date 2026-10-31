@@ -10,7 +10,7 @@ export function TopNavigationFade() {
  return <View pointerEvents="none" testID="top-navigation-fade" style={[StyleSheet.absoluteFill,{overflow:"hidden"}]}>
   <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} accessible={false}>
    <Defs><LinearGradient id={id} x1="0%" y1="0%" x2="0%" y2="100%">
-    <Stop offset="0" stopColor={colors.paper} stopOpacity={1}/>
+    <Stop offset="0" stopColor={colors.paper} stopOpacity={colors.navigationOpacity}/>
     <Stop offset=".55" stopColor={colors.paper} stopOpacity={colors.navigationOpacity}/>
     <Stop offset=".8" stopColor={colors.paper} stopOpacity={.035}/>
     <Stop offset="1" stopColor={colors.paper} stopOpacity={0}/>
