@@ -32,8 +32,8 @@ export function AuthField({label,value,onChangeText,placeholder,secure=false,key
  return <View style={{gap:6}}>
   <Text style={{fontSize:12,fontWeight:"700",color:authSilver.tone14}}>{label}</Text>
   <View style={{flexDirection:"row",alignItems:"center",borderRadius:12,borderColor:authSilver.tone15,borderWidth:1,backgroundColor:authSilver.tone16,minHeight:50,paddingHorizontal:12}}>
-   <TextInput accessibilityLabel={label} style={{flex:1,color:authSilver.tone17,fontSize:15,paddingVertical:12}} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor=authSilver.tone18 secureTextEntry={secure&&!visible} keyboardType={keyboardType} autoCapitalize={autoCapitalize} autoCorrect={false}/>
-   {secure&&<Pressable accessibilityRole="button" accessibilityLabel={visible?"Ocultar contraseña":"Mostrar contraseña"} onPress={()=>setVisible(v=>!v)} style={{padding:7}}><Ionicons name={visible?"eye-off-outline":"eye-outline"} color=authSilver.tone14 size={22}/></Pressable>}
+   <TextInput accessibilityLabel={label} style={{flex:1,color:authSilver.tone17,fontSize:15,paddingVertical:12}} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={authSilver.tone18} secureTextEntry={secure&&!visible} keyboardType={keyboardType} autoCapitalize={autoCapitalize} autoCorrect={false}/>
+   {secure&&<Pressable accessibilityRole="button" accessibilityLabel={visible?"Ocultar contraseña":"Mostrar contraseña"} onPress={()=>setVisible(v=>!v)} style={{padding:7}}><Ionicons name={visible?"eye-off-outline":"eye-outline"} color={authSilver.tone14} size={22}/></Pressable>}
   </View>
  </View>;
 }
