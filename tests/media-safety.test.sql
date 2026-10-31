@@ -100,4 +100,47 @@ select pg_temp.safety_assert((private.safety_state('30000000-0000-4000-8000-0000
 select pg_temp.safety_assert((private.safety_state('30000000-0000-4000-8000-000000000002')->>'contentCount')::int=1,'employer strikes do not increase the content counter');
 select pg_temp.safety_assert((public.jobin_public_trust_mark('30000000-0000-4000-8000-000000000002')->>'marked')::boolean,'confirmed employer violations are visible as a separate professional trust mark');
 select pg_temp.safety_assert(not exists(select 1 from private.blocked_identity_hashes where user_id='30000000-0000-4000-8000-000000000002' and revoked_at is null),'employer suspension never creates a permanent content identity ban');
+-- Professional contexts and historical affiliation are evaluated by the backend, not UI flags.
+select set_config('request.jwt.claim.sub','',true);
+insert into auth.users(id,raw_user_meta_data) values
+ ('30000000-0000-4000-8000-000000000006','{"display_name":"Confirmed employee","account_type":"personal","profession_code":"electricista"}'),
+ ('30000000-0000-4000-8000-000000000007','{"display_name":"Guard","account_type":"personal","profession_code":"guardia_de_seguridad"}'),
+ ('30000000-0000-4000-8000-000000000008','{"display_name":"DJ","account_type":"personal","profession_code":"dj"}'),
+ ('30000000-0000-4000-8000-000000000009','{"display_name":"Academy","account_type":"company","organization_kind":"education"}');
+insert into public.organization_scopes(organization_id,profession_code,approved_by) values
+ ('30000000-0000-4000-8000-000000000009','actor','30000000-0000-4000-8000-000000000004');
+select pg_temp.safety_error($q$select private.assert_work_context('30000000-0000-4000-8000-000000000007','guardia_de_seguridad','work',null,true)$q$,'outside');
+select private.assert_work_context('30000000-0000-4000-8000-000000000007','guardia_de_seguridad','security_outside',null,true);
+select pg_temp.safety_error($q$select private.assert_work_context('30000000-0000-4000-8000-000000000008','dj','work',null,true)$q$,'artists');
+select private.assert_work_context('30000000-0000-4000-8000-000000000008','dj','artist_performance',null,true);
+set local role authenticated;
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000005',true);
+select public.jobin_set_profession('actor','in_academy','30000000-0000-4000-8000-000000000009');
+select pg_temp.safety_error($q$select public.jobin_request_work_live('Academy','actor','academy',null,'public',true)$q$,'actors');
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000009',true);
+select public.jobin_verify_training((select id from public.person_professions where worker_id='30000000-0000-4000-8000-000000000005'),true);
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000005',true);
+select public.jobin_request_work_live('Academy','actor','academy',null,'public',true);
+select pg_temp.safety_assert(not exists(select 1 from public.live_sessions where host_id=auth.uid() and status='live'),'a live request does not fabricate an active broadcast');
+select pg_temp.safety_error($q$select public.jobin_request_work_live('False employer','actor','academy','30000000-0000-4000-8000-000000000003','public',true)$q$,'not approved');
+reset role;
+select set_config('request.jwt.claim.sub','',true);
+insert into public.employment_records(company_id,worker_id,job_title,started_on,worker_consented_at,company_approved_at)
+ values('30000000-0000-4000-8000-000000000003','30000000-0000-4000-8000-000000000006','Electrician',current_date-2,now(),now());
+select set_config('test.approved_media',pg_temp.fixture_media('30000000-0000-4000-8000-000000000006','video',private.work_snapshot('30000000-0000-4000-8000-000000000006'))::text,true);
+insert into storage.objects(bucket_id,name) values('employer-report-evidence','30000000-0000-4000-8000-000000000003/approved-worker.png');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000003',true);
+select public.jobin_report_employer(current_setting('test.approved_media')::uuid,'30000000-0000-4000-8000-000000000003/approved-worker.png','This allegation conflicts with our own approval at that moment.');
+select set_config('test.approved_report',(select id::text from public.impersonation_reports where work_media_id=current_setting('test.approved_media')::uuid),true);
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000004',true);
+select pg_temp.safety_error($q$select public.jobin_review_employer_report(current_setting('test.approved_report')::uuid,true,'Attempt to uphold contrary to timestamped employment proof.')$q$,'was approved');
+reset role;
+select set_config('request.jwt.claim.sub','',true);
+select set_config('test.low_confidence',pg_temp.fixture_media('30000000-0000-4000-8000-000000000006')::text,true);
+select public.jobin_record_moderation_result((select id from private.moderation_jobs where media_id=current_setting('test.low_confidence')::uuid),'fixture-low','fixture-'||current_setting('test.low_confidence'),array['nudity','sexual_content','minors','blood','violence'],'[{"category":"minors","confidence":0.60}]',now());
+select pg_temp.safety_assert((select status='held' from public.work_media where id=current_setting('test.low_confidence')::uuid),'low-confidence findings remain withheld');
+select pg_temp.safety_assert((private.safety_state('30000000-0000-4000-8000-000000000006')->>'contentCount')::int=0,'low confidence never creates an automatic strike');
+select pg_temp.safety_error($q$update public.work_media set employment_snapshot='[]' where id=current_setting('test.approved_media')::uuid$q$,'identity and proof');
+
 rollback;
