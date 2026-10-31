@@ -41,3 +41,5 @@ No native dependencies are added. A new native build is not required for these r
 
 ## Operational follow-up
 Designate actual credential reviewers and complete real organization/document reviews before checks or scopes can appear. Actual legal/compliance validation requires people/processes outside this code. Existing employment verification prerequisites still apply; no new method bypasses that workflow. Live permission enforcement, live moderation and strikes remain phase 3. No fictional accounts, employees, certificates or ratings are seeded in production.
+
+Deployment: migration applied to Supabase project nwiimdmtddjquwxtjxmw and recorded as version 20261031050000. Production contains only the profession catalogue and backfilled real identities; no CI fixtures were run there. Database TypeScript definitions were regenerated from the deployed schema.

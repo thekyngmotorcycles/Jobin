@@ -225,6 +225,64 @@ export type Database = {
           },
         ]
       }
+      career_contacts: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          id: string
+          kind: string
+          message: string
+          organization_id: string
+          profession_code: string
+          status: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          kind: string
+          message: string
+          organization_id: string
+          profession_code: string
+          status?: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          kind?: string
+          message?: string
+          organization_id?: string
+          profession_code?: string
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "career_contacts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "career_contacts_profession_code_fkey"
+            columns: ["profession_code"]
+            isOneToOne: false
+            referencedRelation: "profession_catalog"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "career_contacts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           created_at: string
@@ -578,6 +636,63 @@ export type Database = {
           },
         ]
       }
+      credential_requests: {
+        Row: {
+          created_at: string
+          id: string
+          organization_kind: string | null
+          owner_id: string
+          profession_code: string
+          reason: string | null
+          request_kind: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_kind?: string | null
+          owner_id: string
+          profession_code: string
+          reason?: string | null
+          request_kind: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_kind?: string | null
+          owner_id?: string
+          profession_code?: string
+          reason?: string | null
+          request_kind?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credential_requests_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credential_requests_profession_code_fkey"
+            columns: ["profession_code"]
+            isOneToOne: false
+            referencedRelation: "profession_catalog"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       dispute_evidence: {
         Row: {
           created_at: string
@@ -826,6 +941,138 @@ export type Database = {
           },
         ]
       }
+      impersonation_reports: {
+        Row: {
+          accused_id: string
+          company_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          evidence_path: string
+          id: string
+          live_id: string | null
+          status: string
+        }
+        Insert: {
+          accused_id: string
+          company_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          evidence_path: string
+          id?: string
+          live_id?: string | null
+          status?: string
+        }
+        Update: {
+          accused_id?: string
+          company_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          evidence_path?: string
+          id?: string
+          live_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "impersonation_reports_accused_id_fkey"
+            columns: ["accused_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impersonation_reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "impersonation_reports_live_id_fkey"
+            columns: ["live_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institution_ranks: {
+        Row: {
+          active: boolean
+          id: string
+          label: string
+          ordinal: number
+          organization_id: string
+          profession_code: string
+          short_label: string
+        }
+        Insert: {
+          active?: boolean
+          id?: string
+          label: string
+          ordinal: number
+          organization_id: string
+          profession_code: string
+          short_label: string
+        }
+        Update: {
+          active?: boolean
+          id?: string
+          label?: string
+          ordinal?: number
+          organization_id?: string
+          profession_code?: string
+          short_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_ranks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "institution_ranks_profession_code_fkey"
+            columns: ["profession_code"]
+            isOneToOne: false
+            referencedRelation: "profession_catalog"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      jcard_profiles: {
+        Row: {
+          availability: string
+          handle: string
+          languages: Json
+          profile_id: string
+        }
+        Insert: {
+          availability?: string
+          handle: string
+          languages?: Json
+          profile_id: string
+        }
+        Update: {
+          availability?: string
+          handle?: string
+          languages?: Json
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jcard_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_participants: {
         Row: {
           accepted_at: string | null
@@ -878,6 +1125,7 @@ export type Database = {
           status: string
           title: string
           visibility: string
+          work_consent_at: string | null
         }
         Insert: {
           created_at?: string
@@ -891,6 +1139,7 @@ export type Database = {
           status?: string
           title: string
           visibility: string
+          work_consent_at?: string | null
         }
         Update: {
           created_at?: string
@@ -904,6 +1153,7 @@ export type Database = {
           status?: string
           title?: string
           visibility?: string
+          work_consent_at?: string | null
         }
         Relationships: [
           {
@@ -1031,6 +1281,107 @@ export type Database = {
           },
         ]
       }
+      organization_representatives: {
+        Row: {
+          approved_at: string
+          approved_by: string
+          can_represent: boolean
+          employment_id: string
+        }
+        Insert: {
+          approved_at?: string
+          approved_by: string
+          can_represent?: boolean
+          employment_id: string
+        }
+        Update: {
+          approved_at?: string
+          approved_by?: string
+          can_represent?: boolean
+          employment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_representatives_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "organization_representatives_employment_id_fkey"
+            columns: ["employment_id"]
+            isOneToOne: true
+            referencedRelation: "employment_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_scopes: {
+        Row: {
+          active: boolean
+          approved_at: string
+          approved_by: string
+          organization_id: string
+          profession_code: string
+        }
+        Insert: {
+          active?: boolean
+          approved_at?: string
+          approved_by: string
+          organization_id: string
+          profession_code: string
+        }
+        Update: {
+          active?: boolean
+          approved_at?: string
+          approved_by?: string
+          organization_id?: string
+          profession_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_scopes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "organization_scopes_profession_code_fkey"
+            columns: ["profession_code"]
+            isOneToOne: false
+            referencedRelation: "profession_catalog"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          kind: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          kind?: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          kind?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
       payment_accounts: {
         Row: {
           charges_enabled: boolean
@@ -1110,6 +1461,340 @@ export type Database = {
             columns: ["contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      person_professions: {
+        Row: {
+          id: string
+          institution_id: string | null
+          primary_profession: boolean
+          profession_code: string
+          training_status: string
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+          worker_id: string
+        }
+        Insert: {
+          id?: string
+          institution_id?: string | null
+          primary_profession?: boolean
+          profession_code: string
+          training_status: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+          worker_id: string
+        }
+        Update: {
+          id?: string
+          institution_id?: string | null
+          primary_profession?: boolean
+          profession_code?: string
+          training_status?: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "person_professions_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "person_professions_profession_code_fkey"
+            columns: ["profession_code"]
+            isOneToOne: false
+            referencedRelation: "profession_catalog"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "person_professions_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      personal_licenses: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          id: string
+          profile_id: string
+          reviewed_by: string | null
+          status: string
+          storage_path: string
+          valid_until: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          profile_id: string
+          reviewed_by?: string | null
+          status?: string
+          storage_path: string
+          valid_until: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          profile_id?: string
+          reviewed_by?: string | null
+          status?: string
+          storage_path?: string
+          valid_until?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_licenses_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photo_post_likes: {
+        Row: {
+          created_at: string
+          post_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "photo_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photo_post_likes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photo_post_media: {
+        Row: {
+          position: number
+          post_id: string
+          storage_path: string
+        }
+        Insert: {
+          position: number
+          post_id: string
+          storage_path: string
+        }
+        Update: {
+          position?: number
+          post_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_post_media_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "photo_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photo_posts: {
+        Row: {
+          author_id: string
+          caption: string
+          created_at: string
+          id: string
+          removed_at: string | null
+        }
+        Insert: {
+          author_id: string
+          caption?: string
+          created_at?: string
+          id?: string
+          removed_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          caption?: string
+          created_at?: string
+          id?: string
+          removed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profession_catalog: {
+        Row: {
+          active: boolean
+          category: string
+          code: string
+          icon: string
+          label: string
+          short_label: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          code: string
+          icon?: string
+          label: string
+          short_label: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          code?: string
+          icon?: string
+          label?: string
+          short_label?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profession_catalog_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "profession_categories"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      profession_categories: {
+        Row: {
+          active: boolean
+          code: string
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          label: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          label?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      profession_seals: {
+        Row: {
+          credential_id: string | null
+          employment_id: string | null
+          granted_at: string
+          id: string
+          organization_id: string | null
+          origin: string
+          profession_code: string
+          rank_id: string | null
+          revoked_at: string | null
+          status: string
+          worker_id: string
+        }
+        Insert: {
+          credential_id?: string | null
+          employment_id?: string | null
+          granted_at?: string
+          id?: string
+          organization_id?: string | null
+          origin: string
+          profession_code: string
+          rank_id?: string | null
+          revoked_at?: string | null
+          status: string
+          worker_id: string
+        }
+        Update: {
+          credential_id?: string | null
+          employment_id?: string | null
+          granted_at?: string
+          id?: string
+          organization_id?: string | null
+          origin?: string
+          profession_code?: string
+          rank_id?: string | null
+          revoked_at?: string | null
+          status?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profession_seals_credential_id_fkey"
+            columns: ["credential_id"]
+            isOneToOne: false
+            referencedRelation: "credential_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profession_seals_employment_id_fkey"
+            columns: ["employment_id"]
+            isOneToOne: false
+            referencedRelation: "employment_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profession_seals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "profession_seals_profession_code_fkey"
+            columns: ["profession_code"]
+            isOneToOne: false
+            referencedRelation: "profession_catalog"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "profession_seals_rank_id_fkey"
+            columns: ["rank_id"]
+            isOneToOne: false
+            referencedRelation: "institution_ranks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profession_seals_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1205,6 +1890,45 @@ export type Database = {
           },
         ]
       }
+      review_authorizations: {
+        Row: {
+          client_id: string
+          expires_at: string
+          granted_at: string
+          id: string
+          worker_id: string
+        }
+        Insert: {
+          client_id: string
+          expires_at: string
+          granted_at?: string
+          id?: string
+          worker_id: string
+        }
+        Update: {
+          client_id?: string
+          expires_at?: string
+          granted_at?: string
+          id?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_authorizations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_authorizations_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       review_disputes: {
         Row: {
           created_at: string
@@ -1289,6 +2013,51 @@ export type Database = {
           {
             foreignKeyName: "review_evidence_uploaded_by_fkey"
             columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_extension_requests: {
+        Row: {
+          authorization_id: string
+          created_at: string
+          decided_at: string | null
+          id: string
+          months: number
+          requested_by: string
+          status: string
+        }
+        Insert: {
+          authorization_id: string
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          months: number
+          requested_by: string
+          status?: string
+        }
+        Update: {
+          authorization_id?: string
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          months?: number
+          requested_by?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_extension_requests_authorization_id_fkey"
+            columns: ["authorization_id"]
+            isOneToOne: false
+            referencedRelation: "review_authorizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_extension_requests_requested_by_fkey"
+            columns: ["requested_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1441,6 +2210,35 @@ export type Database = {
             foreignKeyName: "services_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_programs: {
+        Row: {
+          profile_id: string
+          program: string
+          school: string | null
+          updated_at: string
+        }
+        Insert: {
+          profile_id: string
+          program: string
+          school?: string | null
+          updated_at?: string
+        }
+        Update: {
+          profile_id?: string
+          program?: string
+          school?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_programs_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1792,26 +2590,6 @@ export type Database = {
       }
     }
     Functions: {
-      jobin_professional_catalog: { Args: Record<string, never>; Returns: Json }
-      jobin_jcard_data: { Args: { target?: string | null }; Returns: Json }
-      jobin_professional_workspace: { Args: Record<string, never>; Returns: Json }
-      jobin_save_jcard: { Args: { legal_name:string; handle:string; languages:Json; availability:string; city:string; region:string }; Returns: undefined }
-      jobin_set_profession: { Args: { profession:string; training:string; institution?:string|null; make_primary?:boolean }; Returns: string }
-      jobin_remove_unverified_profession: { Args: { profession:string }; Returns: undefined }
-      jobin_set_organization_kind: { Args: { kind:string }; Returns: undefined }
-      jobin_submit_credential: { Args: { profession:string; path:string }; Returns: string }
-      jobin_decide_credential: { Args: { request:string; approve:boolean; reason:string }; Returns: undefined }
-      jobin_set_scope_active: { Args: { organization:string; profession:string; enabled:boolean }; Returns: undefined }
-      jobin_verify_training: { Args: { person_profession:string; approve:boolean }; Returns: undefined }
-      jobin_define_rank: { Args: { profession:string; label:string; short_label:string; ordinal:number }; Returns: string }
-      jobin_grant_rank: { Args: { worker:string; rank:string }; Returns: undefined }
-      jobin_set_representative: { Args: { employment:string; approved:boolean }; Returns: undefined }
-      jobin_credential_queue: { Args: { status_filter?:string }; Returns: Json }
-      jobin_education_options: { Args: { profession:string }; Returns: Json }
-      jobin_organization_data: { Args: { target?:string|null }; Returns: Json }
-      jobin_career_search: { Args: { profession:string; city:string; mode:string }; Returns: Json }
-      jobin_contact_career: { Args: { target:string; profession:string; kind:string; message:string }; Returns: string }
-      jobin_respond_career: { Args: { contact:string; decision:string }; Returns: undefined }
       jobin_approve_employment: { Args: { record: string }; Returns: undefined }
       jobin_attach_company_document: {
         Args: {
@@ -1824,14 +2602,73 @@ export type Database = {
         }
         Returns: string
       }
+      jobin_card: {
+        Args: { profile: string }
+        Returns: {
+          avatar_path: string
+          average_rating: number
+          card_status: string
+          current_employer: string
+          display_name: string
+          experience_years: number
+          licensed: boolean
+          profession: string
+          profile_id: string
+          review_count: number
+          student_program: string
+        }[]
+      }
+      jobin_career_search: {
+        Args: { city: string; mode: string; profession: string }
+        Returns: Json
+      }
       jobin_claim_employment: {
         Args: { company: string; start_date: string; title: string }
+        Returns: string
+      }
+      jobin_contact_career: {
+        Args: {
+          kind: string
+          message: string
+          profession: string
+          target: string
+        }
+        Returns: string
+      }
+      jobin_create_photo_post: {
+        Args: { caption: string; paths: string[] }
+        Returns: string
+      }
+      jobin_credential_queue: {
+        Args: { status_filter?: string }
+        Returns: Json
+      }
+      jobin_decide_credential: {
+        Args: { approve: boolean; reason: string; request: string }
+        Returns: undefined
+      }
+      jobin_decide_impersonation: {
+        Args: { report: string; uphold: boolean }
+        Returns: undefined
+      }
+      jobin_decide_license: {
+        Args: { approve: boolean; license: string }
+        Returns: undefined
+      }
+      jobin_define_rank: {
+        Args: {
+          label: string
+          ordinal: number
+          profession: string
+          short_label: string
+        }
         Returns: string
       }
       jobin_dispute_review: {
         Args: { reason: string; review: string }
         Returns: string
       }
+      jobin_education_options: { Args: { profession: string }; Returns: Json }
       jobin_end_employment: {
         Args: { end_date: string; record: string }
         Returns: undefined
@@ -1840,8 +2677,86 @@ export type Database = {
         Args: { mode: string; target: string }
         Returns: string
       }
+      jobin_grant_rank: {
+        Args: { rank: string; worker: string }
+        Returns: undefined
+      }
+      jobin_jcard_data: { Args: { target?: string }; Returns: Json }
+      jobin_organization_data: { Args: { target?: string }; Returns: Json }
+      jobin_professional_catalog: { Args: never; Returns: Json }
+      jobin_professional_workspace: { Args: never; Returns: Json }
+      jobin_remove_unverified_profession: {
+        Args: { profession: string }
+        Returns: undefined
+      }
+      jobin_report_impersonation: {
+        Args: { accused: string; evidence: string; live: string }
+        Returns: string
+      }
+      jobin_request_review_extension: {
+        Args: { months: number; worker: string }
+        Returns: string
+      }
       jobin_request_verification: {
         Args: { industry: string; municipality: string; state: string }
+        Returns: string
+      }
+      jobin_respond_career: {
+        Args: { contact: string; decision: string }
+        Returns: undefined
+      }
+      jobin_respond_review_extension: {
+        Args: { accept: boolean; request: string }
+        Returns: undefined
+      }
+      jobin_save_jcard: {
+        Args: {
+          availability: string
+          city: string
+          handle: string
+          languages: Json
+          legal_name: string
+          region: string
+        }
+        Returns: undefined
+      }
+      jobin_send_jobin_card: { Args: { client: string }; Returns: string }
+      jobin_set_organization_kind: {
+        Args: { kind: string }
+        Returns: undefined
+      }
+      jobin_set_profession: {
+        Args: {
+          institution?: string
+          make_primary?: boolean
+          profession: string
+          training: string
+        }
+        Returns: string
+      }
+      jobin_set_representative: {
+        Args: { approved: boolean; employment: string }
+        Returns: undefined
+      }
+      jobin_set_scope_active: {
+        Args: { enabled: boolean; organization: string; profession: string }
+        Returns: undefined
+      }
+      jobin_start_live: {
+        Args: {
+          consent: boolean
+          purpose: string
+          title: string
+          visibility: string
+        }
+        Returns: string
+      }
+      jobin_submit_credential: {
+        Args: { path: string; profession: string }
+        Returns: string
+      }
+      jobin_submit_license: {
+        Args: { storage_path: string; valid_until: string }
         Returns: string
       }
       jobin_submit_review: {
@@ -1853,6 +2768,10 @@ export type Database = {
           stars: number
         }
         Returns: string
+      }
+      jobin_verify_training: {
+        Args: { approve: boolean; person_profession: string }
+        Returns: undefined
       }
     }
     Enums: {

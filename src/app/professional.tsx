@@ -59,7 +59,7 @@ export default function Professional() {
     <Button secondary title={institution?"Quitar institución seleccionada":"Sin institución seleccionada"} onPress={()=>setInstitution(null)}/>
     {education.loading?<Text style={s.muted}>Buscando instituciones…</Text>:education.error?<Text style={s.muted}>{education.error}</Text>:education.data?.map(school=><Button key={school.id} secondary title={(institution===school.id?"✓ ":"")+school.name+(school.city?" · "+school.city:"")} onPress={()=>setInstitution(school.id)}/>)}
     {!education.loading&&!education.error&&education.data?.length===0&&<Text style={s.muted}>Todavía no hay instituciones preaprobadas para esta profesión. Puedes registrar tu formación sin check.</Text>}
-    <Button title={action.busy?"Guardando…":"Guardar como profesión principal"} onPress={()=>void action.run(()=>professionalMutation("jobin_set_profession",{profession,training,institution,make_primary:true}),"Profesión guardada. Su verificación depende de la prueba correspondiente.")}/>
+    <Button title={action.busy?"Guardando…":"Guardar como profesión principal"} onPress={()=>void action.run(()=>professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:true}),"Profesión guardada. Su verificación depende de la prueba correspondiente.")}/>
    </View>}
   </>}
  </Screen>;
