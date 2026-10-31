@@ -42,7 +42,7 @@ alter table public.impersonation_reports add column description text;
 create unique index impersonation_one_media_company on public.impersonation_reports(company_id,work_media_id) where work_media_id is not null;
 create table private.moderation_jobs(
  id uuid primary key default gen_random_uuid(), media_id uuid not null references public.work_media(id),
- kind text not null check(kind in ('prepare_video','scan_video','prepare_live','stop_live','disable_video')),
+ kind text not null check(kind in ('prepare_video','scan_video','prepare_live','publish_video','stop_live','disable_video')),
  status text not null default 'pending' check(status in ('pending','leased','waiting','done','error')),
  attempts integer not null default 0, lease_token uuid, lease_until timestamptz,
  provider_job_id text, last_error text, created_at timestamptz not null default now(), unique(media_id,kind)
@@ -347,12 +347,8 @@ create function public.jobin_record_moderation_result(job uuid,event_key text,as
  update public.live_sessions set status='live',started_at=coalesce(started_at,now()),provider_room_id=m.provider_asset_id where work_media_id=m.id;
  else
  if m.duration_ms is null or m.duration_ms not between 1 and 180000 then raise exception 'Trusted processing duration is missing'; end if;
- update public.work_media set status='published',safety_checked_at=observed_at where id=m.id;
- if not exists(select 1 from public.videos where work_media_id=m.id) then
- insert into public.video_projects(creator_id,title,status) values(m.creator_id,m.title,'published') returning id into project;
- insert into public.videos(project_id,creator_id,playback_url,duration_ms,caption,visibility,processing_status,provider_asset_id,work_media_id)
- values(project,m.creator_id,m.playback_url,m.duration_ms,m.title,m.visibility,'ready',m.provider_asset_id,m.id);
- end if;
+ update public.work_media set safety_checked_at=observed_at where id=m.id;
+ insert into private.moderation_jobs(media_id,kind) values(m.id,'publish_video') on conflict(media_id,kind) do nothing;
  update private.moderation_jobs set status='done' where id=job;
  end if;
  end if;
@@ -639,3 +635,19 @@ create function public.jobin_moderation_target(job uuid) returns jsonb language 
 $$;
 revoke all on function public.jobin_moderation_job_waiting(uuid,uuid,text),public.jobin_moderation_target(uuid) from public,anon,authenticated;
 grant execute on function public.jobin_moderation_job_waiting(uuid,uuid,text),public.jobin_moderation_target(uuid) to service_role;
+
+create function public.jobin_finish_video_publish(job uuid,token uuid) returns void language plpgsql security definer set search_path='' as $$
+ declare j private.moderation_jobs; m public.work_media; project uuid;
+ begin
+ select * into j from private.moderation_jobs where id=job and lease_token=token and status='leased' and kind='publish_video' and lease_until>now() for update;
+ if j.id is null then raise exception 'Valid leased publication job required'; end if;
+ select * into m from public.work_media where id=j.media_id for update;
+ if m.status<>'moderating' or m.safety_checked_at is null or not private.safety_can_publish(m.creator_id) or not private.safety_ready(false) then raise exception 'Media is no longer cleared for publication'; end if;
+ update public.work_media set status='published' where id=m.id;
+ insert into public.video_projects(creator_id,title,status) values(m.creator_id,m.title,'published') returning id into project;
+ insert into public.videos(project_id,creator_id,playback_url,duration_ms,caption,visibility,processing_status,provider_asset_id,work_media_id)
+ values(project,m.creator_id,m.playback_url,m.duration_ms,m.title,m.visibility,'ready',m.provider_asset_id,m.id);
+ update private.moderation_jobs set status='done',lease_until=null where id=j.id;
+ end $$;
+revoke all on function public.jobin_finish_video_publish(uuid,uuid) from public,anon,authenticated;
+grant execute on function public.jobin_finish_video_publish(uuid,uuid) to service_role;
