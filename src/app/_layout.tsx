@@ -1,3 +1,4 @@
+import { AuthGate } from "../components/AuthGate";
 import { SafetyAccountGate } from "../components/SafetyAccountGate";
 import { JobinWordmark } from "../components/JobinWordmark";
 import { Stack } from "expo-router";
@@ -25,7 +26,8 @@ function Navigation() {
  <Stack.Screen name="stream/[id]" options={{headerShown:false}}/>
  <Stack.Screen name="connect" options={{headerShown:false}}/>
  <Stack.Screen name="settings" options={{title:"Configuración"}}/>
- <Stack.Screen name="account" options={{title:"Crear cuenta"}}/>
+ <Stack.Screen name="account" options={{title:"Sign up",headerShown:false}}/>
+ <Stack.Screen name="login" options={{title:"Log in",headerShown:false}}/>
  <Stack.Screen name="company" options={{title:"Empresa o institución"}}/>
  <Stack.Screen name="professional" options={{title:"Mi JCard"}}/>
  <Stack.Screen name="certificates" options={{title:"Certificados"}}/>
@@ -42,5 +44,5 @@ function Navigation() {
  </Stack></>;
 }
 export default function RootLayout() {
- return <SafeAreaProvider><ThemeProvider><AppProvider><SocialProvider><IconFontGate><SafetyAccountGate><Navigation/></SafetyAccountGate></IconFontGate></SocialProvider></AppProvider></ThemeProvider></SafeAreaProvider>;
+ return <SafeAreaProvider><ThemeProvider><AppProvider><SocialProvider><IconFontGate><AuthGate><SafetyAccountGate><Navigation/></SafetyAccountGate></AuthGate></IconFontGate></SocialProvider></AppProvider></ThemeProvider></SafeAreaProvider>;
 }
