@@ -2,7 +2,7 @@ export type JobinSettingsEntry={id:string;title:string;description:string;route?
 export type JobinSettingsGroup={title:string;description:string;items:JobinSettingsEntry[]};
 export const JOBIN_SETTINGS_GROUPS:JobinSettingsGroup[]=[
  {title:"Tu cuenta",description:"Gestiona tu identidad y seguridad en Jobin.",items:[
-  {id:"cuenta",title:"Cuenta y seguridad",description:"Contraseña, datos personales y verificación.",route:"/settings"},
+  {id:"cuenta",title:"Cuenta y seguridad",description:"Datos personales, acceso y protección de tu cuenta.",route:"/settings/cuenta"},
   {id:"suscripciones",title:"Suscripciones",description:"Planes y beneficios de Jobin."}]},
  {title:"Privacidad y seguridad",description:"Decide qué compartes y protege tu cuenta.",items:[
   {id:"visibilidad",title:"Privacidad de la JCard",description:"Correo, teléfono e información visible.",route:"/professional"},
