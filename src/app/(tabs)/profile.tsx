@@ -49,7 +49,7 @@ export default function Profile() {
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address:"", contact:"" });
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace);
-  useEffect(()=>{let live=true;void readCloudHistory().then(async rows=>{if(!live)return;if(rows.length){setHistory(rows);return;}const raw=await AsyncStorage.getItem("jobin.professional.history.v1");const local=raw?JSON.parse(raw) as EmploymentEntry[]:[];for(const item of local)await writeCloudHistory(item);if(live)setHistory(local);}).catch(()=>setNotice("No se pudo recuperar el historial en la nube."));return()=>{live=false;};},[]);
+  useEffect(()=>{let live=true;void readCloudHistory().then(async rows=>{if(!live)return;if(rows.length){const rawLocal=await AsyncStorage.getItem("jobin.professional.history.v1");const local=rawLocal?JSON.parse(rawLocal) as EmploymentEntry[]:[];setHistory(rows.map(row=>{const saved=local.find(entry=>entry.id===row.id);return {...row,address:saved?.address??row.address,contact:saved?.contact??row.contact};}));return;}const raw=await AsyncStorage.getItem("jobin.professional.history.v1");const local=raw?JSON.parse(raw) as EmploymentEntry[]:[];for(const item of local)await writeCloudHistory(item);if(live)setHistory(local);}).catch(()=>setNotice("No se pudo recuperar el historial en la nube."));return()=>{live=false;};},[]);
   useEffect(()=>{let live=true;void readBusinessRating(workspace.data?.card.id??"").then(value=>{if(live)setBusinessRating(value);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
   const p = DEMO_PROFILE;
 
