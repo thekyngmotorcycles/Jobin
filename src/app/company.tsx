@@ -26,7 +26,7 @@ export default function Company(){
    <View style={s.panel}><Text style={s.h2}>{ORGANIZATION_LABELS[o.kind]}</Text><Text style={s.muted}>{[o.city,o.region].filter(Boolean).join(" · ")||"Ubicación pendiente"}</Text>
     <Text style={s.h3}>Sellos preaprobados</Text>
     {o.scopes.length===0?<Text style={s.muted}>Ningún sello preaprobado. Adjuntar documentos no concede permisos automáticamente.</Text>:o.scopes.map(scope=><Text key={scope.profession_code} style={s.text}>{scope.active?"✓ ":""}{scope.label} · {scope.active?"Preaprobado":"Inactivo"}</Text>)}
-    {owner&&<>
+    {owner&&<><Button secondary title="Solicitudes de vínculos laborales" onPress={()=>router.push("/employer-links")}/>
      {(["company","education","government"] as const).map(value=><Button key={value} secondary title={(kind===value?"✓ ":"")+ORGANIZATION_LABELS[value]} onPress={()=>setKind(value)}/>)}
      <Button title={action.busy?"Guardando…":"Guardar tipo de organización"} onPress={()=>void action.run(()=>professionalMutation("jobin_set_organization_kind",{kind}),"Tipo de organización guardado.")}/>
      <Text style={s.muted}>El tipo queda bloqueado al enviar acreditaciones. Solo el equipo de revisión puede preaprobar rubros.</Text>
