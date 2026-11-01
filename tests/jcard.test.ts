@@ -10,11 +10,11 @@ function mix(a:string,b:string,fraction:number){return composite(opacity(b,fract
 
 test("JCard selects its finish from the displayed one-decimal rating", () => {
   for (const [rating, expected] of [[1,"base"],[3.5,"base"],[3.549,"base"],[3.55,"silver"],[3.6,"silver"],[4.5,"silver"],[4.549,"silver"],[4.55,"gold"],[4.6,"gold"],[5,"gold"]] as const) {
-    assert.equal(jcardTier(rating, 5), expected, String(rating));
+    assert.equal(jcardTier(rating, 20), expected, String(rating));
   }
   assert.equal(displayedRating(4.55, 2), 4.6);
-  assert.equal(jcardTier(5,4),"base");
-  assert.equal(jcardTier(5,5),"gold");
+  assert.equal(jcardTier(5,19),"base");
+  assert.equal(jcardTier(5,20),"gold");
   assert.equal(displayedRating(null, 0), null);
   assert.equal(displayedRating(5, 0), null);
   assert.equal(jcardTier(null, 0), "base");
