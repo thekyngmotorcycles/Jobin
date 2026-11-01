@@ -2,6 +2,7 @@ import {useMemo,useState} from "react";
 import {FlatList,Modal,Pressable,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {Ionicons} from "@expo/vector-icons";
 import {useUi} from "./ui";
+import {jcardCommon} from "../theme/jcard";
 import {JOBIN_LANGUAGES,canonicalLanguage,normalizedLanguage} from "../lib/languages";
 
 export function LanguagePicker({value,onChange,selected=[]}:{value:string;onChange:(name:string)=>void;selected?:string[]}){
@@ -15,7 +16,7 @@ export function LanguagePicker({value,onChange,selected=[]}:{value:string;onChan
    <Text numberOfLines={1} style={[s.text,{flex:1,color:current?colors.ink:colors.muted}]}>{current||"Seleccionar idioma"}</Text><Ionicons name="chevron-down" size={18} color={colors.muted}/>
   </Pressable>
   <Modal visible={open} transparent animationType="fade" onRequestClose={()=>setOpen(false)}>
-   <View style={{flex:1,backgroundColor:"rgba(0,0,0,0.42)",alignItems:"center",justifyContent:"center",padding:18}}>
+   <View style={{flex:1,backgroundColor:jcardCommon.scrim,alignItems:"center",justifyContent:"center",padding:18}}>
     <Pressable style={{position:"absolute",top:0,bottom:0,left:0,right:0}} onPress={()=>setOpen(false)} accessibilityLabel="Cerrar selección de idioma"/>
     <View style={{width:Math.min(width-36,360),maxHeight:Math.min(height*0.6,430),backgroundColor:colors.card,borderRadius:18,borderWidth:1,borderColor:colors.line,padding:16,gap:12}}>
      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
