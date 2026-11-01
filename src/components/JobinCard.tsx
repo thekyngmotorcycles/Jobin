@@ -3,7 +3,8 @@ import { router } from "expo-router";
 import { Animated, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import Svg, { Defs, LinearGradient, Rect, Stop, Path } from "react-native-svg";
+import Svg, { Defs, LinearGradient, Rect, Stop, Path, SvgXml } from "react-native-svg";
+import {WORDMARK_XML} from "../theme/wordmark";
 import QRCode from "react-native-qrcode-svg";
 import { Avatar } from "./social-ui";
 import { Button, useUi } from "./ui";
@@ -15,6 +16,7 @@ import { LanguageRing } from "./LanguageRing";
 import { jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
 
 export type { CardData } from "../lib/jcard";
+const wordmarkJ=WORDMARK_XML.replace('viewBox="300 76 616 275"','viewBox="300 76 160 275"').replace(/(<path[^>]*\\/>)(?:<path[^>]*\\/>)+/, "$1");
 
 function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { card: CardData; theme: ThemeName; expanded?: boolean; onEdit?: () => void; onQr?: () => void; contact?:{email:string|null;phone:string|null} }) {
   const { s, fs } = useUi();
@@ -47,11 +49,17 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
     <View style={{ padding:jcardLayout.padding, gap:14 }}>
       <View style={{ paddingTop:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
-        <Text accessibilityRole="header" style={[s.h3, { position:"absolute", top:0, left:0, right:0, textAlign:"center", fontSize:Math.max(13,fs(14)), letterSpacing:0.3, fontStyle:"italic",fontFamily:"serif",fontWeight:"600",lineHeight:19,color:finish.text }]}>{"JCard\nPersonal"}</Text>
+        <View accessible accessibilityRole="header" accessibilityLabel="JCard Personal" style={{position:"absolute",top:0,left:0,right:0,alignItems:"center"}}>
+          <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",height:28}}>
+            <SvgXml xml={wordmarkJ} width={25} height={30} color={finish.text}/>
+            <Text style={{fontFamily:"cursive",fontStyle:"italic",fontSize:22,color:finish.text,marginLeft:-3}}>Card</Text>
+          </View>
+          <Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:16,color:finish.text,marginTop:-3}}>Personal</Text>
+        </View>
         <View style={{ width:jcardLayout.avatar + 8, height:jcardLayout.qr + 8 }}>
           <Avatar uri={card.avatar} name={card.name} size={jcardLayout.avatar}/>
           <Pressable accessibilityRole="button" accessibilityLabel="Información sobre verificación de identidad" onPress={()=>setInfo("La identidad todavía no está verificada. La insignia de verificación se otorgará tras revisar documentación válida según el país y la región.")} style={{position:"absolute",right:0,top:jcardLayout.avatar-17,width:25,height:25,borderRadius:13,backgroundColor:finish.sealFill,borderWidth:2,borderColor:finish.start,alignItems:"center",justifyContent:"center"}}>
-           <Svg width={19} height={19} viewBox="0 0 40 40"><Path d="M20 2 L34 9 L38 23 L29 36 L13 37 L2 25 L5 10 Z" fill={finish.sealText}/><Path d="M20 7 L30 12 L33 23 L27 31 L14 32 L7 24 L10 12 Z" fill={finish.start}/><Path d="M25 12 V23 Q25 29 18 29 Q13 29 12 24" stroke={finish.sealText} strokeWidth="4" fill="none" strokeLinecap="round"/></Svg>
+           <SvgXml xml={wordmarkJ} width={18} height={18} color={finish.sealText}/>
           </Pressable>
         </View>
         <View style={{alignItems:"center",gap:7}}>
