@@ -7,10 +7,10 @@ import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import { ProfessionalStatus } from "../../components/ProfessionalStatus";
 import { loadWorkspace } from "../../lib/professional-api";
 import { useProfessionalData } from "../../state/useProfessionalData";
-import { useEffect,useState } from "react";
+import { useCallback,useEffect,useState } from "react";
 import { Image, Keyboard, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router,useLocalSearchParams } from "expo-router";
+import { router,useFocusEffect,useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheet } from "../../components/social-ui";
 import { JobinWordmark } from "../../components/JobinWordmark";
@@ -28,6 +28,7 @@ export default function Profile() {
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
   const [history, setHistory] = useState<EmploymentEntry[]>([]);
   const [historyLoaded,setHistoryLoaded] = useState(false);
+  const [employerLink,setEmployerLink]=useState<{id:string;name:string;handle:string}|null>(null);
   const [businessRating,setBusinessRating]=useState<{rating:number|null;count:number}>({rating:null,count:0});
   useEffect(()=>{let active=true;AsyncStorage.getItem("jobin.professional.history.v1").then(raw=>{if(active&&raw){const parsed:unknown=JSON.parse(raw);if(Array.isArray(parsed))setHistory(parsed as EmploymentEntry[]);}}).catch(()=>{}).finally(()=>{if(active)setHistoryLoaded(true);});return()=>{active=false;};},[]);
   useEffect(()=>{if(historyLoaded)void AsyncStorage.setItem("jobin.professional.history.v1",JSON.stringify(history)).catch(()=>setNotice("No se pudo guardar el historial en este dispositivo."));},[history,historyLoaded]);
@@ -49,6 +50,7 @@ export default function Profile() {
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address:"", contact:"" });
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace);
+  useFocusEffect(useCallback(()=>{let live=true;const id=workspace.data?.card.id;if(id)void AsyncStorage.getItem("jobin.employer.link."+id).then(raw=>{if(live)setEmployerLink(raw?JSON.parse(raw):null);}).catch(()=>{if(live)setEmployerLink(null);});return()=>{live=false;};},[workspace.data?.card.id]));
   useEffect(()=>{let live=true;void readCloudHistory().then(async rows=>{if(!live)return;if(rows.length){const rawLocal=await AsyncStorage.getItem("jobin.professional.history.v1");const local=rawLocal?JSON.parse(rawLocal) as EmploymentEntry[]:[];setHistory(rows.map(row=>{const saved=local.find(entry=>entry.id===row.id);return {...row,address:saved?.address??row.address,contact:saved?.contact??row.contact};}));return;}const raw=await AsyncStorage.getItem("jobin.professional.history.v1");const local=raw?JSON.parse(raw) as EmploymentEntry[]:[];for(const item of local)await writeCloudHistory(item);if(live)setHistory(local);}).catch(()=>setNotice("No se pudo recuperar el historial en la nube."));return()=>{live=false;};},[]);
   useEffect(()=>{let live=true;void readBusinessRating(workspace.data?.card.id??"").then(value=>{if(live)setBusinessRating(value);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
   const p = DEMO_PROFILE;
@@ -110,7 +112,7 @@ export default function Profile() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
-          <JobinCard card={{...workspace.data.card,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,rating:businessRating.rating,reviewCount:businessRating.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness} ownerId={workspace.data.card.id}/>
+          <JobinCard card={{...workspace.data.card,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,rating:businessRating.rating,reviewCount:businessRating.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness} ownerId={workspace.data.card.id} employerLink={employerLink}/>
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
           <View style={{width:"100%",maxWidth:520,alignSelf:"center",gap:8}}>
             <Button title="Mi historial profesional · Agregar empleo" onPress={()=>{setMode("cv");openEmployment();}}/>
