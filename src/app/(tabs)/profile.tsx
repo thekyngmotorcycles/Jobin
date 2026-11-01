@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomSheet } from "../../components/social-ui";
 import { JobinWordmark } from "../../components/JobinWordmark";
 import { JobinCard } from "../../components/JobinCard";
+import type { BusinessCardData, JCardSeal } from "../../lib/jcard";
 import { Button, Notice, useUi } from "../../components/ui";
 import { canSendHistory } from "../../lib/rules";
 import { DEMO_PROFILE, DEMO_REQUESTING_COMPANIES, DEMO_VIDEOS, type EmploymentEntry } from "../../lib/me";
@@ -28,6 +29,12 @@ export default function Profile() {
   const [historyLoaded,setHistoryLoaded] = useState(false);
   useEffect(()=>{let active=true;AsyncStorage.getItem("jobin.professional.history.v1").then(raw=>{if(active&&raw){const parsed:unknown=JSON.parse(raw);if(Array.isArray(parsed))setHistory(parsed as EmploymentEntry[]);}}).catch(()=>{}).finally(()=>{if(active)setHistoryLoaded(true);});return()=>{active=false;};},[]);
   useEffect(()=>{if(historyLoaded)void AsyncStorage.setItem("jobin.professional.history.v1",JSON.stringify(history)).catch(()=>setNotice("No se pudo guardar el historial en este dispositivo."));},[history,historyLoaded]);
+  const [businessOpen,setBusinessOpen]=useState(false);
+  const [business,setBusiness]=useState<BusinessCardData>({name:"",opened:"",closed:"",services:[],location:"",licenseVerified:false,rating:null,reviewCount:0});
+  const [businessDraft,setBusinessDraft]=useState({name:"",opened:"",closed:"",services:"",location:""});
+  useEffect(()=>{let live=true;AsyncStorage.getItem("jobin.business.card.v1").then(raw=>{if(live&&raw)setBusiness(JSON.parse(raw) as BusinessCardData);}).catch(()=>{});return()=>{live=false;};},[]);
+  function editBusiness(){setBusinessDraft({name:business.name,opened:business.opened,closed:business.closed,services:business.services.join(", "),location:business.location});setBusinessOpen(true);}
+  function saveBusiness(){const services=businessDraft.services.split(",").map(x=>x.trim()).filter(Boolean);if(services.length>3){setNotice("Máximo tres servicios.");return;}const updated={...business,...businessDraft,services,licenseVerified:business.licenseVerified};setBusiness(updated);void AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(updated)).catch(()=>setNotice("No se pudo guardar el reverso."));setBusinessOpen(false);}
   const [sendOpen, setSendOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editingId,setEditingId] = useState<string|null>(null);
@@ -71,6 +78,8 @@ export default function Profile() {
     setNotice("Experiencia guardada. Cualquier cambio requiere una nueva verificación de la empresa.");
   }
 
+  const seals: JCardSeal[] = workspace.data?.card.seals.map(seal=>({...seal,icon:seal.profession.toLowerCase().includes("hvac")?"thermometer-outline":seal.profession.toLowerCase().includes("refrig")?"snow-outline":seal.icon,months:employmentMonths(history,seal.profession)}))??[];
+  for(const entry of history)for(const profession of entry.professions??[]){if(!seals.some(s=>s.profession.toLowerCase()===profession.toLowerCase()))seals.push({id:profession,profession,label:profession,icon:/hvac/i.test(profession)?"thermometer-outline":/refrig/i.test(profession)?"snow-outline":/electr/i.test(profession)?"flash-outline":"briefcase-outline",verified:false,months:employmentMonths(history,profession)});}
   const tabIcon = (icon: keyof typeof Ionicons.glyphMap, label: string, value: Mode | "live", active: boolean) => (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected: active }}
       onPress={() => (value === "live" ? openLive() : setMode(value))}
@@ -92,7 +101,7 @@ export default function Profile() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
-          <JobinCard card={{...workspace.data.card,years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}}/>
+          <JobinCard card={{...workspace.data.card,seals,business,years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness}/>
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
           <View style={{width:"100%",maxWidth:520,alignSelf:"center",gap:8}}>
             <Button title="Mi historial profesional · Agregar empleo" onPress={()=>{setMode("cv");openEmployment();}}/>
@@ -157,6 +166,17 @@ export default function Profile() {
         )}
       </ScrollView>
 
+      <BottomSheet visible={businessOpen} onClose={()=>setBusinessOpen(false)} title="Editar reverso de JCard">
+       <View style={{gap:12,paddingVertical:12}}>
+        <Text style={s.muted}>Si no tienes empresa, deja el nombre vacío y usa esta cara para presentarte profesionalmente.</Text>
+        {(["name","opened","closed","services","location"] as const).map(key=><View key={key} style={{gap:4}}>
+         <Text style={s.muted}>{{name:"Nombre de empresa (opcional)",opened:"Año de apertura",closed:"Año de cierre (opcional)",services:"Servicios (máximo 3, separados por comas)",location:"Dirección o localidad"}[key]}</Text>
+         <TextInput accessibilityLabel={key} value={businessDraft[key]} onChangeText={v=>setBusinessDraft(d=>({...d,[key]:v}))} placeholderTextColor={colors.muted} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:12,borderRadius:10}}/>
+        </View>)}
+        <Text style={s.muted}>El check de licencia comercial solo se activa después de verificar la documentación, no al editar estos datos.</Text>
+        <Button title="Guardar presentación o negocio" onPress={saveBusiness}/>
+       </View>
+      </BottomSheet>
       <BottomSheet visible={sendOpen} onClose={() => setSendOpen(false)} title="Enviar historial">
         <View style={{ gap: 14, paddingVertical: 16 }}>
           {DEMO_REQUESTING_COMPANIES.length === 0 ? (
