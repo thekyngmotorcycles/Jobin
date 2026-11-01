@@ -3,6 +3,7 @@ import {router,useLocalSearchParams} from "expo-router";
 import {Pressable,ScrollView,Text,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {HOME_MENU_ITEMS} from "../../components/HomeSideMenu";
+import {JobinMenuIcon} from "../../components/JobinMenuIcon";
 import {useUi} from "../../components/ui";
 import {useTheme} from "../../state/ThemeProvider";
 import {THEMES} from "../../theme/palettes";
@@ -13,7 +14,7 @@ export default function MenuSection(){
  return <SafeAreaView edges={["bottom"]} style={s.screen}>
   <ScrollView contentContainerStyle={{padding:24,gap:22,maxWidth:720,width:"100%",alignSelf:"center"}}>
    <View style={{flexDirection:"row",alignItems:"center",gap:14}}>
-    <Ionicons name={item.icon} size={35} color={colors.ink}/>
+    <JobinMenuIcon name={item.slug} size={35} color={colors.ink}/>
     <Text accessibilityRole="header" style={[s.h2,{flex:1}]}>{item.label}</Text>
    </View>
    <Text style={s.muted}>{item.description}</Text>
