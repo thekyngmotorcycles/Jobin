@@ -112,7 +112,6 @@ export default function Professional() {
        </>}
       </View>}
      </View>}
-    </View>}
     <View onLayout={e=>{positions.current.privacy=e.nativeEvent.layout.y;}} style={s.panel}>
      {sectionRow("privacy","Privacidad de contacto","Decide si muestras correo y teléfono","lock-closed-outline")}
      {section==="privacy"&&<View style={{gap:18,paddingBottom:12}}>
