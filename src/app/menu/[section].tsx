@@ -18,11 +18,7 @@ export default function MenuSection(){
  if(!item)return <SafeAreaView style={s.screen}><Text style={s.h2}>Sección no encontrada</Text></SafeAreaView>;
  return <SafeAreaView edges={["bottom"]} style={s.screen}>
   <ScrollView contentContainerStyle={{padding:24,gap:22,maxWidth:720,width:"100%",alignSelf:"center"}}>
-   <View style={{flexDirection:"row",alignItems:"center",gap:14}}>
-    <JobinMenuIcon name={item.slug} size={35} color={colors.ink}/>
-    <Text accessibilityRole="header" style={[s.h2,{flex:1}]}>{item.label}</Text>
-   </View>
-   <Text style={s.muted}>{item.description}</Text>
+   {section!=="configuracion"&&<Text style={s.muted}>{item.description}</Text>}
    {section==="configuracion"&&<View style={{gap:24}}>
     <View style={{flexDirection:"row",alignItems:"center",backgroundColor:colors.card,borderRadius:16,borderWidth:1,borderColor:colors.line,paddingHorizontal:14,gap:10}}>
      <Ionicons name="search-outline" size={22} color={colors.muted}/>
