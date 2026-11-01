@@ -31,6 +31,8 @@ function Navigation() {
  <Stack.Screen name="settings" options={{title:"Configuración"}}/>
  <Stack.Screen name="account" options={{title:"Sign up",headerShown:false}}/>
  <Stack.Screen name="login" options={{title:"Log in",headerShown:false}}/>
+ <Stack.Screen name="recover-account" options={{title:"Recuperar cuenta",headerShown:false}}/>
+ <Stack.Screen name="verify-phone" options={{title:"Verificar teléfono"}}/>
  <Stack.Screen name="company" options={{title:"Empresa o institución"}}/>
  <Stack.Screen name="professional" options={{title:"Mi JCard"}}/>
  <Stack.Screen name="certificates" options={{title:"Certificados"}}/>
