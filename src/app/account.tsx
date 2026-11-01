@@ -59,7 +59,7 @@ export default function Account() {
    if(phoneError)throw new Error("Cuenta creada. No se pudo iniciar la verificación telefónica: "+phoneError.message);
    await startJobinSession();
    setPassword("");setConfirmPassword("");
-   router.replace("/videos");
+   router.replace("/verify-phone");
   }catch(error){setNotice(error instanceof Error?error.message:"No se pudo completar el registro.");}
   finally{setBusy(false);}
  }
