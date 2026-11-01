@@ -1,4 +1,6 @@
-export const JOBIN_SETTINGS_GROUPS=[
+export type JobinSettingsEntry={id:string;title:string;description:string;route?:string};
+export type JobinSettingsGroup={title:string;description:string;items:JobinSettingsEntry[]};
+export const JOBIN_SETTINGS_GROUPS:JobinSettingsGroup[]=[
  {title:"Tu cuenta",description:"Gestiona tu identidad y seguridad en Jobin.",items:[
   {id:"cuenta",title:"Cuenta y seguridad",description:"Contraseña, datos personales y verificación.",route:"/settings"},
   {id:"suscripciones",title:"Suscripciones",description:"Planes y beneficios de Jobin."}]},
@@ -24,4 +26,4 @@ export const JOBIN_SETTINGS_GROUPS=[
   {id:"privacidad-politica",title:"Política de privacidad",description:"Cómo se protege tu información."},
   {id:"normas",title:"Normas comunitarias",description:"Convivencia y seguridad en Jobin.",route:"/safety"},
   {id:"ayuda",title:"Ayuda y soporte",description:"Resuelve dudas y consulta recursos."}]},
-] as const;
+];
