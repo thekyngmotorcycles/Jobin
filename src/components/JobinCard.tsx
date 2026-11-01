@@ -27,19 +27,22 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
   const [info,setInfo]=useState<string|null>(null);
   const rows = sealRows(card.seals);
   const columns = Math.max(1, ...rows.map(row => row.length));
-  const sealWidth = Math.max(Math.max(jcardLayout.minimumSealWidth, ...card.seals.map(seal => seal.label.length * 6 + 8)) * fontScale, (contentWidth - (columns - 1) * jcardLayout.gap) / columns);
+  const sealGap = 5;
+  const sealWidth = Math.min(72,Math.max(48,(contentWidth - (columns - 1) * sealGap) / columns));
   const bodySize = Math.max(12, fs(expanded ? 14 : 13));
   const lineStyle = { color:finish.text, fontSize:bodySize, lineHeight:bodySize * 1.5 };
   return <View style={[s.panel, { padding:0, gap:0, borderRadius:jcardLayout.radius, borderColor:finish.line, backgroundColor:finish.start, overflow:"hidden" }]}>
-    <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" accessible={false} pointerEvents="none">
+    <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" viewBox="0 0 400 650" preserveAspectRatio="none" accessible={false} pointerEvents="none">
       <Defs><LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
         <Stop offset="0%" stopColor={finish.start}/><Stop offset="100%" stopColor={finish.end}/>
       </LinearGradient><LinearGradient id={shineId} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={finish.start} stopOpacity="0.34"/><Stop offset="34%" stopColor={finish.start} stopOpacity="0"/><Stop offset="70%" stopColor={finish.end} stopOpacity="0.08"/><Stop offset="100%" stopColor={finish.end} stopOpacity="0.26"/></LinearGradient></Defs>
       <Rect width="100%" height="100%" fill={"url(#" + gradientId + ")"}/>
       <Rect width="100%" height="100%" fill={"url(#" + shineId + ")"}/>
 
-      <Path d="M0 95 Q90 20 205 0" stroke={finish.line} strokeOpacity="0.17" strokeWidth="1.5" fill="none"/>
-      <Path d="M0 118 Q110 35 240 0" stroke={finish.line} strokeOpacity="0.12" strokeWidth="1" fill="none"/>
+      {/* Fine flowing emboss lines, like the supplied satin-paper reference. Keep the QR zone clean. */}
+      {Array.from({length:15},(_,i)=><Path key={"left"+i} d={`M ${-45+i*10} 330 C ${42+i*4} 235, ${-20+i*8} 116, ${78+i*7} -25`} stroke={finish.line} strokeOpacity={0.12+(i%3)*0.025} strokeWidth={i%4===0?1.35:0.75} fill="none"/>)}
+      {Array.from({length:16},(_,i)=><Path key={"bottom"+i} d={`M ${-45+i*13} 675 C ${60+i*8} 540, ${235+i*4} 555, ${440+i*2} 395`} stroke={finish.line} strokeOpacity={0.13+(i%4)*0.022} strokeWidth={i%5===0?1.45:0.75} fill="none"/>)}
+      <Path d="M-20 420 C105 250 225 300 420 95" stroke={finish.line} strokeOpacity="0.09" strokeWidth="2" fill="none"/>
     </Svg>
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
     <View style={{ padding:jcardLayout.padding, gap:14 }}>
@@ -59,7 +62,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
       </View>
 
       <View style={{ gap:5 }}>
-        <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[s.h3, { color:finish.text, fontSize:Math.max(13,fs(expanded ? 16 : 14)), lineHeight:Math.max(21,fs(expanded ? 24 : 22)) }]}>
+        <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[s.h3, { color:finish.text, fontSize:Math.max(18,fs(expanded ? 20 : 19)), lineHeight:Math.max(25,fs(expanded ? 28 : 27)) }]}>
           {card.name}
         </Text>
         <Text style={{color:finish.secondary,fontSize:11}}>@{card.handle}</Text>
@@ -73,17 +76,17 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
       </View>
 
       <View onLayout={event => setContentWidth(event.nativeEvent.layout.width)} style={{ paddingTop:12, borderTopWidth:1, borderTopColor:finish.line }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityLabel="Sellos profesionales; desliza horizontalmente si necesitas más espacio" contentContainerStyle={{ minWidth:"100%" }}>
-          <View style={{ gap:jcardLayout.gap }}>
-            {rows.map((row, index) => <View key={index} style={{ flexDirection:"row", gap:jcardLayout.gap }}>
-              {row.map(seal => <Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\n"+experienceLabel(seal.months??0)+" de experiencia registrada.\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:Math.min(112,Math.max(82,sealWidth)),height:100,alignItems:"center",justifyContent:"center",gap:4}}>
-                <View style={{width:70,height:70,borderRadius:35,borderWidth:3,borderColor:seal.verified?finish.sealFill:finish.line,backgroundColor:finish.pendingFill,alignItems:"center",justifyContent:"center",elevation:4,shadowColor:finish.text,shadowOpacity:0.15,shadowRadius:5}}>
-                 <View style={{width:56,height:56,borderRadius:28,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center",gap:3}}>
-                  <Ionicons name={seal.verified?"shield-checkmark-outline":seal.icon} size={23} color={finish.text}/>
-                  <Text style={{fontSize:10,fontWeight:"800",color:finish.text}}>{experienceLabel(seal.months??0)}</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityLabel="Sellos profesionales" contentContainerStyle={{ minWidth:"100%" }}>
+          <View style={{ gap:sealGap }}>
+            {rows.map((row, index) => <View key={index} style={{ flexDirection:"row", gap:sealGap }}>
+              {row.map(seal => <Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\n"+experienceLabel(seal.months??0)+" de experiencia registrada.\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:sealWidth,height:70,alignItems:"center",justifyContent:"center",gap:2}}>
+                <View style={{width:54,height:54,borderRadius:27,borderWidth:2,borderColor:seal.verified?finish.sealFill:finish.line,backgroundColor:finish.pendingFill,alignItems:"center",justifyContent:"center",elevation:4,shadowColor:finish.text,shadowOpacity:0.15,shadowRadius:5}}>
+                 <View style={{width:46,height:46,borderRadius:23,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center",gap:1}}>
+                  <Ionicons name={seal.verified?"shield-checkmark-outline":seal.icon} size={27} color={finish.text}/>
+                  <Text style={{fontSize:8,fontWeight:"700",color:finish.text}}>{experienceLabel(seal.months??0)}</Text>
                  </View>
                 </View>
-                <Text style={{fontSize:9,color:finish.secondary}}>{seal.verified?"VERIFICADO":"SIN VERIFICAR"}</Text>
+
               </Pressable>)}
             </View>)}
           </View>
