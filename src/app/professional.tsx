@@ -4,7 +4,7 @@ import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-nativ
 import { Button, Chips, Notice, Screen, useUi } from "../components/ui";
 import { ProfessionPicker } from "../components/ProfessionPicker";
 import { ProfessionalStatus } from "../components/ProfessionalStatus";
-import { loadCatalog, loadEducation, loadWorkspace, professionalMutation } from "../lib/professional-api";
+import { loadCatalog, loadEducation, loadSpecialtyCatalog, loadWorkspace, professionalMutation, saveProfessionSpecialties } from "../lib/professional-api";
 import { useProfessionalAction, useProfessionalData } from "../state/useProfessionalData";
 import {loadContactPreferences,saveContactPreferences} from "../lib/jcard-contact";
 import {LanguageRing,LANGUAGE_LEVELS,languageLabel} from "../components/LanguageRing";
@@ -18,6 +18,8 @@ export default function Professional() {
  const {s,colors}=useUi();
  const workspace=useProfessionalData(loadWorkspace);const catalog=useProfessionalData(loadCatalog);
  const action=useProfessionalAction(workspace.reload);
+ const specialtyCatalog=useProfessionalData(loadSpecialtyCatalog);
+ const [specialties,setSpecialties]=useState<string[]>([]);
  type Section="identity"|"languages"|"professions"|"privacy";
  const [section,setSection]=useState<Section|null>(null);
  const scrollRef=useRef<ScrollView>(null);
@@ -30,8 +32,8 @@ export default function Professional() {
  const [formMode,setFormMode]=useState<"add"|"edit">("add");
  const [editedPrimary,setEditedPrimary]=useState(false);
  function openSection(id:Section){setSection(current=>current===id?null:id);}
- function openProfession(code:string,primary:boolean){choose(code);setFormMode("edit");setEditedPrimary(primary);setEditingProfession(code);setProfessionFormOpen(true);}
- function addProfession(){setProfession("");setTraining("graduado");setInstitution(null);setFormMode("add");setEditingProfession(null);setEditedPrimary(false);setProfessionFormOpen(true);}
+ function openProfession(code:string,primary:boolean){choose(code);setSpecialties(w?.professions.find(p=>p.profession_code===code)?.specialties??[]);setFormMode("edit");setEditedPrimary(primary);setEditingProfession(code);setProfessionFormOpen(true);}
+ function addProfession(){setSpecialties([]);setProfession("");setTraining("graduado");setInstitution(null);setFormMode("add");setEditingProfession(null);setEditedPrimary(false);setProfessionFormOpen(true);}
  useEffect(()=>{if(!section)return;const t=setTimeout(()=>scrollRef.current?.scrollTo({y:Math.max(0,(positions.current[section]??0)-18),animated:true}),160);return()=>clearTimeout(t);},[section]);
  const [showEmail,setShowEmail]=useState(false);const [showPhone,setShowPhone]=useState(false);
  useEffect(()=>{let live=true;void loadContactPreferences().then(p=>{if(live){setShowEmail(p.show_email);setShowPhone(p.show_phone);}}).catch(()=>{});return()=>{live=false;};},[]);
@@ -46,7 +48,7 @@ export default function Professional() {
 
  useEffect(()=>{if(!w)return;setName(w.card.name);setHandle(w.card.handle);setCity(w.profile.city||"");setRegion(w.profile.region||"");setAvailability(w.card.status);setLanguages(w.card.languages.map(l=>({name:l.name,fluency:String(l.fluency)})));},[w]);
  const input={color:colors.ink,borderColor:colors.line,borderWidth:1,borderRadius:10,padding:12,minHeight:44};
- function choose(code:string){setProfession(code);const pp=w?.professions.find(p=>p.profession_code===code);setTraining(pp?.training_status??"graduado");setInstitution(pp?.institution_id??null);}
+ function choose(code:string){setProfession(code);setSpecialties(w?.professions.find(p=>p.profession_code===code)?.specialties??[]);const pp=w?.professions.find(p=>p.profession_code===code);setTraining(pp?.training_status??"graduado");setInstitution(pp?.institution_id??null);}
  const sectionRow=(id:Section,title:string,subtitle:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}>
   <Ionicons name={icon} size={25} color={colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>{title}</Text><Text style={s.muted}>{subtitle}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={colors.muted}/>
  </Pressable>;
@@ -107,14 +109,17 @@ export default function Professional() {
        {formMode==="edit"&&<Text style={s.muted}>Selecciona otra profesión de la lista para reemplazar la actual, o modifica sus datos de formación.</Text>}
        {!!catalog.error&&<Notice text={catalog.error} onClose={catalog.reload}/>}
        <ProfessionPicker catalog={catalog.data} value={profession} onChange={choose}/>
+       <Text style={[s.h3,{fontSize:15}]}>Especialidades (opcional)</Text>
+       <Text style={s.muted}>Selecciona las áreas en las que trabajas. Aparecerán en la información de tu profesión, no como una lista en la JCard. Son declaradas por el usuario.</Text>
+       {(specialtyCatalog.data?.[profession]??[]).length>0?<View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{(specialtyCatalog.data?.[profession]??[]).map(item=><Pressable key={item} accessibilityRole="checkbox" accessibilityState={{checked:specialties.includes(item)}} onPress={()=>setSpecialties(old=>old.includes(item)?old.filter(x=>x!==item):old.length<20?[...old,item]:old)} style={{borderWidth:1,borderColor:colors.line,borderRadius:12,paddingHorizontal:10,paddingVertical:9,backgroundColor:specialties.includes(item)?colors.accent:colors.paper}}><Text style={{color:colors.ink,fontSize:13}}>{specialties.includes(item)?"✓ ":""}{item}</Text></Pressable>)}</View>:<Text style={s.muted}>{specialtyCatalog.loading?"Cargando especialidades…":"Sin especialidades disponibles para esta profesión."}</Text>}
        <Chips values={["graduado","in_academy"] as const} value={training} onChange={setTraining} getLabel={v=>v==="graduado"?"Graduado":"En formación"} label="Formación"/>
        <Text style={s.muted}>Institución educativa (opcional)</Text>
        <Button secondary title={institution?"Quitar institución":"Sin institución seleccionada"} onPress={()=>setInstitution(null)}/>
        {education.loading?<Text style={s.muted}>Buscando instituciones…</Text>:education.error?<Text style={s.muted}>{education.error}</Text>:education.data?.map(school=><Button key={school.id} secondary title={(institution===school.id?"✓ ":"")+school.name} onPress={()=>setInstitution(school.id)}/>)}
        {!education.loading&&!education.error&&education.data?.length===0&&<Text style={s.muted}>No hay instituciones preaprobadas para esta profesión. Puedes continuar sin seleccionar una.</Text>}
-       {formMode==="edit"?<Button title="Guardar profesión" onPress={()=>void action.run(async()=>{if(!profession)throw new Error("Selecciona una profesión.");await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:editedPrimary});if(editingProfession&&editingProfession!==profession){await professionalMutation("jobin_remove_unverified_profession",{profession:editingProfession});}setProfessionFormOpen(false);setEditingProfession(null);},"Profesión actualizada.")}/>:<>
-        <Button secondary title="Guardar como secundaria" onPress={()=>void action.run(async()=>{if(!profession)throw new Error("Selecciona una profesión.");await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:false});setProfessionFormOpen(false);},"Profesión secundaria guardada.")}/>
-        <Button title="Guardar como principal" onPress={()=>void action.run(async()=>{if(!profession)throw new Error("Selecciona una profesión.");await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:true});setProfessionFormOpen(false);},"Profesión principal guardada.")}/>
+       {formMode==="edit"?<Button title="Guardar profesión" onPress={()=>void action.run(async()=>{if(!profession)throw new Error("Selecciona una profesión.");await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:editedPrimary});await saveProfessionSpecialties(profession,specialties);if(editingProfession&&editingProfession!==profession){await professionalMutation("jobin_remove_unverified_profession",{profession:editingProfession});}setProfessionFormOpen(false);setEditingProfession(null);},"Profesión actualizada.")}/>:<>
+        <Button secondary title="Guardar como secundaria" onPress={()=>void action.run(async()=>{if(!profession)throw new Error("Selecciona una profesión.");await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:false});await saveProfessionSpecialties(profession,specialties);setProfessionFormOpen(false);},"Profesión secundaria guardada.")}/>
+        <Button title="Guardar como principal" onPress={()=>void action.run(async()=>{if(!profession)throw new Error("Selecciona una profesión.");await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:true});await saveProfessionSpecialties(profession,specialties);setProfessionFormOpen(false);},"Profesión principal guardada.")}/>
        </>}
       </View>}
      </View>}
