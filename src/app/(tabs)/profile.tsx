@@ -8,7 +8,7 @@ import { ProfessionalStatus } from "../../components/ProfessionalStatus";
 import { loadWorkspace } from "../../lib/professional-api";
 import { useProfessionalData } from "../../state/useProfessionalData";
 import { useEffect,useState } from "react";
-import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Image, Keyboard, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router,useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -43,10 +43,10 @@ export default function Profile() {
   const [formError,setFormError] = useState("");
   function openEmployment(entry?:EmploymentEntry){
     setEditingId(entry?.id??null);
-    setDraft(entry?{company:entry.company,role:entry.role,from:String(entry.from),to:entry.to===null?"":String(entry.to),profession:(entry.professions??[]).join(", "),fromMonth:String(entry.fromMonth??1),toMonth:String(entry.toMonth??12)}:{company:"",role:"",from:"",to:"",profession:"",fromMonth:"1",toMonth:"12"});
+    setDraft(entry?{company:entry.company,role:entry.role,from:String(entry.from),to:entry.to===null?"":String(entry.to),profession:(entry.professions??[]).join(", "),fromMonth:String(entry.fromMonth??1),toMonth:String(entry.toMonth??12),address:entry.address??"",contact:entry.contact??""}:{company:"",role:"",from:"",to:"",profession:"",fromMonth:"1",toMonth:"12",address:"",contact:""});
     setFormError("");setAddOpen(true);
   }
-  const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12" });
+  const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address:"", contact:"" });
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace);
   useEffect(()=>{let live=true;void readCloudHistory().then(async rows=>{if(!live)return;if(rows.length){setHistory(rows);return;}const raw=await AsyncStorage.getItem("jobin.professional.history.v1");const local=raw?JSON.parse(raw) as EmploymentEntry[]:[];for(const item of local)await writeCloudHistory(item);if(live)setHistory(local);}).catch(()=>setNotice("No se pudo recuperar el historial en la nube."));return()=>{live=false;};},[]);
@@ -76,7 +76,8 @@ export default function Profile() {
       setFormError("Completa empresa, cargo y años válidos (el final no puede ser anterior al inicio).");
       return;
     }
-    const updated:EmploymentEntry={id:editingId??Date.now()+"",company:draft.company.trim(),role:draft.role.trim(),professions:draft.profession.split(",").map(x=>x.trim()).filter(Boolean),fromMonth,toMonth,from,to,status:"pending",verifiedBy:null};
+    Keyboard.dismiss();
+    const updated:EmploymentEntry={id:editingId??Date.now()+"",company:draft.company.trim(),role:draft.role.trim(),professions:draft.profession.split(",").map(x=>x.trim()).filter(Boolean),fromMonth,toMonth,from,to,address:draft.address.trim(),contact:draft.contact.trim(),status:"pending",verifiedBy:null};
     setHistory(items=>editingId?items.map(entry=>entry.id===editingId?updated:entry):[...items,updated]);
     void writeCloudHistory(updated).catch(()=>setNotice("Guardado localmente, pero no se pudo sincronizar. Revisa la conexión."));
     setDraft({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12" });
@@ -203,7 +204,18 @@ export default function Profile() {
           ))}
           {!!formError&&<Text accessibilityRole="alert" style={{color:colors.reaction}}>{formError}</Text>}
           <TextInput accessibilityLabel="Profesiones (separadas por coma)" placeholder="Profesiones: HVAC, Electricidad" placeholderTextColor={colors.muted} value={draft.profession} onChangeText={v=>setDraft(d=>({...d,profession:v}))} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>
-          {(["fromMonth","toMonth"] as const).map(key=><TextInput key={key} accessibilityLabel={key==="fromMonth"?"Mes de inicio":"Mes de término"} placeholder={key==="fromMonth"?"Mes de inicio (1-12)":"Mes de término (1-12)"} placeholderTextColor={colors.muted} keyboardType="number-pad" value={draft[key]} onChangeText={v=>setDraft(d=>({...d,[key]:v}))} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>)}
+          <Text style={[s.h3,{fontSize:15}]}>Meses de trabajo</Text>
+          <Text style={s.muted}>Selecciona el mes de inicio y de finalización. Enero = 1; diciembre = 12.</Text>
+          {(["fromMonth","toMonth"] as const).map(key=><View key={key} style={{gap:6}}>
+           <Text style={s.muted}>{key==="fromMonth"?"Mes de inicio":"Mes de término"}</Text>
+           <View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}>{["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((month,index)=><Pressable key={month} accessibilityRole="button" accessibilityState={{selected:Number(draft[key])===index+1}} onPress={()=>setDraft(d=>({...d,[key]:String(index+1)}))} style={{minWidth:"22%",minHeight:42,borderWidth:1,borderColor:colors.line,borderRadius:10,alignItems:"center",justifyContent:"center",backgroundColor:Number(draft[key])===index+1?colors.accent:colors.card}}><Text style={{color:colors.ink,fontWeight:Number(draft[key])===index+1?"700":"400"}}>{month}</Text></Pressable>)}</View>
+          </View>)}
+          <Text style={[s.h3,{fontSize:15}]}>Contacto de la empresa (opcional)</Text>
+          <Text style={s.muted}>Estos datos ayudan a identificar a tu empleador. No implican que la experiencia esté verificada.</Text>
+          <Text style={s.muted}>Dirección de la empresa</Text>
+          <TextInput accessibilityLabel="Dirección de la empresa" placeholder="Calle, ciudad, estado" placeholderTextColor={colors.muted} value={draft.address} onChangeText={v=>setDraft(d=>({...d,address:v}))} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>
+          <Text style={s.muted}>Teléfono o correo de la empresa</Text>
+          <TextInput accessibilityLabel="Teléfono o correo de la empresa" placeholder="Teléfono o email de contacto" placeholderTextColor={colors.muted} value={draft.contact} onChangeText={v=>setDraft(d=>({...d,contact:v}))} autoCapitalize="none" style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>
           <Text style={s.muted}>Puedes editar estos datos cuando quieras. Al modificarlos se reinicia la verificación de la empresa.</Text>
           <Button title="Guardar" onPress={add} />
         </View>
