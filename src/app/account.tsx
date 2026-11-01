@@ -4,7 +4,7 @@ import { loadCatalog } from "../lib/professional-api";
 import { useProfessionalData } from "../state/useProfessionalData";
 import { ORGANIZATION_LABELS, type OrganizationKind } from "../lib/professional-types";
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import { AuthAction, AuthField, AuthShell } from "../components/AuthForms";
 import { startJobinSession } from "../components/AuthGate";
@@ -14,10 +14,13 @@ import { requireSupabase } from "../lib/supabase";
 const VALID_USERNAME = /^[a-z][a-z0-9_]{2,29}$/;
 export default function Account() {
  const {colors,s}=useUi();
- const [kind,setKind]=useState<"personal"|"company">("personal");
+ const [kind,setKind]=useState<"personal"|"company"|"both">("personal");
  const [name,setName]=useState("");
  const [username,setUsername]=useState("");
  const [email,setEmail]=useState("");
+ const [phone,setPhone]=useState("");
+ const [showEmail,setShowEmail]=useState(false);
+ const [showPhone,setShowPhone]=useState(false);
  const [password,setPassword]=useState("");
  const [confirmPassword,setConfirmPassword]=useState("");
  const [profession,setProfession]=useState("");
@@ -33,14 +36,13 @@ export default function Account() {
   if(!name.trim()||!email.trim()||password.length<8){setNotice("Completa nombre, email y contraseña de al menos 8 caracteres.");return;}
   if(!VALID_USERNAME.test(handle)){setNotice("El usuario debe tener 3 a 30 caracteres: letras minúsculas, números o guiones bajos; comienza con una letra.");return;}
   if(password!==confirmPassword){setNotice("Las contraseñas no coinciden.");return;}
-  if(kind==="personal"&&!profession){setNotice("Selecciona tu profesión en el catálogo.");return;}
   setBusy(true);
   try{
    const client=requireSupabase();
    const {data:existing,error:lookupError}=await client.from("usernames").select("username").eq("username",handle).maybeSingle();
    if(lookupError)throw lookupError;
    if(existing){setNotice("Ese nombre de usuario ya está en uso. Elige otro.");return;}
-   const {data,error}=await client.auth.signUp({email:email.trim().toLowerCase(),password,options:{data:{display_name:name.trim(),username:handle,account_type:kind,profession_code:kind==="personal"?profession:null,training_status:training,organization_kind:kind==="company"?organizationKind:null}}});
+   const {data,error}=await client.auth.signUp({email:email.trim().toLowerCase(),password,options:{data:{display_name:name.trim(),username:handle,account_type:kind,phone:phone.trim()||null,show_email:showEmail,show_phone:showPhone,profession_code:kind!=="company"?(profession||null):null,training_status:training,organization_kind:kind==="company"?organizationKind:null}}});
    if(error)throw error;
    if(!data.user)throw new Error("No se pudo crear la cuenta.");
    let session=data.session;
@@ -62,21 +64,24 @@ export default function Account() {
   finally{setBusy(false);}
  }
  return <AuthShell title="Sign up" footer={<AuthAction secondary label="¿Ya tienes cuenta? Log in" onPress={()=>router.replace("/login")}/>}>
-  <Text style={{fontSize:13,color:authSilver.tone1,textAlign:"center"}}>Crea tu identidad profesional en Jobin.</Text>
+  <Text style={{fontSize:13,color:authSilver.tone1,textAlign:"center"}}>Crea tu cuenta ahora. Puedes completar tu JCard más adelante.</Text>
   <Text style={{fontWeight:"700",color:authSilver.tone2}}>Tipo de cuenta</Text>
-  <Chips values={["personal","company"] as const} value={kind} onChange={setKind} label="Tipo de cuenta"/>
+  <View style={{gap:8}}>{([["personal","Solo personal"],["company","Solo empresa"],["both","Personal y empresa"]] as const).map(([value,label])=><AuthAction key={value} secondary label={(kind===value?"✓ ":"")+label} onPress={()=>setKind(value)}/>)}</View>
   {kind==="company"?<View style={{gap:8}}>
    <Text style={{fontWeight:"700",color:authSilver.tone2}}>Tipo de organización</Text>
    {(["company","education","government"] as const).map(value=><AuthAction key={value} secondary label={(value===organizationKind?"✓ ":"")+ORGANIZATION_LABELS[value]} onPress={()=>setOrganizationKind(value)}/>)}
   </View>:<View style={{gap:8}}>
-   <Text style={{fontWeight:"700",color:authSilver.tone2}}>Profesión</Text>
+   <Text style={{fontWeight:"700",color:authSilver.tone2}}>Profesión (opcional)</Text>
    {!!catalog.error&&<Text style={{color:authSilver.tone3}}>{catalog.error}</Text>}
    <ProfessionPicker catalog={catalog.data} value={profession} onChange={setProfession}/>
    <Chips values={["graduado","in_academy"] as const} value={training} onChange={setTraining} label="Formación"/>
   </View>}
-  <AuthField label="Nombre completo / empresa" placeholder="Tu nombre" value={name} onChangeText={setName} autoCapitalize="words"/>
+  <AuthField label="Nombre legal (obligatorio)" placeholder="Tu nombre" value={name} onChangeText={setName} autoCapitalize="words"/>
   <AuthField label="Nombre de usuario" placeholder="@usuario_en_minusculas" value={username} onChangeText={value=>setUsername(value.toLowerCase().replace(/[^a-z0-9_@]/g,""))}/>
-  <AuthField label="Email" placeholder="Tu correo" value={email} onChangeText={setEmail} keyboardType="email-address"/>
+  <AuthField label="Correo para iniciar sesión (obligatorio por ahora)" placeholder="Tu correo" value={email} onChangeText={setEmail} keyboardType="email-address"/>
+  <AuthField label="Teléfono (opcional)" placeholder="+1 555 000 0000" value={phone} onChangeText={setPhone} keyboardType="phone-pad"/>
+  <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showEmail}} onPress={()=>setShowEmail(v=>!v)}><Text style={{color:authSilver.tone2}}>{showEmail?"☑":"☐"} Mostrar correo en mi JCard</Text></Pressable>
+  <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showPhone}} onPress={()=>setShowPhone(v=>!v)}><Text style={{color:authSilver.tone2}}>{showPhone?"☑":"☐"} Mostrar teléfono en mi JCard</Text></Pressable>
   <AuthField label="Contraseña" placeholder="Mínimo 8 caracteres" value={password} onChangeText={setPassword} secure/>
   <AuthField label="Confirmar contraseña" placeholder="Repite tu contraseña" value={confirmPassword} onChangeText={setConfirmPassword} secure/>
   {!!notice&&<Text accessibilityLiveRegion="polite" style={{color:authSilver.tone3}}>{notice}</Text>}
