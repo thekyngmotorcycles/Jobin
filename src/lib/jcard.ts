@@ -5,7 +5,7 @@ export interface JCardSeal {
   id: string;
   label: string;
   profession: string;
-  icon: "snow-outline" | "flash-outline" | "water-outline" | "hammer-outline" | "build-outline" | "color-palette-outline" | "leaf-outline" | "car-outline" | "restaurant-outline" | "camera-outline" | "mic-outline" | "laptop-outline" | "briefcase-outline" | "medkit-outline" | "cut-outline" | "school-outline" | "shield-checkmark-outline" | "cog-outline";
+  icon: "thermometer-outline" | "snow-outline" | "flash-outline" | "water-outline" | "hammer-outline" | "build-outline" | "color-palette-outline" | "leaf-outline" | "car-outline" | "restaurant-outline" | "camera-outline" | "mic-outline" | "laptop-outline" | "briefcase-outline" | "medkit-outline" | "cut-outline" | "school-outline" | "shield-checkmark-outline" | "cog-outline";
   verified: boolean;
   months?: number;
 }
