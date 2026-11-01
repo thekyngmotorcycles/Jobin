@@ -12,7 +12,7 @@ import { useTheme, type ThemeName } from "../state/ThemeProvider";
 import { displayedRating, jcardTier, sealRows, type CardData, type BusinessCardData } from "../lib/jcard";
 import {loadPublicContact} from "../lib/jcard-contact";
 import { experienceLabel } from "../lib/employment";
-import {professionIcon} from "../lib/profession-icons";
+import {ProfessionGlyph} from "./ProfessionGlyph";
 import { LanguageRing, languageLabel, LANGUAGE_LEVELS } from "./LanguageRing";
 import { jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
 
@@ -89,7 +89,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
         <View style={{flexDirection:"row",alignItems:"center",flexWrap:"wrap",gap:7}}>
           <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[lineStyle,{fontWeight:"600"}]}>{primaryProfession}</Text>
           <Pressable accessibilityRole="button" accessibilityLabel="Detalles de la profesión principal" onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nCategoría: "+(/hvac/i.test(card.role)?"Aire acondicionado":card.role)+"\nExperiencia en esta profesión: "+(primarySeal&&primarySeal.months?experienceLabel(primarySeal.months):"Sin experiencia registrada")+".\n"+(primarySeal?.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{padding:3,borderWidth:1,borderColor:finish.line,borderRadius:18}}>
-            <Ionicons name={professionIcon(card.role,primarySeal?.icon??"briefcase-outline")} size={19} color={finish.text}/>
+            <ProfessionGlyph profession={card.role} fallback={primarySeal?.icon??"briefcase-outline"} size={19} color={finish.text}/>
           </Pressable>
         </View>
         <View style={{flexDirection:"row",alignItems:"center",flexWrap:"wrap",gap:8}}>
@@ -112,7 +112,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
               {row.map(seal => <Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\nExperiencia registrada: "+experienceLabel(seal.months??0)+".\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:sealWidth,height:70,alignItems:"center",justifyContent:"center",gap:2}}>
                 <View style={{width:54,height:54,borderRadius:27,borderWidth:2,borderColor:seal.verified?finish.sealFill:finish.line,backgroundColor:finish.pendingFill,alignItems:"center",justifyContent:"center",elevation:4,shadowColor:finish.text,shadowOpacity:0.15,shadowRadius:5}}>
                  <View style={{width:46,height:46,borderRadius:23,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center",gap:1}}>
-                  <Ionicons name={professionIcon(seal.profession,seal.icon)} size={27} color={finish.text}/>
+                  <ProfessionGlyph profession={seal.profession} fallback={seal.icon} size={27} color={finish.text}/>
                   <Text style={{fontSize:8,fontWeight:"700",color:finish.text}}>{experienceLabel(seal.months??0)}</Text>
                  </View>
                 </View>
