@@ -21,13 +21,13 @@ export function HomeSideMenu({visible,onClose}:{visible:boolean;onClose:()=>void
  const {colors}=useUi();const {width}=useWindowDimensions();const touchStart=useRef<{x:number;y:number}|null>(null);
  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent={false}>
   <View style={{flex:1,flexDirection:"row",backgroundColor:colors.scrim}}>
-   <SafeAreaView edges={["top","bottom"]} onTouchStart={event=>{touchStart.current={x:event.nativeEvent.pageX,y:event.nativeEvent.pageY};}} onTouchEnd={event=>{const start=touchStart.current;if(start&&start.x-event.nativeEvent.pageX>70&&Math.abs(start.y-event.nativeEvent.pageY)<70)onClose();touchStart.current=null;}} style={{width:Math.min(width*0.88,410),backgroundColor:colors.paper,flex:1}}>
+   <SafeAreaView edges={["top","bottom"]} onTouchStart={event=>{touchStart.current={x:event.nativeEvent.pageX,y:event.nativeEvent.pageY};}} onTouchEnd={event=>{const start=touchStart.current;if(start&&start.x-event.nativeEvent.pageX>70&&Math.abs(start.y-event.nativeEvent.pageY)<70)onClose();touchStart.current=null;}} style={{width:Math.min(width*0.88,410),flexShrink:0,backgroundColor:colors.paper}}>
     <ScrollView contentContainerStyle={{paddingTop:14,paddingBottom:32}}>
-     <View style={{paddingHorizontal:24,paddingTop:15,paddingBottom:12}}><Text accessibilityRole="header" style={{color:colors.ink,fontWeight:"700",fontSize:23,lineHeight:30}}>Configuración y privacidad</Text></View>
+     <View style={{paddingHorizontal:22,paddingTop:12,paddingBottom:16}}><Text accessibilityRole="header" style={{color:colors.ink,fontWeight:"700",fontSize:23,lineHeight:30}}>Configuración y privacidad</Text></View>
      {HOME_MENU_ITEMS.map(item=><Pressable key={item.slug} accessibilityRole="button" accessibilityLabel={item.label}
       onPress={()=>{onClose();router.push({pathname:"/menu/[section]",params:{section:item.slug}});}}
-      style={({pressed})=>({flexDirection:"row",alignItems:"center",paddingHorizontal:28,paddingVertical:15,minHeight:68,gap:22,opacity:pressed?0.55:1})}>
-      <JobinMenuIcon name={item.slug} size={29} color={colors.ink}/>
+      style={({pressed})=>({flexDirection:"row",alignItems:"center",paddingHorizontal:22,paddingVertical:15,minHeight:64,gap:17,opacity:pressed?0.55:1})}>
+      <View style={{width:32,alignItems:"center",flexShrink:0}}><JobinMenuIcon name={item.slug} size={27} color={colors.ink}/></View>
       <Text style={{color:colors.ink,fontSize:17,flex:1,fontWeight:"400"}}>{item.label}</Text>
      </Pressable>)}
     </ScrollView>
