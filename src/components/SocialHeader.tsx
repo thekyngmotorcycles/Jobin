@@ -2,20 +2,14 @@ import { AccountAvatar } from "./AccountAvatar";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
-import { BottomSheet, IconButton } from "./social-ui";
+import { IconButton } from "./social-ui";
+import { HomeSideMenu } from "./HomeSideMenu";
 import { JobinWordmark } from "./JobinWordmark";
 import { useUi } from "./ui";
 import { FEED_POSTS } from "../lib/feed";
 import { STORIES } from "../lib/home";
 import { rankStories } from "../lib/rules";
 import { useSocial } from "../state/SocialProvider";
-
-const MENU = [
-  { label: "Grabar mi día", route: "/create" },
-  { label: "Ajustes", route: "/settings" },
-  { label: "Compañía", route: "/company" },
-  { label: "Comunidades", route: "/communities" },
-] as const;
 
 export function SocialHeader() {
   const { s, colors } = useUi();
@@ -50,16 +44,7 @@ export function SocialHeader() {
           </Pressable>
         ))}
       </ScrollView>
-      <BottomSheet visible={menu} onClose={() => setMenu(false)} title="Opciones">
-        <View style={{ paddingVertical: 8 }}>
-          {MENU.map(item => (
-            <Pressable key={item.route} accessibilityRole="button" onPress={() => { setMenu(false); router.push(item.route); }}
-              style={{ paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.line }}>
-              <Text style={s.h3}>{item.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-      </BottomSheet>
+      <HomeSideMenu visible={menu} onClose={() => setMenu(false)}/>
     </View>
   );
 }
