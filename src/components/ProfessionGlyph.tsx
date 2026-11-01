@@ -30,6 +30,8 @@ const SPECIAL_ICONS:Record<string,MIcon>={
  peluquero_canino:"dog-service",
  tecnico_de_laboratorio:"flask-outline",
  notario_escribano:"file-sign",
+ repartidor_cartas_paqueteria:"package-variant-closed",
+ repartidor_alimentos_insumos:"food-takeout-box-outline",
  repartidor_en_automovil:"car",
  repartidor_en_bicicleta:"bicycle",
  mensajero_en_motocicleta:"motorbike",
