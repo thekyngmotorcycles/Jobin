@@ -8,6 +8,8 @@ import { loadCatalog, loadEducation, loadWorkspace, professionalMutation } from 
 import { useProfessionalAction, useProfessionalData } from "../state/useProfessionalData";
 import {loadContactPreferences,saveContactPreferences} from "../lib/jcard-contact";
 import {LanguageRing,LANGUAGE_LEVELS,languageLabel} from "../components/LanguageRing";
+import {LanguagePicker} from "../components/LanguagePicker";
+import {canonicalLanguage} from "../lib/languages";
 import {Ionicons} from "@expo/vector-icons";
 import type { JCardStatus } from "../lib/jcard";
 
@@ -46,9 +48,10 @@ export default function Professional() {
   <Ionicons name={icon} size={25} color={colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>{title}</Text><Text style={s.muted}>{subtitle}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={colors.muted}/>
  </Pressable>;
  const save=()=>void action.run(async()=>{
-  if(languages.some(l=>!l.name.trim()||!Number.isInteger(Number(l.fluency))||Number(l.fluency)<0||Number(l.fluency)>100))throw new Error("Completa el idioma y selecciona un nivel válido.");
+  if(languages.some(l=>!canonicalLanguage(l.name)||!Number.isInteger(Number(l.fluency))||Number(l.fluency)<0||Number(l.fluency)>100))throw new Error("Completa el idioma y selecciona un nivel válido.");
+  if(new Set(languages.map(l=>canonicalLanguage(l.name))).size!==languages.length)throw new Error("No puedes agregar el mismo idioma dos veces.");
   await saveContactPreferences({show_email:showEmail,show_phone:showPhone});
-  await professionalMutation("jobin_save_jcard",{legal_name:name,handle,city,region,availability,languages:languages.map(l=>({name:l.name,fluency:Number(l.fluency)}))});
+  await professionalMutation("jobin_save_jcard",{legal_name:name,handle,city,region,availability,languages:languages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))});
  },"JCard actualizada.");
  return <Screen demo={false} hideHeader hideFooter scrollRef={scrollRef} title="Editar mi JCard" subtitle="">
   {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
@@ -73,7 +76,7 @@ export default function Professional() {
       {languages.map((l,index)=><View key={index} style={{gap:12,padding:14,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
        <View style={{flexDirection:"row",alignItems:"center",gap:12}}>
         <LanguageRing name={l.name} value={Number(l.fluency)||0} color={colors.ink} track={colors.line}/>
-        <View style={{flex:1,gap:5}}><TextInput accessibilityLabel={"Idioma "+(index+1)} placeholder="Nombre del idioma" placeholderTextColor={colors.muted} value={l.name} onChangeText={value=>setLanguages(items=>items.map((item,i)=>i===index?{...item,name:value}:item))} style={input}/><Text style={s.muted}>{languageLabel(Number(l.fluency)||0)}</Text></View>
+        <View style={{flex:1,gap:5}}><LanguagePicker value={l.name} selected={languages.filter((_,i)=>i!==index).map(item=>item.name)} onChange={value=>setLanguages(items=>items.map((item,i)=>i===index?{...item,name:value}:item))}/><Text style={s.muted}>{languageLabel(Number(l.fluency)||0)}</Text></View>
        </View>
        <Text style={[s.text,{fontWeight:"600"}]}>¿Qué tan bien lo dominas?</Text>
        <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{LANGUAGE_LEVELS.map(level=><Pressable key={level.value} accessibilityRole="radio" accessibilityState={{checked:Number(l.fluency)===level.value}} onPress={()=>setLanguages(items=>items.map((item,i)=>i===index?{...item,fluency:String(level.value)}:item))} style={{borderWidth:1,borderColor:colors.line,borderRadius:22,paddingHorizontal:12,paddingVertical:9,backgroundColor:Number(l.fluency)===level.value?colors.accent:colors.paper}}>
