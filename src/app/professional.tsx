@@ -11,6 +11,7 @@ import {LanguageRing,LANGUAGE_LEVELS,languageLabel} from "../components/Language
 import {LanguagePicker} from "../components/LanguagePicker";
 import {canonicalLanguage} from "../lib/languages";
 import {Ionicons} from "@expo/vector-icons";
+import {professionIcon} from "../lib/profession-icons";
 import type { JCardStatus } from "../lib/jcard";
 
 export default function Professional() {
@@ -93,7 +94,7 @@ export default function Professional() {
       <Text style={s.muted}>Hasta 10 profesiones verificadas y una sin verificar. Los certificados requieren revisión.</Text>
       {w.professions.map(p=><View key={p.id} style={{gap:10,borderWidth:1,borderColor:colors.line,borderRadius:12,padding:12}}>
        <View style={{flexDirection:"row",alignItems:"flex-start",gap:12}}>
-        <View style={{flex:1,gap:5}}><Text style={[s.h3,{fontSize:17}]}>{p.label}{p.primary_profession?" · Principal":""}</Text><Text style={s.muted}>{p.training_status==="in_academy"?"En formación":"Graduado"} · {p.verified?"Verificado":"Sin verificar"}{p.school?" · "+p.school:""}</Text></View>
+        <View style={{flex:1,gap:5}}><Text style={[s.h3,{fontSize:17}]}><Ionicons name={professionIcon(p.profession_code)} size={20} color={colors.ink}/>  {p.label}{p.primary_profession?" · Principal":""}</Text><Text style={s.muted}>{p.training_status==="in_academy"?"En formación":"Graduado"} · {p.verified?"Verificado":"Sin verificar"}{p.school?" · "+p.school:""}</Text></View>
         <Pressable accessibilityRole="button" accessibilityLabel={"Editar "+p.label} onPress={()=>openProfession(p.profession_code,p.primary_profession)} style={{padding:8,borderRadius:8,borderWidth:1,borderColor:colors.line}}><Ionicons name="create-outline" size={23} color={colors.ink}/></Pressable>
         {!p.verified&&<Pressable accessibilityRole="button" accessibilityLabel={"Eliminar "+p.label} onPress={()=>Alert.alert("Eliminar profesión",p.primary_profession?"¿Eliminar tu profesión principal? Puedes seleccionar otra después.":"¿Eliminar esta profesión?",[{text:"Cancelar",style:"cancel"},{text:"Eliminar",style:"destructive",onPress:()=>void action.run(()=>professionalMutation("jobin_remove_unverified_profession",{profession:p.profession_code}),"Profesión eliminada.")}])} style={{padding:8,borderRadius:8,borderWidth:1,borderColor:colors.line}}><Ionicons name="trash-outline" size={23} color={colors.ink}/></Pressable>}
        </View>
