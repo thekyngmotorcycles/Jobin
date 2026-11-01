@@ -1,6 +1,6 @@
 import { useId, useRef, useState } from "react";
 import { router } from "expo-router";
-import { Animated, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Animated, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
@@ -48,9 +48,6 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr }: { card: CardD
           <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR" onPress={event=>{event.stopPropagation();onQr?.();}} style={{ backgroundColor:jcardCommon.qrPaper, padding:jcardLayout.qrQuietZone, borderRadius:6 }}>
             <QRCode value={card.profileUrl} size={jcardLayout.qr} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
           </Pressable>
-          {!!onEdit&&<Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={event=>{event.stopPropagation();onEdit();}} style={{width:44,height:34,alignItems:"center",justifyContent:"center",borderRadius:10,backgroundColor:jcardCommon.editBackground}}>
-            <Ionicons name="create-outline" size={21} color={jcardCommon.editInk}/>
-          </Pressable>}
         </View>
       </View>
 
@@ -102,7 +99,7 @@ function BusinessFace({card,theme,onEdit}:{card:CardData;theme:ThemeName;onEdit?
    <Text style={{color:finish.secondary}}>★ {displayedRating(b?.rating??null,b?.reviewCount??0)?.toFixed(1)??"Sin categoría"} · {b?.reviewCount??0} reseñas del negocio</Text>
   </View>
   <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
-   {!!onEdit&&<Pressable accessibilityRole="button" accessibilityLabel="Editar reverso de JCard" onPress={onEdit} style={{padding:10,borderRadius:10,backgroundColor:jcardCommon.editBackground}}><Ionicons name="create-outline" size={22} color={jcardCommon.editInk}/></Pressable>}
+   <View/>
    {b?.licenseVerified&&<View accessibilityLabel="Licencia empresarial verificada" style={{width:28,height:28,borderRadius:14,backgroundColor:jcardCommon.verifiedBubble,alignItems:"center",justifyContent:"center"}}><Ionicons name="checkmark" size={19} color={jcardCommon.qrPaper}/></View>}
   </View>
  </View>;
@@ -117,14 +114,21 @@ export function JobinCard({card,previewTheme,onEditBusiness}:{card:CardData;prev
  const frontRotate=rotation.interpolate({inputRange:[0,180],outputRange:["0deg","180deg"]});
  const backRotate=rotation.interpolate({inputRange:[0,180],outputRange:["180deg","360deg"]});
  const cardTheme=previewTheme??theme;
+ const share=()=>void Share.share({message:`JCard de ${card.name} · ${card.profileUrl}`,url:card.profileUrl,title:`JCard · ${card.name}`});
  return <>
-  <View style={{width:"100%",maxWidth:520,alignSelf:"center"}} {...responder.panHandlers}>
+  <View style={{width:"100%",maxWidth:520,alignSelf:"center"}}>
+   <View style={{flexDirection:"row",justifyContent:"flex-end",gap:10,paddingBottom:8}}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard" onPress={share} style={{padding:9}}><Ionicons name="share-social-outline" size={23} color={jcardCommon.editInk}/></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{padding:9}}><Ionicons name="create-outline" size={23} color={jcardCommon.editInk}/></Pressable>
+   </View>
+   <View {...responder.panHandlers}>
    <Animated.View onLayout={e=>setFaceHeight(e.nativeEvent.layout.height)} pointerEvents={back?"none":"auto"} style={{backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:frontRotate}]}}>
     <CardFace card={card} theme={cardTheme} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)}/>
    </Animated.View>
    <Animated.View pointerEvents={back?"auto":"none"} style={{position:"absolute",top:0,left:0,right:0,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:backRotate}]}}>
     <View style={{height:faceHeight}}><BusinessFace card={card} theme={cardTheme} onEdit={onEditBusiness}/></View>
    </Animated.View>
+   </View>
    <Pressable accessibilityRole="button" accessibilityLabel={back?"Ver cara personal":"Ver reverso de JCard"} onPress={toggle} style={{alignSelf:"center",padding:8,flexDirection:"row",gap:6,alignItems:"center"}}>
     <Ionicons name="sync-outline" size={18} color={jcardCommon.editInk}/><Text style={{color:jcardCommon.editInk,fontSize:12}}>{back?"Negocio / Presentación · Ver personal":"Personal · Ver reverso"}</Text>
    </Pressable>
