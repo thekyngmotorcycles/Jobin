@@ -21,6 +21,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
   const { fontScale } = useWindowDimensions();
   const [contentWidth, setContentWidth] = useState(0);
   const gradientId = "jcard" + useId().replace(/[^a-zA-Z0-9]/g, "");
+  const shineId=gradientId+"shine";
   const finish = jcardTokens(theme, jcardTier(card.rating, card.reviewCount));
   const rating = displayedRating(card.rating, card.reviewCount);
   const [info,setInfo]=useState<string|null>(null);
@@ -33,8 +34,12 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
     <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" accessible={false} pointerEvents="none">
       <Defs><LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
         <Stop offset="0%" stopColor={finish.start}/><Stop offset="100%" stopColor={finish.end}/>
-      </LinearGradient></Defs>
+      </LinearGradient><LinearGradient id={shineId} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={finish.start} stopOpacity="0.34"/><Stop offset="34%" stopColor={finish.start} stopOpacity="0"/><Stop offset="70%" stopColor={finish.end} stopOpacity="0.08"/><Stop offset="100%" stopColor={finish.end} stopOpacity="0.26"/></LinearGradient></Defs>
       <Rect width="100%" height="100%" fill={"url(#" + gradientId + ")"}/>
+      <Rect width="100%" height="100%" fill={"url(#" + shineId + ")"}/>
+      <Rect x="5" y="5" width="calc(100% - 10px)" height="calc(100% - 10px)" rx="22" fill="none" stroke={finish.line} strokeOpacity="0.4" strokeWidth="0.8"/>
+      <Path d="M0 95 Q90 20 205 0" stroke={finish.line} strokeOpacity="0.17" strokeWidth="1.5" fill="none"/>
+      <Path d="M0 118 Q110 35 240 0" stroke={finish.line} strokeOpacity="0.12" strokeWidth="1" fill="none"/>
     </Svg>
     <View style={{ padding:jcardLayout.padding, gap:14 }}>
       <View style={{ paddingTop:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
@@ -42,7 +47,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
         <View style={{ width:jcardLayout.avatar + 8, height:jcardLayout.qr + 8 }}>
           <Avatar uri={card.avatar} name={card.name} size={jcardLayout.avatar}/>
           <Pressable accessibilityRole="button" accessibilityLabel="Información sobre verificación de identidad" onPress={()=>setInfo("La identidad todavía no está verificada. La insignia de verificación se otorgará tras revisar documentación válida según el país y la región.")} style={{position:"absolute",right:0,top:jcardLayout.avatar-17,width:25,height:25,borderRadius:13,backgroundColor:finish.sealFill,borderWidth:2,borderColor:finish.start,alignItems:"center",justifyContent:"center"}}>
-           <Ionicons name="shield-outline" size={16} color={finish.sealText}/>
+           <Svg width={19} height={19} viewBox="0 0 40 40"><Path d="M20 2 L34 9 L38 23 L29 36 L13 37 L2 25 L5 10 Z" fill={finish.sealText}/><Path d="M20 7 L30 12 L33 23 L27 31 L14 32 L7 24 L10 12 Z" fill={finish.start}/><Path d="M25 12 V23 Q25 29 18 29 Q13 29 12 24" stroke={finish.sealText} strokeWidth="4" fill="none" strokeLinecap="round"/></Svg>
           </Pressable>
         </View>
         <View style={{alignItems:"center",gap:7}}>
