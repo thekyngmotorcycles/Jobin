@@ -40,7 +40,7 @@ export default function Account() {
    const {data:existing,error:lookupError}=await client.from("usernames").select("username").eq("username",handle).maybeSingle();
    if(lookupError)throw lookupError;
    if(existing){setNotice("Ese nombre de usuario ya está en uso. Elige otro.");return;}
-   const {data,error}=await client.auth.signUp({email:email.trim().toLowerCase(),password,options:{data:{display_name:name.trim(),username:handle,account_type:kind,profession_code:kind!=="company"?(profession||null):null,training_status:training,organization_kind:kind!=="personal"?organizationKind:null}}});
+   const {data,error}=await client.auth.signUp({email:email.trim().toLowerCase(),password,options:{data:{display_name:name.trim(),username:handle,account_type:kind,registration_phone:phone.trim(),profession_code:kind!=="company"?(profession||null):null,training_status:training,organization_kind:kind!=="personal"?organizationKind:null}}});
    if(error)throw error;
    if(!data.user)throw new Error("No se pudo crear la cuenta.");
    let session=data.session;
