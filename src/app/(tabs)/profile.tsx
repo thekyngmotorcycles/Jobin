@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { employmentMonths } from "../../lib/employment";
+import { employmentMonths,experienceLabel } from "../../lib/employment";
 import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness,readBusinessRating } from "../../lib/jcard-cloud";
 import { useTabClearance } from "../../theme/navigation";
 import { MediaThumbnail } from "../../components/MediaThumbnail";
@@ -85,8 +85,10 @@ export default function Profile() {
     setNotice("Experiencia guardada. Cualquier cambio requiere una nueva verificación de la empresa.");
   }
 
+  const normalizeProfession=(value:string)=>value.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"").replace(/(tecnico|technician|aireacondicionado|airconditioning|refrigeracion|refrigeration)/g,"").trim();
   const seals: JCardSeal[] = workspace.data?.card.seals.map(seal=>({...seal,icon:seal.profession.toLowerCase().includes("hvac")?"thermometer-outline":seal.profession.toLowerCase().includes("refrig")?"snow-outline":seal.icon,months:employmentMonths(history,seal.profession)}))??[];
-  for(const entry of history)for(const profession of entry.professions??[]){if(!seals.some(s=>s.profession.toLowerCase()===profession.toLowerCase()))seals.push({id:profession,profession,label:profession,icon:/hvac/i.test(profession)?"thermometer-outline":/refrig/i.test(profession)?"snow-outline":/electr/i.test(profession)?"flash-outline":"briefcase-outline",verified:false,months:employmentMonths(history,profession)});}
+  for(const entry of history)for(const profession of entry.professions??[]){if(!seals.some(s=>normalizeProfession(s.profession)===normalizeProfession(profession)))seals.push({id:profession,profession,label:profession,icon:/hvac/i.test(profession)?"thermometer-outline":/refrig/i.test(profession)?"snow-outline":/electr/i.test(profession)?"flash-outline":"briefcase-outline",verified:false,months:employmentMonths(history,profession)});}
+  const uniqueSeals=seals.filter((seal,index)=>seals.findIndex(other=>normalizeProfession(other.profession)===normalizeProfession(seal.profession))===index);
   const tabIcon = (icon: keyof typeof Ionicons.glyphMap, label: string, value: Mode | "live", active: boolean) => (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected: active }}
       onPress={() => (value === "live" ? openLive() : setMode(value))}
@@ -102,13 +104,13 @@ export default function Profile() {
         <View style={{ flexDirection: "row", gap: 4 }}>
           {tabIcon("school-outline", "Historial profesional", "cv", mode === "cv")}
           {tabIcon("play-outline", "Videos", "videos", mode === "videos")}
-          {tabIcon("radio-outline", p.streamingNow ? "Live now" : "Not live", "live", false)}
+          {tabIcon("radio-outline", p.streamingNow ? "En vivo" : "Sin transmisión", "live", false)}
         </View>
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
-          <JobinCard card={{...workspace.data.card,seals,rating:null,reviewCount:0,business:{...business,rating:businessRating.rating,reviewCount:businessRating.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness} ownerId={workspace.data.card.id}/>
+          <JobinCard card={{...workspace.data.card,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,rating:businessRating.rating,reviewCount:businessRating.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness} ownerId={workspace.data.card.id}/>
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
           <View style={{width:"100%",maxWidth:520,alignSelf:"center",gap:8}}>
             <Button title="Mi historial profesional · Agregar empleo" onPress={()=>{setMode("cv");openEmployment();}}/>
@@ -124,7 +126,7 @@ export default function Profile() {
         {mode === "cv" && (
           <View style={{ gap: 14 }}>
             <Text style={s.h2}>Historial profesional</Text>
-            <Text style={s.muted}>Experiencia total registrada: {Math.floor(employmentMonths(history)/12)} años y {employmentMonths(history)%12} meses. Agrega cada empresa, el cargo y los años trabajados. Los datos se guardan en este dispositivo; la verificación por la empresa aún no está conectada.</Text>
+            <Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}. Agrega cada empresa, el cargo y los años trabajados. Los datos se guardan en este dispositivo; la verificación por la empresa aún no está conectada.</Text>
             {history.length===0&&<Text style={s.muted}>Todavía no agregaste empleos. Pulsa Agregar para comenzar.</Text>}
             {history.map(entry => (
               <View key={entry.id} style={[s.panel, { flexDirection: "row", gap: 12, alignItems: "center" }]}>
@@ -208,7 +210,7 @@ export default function Profile() {
           <Text style={s.muted}>Selecciona el mes de inicio y de finalización. Enero = 1; diciembre = 12.</Text>
           {(["fromMonth","toMonth"] as const).map(key=><View key={key} style={{gap:6}}>
            <Text style={s.muted}>{key==="fromMonth"?"Mes de inicio":"Mes de término"}</Text>
-           <View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}>{["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((month,index)=><Pressable key={month} accessibilityRole="button" accessibilityState={{selected:Number(draft[key])===index+1}} onPress={()=>setDraft(d=>({...d,[key]:String(index+1)}))} style={{minWidth:"22%",minHeight:42,borderWidth:1,borderColor:colors.line,borderRadius:10,alignItems:"center",justifyContent:"center",backgroundColor:Number(draft[key])===index+1?colors.accent:colors.card}}><Text style={{color:colors.ink,fontWeight:Number(draft[key])===index+1?"700":"400"}}>{month}</Text></Pressable>)}</View>
+           <View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}>{["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((month,index)=><Pressable key={month} accessibilityRole="button" accessibilityState={{selected:Number(draft[key])===index+1}} onPress={()=>setDraft(d=>({...d,[key]:String(index+1)}))} style={{minWidth:"22%",minHeight:42,borderWidth:1,borderColor:colors.line,borderRadius:10,alignItems:"center",justifyContent:"center",backgroundColor:Number(draft[key])===index+1?colors.ink:colors.card}}><Text style={{color:Number(draft[key])===index+1?colors.inverse:colors.ink,fontWeight:Number(draft[key])===index+1?"800":"400"}}>{Number(draft[key])===index+1?"✓ "+month:month}</Text></Pressable>)}</View>
           </View>)}
           <Text style={[s.h3,{fontSize:15}]}>Contacto de la empresa (opcional)</Text>
           <Text style={s.muted}>Estos datos ayudan a identificar a tu empleador. No implican que la experiencia esté verificada.</Text>
