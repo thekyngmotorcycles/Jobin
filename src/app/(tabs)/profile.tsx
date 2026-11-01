@@ -80,7 +80,7 @@ export default function Profile() {
     const updated:EmploymentEntry={id:editingId??Date.now()+"",company:draft.company.trim(),role:draft.role.trim(),professions:draft.profession.split(",").map(x=>x.trim()).filter(Boolean),fromMonth,toMonth,from,to,address:draft.address.trim(),contact:draft.contact.trim(),status:"pending",verifiedBy:null};
     setHistory(items=>editingId?items.map(entry=>entry.id===editingId?updated:entry):[...items,updated]);
     void writeCloudHistory(updated).catch(()=>setNotice("Guardado localmente, pero no se pudo sincronizar. Revisa la conexión."));
-    setDraft({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12" });
+    setDraft({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address: "", contact: "" });
     setAddOpen(false);setEditingId(null);setFormError("");
     setNotice("Experiencia guardada. Cualquier cambio requiere una nueva verificación de la empresa.");
   }
