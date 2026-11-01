@@ -90,8 +90,8 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
         {!!contact?.email&&<Text selectable style={lineStyle}>{contact.email}</Text>}
         {!!contact?.phone&&<Text selectable style={lineStyle}>{contact.phone}</Text>}
 
-        {card.status==="ACTIVE"&&employerLink&&<Pressable accessibilityRole="link" onPress={()=>router.push({pathname:"/company",params:{id:employerLink.id}})}><Text style={[lineStyle,{textDecorationLine:"underline"}]}>Trabaja en {employerLink.name} · @{employerLink.handle} ↗</Text><Text style={{fontSize:10,color:finish.secondary}}>Vínculo declarado · sin verificar</Text></Pressable>}
-        {card.status==="ACTIVE"&&!employerLink&&!!card.employer&&<Text style={lineStyle}>Trabaja en {card.employer} · sin verificar</Text>}
+        {card.status==="ACTIVE"&&employerLink&&<Pressable accessibilityRole="link" onPress={()=>router.push({pathname:"/company",params:{id:employerLink.id}})}><Text style={[lineStyle,{textDecorationLine:"underline"}]}>Trabaja en {employerLink.name} · @{employerLink.handle} ↗</Text><Text style={{fontSize:10,color:finish.secondary}}>Vínculo laboral verificado por la empresa</Text></Pressable>}
+
         <Text style={{fontSize:10,color:finish.secondary,textAlign:"center",letterSpacing:1.5,marginTop:9}}>Idiomas</Text>
         <View style={{flexDirection:"row",flexWrap:"wrap",gap:10,paddingTop:2}}>{card.languages.map((language,index)=><View key={language.name+index} style={{alignItems:"center",gap:3}}><LanguageRing name={language.name} value={language.fluency} color={finish.text} track={finish.line}/><Text style={{fontSize:10,color:finish.secondary}}>{language.name}</Text></View>)}</View>
       </View>
