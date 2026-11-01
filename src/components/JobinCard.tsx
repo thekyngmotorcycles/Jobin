@@ -17,6 +17,7 @@ import { jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
 
 export type { CardData } from "../lib/jcard";
 const wordmarkJ=WORDMARK_XML.replace('viewBox="300 76 616 275"','viewBox="300 76 160 275"').replace(/(<path[^>]*\/>)[\s\S]*?(<\/g>)/,"$1$2");
+function jobinGlyph(color:string){return wordmarkJ.replace('currentColor',color);}
 
 function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { card: CardData; theme: ThemeName; expanded?: boolean; onEdit?: () => void; onQr?: () => void; contact?:{email:string|null;phone:string|null} }) {
   const { s, fs } = useUi();
@@ -29,7 +30,9 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
   const embossInk=finish.text;
   const embossStrength=finish.start===finish.end?0.20:0.12;
   const [info,setInfo]=useState<string|null>(null);
-  const rows = sealRows(card.seals);
+  const primaryProfession=card.role.trim().replace(/\s*[-–/]\s*aire acondicionado\s*$/i,"").trim();
+  const secondarySeals=card.seals.filter(seal=>!(/hvac/i.test(primaryProfession)&&/hvac|aire acondicionado/i.test(seal.profession))&&seal.profession.trim().toLocaleLowerCase()!==primaryProfession.toLocaleLowerCase());
+  const rows = sealRows(secondarySeals);
   const columns = Math.max(1, ...rows.map(row => row.length));
   const sealGap = 5;
   const sealWidth = Math.min(72,Math.max(48,(contentWidth - (columns - 1) * sealGap) / columns));
@@ -51,17 +54,14 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
     <View style={{ padding:jcardLayout.padding, gap:14 }}>
       <View style={{ paddingTop:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
-        <View accessible accessibilityRole="header" accessibilityLabel="JCard Personal" style={{position:"absolute",top:0,left:0,right:0,alignItems:"center"}}>
-          <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",height:28}}>
-            <SvgXml xml={wordmarkJ} width={25} height={30} color={finish.text}/>
-            <Text style={{fontFamily:"cursive",fontStyle:"italic",fontSize:22,color:finish.text,marginLeft:-3}}>Card</Text>
-          </View>
-          <Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:16,color:finish.text,marginTop:-3}}>Personal</Text>
+        <View accessible accessibilityRole="header" accessibilityLabel="JCard Personal" style={{position:"absolute",top:0,left:0,right:0,alignItems:"center",justifyContent:"center"}}>
+          <Text style={{fontFamily:"cursive",fontWeight:"700",fontSize:24,lineHeight:29,color:finish.text}}>JCard</Text>
+          <Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:15,lineHeight:21,color:finish.text}}>Personal</Text>
         </View>
         <View style={{ width:jcardLayout.avatar + 8, height:jcardLayout.qr + 8 }}>
           <Avatar uri={card.avatar} name={card.name} size={jcardLayout.avatar}/>
           <Pressable accessibilityRole="button" accessibilityLabel="Información sobre verificación de identidad" onPress={()=>setInfo("La identidad todavía no está verificada. La insignia de verificación se otorgará tras revisar documentación válida según el país y la región.")} style={{position:"absolute",right:0,top:jcardLayout.avatar-17,width:25,height:25,borderRadius:13,backgroundColor:finish.sealFill,borderWidth:2,borderColor:finish.start,alignItems:"center",justifyContent:"center"}}>
-           <SvgXml xml={wordmarkJ} width={18} height={18} color={finish.sealText}/>
+           <SvgXml xml={jobinGlyph(finish.sealText)} width={22} height={22}/>
           </Pressable>
         </View>
         <View style={{alignItems:"center",gap:7}}>
@@ -76,16 +76,25 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
           {card.name}
         </Text>
         <Text style={{color:finish.secondary,fontSize:11}}>@{card.handle}</Text>
-        <Text style={{ color:finish.text, fontWeight:"700", fontSize:11, letterSpacing:1.2 }}>{card.status==="ACTIVE"?"TRABAJANDO":"DISPONIBLE"}</Text>
+        <View style={{flexDirection:"row",alignItems:"center",flexWrap:"wrap",gap:7}}>
+          <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[lineStyle,{fontWeight:"600"}]}>{primaryProfession}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="Detalles de la profesión principal" onPress={()=>setInfo("Profesión principal: "+card.role+"\\nCategoría: "+(/hvac/i.test(card.role)?"Aire acondicionado":card.role))} style={{padding:3,borderWidth:1,borderColor:finish.line,borderRadius:18}}>
+            <Ionicons name={/hvac|aire acondicionado/i.test(card.role)?"thermometer-outline":"briefcase-outline"} size={19} color={finish.text}/>
+          </Pressable>
+        </View>
+        <View style={{flexDirection:"row",alignItems:"center",flexWrap:"wrap",gap:8}}>
+          {!!card.years&&<Text style={{color:finish.secondary,fontSize:11}}>{card.years} {card.years===1?"año":"años"} de experiencia</Text>}
+          <Text style={{color:finish.text,fontWeight:"700",fontSize:10,letterSpacing:0.7}}>{card.status==="ACTIVE"?"TRABAJANDO":"DISPONIBLE"}</Text>
+        </View>
         {!!contact?.email&&<Text selectable style={lineStyle}>{contact.email}</Text>}
         {!!contact?.phone&&<Text selectable style={lineStyle}>{contact.phone}</Text>}
-        <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>{card.role}{card.inAcademy ? " · En formación" : ""}{card.inAcademy && card.trainingVerified ? " ✓" : ""}</Text>
 
         {card.status === "ACTIVE" && card.employer && <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>Trabaja en @{card.employer}</Text>}
-        <View style={{flexDirection:"row",flexWrap:"wrap",gap:10,paddingTop:7}}>{card.languages.map((language,index)=><View key={language.name+index} style={{alignItems:"center",gap:3}}><LanguageRing name={language.name} value={language.fluency} color={finish.text} track={finish.line}/><Text style={{fontSize:10,color:finish.secondary}}>{language.name}</Text></View>)}</View>
+        <Text style={{fontSize:10,color:finish.secondary,textAlign:"center",letterSpacing:1.5,marginTop:9}}>Idiomas</Text>
+        <View style={{flexDirection:"row",flexWrap:"wrap",gap:10,paddingTop:2}}>{card.languages.map((language,index)=><View key={language.name+index} style={{alignItems:"center",gap:3}}><LanguageRing name={language.name} value={language.fluency} color={finish.text} track={finish.line}/><Text style={{fontSize:10,color:finish.secondary}}>{language.name}</Text></View>)}</View>
       </View>
 
-      <View onLayout={event => setContentWidth(event.nativeEvent.layout.width)} style={{ paddingTop:12, borderTopWidth:1, borderTopColor:finish.line }}>
+      {secondarySeals.length>0&&<View onLayout={event => setContentWidth(event.nativeEvent.layout.width)} style={{ paddingTop:12, borderTopWidth:1, borderTopColor:finish.line }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityLabel="Sellos profesionales" contentContainerStyle={{ minWidth:"100%" }}>
           <View style={{ gap:sealGap }}>
             {rows.map((row, index) => <View key={index} style={{ flexDirection:"row", gap:sealGap }}>
@@ -101,7 +110,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
             </View>)}
           </View>
         </ScrollView>
-      </View>
+      </View>}
     </View>
     <Modal visible={info!==null} transparent animationType="fade" onRequestClose={()=>setInfo(null)}><View style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}><View style={{backgroundColor:jcardCommon.qrPaper,borderRadius:20,padding:24,gap:16}}><Text style={{fontSize:18,fontWeight:"700",color:jcardCommon.qrInk}}>Información de la insignia</Text><Text style={{fontSize:15,lineHeight:23,color:jcardCommon.qrInk}}>{info}</Text><Button title="Entendido" onPress={()=>setInfo(null)}/></View></View></Modal>
   </View>;
