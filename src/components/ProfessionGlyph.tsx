@@ -30,6 +30,9 @@ const SPECIAL_ICONS:Record<string,MIcon>={
  peluquero_canino:"dog-service",
  tecnico_de_laboratorio:"flask-outline",
  notario_escribano:"file-sign",
+ repartidor_en_automovil:"car",
+ repartidor_en_bicicleta:"bicycle",
+ mensajero_en_motocicleta:"motorbike",
  juez_de_paz:"gavel"
 };
 export function ProfessionGlyph({profession,fallback,size=22,color}:{profession:string;fallback?:IIcon;size?:number;color:string}){
