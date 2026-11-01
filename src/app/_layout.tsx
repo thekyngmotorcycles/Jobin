@@ -29,6 +29,7 @@ function Navigation() {
  <Stack.Screen name="stream/[id]" options={{headerShown:false}}/>
  <Stack.Screen name="connect" options={{headerShown:false}}/>
  <Stack.Screen name="settings" options={{title:"Configuración"}}/>
+ <Stack.Screen name="menu/[section]" options={{title:"Configuración y privacidad"}}/>
  <Stack.Screen name="account" options={{title:"Sign up",headerShown:false}}/>
  <Stack.Screen name="login" options={{title:"Log in",headerShown:false}}/>
  <Stack.Screen name="recover-account" options={{title:"Recuperar cuenta",headerShown:false}}/>
