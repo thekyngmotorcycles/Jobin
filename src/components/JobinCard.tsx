@@ -70,16 +70,15 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
         <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityLabel="Sellos profesionales; desliza horizontalmente si necesitas más espacio" contentContainerStyle={{ minWidth:"100%" }}>
           <View style={{ gap:jcardLayout.gap }}>
             {rows.map((row, index) => <View key={index} style={{ flexDirection:"row", gap:jcardLayout.gap }}>
-              {row.map(seal => <View key={seal.id} accessible accessibilityLabel={seal.profession + (seal.verified ? ", verificado" : ", sin verificar")}
-                style={{ width:sealWidth, minHeight:66, paddingVertical:5, paddingHorizontal:2, gap:3, alignItems:"center", justifyContent:"center", borderRadius:7, borderWidth:1, borderStyle:seal.verified ? "solid" : "dashed", borderColor:seal.verified ? finish.sealFill : finish.pendingLine, backgroundColor:seal.verified ? finish.sealFill : finish.pendingFill }}>
-                <Text style={{fontSize:10,fontWeight:"600",color:finish.text}}>{experienceLabel(seal.months??0)}</Text>
-                <View style={{ flexDirection:"row", alignItems:"center", gap:2 }}>
-                  <Ionicons name={seal.icon} size={12} color={seal.verified ? finish.sealText : finish.pendingText}/>
-
+              {row.map(seal => <Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\n"+experienceLabel(seal.months??0)+" de experiencia registrada.\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:Math.min(112,Math.max(82,sealWidth)),height:100,alignItems:"center",justifyContent:"center",gap:4}}>
+                <View style={{width:70,height:70,borderRadius:35,borderWidth:3,borderColor:seal.verified?finish.sealFill:finish.line,backgroundColor:finish.pendingFill,alignItems:"center",justifyContent:"center",elevation:4,shadowColor:finish.text,shadowOpacity:0.15,shadowRadius:5}}>
+                 <View style={{width:56,height:56,borderRadius:28,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center",gap:3}}>
+                  <Ionicons name={seal.verified?"shield-checkmark-outline":seal.icon} size={23} color={finish.text}/>
+                  <Text style={{fontSize:10,fontWeight:"800",color:finish.text}}>{experienceLabel(seal.months??0)}</Text>
+                 </View>
                 </View>
-                <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={{ fontSize:9, lineHeight:13, fontWeight:"600", color:seal.verified ? finish.sealText : finish.pendingText }}>{seal.label}</Text>
-                {seal.verified&&<View accessibilityLabel="Profesión verificada" style={{width:16,height:16,borderRadius:8,backgroundColor:jcardCommon.verifiedBubble,alignItems:"center",justifyContent:"center"}}><Ionicons name="checkmark" size={12} color={jcardCommon.qrPaper}/></View>}
-              </View>)}
+                <Text style={{fontSize:9,color:finish.secondary}}>{seal.verified?"VERIFICADO":"SIN VERIFICAR"}</Text>
+              </Pressable>)}
             </View>)}
           </View>
         </ScrollView>
