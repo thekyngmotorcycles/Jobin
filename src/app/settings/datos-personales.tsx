@@ -2,9 +2,8 @@ import {router} from "expo-router";
 import {Pressable,ScrollView,Text,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useUi} from "../../components/ui";
-import {requireSupabase} from "../../lib/supabase";
 export default function PersonalData(){
- const {s,colors}=useUi();const user=requireSupabase().auth.getUser;
+ const {s}=useUi();
  return <SafeAreaView edges={["bottom"]} style={s.screen}><ScrollView contentContainerStyle={{padding:24,gap:22,maxWidth:700,width:"100%",alignSelf:"center"}}>
   <Text style={[s.h2,{fontFamily:undefined,fontStyle:"normal",fontWeight:"700"}]}>Información personal</Text>
   <Text style={s.muted}>Tu correo y teléfono son necesarios para acceder y recuperar tu cuenta. Puedes decidir si se muestran en tu JCard.</Text>
