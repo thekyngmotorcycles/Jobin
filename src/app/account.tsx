@@ -4,7 +4,7 @@ import { loadCatalog } from "../lib/professional-api";
 import { useProfessionalData } from "../state/useProfessionalData";
 import { ORGANIZATION_LABELS, type OrganizationKind } from "../lib/professional-types";
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { router } from "expo-router";
 import { AuthAction, AuthField, AuthShell } from "../components/AuthForms";
 import { startJobinSession } from "../components/AuthGate";
@@ -19,8 +19,6 @@ export default function Account() {
  const [username,setUsername]=useState("");
  const [email,setEmail]=useState("");
  const [phone,setPhone]=useState("");
- const [showEmail,setShowEmail]=useState(false);
- const [showPhone,setShowPhone]=useState(false);
  const [password,setPassword]=useState("");
  const [confirmPassword,setConfirmPassword]=useState("");
  const [profession,setProfession]=useState("");
@@ -33,7 +31,7 @@ export default function Account() {
   if(busy)return;
   setNotice("");
   const handle=username.trim().replace(/^@/,"").toLowerCase();
-  if(!name.trim()||!email.trim()||password.length<8){setNotice("Completa nombre, email y contraseña de al menos 8 caracteres.");return;}
+  if(!name.trim()||!email.trim()||!/^\+[1-9]\d{7,14}$/.test(phone.trim())||password.length<8){setNotice("Completa nombre, correo, teléfono internacional (+código de país) y contraseña de al menos 8 caracteres.");return;}
   if(!VALID_USERNAME.test(handle)){setNotice("El usuario debe tener 3 a 30 caracteres: letras minúsculas, números o guiones bajos; comienza con una letra.");return;}
   if(password!==confirmPassword){setNotice("Las contraseñas no coinciden.");return;}
   setBusy(true);
@@ -42,7 +40,7 @@ export default function Account() {
    const {data:existing,error:lookupError}=await client.from("usernames").select("username").eq("username",handle).maybeSingle();
    if(lookupError)throw lookupError;
    if(existing){setNotice("Ese nombre de usuario ya está en uso. Elige otro.");return;}
-   const {data,error}=await client.auth.signUp({email:email.trim().toLowerCase(),password,options:{data:{display_name:name.trim(),username:handle,account_type:kind,phone:phone.trim()||null,show_email:showEmail,show_phone:showPhone,profession_code:kind!=="company"?(profession||null):null,training_status:training,organization_kind:kind!=="personal"?organizationKind:null}}});
+   const {data,error}=await client.auth.signUp({email:email.trim().toLowerCase(),password,options:{data:{display_name:name.trim(),username:handle,account_type:kind,profession_code:kind!=="company"?(profession||null):null,training_status:training,organization_kind:kind!=="personal"?organizationKind:null}}});
    if(error)throw error;
    if(!data.user)throw new Error("No se pudo crear la cuenta.");
    let session=data.session;
@@ -57,6 +55,8 @@ export default function Account() {
     const {data:owned}=await client.from("usernames").select("username").eq("user_id",session.user.id).maybeSingle();
     if(owned?.username!==handle)throw new Error("El nombre de usuario ya está ocupado. Cambia tu usuario desde el perfil.");
    }
+   const {error:phoneError}=await client.auth.updateUser({phone:phone.trim()});
+   if(phoneError)throw new Error("Cuenta creada. No se pudo iniciar la verificación telefónica: "+phoneError.message);
    await startJobinSession();
    setPassword("");setConfirmPassword("");
    router.replace("/videos");
@@ -80,9 +80,8 @@ export default function Account() {
   <AuthField label="Nombre legal (obligatorio)" placeholder="Tu nombre" value={name} onChangeText={setName} autoCapitalize="words"/>
   <AuthField label="Nombre de usuario" placeholder="@usuario_en_minusculas" value={username} onChangeText={value=>setUsername(value.toLowerCase().replace(/[^a-z0-9_@]/g,""))}/>
   <AuthField label="Correo para iniciar sesión (obligatorio por ahora)" placeholder="Tu correo" value={email} onChangeText={setEmail} keyboardType="email-address"/>
-  <AuthField label="Teléfono (opcional)" placeholder="+1 555 000 0000" value={phone} onChangeText={setPhone} keyboardType="phone-pad"/>
-  <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showEmail}} onPress={()=>setShowEmail(v=>!v)}><Text style={{color:authSilver.tone2}}>{showEmail?"☑":"☐"} Mostrar correo en mi JCard</Text></Pressable>
-  <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showPhone}} onPress={()=>setShowPhone(v=>!v)}><Text style={{color:authSilver.tone2}}>{showPhone?"☑":"☐"} Mostrar teléfono en mi JCard</Text></Pressable>
+  <AuthField label="Teléfono (obligatorio)" placeholder="+15550000000" value={phone} onChangeText={setPhone} keyboardType="phone-pad"/>
+  <Text style={{color:authSilver.tone1,fontSize:12}}>La visibilidad del correo y teléfono se configura después, desde Editar JCard. Debes verificar ambos antes de publicar reseñas.</Text>
   <AuthField label="Contraseña" placeholder="Mínimo 8 caracteres" value={password} onChangeText={setPassword} secure/>
   <AuthField label="Confirmar contraseña" placeholder="Repite tu contraseña" value={confirmPassword} onChangeText={setConfirmPassword} secure/>
   {!!notice&&<Text accessibilityLiveRegion="polite" style={{color:authSilver.tone3}}>{notice}</Text>}
