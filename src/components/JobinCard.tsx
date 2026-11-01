@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { Animated, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
+import Svg, { Defs, LinearGradient, Rect, Stop, Path } from "react-native-svg";
 import QRCode from "react-native-qrcode-svg";
 import { Avatar } from "./social-ui";
 import { Button, useUi } from "./ui";
