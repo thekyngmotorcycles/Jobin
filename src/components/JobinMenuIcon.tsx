@@ -1,9 +1,9 @@
-import Svg,{Circle,Path,Rect,Line,Polyline} from "react-native-svg";
+import Svg,{Circle,Path,Rect} from "react-native-svg";
 export type JobinMenuIconName="configuracion"|"centro-privacidad"|"administracion-tiempo"|"solicitudes-dispositivos"|"actividad-publicitaria"|"pedidos-pagos"|"historial-enlaces"|"modo-oscuro"|"idioma"|"icono-app"|"uso-datos";
 export function JobinMenuIcon({name,size=30,color}:{name:JobinMenuIconName;size?:number;color?:string}){
  const stroke={stroke:color,strokeWidth:1.8,strokeLinecap:"round" as const,strokeLinejoin:"round" as const,fill:"none"};
  const drawings={
- configuracion:<><Path {...stroke} d="M5 8h14M5 16h14"/><Circle {...stroke} cx="10" cy="8" r="3" fill="none"/><Circle {...stroke} cx="16" cy="16" r="3" fill="white"/></>,
+ configuracion:<><Path {...stroke} d="M5 8h14M5 16h14"/><Circle {...stroke} cx="10" cy="8" r="3" fill="none"/><Circle {...stroke} cx="16" cy="16" r="3" fill="none"/></>,
  "centro-privacidad":<><Path {...stroke} d="M12 2 20 6v6c0 5-3 8-8 10-5-2-8-5-8-10V6z"/><Path {...stroke} d="m9 12 2 2 4-4"/></>,
  "administracion-tiempo":<><Circle {...stroke} cx="12" cy="12" r="9"/><Path {...stroke} d="M12 6v7l5 3M8 3l-2-2M16 3l2-2"/></>,
  "solicitudes-dispositivos":<><Rect {...stroke} x="5" y="2" width="14" height="20" rx="3"/><Path {...stroke} d="m9 12 2 2 4-4M10 19h4"/></>,
