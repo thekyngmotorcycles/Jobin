@@ -30,6 +30,10 @@ function Navigation() {
  <Stack.Screen name="connect" options={{headerShown:false}}/>
  <Stack.Screen name="settings" options={{title:"Configuración"}}/>
  <Stack.Screen name="settings/[item]" options={{title:"Configuración de Jobin"}}/>
+ <Stack.Screen name="settings/cuenta" options={{title:"Cuenta y seguridad"}}/>
+ <Stack.Screen name="settings/datos-personales" options={{title:"Información personal"}}/>
+ <Stack.Screen name="settings/tipo-cuenta" options={{title:"Tipo de cuenta"}}/>
+ <Stack.Screen name="settings/cierre-cuenta" options={{title:"Administrar cuenta"}}/>
  <Stack.Screen name="menu/[section]" options={{title:"Configuración y privacidad"}}/>
  <Stack.Screen name="account" options={{title:"Sign up",headerShown:false}}/>
  <Stack.Screen name="login" options={{title:"Log in",headerShown:false}}/>
