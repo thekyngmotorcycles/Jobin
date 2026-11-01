@@ -16,7 +16,7 @@ import { LanguageRing } from "./LanguageRing";
 import { jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
 
 export type { CardData } from "../lib/jcard";
-const wordmarkJ=WORDMARK_XML.replace('viewBox="300 76 616 275"','viewBox="300 76 160 275"').replace(/(<path[^>]*\\/>)(?:<path[^>]*\\/>)+/, "$1");
+const wordmarkJ=WORDMARK_XML.replace('viewBox="300 76 616 275"','viewBox="300 76 160 275"').replace(/(<path[^>]*\/>)[\s\S]*?(<\/g>)/,"$1$2");
 
 function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { card: CardData; theme: ThemeName; expanded?: boolean; onEdit?: () => void; onQr?: () => void; contact?:{email:string|null;phone:string|null} }) {
   const { s, fs } = useUi();
