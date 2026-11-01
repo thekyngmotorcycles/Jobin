@@ -79,6 +79,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr }: { card: CardD
 
                 </View>
                 <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={{ fontSize:9, lineHeight:13, fontWeight:"600", color:seal.verified ? finish.sealText : finish.pendingText }}>{seal.label}</Text>
+                {seal.verified&&<View accessibilityLabel="Profesión verificada" style={{width:16,height:16,borderRadius:8,backgroundColor:jcardCommon.verifiedBubble,alignItems:"center",justifyContent:"center"}}><Ionicons name="checkmark" size={12} color={jcardCommon.qrPaper}/></View>}
               </View>)}
             </View>)}
           </View>
@@ -91,7 +92,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr }: { card: CardD
 function BusinessFace({card,theme,onEdit}:{card:CardData;theme:ThemeName;onEdit?:()=>void}){
  const {s}=useUi();const b=card.business;const finish=jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0));
  const company=!!b?.name.trim();
- return <View style={[s.panel,{minHeight:330,padding:22,borderRadius:jcardLayout.radius,backgroundColor:finish.start,borderColor:finish.line,gap:15,justifyContent:"space-between"}]}>
+ return <View style={[s.panel,{flex:1,padding:22,borderRadius:jcardLayout.radius,backgroundColor:finish.start,borderColor:finish.line,gap:15,justifyContent:"space-between"}]}>
   <View style={{gap:10}}>
    <Text style={{fontSize:19,fontWeight:"700",color:finish.text,textAlign:"center"}}>{company?"JCard · Negocio":"JCard · Presentación profesional"}</Text>
    <Text style={{fontSize:23,fontWeight:"700",color:finish.text}}>{company?b?.name:card.name}</Text>
@@ -108,9 +109,9 @@ function BusinessFace({card,theme,onEdit}:{card:CardData;theme:ThemeName;onEdit?
 }
 export function JobinCard({card,previewTheme,onEditBusiness}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void}){
  const {theme}=useTheme();const {width}=useWindowDimensions();
- const [back,setBack]=useState(false),[qrOpen,setQrOpen]=useState(false);
+ const [back,setBack]=useState(false),[qrOpen,setQrOpen]=useState(false),[faceHeight,setFaceHeight]=useState(340);
  const rotation=useRef(new Animated.Value(0)).current;
- const toggle=()=>{const next=!back;setBack(next);Animated.spring(rotation,{toValue:next?180:0,useNativeDriver:true,friction:9,tension:65}).start();};
+ const toggle=()=>{const next=!back;setBack(next);Animated.timing(rotation,{toValue:next?180:0,useNativeDriver:true,duration:500}).start();};
  const responder=useRef(PanResponder.create({onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>28&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,onPanResponderRelease:(_,g)=>{if(Math.abs(g.dx)>65)toggleRef.current();}})).current;
  const toggleRef=useRef(toggle);toggleRef.current=toggle;
  const frontRotate=rotation.interpolate({inputRange:[0,180],outputRange:["0deg","180deg"]});
@@ -118,14 +119,14 @@ export function JobinCard({card,previewTheme,onEditBusiness}:{card:CardData;prev
  const cardTheme=previewTheme??theme;
  return <>
   <View style={{width:"100%",maxWidth:520,alignSelf:"center"}} {...responder.panHandlers}>
-   <Animated.View pointerEvents={back?"none":"auto"} style={{backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:frontRotate}]}}>
+   <Animated.View onLayout={e=>setFaceHeight(e.nativeEvent.layout.height)} pointerEvents={back?"none":"auto"} style={{backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:frontRotate}]}}>
     <CardFace card={card} theme={cardTheme} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)}/>
    </Animated.View>
    <Animated.View pointerEvents={back?"auto":"none"} style={{position:"absolute",top:0,left:0,right:0,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:backRotate}]}}>
-    <BusinessFace card={card} theme={cardTheme} onEdit={onEditBusiness}/>
+    <View style={{height:faceHeight}}><BusinessFace card={card} theme={cardTheme} onEdit={onEditBusiness}/></View>
    </Animated.View>
    <Pressable accessibilityRole="button" accessibilityLabel={back?"Ver cara personal":"Ver reverso de JCard"} onPress={toggle} style={{alignSelf:"center",padding:8,flexDirection:"row",gap:6,alignItems:"center"}}>
-    <Ionicons name="sync-outline" size={18} color={jcardCommon.editInk}/><Text style={{color:jcardCommon.editInk,fontSize:12}}>{back?"Ver JCard personal":"Girar JCard"}</Text>
+    <Ionicons name="sync-outline" size={18} color={jcardCommon.editInk}/><Text style={{color:jcardCommon.editInk,fontSize:12}}>{back?"Negocio / Presentación · Ver personal":"Personal · Ver reverso"}</Text>
    </Pressable>
   </View>
   <Modal visible={qrOpen} transparent animationType="fade" onRequestClose={()=>setQrOpen(false)}>
