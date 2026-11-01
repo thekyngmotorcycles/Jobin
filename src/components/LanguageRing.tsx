@@ -1,5 +1,6 @@
-import Svg,{Circle} from "react-native-svg";
+import Svg,{Circle,Defs,LinearGradient,Stop} from "react-native-svg";
 import {Text,View} from "react-native";
+import {proficiencyColors} from "../theme/jcard";
 export const LANGUAGE_LEVELS=[
  {label:"Básico",value:20,code:"A1–A2"},
  {label:"Intermedio",value:45,code:"B1"},
@@ -12,9 +13,9 @@ export function languageSymbol(name:string){const n=name.trim().toLocaleLowerCas
 export function LanguageRing({name,value,color,track}:{name:string;value:number;color:string;track:string}){
  const size=64,radius=25,circumference=2*Math.PI*radius,progress=Math.max(0,Math.min(100,value))/100;
  return <View accessible accessibilityLabel={name+", "+languageLabel(value)} style={{width:size,height:size,alignItems:"center",justifyContent:"center"}}>
-  <Svg width={size} height={size} viewBox="0 0 64 64" style={{position:"absolute"}}>
+  <Svg width={size} height={size} viewBox="0 0 64 64" style={{position:"absolute"}}><Defs><LinearGradient id="jobinLevelGradient" x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={proficiencyColors.low}/><Stop offset="50%" stopColor={proficiencyColors.middle}/><Stop offset="100%" stopColor={proficiencyColors.high}/></LinearGradient></Defs>
    <Circle cx="32" cy="32" r={radius} stroke={track} strokeWidth="5" fill="none"/>
-   <Circle cx="32" cy="32" r={radius} stroke={color} strokeWidth="5" fill="none" strokeDasharray={circumference} strokeDashoffset={circumference*(1-progress)} strokeLinecap="round" rotation="-90" origin="32,32"/>
+   <Circle cx="32" cy="32" r={radius} stroke="url(#jobinLevelGradient)" strokeWidth="6" fill="none" strokeDasharray={circumference} strokeDashoffset={circumference*(1-progress)} strokeLinecap="round" rotation="-90" origin="32,32"/>
   </Svg>
   <Text style={{color,fontSize:16,fontWeight:"800"}}>{languageSymbol(name)}</Text>
  </View>;
