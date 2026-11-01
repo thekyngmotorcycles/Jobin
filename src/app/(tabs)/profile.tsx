@@ -8,6 +8,7 @@ import { ProfessionalStatus } from "../../components/ProfessionalStatus";
 import { loadWorkspace } from "../../lib/professional-api";
 import { useProfessionalData } from "../../state/useProfessionalData";
 import { useCallback,useEffect,useState } from "react";
+import {getEmployerLinks} from "../../lib/employer-links";
 import { Image, Keyboard, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router,useFocusEffect,useLocalSearchParams } from "expo-router";
@@ -50,7 +51,7 @@ export default function Profile() {
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address:"", contact:"" });
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace);
-  useFocusEffect(useCallback(()=>{let live=true;const id=workspace.data?.card.id;if(id)void AsyncStorage.getItem("jobin.employer.link."+id).then(raw=>{if(live)setEmployerLink(raw?JSON.parse(raw):null);}).catch(()=>{if(live)setEmployerLink(null);});return()=>{live=false;};},[workspace.data?.card.id]));
+  useFocusEffect(useCallback(()=>{let live=true;void getEmployerLinks().then(rows=>{if(live){const verified=rows.find(row=>row.worker_id===workspace.data?.card.id&&row.status==="approved");setEmployerLink(verified?{id:verified.company_id,name:verified.name,handle:verified.handle}:null);}}).catch(()=>{if(live)setEmployerLink(null);});return()=>{live=false;};},[workspace.data?.card.id]));
   useEffect(()=>{let live=true;void readCloudHistory().then(async rows=>{if(!live)return;if(rows.length){const rawLocal=await AsyncStorage.getItem("jobin.professional.history.v1");const local=rawLocal?JSON.parse(rawLocal) as EmploymentEntry[]:[];setHistory(rows.map(row=>{const saved=local.find(entry=>entry.id===row.id);return {...row,address:saved?.address??row.address,contact:saved?.contact??row.contact};}));return;}const raw=await AsyncStorage.getItem("jobin.professional.history.v1");const local=raw?JSON.parse(raw) as EmploymentEntry[]:[];for(const item of local)await writeCloudHistory(item);if(live)setHistory(local);}).catch(()=>setNotice("No se pudo recuperar el historial en la nube."));return()=>{live=false;};},[]);
   useEffect(()=>{let live=true;void readBusinessRating(workspace.data?.card.id??"").then(value=>{if(live)setBusinessRating(value);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
   const p = DEMO_PROFILE;
