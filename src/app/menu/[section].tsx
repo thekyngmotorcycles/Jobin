@@ -32,7 +32,7 @@ export default function MenuSection(){
      <Text accessibilityRole="header" style={[s.h3,{fontSize:22}]}>{group.title}</Text>
      <Text style={s.muted}>{group.description}</Text>
      {group.items.map(entry=><Pressable key={entry.id} accessibilityRole="button" accessibilityLabel={entry.title}
-      onPress={()=>router.push(entry.route??({pathname:"/settings/[item]",params:{item:entry.id}} as const))}
+      onPress={()=>{if(entry.route){router.push(entry.route as any);}else{router.push({pathname:"/settings/[item]",params:{item:entry.id}});}}}
       style={({pressed})=>({flexDirection:"row",alignItems:"center",gap:16,paddingVertical:14,opacity:pressed?.55:1})}>
       <JobinSettingsIcon id={entry.id} size={27} color={colors.ink}/>
       <View style={{flex:1,gap:3}}><Text style={[s.text,{fontWeight:"600",fontSize:16}]}>{entry.title}</Text><Text style={s.muted}>{entry.description}</Text></View>
