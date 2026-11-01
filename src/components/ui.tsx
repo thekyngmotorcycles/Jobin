@@ -1,5 +1,5 @@
 import { JobinWordmark } from "./JobinWordmark";
-import { useCallback, useMemo, type ReactNode } from "react";
+import { useCallback, useMemo, type ReactNode, type RefObject } from "react";
 import { useTheme } from "../state/ThemeProvider";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -78,10 +78,10 @@ export function Footer({ demo = true }: { demo?: boolean } = {}) {
     <Text style={s.muted}>Haz lo que amas. Conecta con quienes lo valoran.</Text>
     {demo && <Text style={s.muted}>Datos de ejemplo. Los cambios se reinician al cerrar o recargar la app.</Text>}</View>;
 }
-export function Screen({ children, title, subtitle, showCity = false, demo = true, plainHeading = false, showBadge = true, bottomPadding,hideHeader=false,hideFooter=false }: { children: ReactNode; title: string; subtitle: string; showCity?: boolean; demo?: boolean; plainHeading?:boolean; showBadge?:boolean; bottomPadding?:number;hideHeader?:boolean;hideFooter?:boolean }) {
+export function Screen({ children, title, subtitle, showCity = false, demo = true, plainHeading = false, showBadge = true, bottomPadding,hideHeader=false,hideFooter=false,scrollRef }: { children: ReactNode; title: string; subtitle: string; showCity?: boolean; demo?: boolean; plainHeading?:boolean; showBadge?:boolean; bottomPadding?:number;hideHeader?:boolean;hideFooter?:boolean;scrollRef?:RefObject<ScrollView|null> }) {
   const {s} = useUi();
   return <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[s.content,bottomPadding!==undefined&&{paddingBottom:bottomPadding}]}>
+    <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" contentContainerStyle={[s.content,bottomPadding!==undefined&&{paddingBottom:bottomPadding}]}>
       {!hideHeader&&<Header title={title} subtitle={subtitle} showCity={showCity} demo={demo} plainHeading={plainHeading} showBadge={showBadge} />}{children}{!hideFooter&&<Footer demo={demo} />}
     </ScrollView>
   </SafeAreaView>;
