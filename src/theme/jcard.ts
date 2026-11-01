@@ -35,11 +35,11 @@ const finishes = {
  camel:{base:inverted("camel"),silver:finish("camel",silver),gold:finish("camel",gold)},
 };
 export const jcardLayout = {
-  avatar: 64, qr: 72, qrQuietZone: 4, radius: 18, padding: 14,
+  avatar: 64, qr: 56, qrQuietZone: 4, radius: 18, padding: 14,
   gap: 5, minimumSealWidth: 38,
 };
 export const jcardCommon = {
-  scrim: "#000000aa", qrPaper: "#ffffff", qrInk: "#111111", editBackground: "#e5e5e5", editInk: "#555555",
+  scrim: "#000000aa", qrPaper: "#ffffff", qrInk: "#111111", editBackground: "#e5e5e5", editInk: "#555555", verifiedBubble: "#38bdf8",
 };
 export function jcardTokens(theme: ThemeName, tier: JCardTier) {
   // Rating-based silver and gold finishes remain unchanged in every appearance.
