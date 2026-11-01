@@ -30,6 +30,7 @@ export default function Login() {
   <AuthField label="Email" placeholder="Tu correo electrónico" value={email} onChangeText={setEmail} keyboardType="email-address"/>
   <AuthField label="Password" placeholder="Tu contraseña" value={password} onChangeText={setPassword} secure/>
   {!!error&&<Text accessibilityLiveRegion="polite" style={{color:authSilver.tone3}}>{error}</Text>}
+  <AuthAction secondary label="¿Olvidaste tu contraseña? Recuperar cuenta" onPress={()=>router.push("/recover-account")}/>
   <AuthAction label={busy?"ENTRANDO…":"LOG IN"} disabled={busy} onPress={()=>void submit()}/>
  </AuthShell>;
 }

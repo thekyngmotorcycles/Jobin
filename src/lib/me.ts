@@ -2,6 +2,9 @@ export interface EmploymentEntry {
   id: string;
   company: string;
   role: string;
+  professions?: string[];
+  fromMonth?: number;
+  toMonth?: number;
   from: number;
   to: number | null;
   status: "approved" | "pending";

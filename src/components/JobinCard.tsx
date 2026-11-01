@@ -1,5 +1,6 @@
-import { useId, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { useEffect, useId, useRef, useState } from "react";
+import { router } from "expo-router";
+import { Animated, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
@@ -7,12 +8,14 @@ import QRCode from "react-native-qrcode-svg";
 import { Avatar } from "./social-ui";
 import { Button, useUi } from "./ui";
 import { useTheme, type ThemeName } from "../state/ThemeProvider";
-import { displayedRating, jcardTier, sealRows, type CardData } from "../lib/jcard";
+import { displayedRating, jcardTier, sealRows, type CardData, type BusinessCardData } from "../lib/jcard";
+import {loadPublicContact} from "../lib/jcard-contact";
+import { experienceLabel } from "../lib/employment";
 import { jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
 
 export type { CardData } from "../lib/jcard";
 
-function CardFace({ card, theme, expanded = false }: { card: CardData; theme: ThemeName; expanded?: boolean }) {
+function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { card: CardData; theme: ThemeName; expanded?: boolean; onEdit?: () => void; onQr?: () => void; contact?:{email:string|null;phone:string|null} }) {
   const { s, fs } = useUi();
   const { fontScale } = useWindowDimensions();
   const [contentWidth, setContentWidth] = useState(0);
@@ -42,8 +45,10 @@ function CardFace({ card, theme, expanded = false }: { card: CardData; theme: Th
             </Text>
           </View>
         </View>
-        <View accessible accessibilityRole="image" accessibilityLabel="QR del perfil" style={{ backgroundColor:jcardCommon.qrPaper, padding:jcardLayout.qrQuietZone, borderRadius:6 }}>
-          <QRCode value={card.profileUrl} size={jcardLayout.qr} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
+        <View style={{alignItems:"center",gap:7}}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR" onPress={event=>{event.stopPropagation();onQr?.();}} style={{ backgroundColor:jcardCommon.qrPaper, padding:jcardLayout.qrQuietZone, borderRadius:6 }}>
+            <QRCode value={card.profileUrl} size={jcardLayout.qr} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
+          </Pressable>
         </View>
       </View>
 
@@ -52,6 +57,8 @@ function CardFace({ card, theme, expanded = false }: { card: CardData; theme: Th
           {card.name} - @{card.handle}
         </Text>
         <Text style={{ color:finish.text, fontWeight:"700", fontSize:11, letterSpacing:1.2 }}>{card.status}</Text>
+        {!!contact?.email&&<Text selectable style={lineStyle}>{contact.email}</Text>}
+        {!!contact?.phone&&<Text selectable style={lineStyle}>{contact.phone}</Text>}
         <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>{card.role}{card.inAcademy ? " - In academy" : ""}{card.inAcademy && card.trainingVerified ? " ✓" : ""}</Text>
         {!card.inAcademy && <Text style={lineStyle}>{card.years} años de experiencia</Text>}
         {card.status === "ACTIVE" && card.employer && <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>Working in @{card.employer}</Text>}
@@ -61,16 +68,18 @@ function CardFace({ card, theme, expanded = false }: { card: CardData; theme: Th
       </View>
 
       <View onLayout={event => setContentWidth(event.nativeEvent.layout.width)} style={{ paddingTop:12, borderTopWidth:1, borderTopColor:finish.line }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityLabel="Sellos de ejemplo; desliza horizontalmente si necesitas más espacio" contentContainerStyle={{ minWidth:"100%" }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityLabel="Sellos profesionales; desliza horizontalmente si necesitas más espacio" contentContainerStyle={{ minWidth:"100%" }}>
           <View style={{ gap:jcardLayout.gap }}>
             {rows.map((row, index) => <View key={index} style={{ flexDirection:"row", gap:jcardLayout.gap }}>
               {row.map(seal => <View key={seal.id} accessible accessibilityLabel={seal.profession + (seal.verified ? ", verificado" : ", sin verificar")}
-                style={{ width:sealWidth, minHeight:43, paddingVertical:5, paddingHorizontal:2, gap:3, alignItems:"center", justifyContent:"center", borderRadius:7, borderWidth:1, borderStyle:seal.verified ? "solid" : "dashed", borderColor:seal.verified ? finish.sealFill : finish.pendingLine, backgroundColor:seal.verified ? finish.sealFill : finish.pendingFill }}>
+                style={{ width:sealWidth, minHeight:66, paddingVertical:5, paddingHorizontal:2, gap:3, alignItems:"center", justifyContent:"center", borderRadius:7, borderWidth:1, borderStyle:seal.verified ? "solid" : "dashed", borderColor:seal.verified ? finish.sealFill : finish.pendingLine, backgroundColor:seal.verified ? finish.sealFill : finish.pendingFill }}>
+                <Text style={{fontSize:10,fontWeight:"700",color:finish.text}}>{experienceLabel(seal.months??0)}</Text>
                 <View style={{ flexDirection:"row", alignItems:"center", gap:2 }}>
                   <Ionicons name={seal.icon} size={12} color={seal.verified ? finish.sealText : finish.pendingText}/>
-                  {seal.verified && <Ionicons name="checkmark" size={9} color={finish.sealText}/>}
+
                 </View>
                 <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={{ fontSize:9, lineHeight:13, fontWeight:"600", color:seal.verified ? finish.sealText : finish.pendingText }}>{seal.label}</Text>
+                {seal.verified&&<View accessibilityLabel="Profesión verificada" style={{width:16,height:16,borderRadius:8,backgroundColor:jcardCommon.verifiedBubble,alignItems:"center",justifyContent:"center"}}><Ionicons name="checkmark" size={12} color={jcardCommon.qrPaper}/></View>}
               </View>)}
             </View>)}
           </View>
@@ -80,30 +89,72 @@ function CardFace({ card, theme, expanded = false }: { card: CardData; theme: Th
   </View>;
 }
 
-export function JobinCard({ card, previewTheme }: { card: CardData; previewTheme?: ThemeName }) {
-  const { theme } = useTheme();
-  const { s } = useUi();
-  const [open, setOpen] = useState(false);
-  const cardTheme = previewTheme ?? theme;
-  return <>
-    <Pressable accessibilityRole="button" accessibilityLabel={"Ampliar JCard de " + card.name}
-      accessibilityHint="Muestra los mismos datos y el código QR en una vista ampliada"
-      onPress={() => setOpen(true)} style={({pressed}) => ({ width:"100%", maxWidth:520, alignSelf:"center", opacity:pressed ? 0.9 : 1 })}>
-      <CardFace card={card} theme={cardTheme}/>
-    </Pressable>
-    <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-      <SafeAreaView style={{ flex:1, backgroundColor:jcardCommon.scrim }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Cerrar JCard" onPress={() => setOpen(false)} style={StyleSheet.absoluteFill}/>
-        <ScrollView contentContainerStyle={{ flexGrow:1, justifyContent:"center", alignItems:"center", padding:12 }} showsVerticalScrollIndicator={false}>
-          <View accessibilityViewIsModal style={{ width:"100%", maxWidth:680, gap:16 }}>
-            <CardFace card={card} theme={cardTheme} expanded/>
-            <View style={{ padding:12, borderRadius:12, backgroundColor:jcardCommon.qrPaper, gap:12 }}>
-              <Text style={[s.muted, { color:jcardCommon.qrInk, textAlign:"center" }]}>Escanea el QR para ver la JCard profesional.</Text>
-              <Button title="Cerrar JCard" secondary onPress={() => setOpen(false)}/>
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </Modal>
-  </>;
+function BusinessFace({card,theme,onEdit}:{card:CardData;theme:ThemeName;onEdit?:()=>void}){
+ const {s}=useUi();const b=card.business;const finish=jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0));
+ const company=!!b?.name.trim();
+ return <View style={[s.panel,{flex:1,padding:22,borderRadius:jcardLayout.radius,backgroundColor:finish.start,borderColor:finish.line,gap:15,justifyContent:"space-between"}]}>
+  <View style={{gap:10}}>
+   <Text style={{fontSize:19,fontWeight:"700",color:finish.text,textAlign:"center"}}>{company?"JCard · Negocio":"JCard · Presentación profesional"}</Text>
+   <Text style={{fontSize:23,fontWeight:"700",color:finish.text}}>{company?b?.name:card.name}</Text>
+   {company?<Text style={{color:finish.secondary}}>{b?.opened||"Apertura no indicada"} – {b?.closed||"Actualidad"}</Text>:<Text style={{color:finish.secondary}}>{card.role}</Text>}
+   <Text style={{color:finish.text}}>{b?.services.length?b.services.join(" · "):"Agrega hasta tres servicios que ofreces"}</Text>
+   <Text style={{color:finish.secondary}}>{b?.location||"Ubicación por completar"}</Text>
+   <Text style={{color:finish.secondary}}>★ {displayedRating(b?.rating??null,b?.reviewCount??0)?.toFixed(1)??"Sin categoría"} · {b?.reviewCount??0} reseñas del negocio</Text>
+  </View>
+  <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
+   <View/>
+   {b?.licenseVerified&&<View accessibilityLabel="Licencia empresarial verificada" style={{width:28,height:28,borderRadius:14,backgroundColor:jcardCommon.verifiedBubble,alignItems:"center",justifyContent:"center"}}><Ionicons name="checkmark" size={19} color={jcardCommon.qrPaper}/></View>}
+  </View>
+ </View>;
+}
+export function JobinCard({card,previewTheme,onEditBusiness,ownerId}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;ownerId?:string}){
+ const {theme}=useTheme();const {width}=useWindowDimensions();
+ const [contact,setContact]=useState<{email:string|null;phone:string|null}>({email:null,phone:null});
+ useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void loadPublicContact(ownerId).then(value=>{if(live)setContact(value);}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
+ const [back,setBack]=useState(false),[shareOpen,setShareOpen]=useState(false),[qrOpen,setQrOpen]=useState(false),[faceHeight,setFaceHeight]=useState(340);
+ const rotation=useRef(new Animated.Value(0)).current;
+ const toggle=()=>{const next=!back;setBack(next);Animated.timing(rotation,{toValue:next?180:0,useNativeDriver:true,duration:500}).start();};
+ const responder=useRef(PanResponder.create({onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>28&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,onPanResponderRelease:(_,g)=>{if(Math.abs(g.dx)>65)toggleRef.current();}})).current;
+ const toggleRef=useRef(toggle);toggleRef.current=toggle;
+ const frontRotate=rotation.interpolate({inputRange:[0,180],outputRange:["0deg","180deg"]});
+ const backRotate=rotation.interpolate({inputRange:[0,180],outputRange:["180deg","360deg"]});
+ const cardTheme=previewTheme??theme;
+ const share=()=>void Share.share({message:`JCard de ${card.name} · ${card.profileUrl}`,url:card.profileUrl,title:`JCard · ${card.name}`});
+ return <>
+  <View style={{width:"100%",maxWidth:520,alignSelf:"center"}}>
+   <View style={{flexDirection:"row",justifyContent:"flex-end",gap:10,paddingBottom:8}}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard" onPress={()=>setShareOpen(true)} style={{padding:9}}><Ionicons name="share-social-outline" size={23} color={jcardCommon.editInk}/></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{padding:9}}><Ionicons name="create-outline" size={23} color={jcardCommon.editInk}/></Pressable>
+   </View>
+   <View {...responder.panHandlers}>
+   <Animated.View onLayout={e=>setFaceHeight(e.nativeEvent.layout.height)} pointerEvents={back?"none":"auto"} style={{backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:frontRotate}]}}>
+    <CardFace card={card} theme={cardTheme} contact={contact} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)}/>
+   </Animated.View>
+   <Animated.View pointerEvents={back?"auto":"none"} style={{position:"absolute",top:0,left:0,right:0,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:backRotate}]}}>
+    <View style={{height:faceHeight}}><BusinessFace card={card} theme={cardTheme} onEdit={onEditBusiness}/></View>
+   </Animated.View>
+   </View>
+   <Pressable accessibilityRole="button" accessibilityLabel={back?"Ver cara personal":"Ver reverso de JCard"} onPress={toggle} style={{alignSelf:"center",padding:8,flexDirection:"row",gap:6,alignItems:"center"}}>
+    <Ionicons name="sync-outline" size={18} color={jcardCommon.editInk}/><Text style={{color:jcardCommon.editInk,fontSize:12}}>{back?"Negocio / Presentación · Ver personal":"Personal · Ver reverso"}</Text>
+   </Pressable>
+  </View>
+  <Modal visible={shareOpen} transparent animationType="fade" onRequestClose={()=>setShareOpen(false)}>
+   <SafeAreaView style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}>
+    <View style={{padding:22,borderRadius:18,backgroundColor:jcardCommon.qrPaper,gap:14}}>
+     <Text style={{fontSize:20,fontWeight:"700",color:jcardCommon.qrInk}}>Compartir JCard</Text>
+     <Button title="Compartir enlace" onPress={()=>{setShareOpen(false);share();}}/>
+     <Text style={{color:jcardCommon.qrInk}}>Guardar imagen JPG — disponible próximamente</Text>
+     <Text style={{color:jcardCommon.qrInk}}>Agregar a Apple Wallet — requiere un pase digital firmado</Text>
+     <Button title="Cerrar" onPress={()=>setShareOpen(false)}/>
+    </View>
+   </SafeAreaView>
+  </Modal>
+  <Modal visible={qrOpen} transparent animationType="fade" onRequestClose={()=>setQrOpen(false)}>
+   <SafeAreaView style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",alignItems:"center",padding:16}}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Cerrar QR" onPress={()=>setQrOpen(false)} style={StyleSheet.absoluteFill}/>
+    <View style={{padding:12,backgroundColor:jcardCommon.qrPaper,borderRadius:14,maxWidth:"100%"}}><QRCode value={card.profileUrl} size={Math.min(width-56,480)} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/></View>
+    <Pressable accessibilityRole="button" accessibilityLabel="Cerrar QR ampliado" onPress={()=>setQrOpen(false)} style={{padding:16}}><Ionicons name="close-circle" size={32} color={jcardCommon.qrPaper}/></Pressable>
+   </SafeAreaView>
+  </Modal>
+ </>;
 }
