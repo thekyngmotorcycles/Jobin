@@ -3127,8 +3127,8 @@ export type Database = {
       jobin_submit_review: {
         Args: {
           body: string
-          booking: string
-          contract: string
+          booking: string | null
+          contract: string | null
           photos?: string[]
           stars: number
         }
