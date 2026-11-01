@@ -1,6 +1,6 @@
-import {Ionicons} from "@expo/vector-icons";
+import {JobinMenuIcon} from "./JobinMenuIcon";
 import {router} from "expo-router";
-import {useState} from "react";
+import {useRef} from "react";
 import {Modal,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useUi} from "./ui";
@@ -18,21 +18,16 @@ export const HOME_MENU_ITEMS=[
  {slug:"uso-datos",label:"Uso de datos del celular",icon:"phone-portrait-outline",description:"Administra el consumo de datos móviles."},
 ] as const;
 export function HomeSideMenu({visible,onClose}:{visible:boolean;onClose:()=>void}){
- const {colors}=useUi();const {width}=useWindowDimensions();const [expanded,setExpanded]=useState(true);
+ const {colors}=useUi();const {width}=useWindowDimensions();const touchStart=useRef<{x:number;y:number}|null>(null);
  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent={false}>
   <View style={{flex:1,flexDirection:"row",backgroundColor:"rgba(0,0,0,0.46)"}}>
-   <SafeAreaView edges={["top","bottom"]} style={{width:Math.min(width*0.88,410),backgroundColor:colors.paper,flex:1}}>
+   <SafeAreaView edges={["top","bottom"]} onTouchStart={event=>{touchStart.current={x:event.nativeEvent.pageX,y:event.nativeEvent.pageY};}} onTouchEnd={event=>{const start=touchStart.current;if(start&&start.x-event.nativeEvent.pageX>70&&Math.abs(start.y-event.nativeEvent.pageY)<70)onClose();touchStart.current=null;}} style={{width:Math.min(width*0.88,410),backgroundColor:colors.paper,flex:1}}>
     <ScrollView contentContainerStyle={{paddingTop:14,paddingBottom:32}}>
-     <Pressable accessibilityRole="button" accessibilityLabel="Expandir o contraer Configuración y privacidad" onPress={()=>setExpanded(v=>!v)}
-      style={{flexDirection:"row",alignItems:"center",paddingHorizontal:22,paddingVertical:14,gap:20}}>
-      <Ionicons name="settings-outline" size={31} color={colors.ink}/>
-      <Text style={{color:colors.ink,fontWeight:"700",fontSize:23,flex:1,lineHeight:30}}>Configuración y privacidad</Text>
-      <Ionicons name={expanded?"chevron-up":"chevron-down"} size={23} color={colors.ink}/>
-     </Pressable>
-     {expanded&&HOME_MENU_ITEMS.map(item=><Pressable key={item.slug} accessibilityRole="button" accessibilityLabel={item.label}
+     <View style={{paddingHorizontal:24,paddingTop:15,paddingBottom:12}}><Text accessibilityRole="header" style={{color:colors.ink,fontWeight:"700",fontSize:23,lineHeight:30}}>Configuración y privacidad</Text></View>
+     {HOME_MENU_ITEMS.map(item=><Pressable key={item.slug} accessibilityRole="button" accessibilityLabel={item.label}
       onPress={()=>{onClose();router.push({pathname:"/menu/[section]",params:{section:item.slug}});}}
       style={({pressed})=>({flexDirection:"row",alignItems:"center",paddingHorizontal:28,paddingVertical:15,minHeight:68,gap:22,opacity:pressed?0.55:1})}>
-      <Ionicons name={item.icon} size={29} color={colors.ink}/>
+      <JobinMenuIcon name={item.slug} size={29} color={colors.ink}/>
       <Text style={{color:colors.ink,fontSize:17,flex:1,fontWeight:"400"}}>{item.label}</Text>
      </Pressable>)}
     </ScrollView>
