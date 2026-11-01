@@ -20,7 +20,7 @@ export const HOME_MENU_ITEMS=[
 export function HomeSideMenu({visible,onClose}:{visible:boolean;onClose:()=>void}){
  const {colors}=useUi();const {width}=useWindowDimensions();const touchStart=useRef<{x:number;y:number}|null>(null);
  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent={false}>
-  <View style={{flex:1,flexDirection:"row",backgroundColor:"rgba(0,0,0,0.46)"}}>
+  <View style={{flex:1,flexDirection:"row",backgroundColor:colors.scrim}}>
    <SafeAreaView edges={["top","bottom"]} onTouchStart={event=>{touchStart.current={x:event.nativeEvent.pageX,y:event.nativeEvent.pageY};}} onTouchEnd={event=>{const start=touchStart.current;if(start&&start.x-event.nativeEvent.pageX>70&&Math.abs(start.y-event.nativeEvent.pageY)<70)onClose();touchStart.current=null;}} style={{width:Math.min(width*0.88,410),backgroundColor:colors.paper,flex:1}}>
     <ScrollView contentContainerStyle={{paddingTop:14,paddingBottom:32}}>
      <View style={{paddingHorizontal:24,paddingTop:15,paddingBottom:12}}><Text accessibilityRole="header" style={{color:colors.ink,fontWeight:"700",fontSize:23,lineHeight:30}}>Configuración y privacidad</Text></View>
