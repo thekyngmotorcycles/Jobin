@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useUi } from "./ui";
+import { Ionicons } from "@expo/vector-icons";
+import {professionIcon} from "../lib/profession-icons";
 import type { ProfessionalCatalog } from "../lib/professional-types";
 export function ProfessionPicker({catalog,value,onChange}:{catalog:ProfessionalCatalog|null;value:string;onChange:(code:string)=>void}) {
  const {s,colors}=useUi();const [query,setQuery]=useState("");
@@ -15,7 +17,7 @@ export function ProfessionPicker({catalog,value,onChange}:{catalog:ProfessionalC
     return <View key={category.code} style={{gap:4,marginBottom:12}}>
      <Text style={s.eyebrow}>{category.label}</Text>
      {professions.map(p=><Pressable key={p.code} accessibilityRole="button" accessibilityState={{selected:value===p.code}} onPress={()=>onChange(p.code)} style={{padding:12,minHeight:44,borderRadius:8,backgroundColor:value===p.code?colors.ink:colors.accent}}>
-      <Text style={{color:value===p.code?colors.inverse:colors.ink,fontSize:13}}>{p.label}</Text>
+      <View style={{flexDirection:"row",alignItems:"center",gap:12}}><Ionicons name={professionIcon(p.code)} size={22} color={value===p.code?colors.inverse:colors.ink}/><Text style={{color:value===p.code?colors.inverse:colors.ink,fontSize:13,flex:1}}>{p.label}</Text></View>
      </Pressable>)}
     </View>;
    })}
