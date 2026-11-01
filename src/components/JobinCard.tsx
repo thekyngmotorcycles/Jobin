@@ -26,6 +26,8 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
   const shineId=gradientId+"shine";
   const finish = jcardTokens(theme, jcardTier(card.rating, card.reviewCount));
   const rating = displayedRating(card.rating, card.reviewCount);
+  const embossInk=finish.text;
+  const embossStrength=finish.start===finish.end?0.20:0.12;
   const [info,setInfo]=useState<string|null>(null);
   const rows = sealRows(card.seals);
   const columns = Math.max(1, ...rows.map(row => row.length));
@@ -42,9 +44,9 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
       <Rect width="100%" height="100%" fill={"url(#" + shineId + ")"}/>
 
       {/* Fine flowing emboss lines, like the supplied satin-paper reference. Keep the QR zone clean. */}
-      {Array.from({length:15},(_,i)=><Path key={"left"+i} d={`M ${-45+i*10} 330 C ${42+i*4} 235, ${-20+i*8} 116, ${78+i*7} -25`} stroke={finish.line} strokeOpacity={0.12+(i%3)*0.025} strokeWidth={i%4===0?1.35:0.75} fill="none"/>)}
-      {Array.from({length:16},(_,i)=><Path key={"bottom"+i} d={`M ${-45+i*13} 675 C ${60+i*8} 540, ${235+i*4} 555, ${440+i*2} 395`} stroke={finish.line} strokeOpacity={0.13+(i%4)*0.022} strokeWidth={i%5===0?1.45:0.75} fill="none"/>)}
-      <Path d="M-20 420 C105 250 225 300 420 95" stroke={finish.line} strokeOpacity="0.09" strokeWidth="2" fill="none"/>
+      {Array.from({length:15},(_,i)=><Path key={"left"+i} d={`M ${-45+i*10} 330 C ${42+i*4} 235, ${-20+i*8} 116, ${78+i*7} -25`} stroke={embossInk} strokeOpacity={embossStrength+(i%3)*0.018} strokeWidth={i%4===0?1.35:0.75} fill="none"/>)}
+      {Array.from({length:16},(_,i)=><Path key={"bottom"+i} d={`M ${-45+i*13} 675 C ${60+i*8} 540, ${235+i*4} 555, ${440+i*2} 395`} stroke={embossInk} strokeOpacity={embossStrength+(i%4)*0.018} strokeWidth={i%5===0?1.45:0.75} fill="none"/>)}
+      <Path d="M-20 420 C105 250 225 300 420 95" stroke={embossInk} strokeOpacity={embossStrength*0.7} strokeWidth="2" fill="none"/>
     </Svg>
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
     <View style={{ padding:jcardLayout.padding, gap:14 }}>
