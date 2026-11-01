@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { Button, Chips, Notice, Screen, useUi } from "../components/ui";
 import { ProfessionPicker } from "../components/ProfessionPicker";
 import { ProfessionalStatus } from "../components/ProfessionalStatus";
 import { loadCatalog, loadEducation, loadWorkspace, professionalMutation } from "../lib/professional-api";
 import { useProfessionalAction, useProfessionalData } from "../state/useProfessionalData";
+import {loadContactPreferences,saveContactPreferences} from "../lib/jcard-contact";
 import type { JCardStatus } from "../lib/jcard";
 
 export default function Professional() {
  const {s,colors}=useUi();
  const workspace=useProfessionalData(loadWorkspace);const catalog=useProfessionalData(loadCatalog);
  const action=useProfessionalAction(workspace.reload);
+ const [showEmail,setShowEmail]=useState(false);const [showPhone,setShowPhone]=useState(false);
+ useEffect(()=>{let live=true;void loadContactPreferences().then(p=>{if(live){setShowEmail(p.show_email);setShowPhone(p.show_phone);}}).catch(()=>{});return()=>{live=false;};},[]);
  const [name,setName]=useState("");const [handle,setHandle]=useState("");const [city,setCity]=useState("");const [region,setRegion]=useState("");
  const [availability,setAvailability]=useState<JCardStatus>("AVAILABLE");
  const [languages,setLanguages]=useState<{name:string;fluency:string}[]>([]);
@@ -38,8 +41,13 @@ export default function Professional() {
      <Button secondary title="Quitar idioma" onPress={()=>setLanguages(items=>items.filter((_,i)=>i!==index))}/>
     </View>)}
     <Button secondary title="Agregar idioma" onPress={()=>setLanguages(items=>[...items,{name:"",fluency:"100"}])}/>
+    <Text style={s.h3}>Privacidad de contacto</Text>
+    <Text style={s.muted}>El correo y el teléfono están ocultos por defecto. Puedes mostrarlos u ocultarlos cuando quieras.</Text>
+    <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showEmail}} onPress={()=>setShowEmail(v=>!v)}><Text style={{color:colors.ink}}>{showEmail?"☑":"☐"} Mostrar correo en mi JCard</Text></Pressable>
+    <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showPhone}} onPress={()=>setShowPhone(v=>!v)}><Text style={{color:colors.ink}}>{showPhone?"☑":"☐"} Mostrar teléfono en mi JCard</Text></Pressable>
     <Button title={action.busy?"Guardando…":"Guardar JCard"} onPress={()=>void action.run(async()=>{
      if(languages.some(l=>!l.fluency.trim()||!Number.isInteger(Number(l.fluency))))throw new Error("Indica la fluidez como un entero de 0 a 100.");
+     await saveContactPreferences({show_email:showEmail,show_phone:showPhone});
      await professionalMutation("jobin_save_jcard",{legal_name:name,handle,city,region,availability,languages:languages.map(l=>({name:l.name,fluency:Number(l.fluency)}))});
     },"JCard actualizada.")}/>
    </View>
