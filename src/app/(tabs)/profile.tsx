@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { employmentMonths } from "../../lib/employment";
-import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness,readRatings } from "../../lib/jcard-cloud";
+import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness,readBusinessRating } from "../../lib/jcard-cloud";
 import { useTabClearance } from "../../theme/navigation";
 import { MediaThumbnail } from "../../components/MediaThumbnail";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
@@ -28,7 +28,7 @@ export default function Profile() {
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
   const [history, setHistory] = useState<EmploymentEntry[]>([]);
   const [historyLoaded,setHistoryLoaded] = useState(false);
-  const [cloudRatings,setCloudRatings]=useState<{personal:{rating:number|null;count:number};business:{rating:number|null;count:number}}>({personal:{rating:null,count:0},business:{rating:null,count:0}});
+  const [businessRating,setBusinessRating]=useState<{rating:number|null;count:number}>({rating:null,count:0});
   useEffect(()=>{let active=true;AsyncStorage.getItem("jobin.professional.history.v1").then(raw=>{if(active&&raw){const parsed:unknown=JSON.parse(raw);if(Array.isArray(parsed))setHistory(parsed as EmploymentEntry[]);}}).catch(()=>{}).finally(()=>{if(active)setHistoryLoaded(true);});return()=>{active=false;};},[]);
   useEffect(()=>{if(historyLoaded)void AsyncStorage.setItem("jobin.professional.history.v1",JSON.stringify(history)).catch(()=>setNotice("No se pudo guardar el historial en este dispositivo."));},[history,historyLoaded]);
   const [businessOpen,setBusinessOpen]=useState(false);
@@ -50,7 +50,7 @@ export default function Profile() {
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace);
   useEffect(()=>{let live=true;void readCloudHistory().then(async rows=>{if(!live)return;if(rows.length){setHistory(rows);return;}const raw=await AsyncStorage.getItem("jobin.professional.history.v1");const local=raw?JSON.parse(raw) as EmploymentEntry[]:[];for(const item of local)await writeCloudHistory(item);if(live)setHistory(local);}).catch(()=>setNotice("No se pudo recuperar el historial en la nube."));return()=>{live=false;};},[]);
-  useEffect(()=>{if(!workspace.data?.card.id)return;let live=true;const person=workspace.data.card.id,businessId=workspace.data.organization?.profile_id;void readRatings(person,businessId).then(rows=>{if(!live)return;const personal=rows.find(x=>x.subject_id===person),company=rows.find(x=>x.subject_id===businessId);setCloudRatings({personal:{rating:personal?.average_rating??null,count:personal?.review_count??0},business:{rating:company?.average_rating??null,count:company?.review_count??0}});}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id,workspace.data?.organization?.profile_id]);
+  useEffect(()=>{let live=true;void readBusinessRating(workspace.data?.card.id??"").then(value=>{if(live)setBusinessRating(value);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
   const p = DEMO_PROFILE;
 
   function openLive() {
@@ -107,11 +107,11 @@ export default function Profile() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
-          <JobinCard card={{...workspace.data.card,seals,rating:cloudRatings.personal.rating,reviewCount:cloudRatings.personal.count,business:{...business,rating:cloudRatings.business.rating,reviewCount:cloudRatings.business.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness}/>
+          <JobinCard card={{...workspace.data.card,seals,rating:null,reviewCount:0,business:{...business,rating:businessRating.rating,reviewCount:businessRating.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness}/>
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
           <View style={{width:"100%",maxWidth:520,alignSelf:"center",gap:8}}>
             <Button title="Mi historial profesional · Agregar empleo" onPress={()=>{setMode("cv");openEmployment();}}/>
-            <Button secondary title="Reseñas de servicios completados" onPress={()=>router.push("/reviews")}/>
+            <Button secondary title="Reseñas de empresas" onPress={()=>router.push("/reviews")}/>
             <Button secondary title="Certificados y sellos" onPress={()=>router.push("/certificates")}/>
             <Button secondary title="Oportunidades por ciudad y profesión" onPress={()=>router.push("/opportunities")}/>
             {!!workspace.data.organization&&<Button secondary title="Mi empresa o institución" onPress={()=>router.push("/company")}/>}
