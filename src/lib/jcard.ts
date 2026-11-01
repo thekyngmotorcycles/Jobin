@@ -28,10 +28,11 @@ export interface CardData {
 }
 export interface BusinessCardData { name:string; opened:string; closed:string; services:string[]; location:string; licenseVerified:boolean; rating:number|null; reviewCount:number; }
 export function displayedRating(rating: number | null, reviewCount: number): number | null {
-  if (reviewCount < 5 || rating === null || !Number.isFinite(rating)) return null;
+  if (!reviewCount || rating === null || !Number.isFinite(rating)) return null;
   return Math.round(Math.min(5, Math.max(1, rating)) * 10) / 10;
 }
 export function jcardTier(rating: number | null, reviewCount: number): JCardTier {
+  if(reviewCount<5)return "base";
   const rounded = displayedRating(rating, reviewCount);
   return rounded === null || rounded <= 3.5 ? "base" : rounded <= 4.5 ? "silver" : "gold";
 }
