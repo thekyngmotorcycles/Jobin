@@ -6,7 +6,6 @@ import {router,useLocalSearchParams} from "expo-router";
 import {Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {HOME_MENU_ITEMS} from "../../components/HomeSideMenu";
-import {JobinMenuIcon} from "../../components/JobinMenuIcon";
 import {useUi} from "../../components/ui";
 import {useTheme} from "../../state/ThemeProvider";
 import {THEMES} from "../../theme/palettes";
