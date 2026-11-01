@@ -106,7 +106,7 @@ function BusinessFace({card,theme,onEdit}:{card:CardData;theme:ThemeName;onEdit?
 }
 export function JobinCard({card,previewTheme,onEditBusiness}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void}){
  const {theme}=useTheme();const {width}=useWindowDimensions();
- const [back,setBack]=useState(false),[qrOpen,setQrOpen]=useState(false),[faceHeight,setFaceHeight]=useState(340);
+ const [back,setBack]=useState(false),[shareOpen,setShareOpen]=useState(false),[qrOpen,setQrOpen]=useState(false),[faceHeight,setFaceHeight]=useState(340);
  const rotation=useRef(new Animated.Value(0)).current;
  const toggle=()=>{const next=!back;setBack(next);Animated.timing(rotation,{toValue:next?180:0,useNativeDriver:true,duration:500}).start();};
  const responder=useRef(PanResponder.create({onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>28&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,onPanResponderRelease:(_,g)=>{if(Math.abs(g.dx)>65)toggleRef.current();}})).current;
@@ -118,7 +118,7 @@ export function JobinCard({card,previewTheme,onEditBusiness}:{card:CardData;prev
  return <>
   <View style={{width:"100%",maxWidth:520,alignSelf:"center"}}>
    <View style={{flexDirection:"row",justifyContent:"flex-end",gap:10,paddingBottom:8}}>
-    <Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard" onPress={share} style={{padding:9}}><Ionicons name="share-social-outline" size={23} color={jcardCommon.editInk}/></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard" onPress={()=>setShareOpen(true)} style={{padding:9}}><Ionicons name="share-social-outline" size={23} color={jcardCommon.editInk}/></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{padding:9}}><Ionicons name="create-outline" size={23} color={jcardCommon.editInk}/></Pressable>
    </View>
    <View {...responder.panHandlers}>
@@ -133,6 +133,17 @@ export function JobinCard({card,previewTheme,onEditBusiness}:{card:CardData;prev
     <Ionicons name="sync-outline" size={18} color={jcardCommon.editInk}/><Text style={{color:jcardCommon.editInk,fontSize:12}}>{back?"Negocio / Presentación · Ver personal":"Personal · Ver reverso"}</Text>
    </Pressable>
   </View>
+  <Modal visible={shareOpen} transparent animationType="fade" onRequestClose={()=>setShareOpen(false)}>
+   <SafeAreaView style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}>
+    <View style={{padding:22,borderRadius:18,backgroundColor:jcardCommon.qrPaper,gap:14}}>
+     <Text style={{fontSize:20,fontWeight:"700",color:jcardCommon.qrInk}}>Compartir JCard</Text>
+     <Button title="Compartir enlace" onPress={()=>{setShareOpen(false);share();}}/>
+     <Text style={{color:jcardCommon.qrInk}}>Guardar imagen JPG — disponible próximamente</Text>
+     <Text style={{color:jcardCommon.qrInk}}>Agregar a Apple Wallet — requiere un pase digital firmado</Text>
+     <Button title="Cerrar" onPress={()=>setShareOpen(false)}/>
+    </View>
+   </SafeAreaView>
+  </Modal>
   <Modal visible={qrOpen} transparent animationType="fade" onRequestClose={()=>setQrOpen(false)}>
    <SafeAreaView style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",alignItems:"center",padding:16}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar QR" onPress={()=>setQrOpen(false)} style={StyleSheet.absoluteFill}/>
