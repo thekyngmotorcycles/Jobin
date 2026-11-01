@@ -2,6 +2,8 @@ export interface EmploymentEntry {
   id: string;
   company: string;
   role: string;
+  address?: string;
+  contact?: string;
   professions?: string[];
   fromMonth?: number;
   toMonth?: number;
