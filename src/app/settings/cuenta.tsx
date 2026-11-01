@@ -5,7 +5,6 @@ import {Alert,Pressable,ScrollView,Text,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {endJobinSession} from "../../components/AuthGate";
 import {useUi} from "../../components/ui";
-import {requireSupabase} from "../../lib/supabase";
 type Item={label:string;detail:string;icon:React.ComponentProps<typeof Ionicons>["name"];route?:string;action?:()=>void};
 export default function AccountSecurity(){
  const {s,colors}=useUi();const [signingOut,setSigningOut]=useState(false);
