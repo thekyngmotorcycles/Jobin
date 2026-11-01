@@ -10,6 +10,7 @@ export const LANGUAGE_LEVELS=[
 ] as const;
 export function languageLabel(value:number){if(value>=95)return "Dominio completo";if(value>=75)return "Avanzado";if(value>=55)return "Intermedio alto";if(value>=35)return "Intermedio";return "Básico";}
 export function languageSymbol(name:string){const n=name.trim().toLocaleLowerCase();if(/español|spanish|castellano/.test(n))return "ES";if(/inglés|ingles|english/.test(n))return "EN";if(/francés|frances|french/.test(n))return "FR";if(/portugués|portugues|portuguese/.test(n))return "PT";if(/alemán|aleman|german/.test(n))return "DE";if(/italiano|italian/.test(n))return "IT";return (name.trim().slice(0,2)||"ID").toLocaleUpperCase();}
+export function languageFlag(name:string){const code=languageSymbol(name);const flags:Record<string,string>={ES:"🇪🇸",EN:"🇬🇧",FR:"🇫🇷",PT:"🇵🇹",DE:"🇩🇪",IT:"🇮🇹"};return flags[code]??"🌐";}
 export function LanguageRing({name,value,color,track}:{name:string;value:number;color:string;track:string}){
  const size=64,radius=25,circumference=2*Math.PI*radius,progress=Math.max(0,Math.min(100,value))/100;
  return <View accessible accessibilityLabel={name+", "+languageLabel(value)} style={{width:size,height:size,alignItems:"center",justifyContent:"center"}}>
@@ -17,6 +18,6 @@ export function LanguageRing({name,value,color,track}:{name:string;value:number;
    <Circle cx="32" cy="32" r={radius} stroke={track} strokeWidth="5" fill="none"/>
    <Circle cx="32" cy="32" r={radius} stroke="url(#jobinLevelGradient)" strokeWidth="6" fill="none" strokeDasharray={circumference} strokeDashoffset={circumference*(1-progress)} strokeLinecap="round" rotation="-90" origin="32,32"/>
   </Svg>
-  <Text style={{color,fontSize:16,fontWeight:"800"}}>{languageSymbol(name)}</Text>
+  <Text style={{color,fontSize:27,fontWeight:"800"}}>{languageFlag(name)}</Text>
  </View>;
 }
