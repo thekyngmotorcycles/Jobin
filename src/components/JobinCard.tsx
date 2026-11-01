@@ -87,8 +87,8 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
         </Text>
         <Text style={{color:finish.secondary,fontSize:11}}>@{card.handle}</Text>
         <View style={{flexDirection:"row",alignItems:"center",flexWrap:"wrap",gap:7}}>
-          <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[lineStyle,{fontWeight:"600"}]}>{primaryProfession}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="Detalles de la profesión principal" onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nCategoría: "+(/hvac/i.test(card.role)?"Aire acondicionado":card.role)+"\nExperiencia en esta profesión: "+(primarySeal&&primarySeal.months?experienceLabel(primarySeal.months):"Sin experiencia registrada")+".\n"+(primarySeal?.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{padding:3,borderWidth:1,borderColor:finish.line,borderRadius:18}}>
+          <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[lineStyle,{fontWeight:"600"}]}>{primaryProfession}{!!card.primarySpecialties?.length?" / Especializado":""}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="Detalles de la profesión principal" onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nEspecialidades: "+(card.primarySpecialties?.length?card.primarySpecialties.join(", "):"No declaradas")+"\nExperiencia en esta profesión: "+(primarySeal&&primarySeal.months?experienceLabel(primarySeal.months):"Sin experiencia registrada")+".\n"+(primarySeal?.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{padding:3,borderWidth:1,borderColor:finish.line,borderRadius:18}}>
             <ProfessionGlyph profession={card.role} fallback={primarySeal?.icon??"briefcase-outline"} size={19} color={finish.text}/>
           </Pressable>
         </View>
@@ -109,7 +109,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
         <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityLabel="Sellos profesionales" contentContainerStyle={{ minWidth:"100%" }}>
           <View style={{ gap:sealGap }}>
             {rows.map((row, index) => <View key={index} style={{ flexDirection:"row", gap:sealGap }}>
-              {row.map(seal => <Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\nExperiencia registrada: "+experienceLabel(seal.months??0)+".\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:sealWidth,height:70,alignItems:"center",justifyContent:"center",gap:2}}>
+              {row.map(seal => <Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\nEspecialidades: "+(seal.specialties?.length?seal.specialties.join(", "):"No declaradas")+"\nExperiencia registrada: "+experienceLabel(seal.months??0)+".\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:sealWidth,height:70,alignItems:"center",justifyContent:"center",gap:2}}>
                 <View style={{width:54,height:54,borderRadius:27,borderWidth:2,borderColor:seal.verified?finish.sealFill:finish.line,backgroundColor:finish.pendingFill,alignItems:"center",justifyContent:"center",elevation:4,shadowColor:finish.text,shadowOpacity:0.15,shadowRadius:5}}>
                  <View style={{width:46,height:46,borderRadius:23,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center",gap:1}}>
                   <ProfessionGlyph profession={seal.profession} fallback={seal.icon} size={27} color={finish.text}/>
