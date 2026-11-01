@@ -12,7 +12,7 @@ export default function RecoverAccount(){
  <Text>Elige cómo recuperar tu acceso:</Text>
  <View style={{gap:8}}><AuthAction secondary label={(method==="email"?"✓ ":"")+"Correo electrónico"} onPress={()=>{setMethod("email");setSent(false);setValue("");}}/><AuthAction secondary label={(method==="phone"?"✓ ":"")+"Teléfono verificado"} onPress={()=>{setMethod("phone");setSent(false);setValue("");}}/></View>
  <AuthField label={method==="email"?"Correo registrado":"Teléfono registrado (+código de país)"} placeholder={method==="email"?"correo@ejemplo.com":"+15550000000"} value={value} onChangeText={setValue} keyboardType={method==="email"?"email-address":"phone-pad"}/>
- {!sent?<AuthAction label={busy?"Enviando…":"Enviar instrucciones"} disabled={busy} onPress={()=>void send()}/>:<><AuthField label="Código SMS" placeholder="Código recibido" value={code} onChangeText={setCode} keyboardType="number-pad"/><AuthAction label={busy?"Verificando…":"Recuperar acceso"} disabled={busy} onPress={()=>void verify()}/></>}
+ {!sent?<AuthAction label={busy?"Enviando…":"Enviar instrucciones"} disabled={busy} onPress={()=>void send()}/>:<><AuthField label="Código SMS" placeholder="Código recibido" value={code} onChangeText={setCode} keyboardType="phone-pad"/><AuthAction label={busy?"Verificando…":"Recuperar acceso"} disabled={busy} onPress={()=>void verify()}/></>}
  {!!notice&&<Text accessibilityLiveRegion="polite">{notice}</Text>}
  </AuthShell>;
 }
