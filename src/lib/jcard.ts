@@ -7,12 +7,14 @@ export interface JCardSeal {
   profession: string;
   icon: "thermometer-outline" | "snow-outline" | "flash-outline" | "water-outline" | "hammer-outline" | "build-outline" | "color-palette-outline" | "leaf-outline" | "car-outline" | "restaurant-outline" | "camera-outline" | "mic-outline" | "laptop-outline" | "briefcase-outline" | "medkit-outline" | "cut-outline" | "school-outline" | "shield-checkmark-outline" | "cog-outline";
   verified: boolean;
+  specialties?: readonly string[];
   months?: number;
 }
 export interface CardData {
   name: string;
   handle: string;
   role: string;
+  primarySpecialties?: readonly string[];
   years: number;
   status: JCardStatus;
   employer: string | null;
