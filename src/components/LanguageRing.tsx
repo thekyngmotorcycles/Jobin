@@ -86,9 +86,9 @@ export const LANGUAGE_FLAGS:Record<string,string>={
  "Zulú": "🇿🇦"
 };
 export function languageFlag(name:string){
- const key=name.trim().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase();
+ const key=name.trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
  const aliases:Record<string,string>={spanish:"Español",castellano:"Español",english:"Inglés",french:"Francés",portuguese:"Portugués",german:"Alemán",italian:"Italiano",mandarin:"Chino (mandarín)",chino:"Chino (mandarín)"};
- const canonical=Object.keys(LANGUAGE_FLAGS).find(language=>language.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase()===key)??aliases[key];
+ const canonical=Object.keys(LANGUAGE_FLAGS).find(language=>language.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()===key)??aliases[key];
  return canonical?LANGUAGE_FLAGS[canonical]:"🌐";
 }
 function wavyArc(fraction:number){const steps=Math.max(2,Math.round(140*fraction));let path="";for(let i=0;i<=steps;i++){const angle=-Math.PI/2+2*Math.PI*fraction*i/steps;const radius=25+1.1*Math.sin(i/steps*2*Math.PI*fraction*18);const x=32+radius*Math.cos(angle),y=32+radius*Math.sin(angle);path+=(i===0?"M":"L")+x.toFixed(2)+" "+y.toFixed(2)+" ";}return path;}
