@@ -1,4 +1,4 @@
-import Svg,{Circle,Path,Defs,LinearGradient,Stop} from "react-native-svg";
+import Svg,{Path,Defs,LinearGradient,Stop} from "react-native-svg";
 import {Text,View} from "react-native";
 import {proficiencyColors} from "../theme/jcard";
 export const LANGUAGE_LEVELS=[
@@ -13,12 +13,13 @@ export function languageSymbol(name:string){const n=name.trim().toLocaleLowerCas
 export function languageFlag(name:string){const code=languageSymbol(name);const flags:Record<string,string>={ES:"🇪🇸",EN:"🇬🇧",FR:"🇫🇷",PT:"🇵🇹",DE:"🇩🇪",IT:"🇮🇹"};return flags[code]??"🌐";}
 function wavyArc(fraction:number){const steps=Math.max(2,Math.round(140*fraction));let path="";for(let i=0;i<=steps;i++){const angle=-Math.PI/2+2*Math.PI*fraction*i/steps;const radius=25+1.1*Math.sin(i/steps*2*Math.PI*fraction*18);const x=32+radius*Math.cos(angle),y=32+radius*Math.sin(angle);path+=(i===0?"M":"L")+x.toFixed(2)+" "+y.toFixed(2)+" ";}return path;}
 export function LanguageRing({name,value,color,track}:{name:string;value:number;color:string;track:string}){
- const size=64,radius=25,circumference=2*Math.PI*radius,progress=Math.max(0,Math.min(100,value))/100;
+ const size=52,progress=Math.max(0,Math.min(100,value))/100;
+ const activeColor=progress<=0.5?proficiencyColors.low:progress<0.8?proficiencyColors.middle:proficiencyColors.high;
  return <View accessible accessibilityLabel={name+", "+languageLabel(value)} style={{width:size,height:size,alignItems:"center",justifyContent:"center"}}>
   <Svg width={size} height={size} viewBox="0 0 64 64" style={{position:"absolute"}}><Defs><LinearGradient id="jobinLevelGradient" x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={proficiencyColors.low}/><Stop offset="50%" stopColor={proficiencyColors.middle}/><Stop offset="100%" stopColor={proficiencyColors.high}/></LinearGradient></Defs>
    <Path d={wavyArc(1)} stroke={track} strokeWidth="5" fill="none"/>
-   <Path d={wavyArc(progress)} stroke="url(#jobinLevelGradient)" strokeWidth="6" fill="none" strokeLinecap="round"/>
+   <Path d={wavyArc(progress)} stroke={activeColor} strokeWidth="6" fill="none" strokeLinecap="round"/>
   </Svg>
-  <Text style={{color,fontSize:27,fontWeight:"800"}}>{languageFlag(name)}</Text>
+  <Text style={{color,fontSize:19,fontWeight:"800"}}>{languageFlag(name)}</Text>
  </View>;
 }
