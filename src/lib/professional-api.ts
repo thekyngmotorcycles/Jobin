@@ -86,3 +86,19 @@ export async function saveProfessionSpecialties(profession:string,specialties:st
  const {error}=await requireSupabase().rpc("jobin_set_profession_specialties" as never,{p_profession:profession,p_specialties:specialties} as never);
  if(error)throw new Error(error.message);
 }
+
+export interface ProfessionalSearchResult {
+ id:string;name:string;handle:string;city:string|null;region:string|null;
+ profession:string;profession_code:string;specialties:string[];verified:boolean;
+ verified_seals:number;business_rating:number;business_reviews:number;
+ account_type:"personal"|"company";match_rank:number;trust_rank:number;
+}
+/** Server ranks relevance first and verified professional evidence second.
+ * Personal profiles never receive fabricated star ratings. */
+export async function findProfessionals(query:string,city:string,profession:string,specialty:string):Promise<ProfessionalSearchResult[]> {
+ const {data,error}=await requireSupabase().rpc("jobin_find_professionals" as never,{
+  p_query:query.trim(),p_city:city.trim(),p_profession:profession,p_specialty:specialty,p_limit:50
+ } as never);
+ if(error)throw new Error(error.message);
+ return (data??[]) as ProfessionalSearchResult[];
+}
