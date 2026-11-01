@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { employmentMonths } from "../../lib/employment";
 import { useTabClearance } from "../../theme/navigation";
 import { MediaThumbnail } from "../../components/MediaThumbnail";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
@@ -33,10 +34,10 @@ export default function Profile() {
   const [formError,setFormError] = useState("");
   function openEmployment(entry?:EmploymentEntry){
     setEditingId(entry?.id??null);
-    setDraft(entry?{company:entry.company,role:entry.role,from:String(entry.from),to:entry.to===null?"":String(entry.to)}:{company:"",role:"",from:"",to:""});
+    setDraft(entry?{company:entry.company,role:entry.role,from:String(entry.from),to:entry.to===null?"":String(entry.to),profession:(entry.professions??[]).join(", "),fromMonth:String(entry.fromMonth??1),toMonth:String(entry.toMonth??12)}:{company:"",role:"",from:"",to:"",profession:"",fromMonth:"1",toMonth:"12"});
     setFormError("");setAddOpen(true);
   }
-  const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "" });
+  const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12" });
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace);
   const p = DEMO_PROFILE;
@@ -57,13 +58,15 @@ export default function Profile() {
   function add() {
     const from = Number(draft.from), to = draft.to ? Number(draft.to) : null;
     const currentYear=new Date().getFullYear();
+    const fromMonth=Number(draft.fromMonth),toMonth=Number(draft.toMonth);
+    if(!Number.isInteger(fromMonth)||fromMonth<1||fromMonth>12||!Number.isInteger(toMonth)||toMonth<1||toMonth>12){setFormError("Los meses deben estar entre 1 y 12.");return;}
     if (!draft.company.trim() || !draft.role.trim() || !draft.from.trim() || !Number.isInteger(from) || from < 1950 || from > currentYear || (to!==null&&(!Number.isInteger(to)||to<from||to>currentYear))) {
       setFormError("Completa empresa, cargo y años válidos (el final no puede ser anterior al inicio).");
       return;
     }
-    const updated:EmploymentEntry={id:editingId??Date.now()+"",company:draft.company.trim(),role:draft.role.trim(),from,to,status:"pending",verifiedBy:null};
+    const updated:EmploymentEntry={id:editingId??Date.now()+"",company:draft.company.trim(),role:draft.role.trim(),professions:draft.profession.split(",").map(x=>x.trim()).filter(Boolean),fromMonth,toMonth,from,to,status:"pending",verifiedBy:null};
     setHistory(items=>editingId?items.map(entry=>entry.id===editingId?updated:entry):[...items,updated]);
-    setDraft({ company: "", role: "", from: "", to: "" });
+    setDraft({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12" });
     setAddOpen(false);setEditingId(null);setFormError("");
     setNotice("Experiencia guardada. Cualquier cambio requiere una nueva verificación de la empresa.");
   }
@@ -89,7 +92,7 @@ export default function Profile() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
-          <JobinCard card={workspace.data.card}/>
+          <JobinCard card={{...workspace.data.card,years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}}/>
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
           <View style={{width:"100%",maxWidth:520,alignSelf:"center",gap:8}}>
             <Button title="Mi historial profesional · Agregar empleo" onPress={()=>{setMode("cv");openEmployment();}}/>
@@ -104,7 +107,7 @@ export default function Profile() {
         {mode === "cv" && (
           <View style={{ gap: 14 }}>
             <Text style={s.h2}>Historial profesional</Text>
-            <Text style={s.muted}>Agrega cada empresa, el cargo y los años trabajados. Los datos se guardan en este dispositivo; la verificación por la empresa aún no está conectada.</Text>
+            <Text style={s.muted}>Experiencia total registrada: {Math.floor(employmentMonths(history)/12)} años y {employmentMonths(history)%12} meses. Agrega cada empresa, el cargo y los años trabajados. Los datos se guardan en este dispositivo; la verificación por la empresa aún no está conectada.</Text>
             {history.length===0&&<Text style={s.muted}>Todavía no agregaste empleos. Pulsa Agregar para comenzar.</Text>}
             {history.map(entry => (
               <View key={entry.id} style={[s.panel, { flexDirection: "row", gap: 12, alignItems: "center" }]}>
@@ -172,6 +175,8 @@ export default function Profile() {
               style={{ color: colors.ink, borderColor: colors.line, borderWidth: 1, padding: 14, borderRadius: 10 }} />
           ))}
           {!!formError&&<Text accessibilityRole="alert" style={{color:colors.reaction}}>{formError}</Text>}
+          <TextInput accessibilityLabel="Profesiones (separadas por coma)" placeholder="Profesiones: HVAC, Electricidad" placeholderTextColor={colors.muted} value={draft.profession} onChangeText={v=>setDraft(d=>({...d,profession:v}))} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>
+          {(["fromMonth","toMonth"] as const).map(key=><TextInput key={key} accessibilityLabel={key==="fromMonth"?"Mes de inicio":"Mes de término"} placeholder={key==="fromMonth"?"Mes de inicio (1-12)":"Mes de término (1-12)"} placeholderTextColor={colors.muted} keyboardType="number-pad" value={draft[key]} onChangeText={v=>setDraft(d=>({...d,[key]:v}))} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>)}
           <Text style={s.muted}>Puedes editar estos datos cuando quieras. Al modificarlos se reinicia la verificación de la empresa.</Text>
           <Button title="Guardar" onPress={add} />
         </View>
