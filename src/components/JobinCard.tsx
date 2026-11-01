@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { router } from "expo-router";
-import { Animated, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Animated, Linking, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Rect, Stop, Path, SvgXml } from "react-native-svg";
@@ -12,13 +12,21 @@ import { useTheme, type ThemeName } from "../state/ThemeProvider";
 import { displayedRating, jcardTier, sealRows, type CardData, type BusinessCardData } from "../lib/jcard";
 import {loadPublicContact} from "../lib/jcard-contact";
 import { experienceLabel } from "../lib/employment";
-import { LanguageRing } from "./LanguageRing";
+import { LanguageRing, languageLabel, LANGUAGE_LEVELS } from "./LanguageRing";
 import { jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
 
 export type { CardData } from "../lib/jcard";
 const wordmarkJ=WORDMARK_XML.replace('viewBox="300 76 616 275"','viewBox="300 76 160 275"').replace(/(<path[^>]*\/>)[\s\S]*?(<\/g>)/,"$1$2");
 function jobinGlyph(color:string){return wordmarkJ.replace('currentColor',color);}
 
+function professionalIcon(profession:string, fallback:React.ComponentProps<typeof Ionicons>["name"]):React.ComponentProps<typeof Ionicons>["name"] {
+  return /handyman|manitas|mantenimiento general|todero|multioficio/i.test(profession)?"construct-outline":fallback;
+}
+function languageDetails(name:string,fluency:number){
+ const level=LANGUAGE_LEVELS.find(l=>l.value===fluency);
+ const international=level?.code??(fluency<35?"A1–A2":fluency<55?"B1":fluency<75?"B2":fluency<95?"C1":"C2");
+ return "Idioma: "+name+"\nNivel: "+languageLabel(fluency)+"\nReferencia internacional (MCER): "+international+".\nEl nivel es declarado por el usuario y no está verificado mediante examen.";
+}
 function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employerLink }: { card: CardData; theme: ThemeName; expanded?: boolean; onEdit?: () => void; onQr?: () => void; contact?:{email:string|null;phone:string|null}; employerLink?:{id:string;name:string;handle:string}|null }) {
   const { s, fs } = useUi();
   const { fontScale } = useWindowDimensions();
@@ -87,13 +95,13 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
           {!!card.years&&<Pressable accessibilityRole="button" accessibilityLabel="Información sobre experiencia general" onPress={()=>setInfo("Experiencia general\nEs el tiempo total trabajado en todas las profesiones y sectores registrados. Los períodos que coinciden se cuentan una sola vez.")}><Text style={{color:finish.secondary,fontSize:11,textDecorationLine:"underline"}}>{card.years} {card.years===1?"año":"años"} de experiencia ⓘ</Text></Pressable>}
           <Pressable accessibilityRole="button" accessibilityLabel="Información sobre disponibilidad" onPress={()=>setInfo(card.status==="ACTIVE"?"Trabajando actualmente\nLa persona indica que tiene un trabajo activo. Esto no significa que Jobin haya confirmado su relación laboral.":"Disponible para trabajar\nLa persona indica que está abierta a nuevas oportunidades laborales o solicitudes de clientes.")}><Text style={{color:finish.text,fontWeight:"700",fontSize:10,letterSpacing:0.7,textDecorationLine:"underline"}}>{card.status==="ACTIVE"?"TRABAJANDO":"DISPONIBLE"} ⓘ</Text></Pressable>
         </View>
-        {!!contact?.email&&<Text selectable style={lineStyle}>{contact.email}</Text>}
+        {!!contact?.email&&<Pressable accessibilityRole="link" accessibilityLabel={"Enviar correo a "+contact.email} onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(contact.email!)).catch(()=>setInfo("No se encontró una aplicación de correo disponible."))} onLongPress={()=>void Share.share({message:contact.email!})}><Text selectable style={[lineStyle,{textDecorationLine:"underline"}]}>{contact.email}</Text></Pressable>}
         {!!contact?.phone&&<Text selectable style={lineStyle}>{contact.phone}</Text>}
 
         {card.status==="ACTIVE"&&employerLink&&<Pressable accessibilityRole="link" onPress={()=>router.push({pathname:"/company",params:{id:employerLink.id}})}><Text style={[lineStyle,{textDecorationLine:"underline"}]}>Trabaja en {employerLink.name} · @{employerLink.handle} ↗</Text><Text style={{fontSize:10,color:finish.secondary}}>Vínculo laboral verificado por la empresa</Text></Pressable>}
 
         <Text style={{fontSize:10,color:finish.secondary,textAlign:"center",letterSpacing:1.5,marginTop:9}}>Idiomas</Text>
-        <View style={{flexDirection:"row",flexWrap:"wrap",gap:10,paddingTop:2}}>{card.languages.map((language,index)=><View key={language.name+index} style={{alignItems:"center",gap:3}}><LanguageRing name={language.name} value={language.fluency} color={finish.text} track={finish.line}/><Text style={{fontSize:10,color:finish.secondary}}>{language.name}</Text></View>)}</View>
+        <View style={{flexDirection:"row",flexWrap:"wrap",gap:10,paddingTop:2}}>{card.languages.map((language,index)=><Pressable key={language.name+index} accessibilityRole="button" accessibilityLabel={"Información de idioma "+language.name+", "+languageLabel(language.fluency)} onPress={()=>setInfo(languageDetails(language.name,language.fluency))} style={{alignItems:"center",gap:3,padding:3}}><LanguageRing name={language.name} value={language.fluency} color={finish.text} track={finish.line}/><Text style={{fontSize:10,color:finish.secondary,textDecorationLine:"underline"}}>{language.name} ⓘ</Text></Pressable>)}</View>
       </View>
 
       {secondarySeals.length>0&&<View onLayout={event => setContentWidth(event.nativeEvent.layout.width)} style={{ paddingTop:12, borderTopWidth:1, borderTopColor:finish.line }}>
@@ -103,7 +111,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
               {row.map(seal => <Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\nExperiencia registrada: "+experienceLabel(seal.months??0)+".\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:sealWidth,height:70,alignItems:"center",justifyContent:"center",gap:2}}>
                 <View style={{width:54,height:54,borderRadius:27,borderWidth:2,borderColor:seal.verified?finish.sealFill:finish.line,backgroundColor:finish.pendingFill,alignItems:"center",justifyContent:"center",elevation:4,shadowColor:finish.text,shadowOpacity:0.15,shadowRadius:5}}>
                  <View style={{width:46,height:46,borderRadius:23,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center",gap:1}}>
-                  <Ionicons name={seal.verified?"shield-checkmark-outline":seal.icon} size={27} color={finish.text}/>
+                  <Ionicons name={seal.verified?"shield-checkmark-outline":professionalIcon(seal.profession,seal.icon)} size={27} color={finish.text}/>
                   <Text style={{fontSize:8,fontWeight:"700",color:finish.text}}>{experienceLabel(seal.months??0)}</Text>
                  </View>
                 </View>
