@@ -48,7 +48,7 @@ export default function Search(){
     </Pressable>
     <Text style={s.muted}>Primero coincidencia con tu búsqueda; después credenciales y reconocimientos verificados. Las cuentas personales no tienen puntuación por estrellas.</Text>
     {loading&&<ActivityIndicator color={colors.ink}/>}
-    {!!error&&<Text style={{color:"#b42318"}}>{error}</Text>}
+    {!!error&&<Text style={{color:colors.ink}}>{error}</Text>}
     {searched&&!loading&&!error&&<Text style={s.muted}>{results.length} resultados encontrados</Text>}
     {results.map(person=><Pressable key={person.id+":"+person.profession_code} accessibilityRole="button" onPress={()=>router.push({pathname:"/jcard",params:{user:person.id}})} style={{padding:14,borderWidth:1,borderColor:colors.line,borderRadius:16,gap:5}}>
      <Text style={s.h3}>{person.name}</Text>
