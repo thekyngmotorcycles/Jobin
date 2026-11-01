@@ -34,7 +34,7 @@ export default function Profile() {
   const [businessDraft,setBusinessDraft]=useState({name:"",opened:"",closed:"",services:"",location:""});
   useEffect(()=>{let live=true;AsyncStorage.getItem("jobin.business.card.v1").then(raw=>{if(live&&raw)setBusiness(JSON.parse(raw) as BusinessCardData);}).catch(()=>{});return()=>{live=false;};},[]);
   function editBusiness(){setBusinessDraft({name:business.name,opened:business.opened,closed:business.closed,services:business.services.join(", "),location:business.location});setBusinessOpen(true);}
-  function saveBusiness(){const services=businessDraft.services.split(",").map(x=>x.trim()).filter(Boolean);if(services.length>3){setNotice("Máximo tres servicios.");return;}const updated={...business,...businessDraft,services,licenseVerified:business.licenseVerified};setBusiness(updated);void AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(updated)).catch(()=>setNotice("No se pudo guardar el reverso."));setBusinessOpen(false);}
+  function saveBusiness(){const services=businessDraft.services.split(",").map(x=>x.trim()).filter(Boolean);if(services.length>3){setNotice("Máximo tres servicios.");return;}const opened=businessDraft.opened.trim(),closed=businessDraft.closed.trim(),year=new Date().getFullYear();if((opened&&(!/^\\d{4}$/.test(opened)||Number(opened)>year||Number(opened)<1800))||(closed&&(!/^\\d{4}$/.test(closed)||Number(closed)>year||Number(closed)<Number(opened)))){setNotice("Revisa los años de apertura y cierre.");return;}const updated={...business,...businessDraft,services,licenseVerified:business.licenseVerified};setBusiness(updated);void AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(updated)).catch(()=>setNotice("No se pudo guardar el reverso."));setBusinessOpen(false);}
   const [sendOpen, setSendOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editingId,setEditingId] = useState<string|null>(null);
@@ -67,6 +67,7 @@ export default function Profile() {
     const currentYear=new Date().getFullYear();
     const fromMonth=Number(draft.fromMonth),toMonth=Number(draft.toMonth);
     if(!Number.isInteger(fromMonth)||fromMonth<1||fromMonth>12||!Number.isInteger(toMonth)||toMonth<1||toMonth>12){setFormError("Los meses deben estar entre 1 y 12.");return;}
+    if (to!==null && to===from && toMonth<fromMonth){setFormError("El mes de término debe ser posterior al de inicio.");return;}
     if (!draft.company.trim() || !draft.role.trim() || !draft.from.trim() || !Number.isInteger(from) || from < 1950 || from > currentYear || (to!==null&&(!Number.isInteger(to)||to<from||to>currentYear))) {
       setFormError("Completa empresa, cargo y años válidos (el final no puede ser anterior al inicio).");
       return;
