@@ -37,10 +37,11 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
       </LinearGradient><LinearGradient id={shineId} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={finish.start} stopOpacity="0.34"/><Stop offset="34%" stopColor={finish.start} stopOpacity="0"/><Stop offset="70%" stopColor={finish.end} stopOpacity="0.08"/><Stop offset="100%" stopColor={finish.end} stopOpacity="0.26"/></LinearGradient></Defs>
       <Rect width="100%" height="100%" fill={"url(#" + gradientId + ")"}/>
       <Rect width="100%" height="100%" fill={"url(#" + shineId + ")"}/>
-      <Rect x="5" y="5" width="calc(100% - 10px)" height="calc(100% - 10px)" rx="22" fill="none" stroke={finish.line} strokeOpacity="0.4" strokeWidth="0.8"/>
+
       <Path d="M0 95 Q90 20 205 0" stroke={finish.line} strokeOpacity="0.17" strokeWidth="1.5" fill="none"/>
       <Path d="M0 118 Q110 35 240 0" stroke={finish.line} strokeOpacity="0.12" strokeWidth="1" fill="none"/>
     </Svg>
+    <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
     <View style={{ padding:jcardLayout.padding, gap:14 }}>
       <View style={{ paddingTop:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
         <Text accessibilityRole="header" style={[s.h3, { position:"absolute", top:0, left:0, right:0, textAlign:"center", fontSize:Math.max(13,fs(14)), letterSpacing:0.3, fontStyle:"italic",fontFamily:"serif",fontWeight:"600",lineHeight:19,color:finish.text }]}>{"JCard\nPersonal"}</Text>
