@@ -1,4 +1,4 @@
-import Svg,{Circle,Defs,LinearGradient,Stop} from "react-native-svg";
+import Svg,{Circle,Path,Defs,LinearGradient,Stop} from "react-native-svg";
 import {Text,View} from "react-native";
 import {proficiencyColors} from "../theme/jcard";
 export const LANGUAGE_LEVELS=[
@@ -11,12 +11,13 @@ export const LANGUAGE_LEVELS=[
 export function languageLabel(value:number){if(value>=95)return "Dominio completo";if(value>=75)return "Avanzado";if(value>=55)return "Intermedio alto";if(value>=35)return "Intermedio";return "Básico";}
 export function languageSymbol(name:string){const n=name.trim().toLocaleLowerCase();if(/español|spanish|castellano/.test(n))return "ES";if(/inglés|ingles|english/.test(n))return "EN";if(/francés|frances|french/.test(n))return "FR";if(/portugués|portugues|portuguese/.test(n))return "PT";if(/alemán|aleman|german/.test(n))return "DE";if(/italiano|italian/.test(n))return "IT";return (name.trim().slice(0,2)||"ID").toLocaleUpperCase();}
 export function languageFlag(name:string){const code=languageSymbol(name);const flags:Record<string,string>={ES:"🇪🇸",EN:"🇬🇧",FR:"🇫🇷",PT:"🇵🇹",DE:"🇩🇪",IT:"🇮🇹"};return flags[code]??"🌐";}
+function wavyArc(fraction:number){const steps=Math.max(2,Math.round(140*fraction));let path="";for(let i=0;i<=steps;i++){const angle=-Math.PI/2+2*Math.PI*fraction*i/steps;const radius=25+1.1*Math.sin(i/steps*2*Math.PI*fraction*18);const x=32+radius*Math.cos(angle),y=32+radius*Math.sin(angle);path+=(i===0?"M":"L")+x.toFixed(2)+" "+y.toFixed(2)+" ";}return path;}
 export function LanguageRing({name,value,color,track}:{name:string;value:number;color:string;track:string}){
  const size=64,radius=25,circumference=2*Math.PI*radius,progress=Math.max(0,Math.min(100,value))/100;
  return <View accessible accessibilityLabel={name+", "+languageLabel(value)} style={{width:size,height:size,alignItems:"center",justifyContent:"center"}}>
   <Svg width={size} height={size} viewBox="0 0 64 64" style={{position:"absolute"}}><Defs><LinearGradient id="jobinLevelGradient" x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={proficiencyColors.low}/><Stop offset="50%" stopColor={proficiencyColors.middle}/><Stop offset="100%" stopColor={proficiencyColors.high}/></LinearGradient></Defs>
-   <Circle cx="32" cy="32" r={radius} stroke={track} strokeWidth="5" fill="none"/>
-   <Circle cx="32" cy="32" r={radius} stroke="url(#jobinLevelGradient)" strokeWidth="6" fill="none" strokeDasharray={circumference} strokeDashoffset={circumference*(1-progress)} strokeLinecap="round" rotation="-90" origin="32,32"/>
+   <Path d={wavyArc(1)} stroke={track} strokeWidth="5" fill="none"/>
+   <Path d={wavyArc(progress)} stroke="url(#jobinLevelGradient)" strokeWidth="6" fill="none" strokeLinecap="round"/>
   </Svg>
   <Text style={{color,fontSize:27,fontWeight:"800"}}>{languageFlag(name)}</Text>
  </View>;
