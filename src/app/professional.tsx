@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert, Pressable, Text, TextInput, View } from "react-native";
 import { Button, Chips, Notice, Screen, useUi } from "../components/ui";
 import { ProfessionPicker } from "../components/ProfessionPicker";
 import { ProfessionalStatus } from "../components/ProfessionalStatus";
-import { loadCatalog, loadEducation, loadWorkspace, professionalMutation } from "../lib/professional-api";
+import { loadCatalog, loadEducation, loadOrganization, loadWorkspace, professionalMutation } from "../lib/professional-api";
 import { useProfessionalAction, useProfessionalData } from "../state/useProfessionalData";
 import {loadContactPreferences,saveContactPreferences} from "../lib/jcard-contact";
 import {LanguageRing,LANGUAGE_LEVELS,languageLabel} from "../components/LanguageRing";
@@ -19,11 +20,13 @@ export default function Professional() {
  useEffect(()=>{let live=true;void loadContactPreferences().then(p=>{if(live){setShowEmail(p.show_email);setShowPhone(p.show_phone);}}).catch(()=>{});return()=>{live=false;};},[]);
  const [name,setName]=useState("");const [handle,setHandle]=useState("");const [city,setCity]=useState("");const [region,setRegion]=useState("");
  const [availability,setAvailability]=useState<JCardStatus>("AVAILABLE");
+ const [employerId,setEmployerId]=useState("");const [employerName,setEmployerName]=useState("");const [employerHandle,setEmployerHandle]=useState("");
  const [languages,setLanguages]=useState<{name:string;fluency:string}[]>([]);
  const [profession,setProfession]=useState("");const [training,setTraining]=useState<"graduado"|"in_academy">("graduado");
  const [institution,setInstitution]=useState<string|null>(null);
  const education=useProfessionalData(useCallback(()=>profession?loadEducation(profession):Promise.resolve([]),[profession]));
  const w=workspace.data;
+ useEffect(()=>{if(!w)return;let live=true;void AsyncStorage.getItem("jobin.employer.link."+w.card.id).then(raw=>{if(live&&raw){const link=JSON.parse(raw) as {id:string;name:string;handle:string};setEmployerId(link.id);setEmployerName(link.name);setEmployerHandle(link.handle);}}).catch(()=>{});return()=>{live=false;};},[w?.card.id]);
  useEffect(()=>{if(!w)return;setName(w.card.name);setHandle(w.card.handle);setCity(w.profile.city||"");setRegion(w.profile.region||"");setAvailability(w.card.status);setLanguages(w.card.languages.map(l=>({name:l.name,fluency:String(l.fluency)})));},[w]);
  const input={color:colors.ink,borderColor:colors.line,borderWidth:1,borderRadius:10,padding:12,minHeight:44};
  function choose(code:string){setProfession(code);const pp=w?.professions.find(p=>p.profession_code===code);setTraining(pp?.training_status??"graduado");setInstitution(pp?.institution_id??null);}
@@ -34,6 +37,7 @@ export default function Professional() {
   if(languages.some(l=>!l.name.trim()||!Number.isInteger(Number(l.fluency))||Number(l.fluency)<0||Number(l.fluency)>100))throw new Error("Completa el idioma y selecciona un nivel válido.");
   await saveContactPreferences({show_email:showEmail,show_phone:showPhone});
   await professionalMutation("jobin_save_jcard",{legal_name:name,handle,city,region,availability,languages:languages.map(l=>({name:l.name,fluency:Number(l.fluency)}))});
+  if(w){if(availability==="ACTIVE"&&employerId.trim()){const organization=await loadOrganization(employerId.trim());await AsyncStorage.setItem("jobin.employer.link."+w.card.id,JSON.stringify({id:organization.id,name:organization.name,handle:organization.handle}));setEmployerName(organization.name);setEmployerHandle(organization.handle);}else{await AsyncStorage.removeItem("jobin.employer.link."+w.card.id);setEmployerName("");setEmployerHandle("");}}
  },"JCard actualizada.");
  return <Screen demo={false} hideHeader hideFooter title="Editar mi JCard" subtitle="">
   {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
@@ -48,6 +52,15 @@ export default function Professional() {
       <Text style={s.muted}>Ciudad</Text><TextInput accessibilityLabel="Ciudad" value={city} onChangeText={setCity} style={input}/>
       <Text style={s.muted}>Estado o región</Text><TextInput accessibilityLabel="Estado o región" value={region} onChangeText={setRegion} style={input}/>
       <Text style={s.muted}>Disponibilidad profesional</Text><Chips values={["AVAILABLE","ACTIVE"] as const} value={availability} onChange={setAvailability} getLabel={v=>v==="AVAILABLE"?"Disponible para trabajar":"Trabajando actualmente"} label="Disponibilidad profesional"/>
+      {availability==="ACTIVE"&&<View style={{gap:10,padding:12,borderWidth:1,borderColor:colors.line,borderRadius:12}}>
+        <Text style={[s.h3,{fontSize:16}]}>Empresa donde trabajas actualmente</Text>
+        <Text style={s.muted}>Puedes enlazar una empresa registrada en Jobin, incluida tu propia empresa. El vínculo se muestra como declarado, no como empleo verificado.</Text>
+        {!!w.organization&&<Button secondary title="Vincular mi propia empresa" onPress={()=>{setEmployerId(w.organization!.profile_id);setEmployerName("Mi empresa");setEmployerHandle("");}}/>}
+        <Text style={s.muted}>Identificador de la JCard de la empresa (opcional)</Text>
+        <TextInput accessibilityLabel="Identificador de empresa en Jobin" placeholder="Identificador de la empresa" placeholderTextColor={colors.muted} autoCapitalize="none" value={employerId} onChangeText={value=>{setEmployerId(value.trim());setEmployerName("");setEmployerHandle("");}} style={input}/>
+        {!!employerName&&<Text style={s.text}>Empresa seleccionada: {employerName}{employerHandle?" · @"+employerHandle:""}</Text>}
+        <Text style={s.muted}>Al guardar, Jobin comprobará que el identificador corresponde a una organización existente. La búsqueda por nombre o usuario se añadirá más adelante.</Text>
+      </View>}
      </View>}
     </View>
     <View style={s.panel}>
