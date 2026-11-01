@@ -31,7 +31,7 @@ export default function Professional() {
  const [editedPrimary,setEditedPrimary]=useState(false);
  function openSection(id:Section){setSection(current=>current===id?null:id);}
  function openProfession(code:string,primary:boolean){choose(code);setFormMode("edit");setEditedPrimary(primary);setEditingProfession(code);setProfessionFormOpen(true);}
- function addProfession(){setProfession("");setTraining("graduado");setInstitution(null);setFormMode("add");setEditingProfession(null);setEditedPrimary(false);setProfessionFormOpen(true);setTimeout(()=>scrollRef.current?.scrollTo({y:Math.max(0,formTop-24),animated:true}),180);}
+ function addProfession(){setProfession("");setTraining("graduado");setInstitution(null);setFormMode("add");setEditingProfession(null);setEditedPrimary(false);setProfessionFormOpen(true);}
  useEffect(()=>{if(!section)return;const t=setTimeout(()=>scrollRef.current?.scrollTo({y:Math.max(0,(positions.current[section]??0)-18),animated:true}),160);return()=>clearTimeout(t);},[section]);
  const [showEmail,setShowEmail]=useState(false);const [showPhone,setShowPhone]=useState(false);
  useEffect(()=>{let live=true;void loadContactPreferences().then(p=>{if(live){setShowEmail(p.show_email);setShowPhone(p.show_phone);}}).catch(()=>{});return()=>{live=false;};},[]);
