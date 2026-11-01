@@ -111,6 +111,7 @@ export default function Profile() {
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
           <View style={{width:"100%",maxWidth:520,alignSelf:"center",gap:8}}>
             <Button title="Mi historial profesional · Agregar empleo" onPress={()=>{setMode("cv");openEmployment();}}/>
+            <Button secondary title="Reseñas de servicios completados" onPress={()=>router.push("/reviews")}/>
             <Button secondary title="Certificados y sellos" onPress={()=>router.push("/certificates")}/>
             <Button secondary title="Oportunidades por ciudad y profesión" onPress={()=>router.push("/opportunities")}/>
             {!!workspace.data.organization&&<Button secondary title="Mi empresa o institución" onPress={()=>router.push("/company")}/>}
