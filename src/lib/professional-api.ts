@@ -74,3 +74,15 @@ export async function credentialPreview(path:string):Promise<string> {
  if(error)throw new Error(error.message);
  return data.signedUrl;
 }
+
+/** Public catalog of specialty options, grouped by stable profession code. */
+export async function loadSpecialtyCatalog():Promise<Record<string,string[]>> {
+ const {data,error}=await requireSupabase().rpc("jobin_specialty_catalog" as never);
+ if(error)throw new Error(error.message);
+ return (data??{}) as Record<string,string[]>;
+}
+/** Only the signed-in owner can change their declared specialties. */
+export async function saveProfessionSpecialties(profession:string,specialties:string[]):Promise<void> {
+ const {error}=await requireSupabase().rpc("jobin_set_profession_specialties" as never,{p_profession:profession,p_specialties:specialties} as never);
+ if(error)throw new Error(error.message);
+}
