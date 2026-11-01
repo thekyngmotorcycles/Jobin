@@ -35,9 +35,10 @@ export default function Professional() {
  </Pressable>;
  const save=()=>void action.run(async()=>{
   if(languages.some(l=>!l.name.trim()||!Number.isInteger(Number(l.fluency))||Number(l.fluency)<0||Number(l.fluency)>100))throw new Error("Completa el idioma y selecciona un nivel válido.");
+  const selectedOrganization=availability==="ACTIVE"&&employerId.trim()?await loadOrganization(employerId.trim()):null;
   await saveContactPreferences({show_email:showEmail,show_phone:showPhone});
   await professionalMutation("jobin_save_jcard",{legal_name:name,handle,city,region,availability,languages:languages.map(l=>({name:l.name,fluency:Number(l.fluency)}))});
-  if(w){if(availability==="ACTIVE"&&employerId.trim()){const organization=await loadOrganization(employerId.trim());await AsyncStorage.setItem("jobin.employer.link."+w.card.id,JSON.stringify({id:organization.id,name:organization.name,handle:organization.handle}));setEmployerName(organization.name);setEmployerHandle(organization.handle);}else{await AsyncStorage.removeItem("jobin.employer.link."+w.card.id);setEmployerName("");setEmployerHandle("");}}
+  if(w){if(selectedOrganization){await AsyncStorage.setItem("jobin.employer.link."+w.card.id,JSON.stringify({id:selectedOrganization.id,name:selectedOrganization.name,handle:selectedOrganization.handle}));setEmployerName(selectedOrganization.name);setEmployerHandle(selectedOrganization.handle);}else{await AsyncStorage.removeItem("jobin.employer.link."+w.card.id);setEmployerName("");setEmployerHandle("");}}
  },"JCard actualizada.");
  return <Screen demo={false} hideHeader hideFooter title="Editar mi JCard" subtitle="">
   {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
