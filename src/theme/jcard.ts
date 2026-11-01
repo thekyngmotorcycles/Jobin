@@ -38,6 +38,7 @@ export const jcardLayout = {
   avatar: 64, qr: 56, qrQuietZone: 4, radius: 18, padding: 14,
   gap: 5, minimumSealWidth: 38,
 };
+export const proficiencyColors = {low:'#d84b54',middle:'#e4af42',high:'#219765'};
 export const jcardCommon = {
   scrim: "#000000aa", qrPaper: "#ffffff", qrInk: "#111111", editBackground: "#e5e5e5", editInk: "#555555", verifiedBubble: "#38bdf8",
 };
