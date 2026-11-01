@@ -11,6 +11,7 @@ import { useTheme, type ThemeName } from "../state/ThemeProvider";
 import { displayedRating, jcardTier, sealRows, type CardData, type BusinessCardData } from "../lib/jcard";
 import {loadPublicContact} from "../lib/jcard-contact";
 import { experienceLabel } from "../lib/employment";
+import { LanguageRing } from "./LanguageRing";
 import { jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
 
 export type { CardData } from "../lib/jcard";
@@ -36,12 +37,12 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
     </Svg>
     <View style={{ padding:jcardLayout.padding, gap:14 }}>
       <View style={{ paddingTop:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
-        <Text accessibilityRole="header" style={[s.h3, { position:"absolute", top:0, left:0, right:0, textAlign:"center", fontSize:Math.max(13,fs(14)), letterSpacing:1.5, color:finish.text }]}>JCard</Text>
+        <Text accessibilityRole="header" style={[s.h3, { position:"absolute", top:0, left:0, right:0, textAlign:"center", fontSize:Math.max(13,fs(14)), letterSpacing:0.3, fontStyle:"italic",fontFamily:"serif",fontWeight:"600",lineHeight:19,color:finish.text }]}>JCard\nPersonal</Text>
         <View style={{ width:jcardLayout.avatar + 8, height:jcardLayout.qr + 8 }}>
           <Avatar uri={card.avatar} name={card.name} size={jcardLayout.avatar}/>
           <View style={{ position:"absolute", right:0, top:jcardLayout.avatar - 16, borderRadius:12, paddingHorizontal:6, paddingVertical:3, backgroundColor:finish.sealFill, borderWidth:1, borderColor:finish.line }}>
             <Text accessibilityLabel={rating === null ? "Sin reseñas" : rating.toFixed(1) + " de 5 estrellas"} style={{ color:finish.sealText, fontSize:11, fontWeight:"700" }}>
-              {rating === null ? "NEW" : "★ " + rating.toFixed(1)}
+              {rating === null ? "NUEVA" : "★ " + rating.toFixed(1)}
             </Text>
           </View>
         </View>
@@ -54,17 +55,16 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
 
       <View style={{ gap:5 }}>
         <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[s.h3, { color:finish.text, fontSize:Math.max(13,fs(expanded ? 16 : 14)), lineHeight:Math.max(21,fs(expanded ? 24 : 22)) }]}>
-          {card.name} - @{card.handle}
+          {card.name}
         </Text>
-        <Text style={{ color:finish.text, fontWeight:"700", fontSize:11, letterSpacing:1.2 }}>{card.status}</Text>
+        <Text style={{color:finish.secondary,fontSize:11}}>@{card.handle}</Text>
+        <Text style={{ color:finish.text, fontWeight:"700", fontSize:11, letterSpacing:1.2 }}>{card.status==="ACTIVE"?"TRABAJANDO":"DISPONIBLE"}</Text>
         {!!contact?.email&&<Text selectable style={lineStyle}>{contact.email}</Text>}
         {!!contact?.phone&&<Text selectable style={lineStyle}>{contact.phone}</Text>}
-        <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>{card.role}{card.inAcademy ? " - In academy" : ""}{card.inAcademy && card.trainingVerified ? " ✓" : ""}</Text>
+        <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>{card.role}{card.inAcademy ? " · En formación" : ""}{card.inAcademy && card.trainingVerified ? " ✓" : ""}</Text>
         {!card.inAcademy && <Text style={lineStyle}>{card.years} años de experiencia</Text>}
-        {card.status === "ACTIVE" && card.employer && <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>Working in @{card.employer}</Text>}
-        <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[lineStyle, { color:finish.secondary }]}>
-          {card.languages.map(language => language.name + " " + language.fluency + "%").join(" · ")}
-        </Text>
+        {card.status === "ACTIVE" && card.employer && <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>Trabaja en @{card.employer}</Text>}
+        <View style={{flexDirection:"row",flexWrap:"wrap",gap:10,paddingTop:7}}>{card.languages.map((language,index)=><View key={language.name+index} style={{alignItems:"center",gap:3}}><LanguageRing name={language.name} value={language.fluency} color={finish.text} track={finish.line}/><Text style={{fontSize:10,color:finish.secondary}}>{language.name}</Text></View>)}</View>
       </View>
 
       <View onLayout={event => setContentWidth(event.nativeEvent.layout.width)} style={{ paddingTop:12, borderTopWidth:1, borderTopColor:finish.line }}>
@@ -73,7 +73,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
             {rows.map((row, index) => <View key={index} style={{ flexDirection:"row", gap:jcardLayout.gap }}>
               {row.map(seal => <View key={seal.id} accessible accessibilityLabel={seal.profession + (seal.verified ? ", verificado" : ", sin verificar")}
                 style={{ width:sealWidth, minHeight:66, paddingVertical:5, paddingHorizontal:2, gap:3, alignItems:"center", justifyContent:"center", borderRadius:7, borderWidth:1, borderStyle:seal.verified ? "solid" : "dashed", borderColor:seal.verified ? finish.sealFill : finish.pendingLine, backgroundColor:seal.verified ? finish.sealFill : finish.pendingFill }}>
-                <Text style={{fontSize:10,fontWeight:"700",color:finish.text}}>{experienceLabel(seal.months??0)}</Text>
+                <Text style={{fontSize:10,fontWeight:"600",color:finish.text}}>{experienceLabel(seal.months??0)}</Text>
                 <View style={{ flexDirection:"row", alignItems:"center", gap:2 }}>
                   <Ionicons name={seal.icon} size={12} color={seal.verified ? finish.sealText : finish.pendingText}/>
 
