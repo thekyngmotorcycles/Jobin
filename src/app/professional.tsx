@@ -42,7 +42,7 @@ export default function Professional() {
  useEffect(()=>{if(!w)return;setName(w.card.name);setHandle(w.card.handle);setCity(w.profile.city||"");setRegion(w.profile.region||"");setAvailability(w.card.status);setLanguages(w.card.languages.map(l=>({name:l.name,fluency:String(l.fluency)})));},[w]);
  const input={color:colors.ink,borderColor:colors.line,borderWidth:1,borderRadius:10,padding:12,minHeight:44};
  function choose(code:string){setProfession(code);const pp=w?.professions.find(p=>p.profession_code===code);setTraining(pp?.training_status??"graduado");setInstitution(pp?.institution_id??null);}
- const sectionRow=(id:typeof section,title:string,subtitle:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}>
+ const sectionRow=(id:Section,title:string,subtitle:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}>
   <Ionicons name={icon} size={25} color={colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>{title}</Text><Text style={s.muted}>{subtitle}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={colors.muted}/>
  </Pressable>;
  const save=()=>void action.run(async()=>{
