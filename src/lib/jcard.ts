@@ -32,7 +32,7 @@ export function displayedRating(rating: number | null, reviewCount: number): num
   return Math.round(Math.min(5, Math.max(1, rating)) * 10) / 10;
 }
 export function jcardTier(rating: number | null, reviewCount: number): JCardTier {
-  if(reviewCount<5)return "base";
+  if(reviewCount<20)return "base";
   const rounded = displayedRating(rating, reviewCount);
   return rounded === null || rounded <= 3.5 ? "base" : rounded <= 4.5 ? "silver" : "gold";
 }
