@@ -42,7 +42,7 @@ export default function Account() {
    const {data:existing,error:lookupError}=await client.from("usernames").select("username").eq("username",handle).maybeSingle();
    if(lookupError)throw lookupError;
    if(existing){setNotice("Ese nombre de usuario ya está en uso. Elige otro.");return;}
-   const {data,error}=await client.auth.signUp({email:email.trim().toLowerCase(),password,options:{data:{display_name:name.trim(),username:handle,account_type:kind,phone:phone.trim()||null,show_email:showEmail,show_phone:showPhone,profession_code:kind!=="company"?(profession||null):null,training_status:training,organization_kind:kind==="company"?organizationKind:null}}});
+   const {data,error}=await client.auth.signUp({email:email.trim().toLowerCase(),password,options:{data:{display_name:name.trim(),username:handle,account_type:kind,phone:phone.trim()||null,show_email:showEmail,show_phone:showPhone,profession_code:kind!=="company"?(profession||null):null,training_status:training,organization_kind:kind!=="personal"?organizationKind:null}}});
    if(error)throw error;
    if(!data.user)throw new Error("No se pudo crear la cuenta.");
    let session=data.session;
@@ -67,10 +67,11 @@ export default function Account() {
   <Text style={{fontSize:13,color:authSilver.tone1,textAlign:"center"}}>Crea tu cuenta ahora. Puedes completar tu JCard más adelante.</Text>
   <Text style={{fontWeight:"700",color:authSilver.tone2}}>Tipo de cuenta</Text>
   <View style={{gap:8}}>{([["personal","Solo personal"],["company","Solo empresa"],["both","Personal y empresa"]] as const).map(([value,label])=><AuthAction key={value} secondary label={(kind===value?"✓ ":"")+label} onPress={()=>setKind(value)}/>)}</View>
-  {kind==="company"?<View style={{gap:8}}>
+  {kind!=="personal"&&<View style={{gap:8}}>
    <Text style={{fontWeight:"700",color:authSilver.tone2}}>Tipo de organización</Text>
    {(["company","education","government"] as const).map(value=><AuthAction key={value} secondary label={(value===organizationKind?"✓ ":"")+ORGANIZATION_LABELS[value]} onPress={()=>setOrganizationKind(value)}/>)}
-  </View>:<View style={{gap:8}}>
+  </View>}
+  {kind!=="company"&&<View style={{gap:8}}>
    <Text style={{fontWeight:"700",color:authSilver.tone2}}>Profesión (opcional)</Text>
    {!!catalog.error&&<Text style={{color:authSilver.tone3}}>{catalog.error}</Text>}
    <ProfessionPicker catalog={catalog.data} value={profession} onChange={setProfession}/>
