@@ -24,11 +24,13 @@ export default function Professional() {
  const positions=useRef<Partial<Record<Section,number>>>({});
  const [editingProfession,setEditingProfession]=useState<string|null>(null);
  const [professionFormOpen,setProfessionFormOpen]=useState(false);
- const [formTop,setFormTop]=useState(0);
+ const professionFormRef=useRef<View>(null);
+ const scrollToProfessionForm=()=>{const content=scrollRef.current?.getInnerViewNode();if(!content)return;professionFormRef.current?.measureLayout(content,(_x,y)=>scrollRef.current?.scrollTo({y:Math.max(0,y-24),animated:true}),()=>{});};
+ useEffect(()=>{if(section!=="professions"||!professionFormOpen)return;const timer=setTimeout(scrollToProfessionForm,260);return()=>clearTimeout(timer);},[section,professionFormOpen,editingProfession]);
  const [formMode,setFormMode]=useState<"add"|"edit">("add");
  const [editedPrimary,setEditedPrimary]=useState(false);
  function openSection(id:Section){setSection(current=>current===id?null:id);}
- function openProfession(code:string,primary:boolean){choose(code);setFormMode("edit");setEditedPrimary(primary);setEditingProfession(code);setProfessionFormOpen(true);setTimeout(()=>scrollRef.current?.scrollTo({y:Math.max(0,formTop-24),animated:true}),180);}
+ function openProfession(code:string,primary:boolean){choose(code);setFormMode("edit");setEditedPrimary(primary);setEditingProfession(code);setProfessionFormOpen(true);}
  function addProfession(){setProfession("");setTraining("graduado");setInstitution(null);setFormMode("add");setEditingProfession(null);setEditedPrimary(false);setProfessionFormOpen(true);setTimeout(()=>scrollRef.current?.scrollTo({y:Math.max(0,formTop-24),animated:true}),180);}
  useEffect(()=>{if(!section)return;const t=setTimeout(()=>scrollRef.current?.scrollTo({y:Math.max(0,(positions.current[section]??0)-18),animated:true}),160);return()=>clearTimeout(t);},[section]);
  const [showEmail,setShowEmail]=useState(false);const [showPhone,setShowPhone]=useState(false);
@@ -100,7 +102,7 @@ export default function Professional() {
        </View>
       </View>)}
       {!professionFormOpen&&<Button secondary title="+ Agregar profesión" onPress={addProfession}/>}
-      {professionFormOpen&&<View onLayout={e=>setFormTop(e.nativeEvent.layout.y+(positions.current.professions??0))} style={{gap:12,borderWidth:1,borderColor:colors.line,borderRadius:12,padding:12}}>
+      {professionFormOpen&&<View ref={professionFormRef} onLayout={()=>{if(professionFormOpen)requestAnimationFrame(scrollToProfessionForm);}} style={{gap:12,borderWidth:1,borderColor:colors.line,borderRadius:12,padding:12}}>
        <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}><Text style={[s.h3,{fontSize:17,flex:1}]}>{formMode==="edit"?"Editar profesión":"Agregar profesión"}</Text><Pressable accessibilityRole="button" accessibilityLabel="Cerrar formulario de profesión" onPress={()=>{setProfessionFormOpen(false);setEditingProfession(null);}} style={{padding:7}}><Ionicons name="close-circle-outline" size={25} color={colors.ink}/></Pressable></View>
        {formMode==="edit"&&<Text style={s.muted}>Selecciona otra profesión de la lista para reemplazar la actual, o modifica sus datos de formación.</Text>}
        {!!catalog.error&&<Notice text={catalog.error} onClose={catalog.reload}/>}
