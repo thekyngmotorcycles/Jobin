@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { employmentMonths } from "../../lib/employment";
+import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness,readRatings } from "../../lib/jcard-cloud";
 import { useTabClearance } from "../../theme/navigation";
 import { MediaThumbnail } from "../../components/MediaThumbnail";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
@@ -27,14 +28,15 @@ export default function Profile() {
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
   const [history, setHistory] = useState<EmploymentEntry[]>([]);
   const [historyLoaded,setHistoryLoaded] = useState(false);
+  const [cloudRatings,setCloudRatings]=useState<{personal:{rating:number|null;count:number};business:{rating:number|null;count:number}}>({personal:{rating:null,count:0},business:{rating:null,count:0}});
   useEffect(()=>{let active=true;AsyncStorage.getItem("jobin.professional.history.v1").then(raw=>{if(active&&raw){const parsed:unknown=JSON.parse(raw);if(Array.isArray(parsed))setHistory(parsed as EmploymentEntry[]);}}).catch(()=>{}).finally(()=>{if(active)setHistoryLoaded(true);});return()=>{active=false;};},[]);
   useEffect(()=>{if(historyLoaded)void AsyncStorage.setItem("jobin.professional.history.v1",JSON.stringify(history)).catch(()=>setNotice("No se pudo guardar el historial en este dispositivo."));},[history,historyLoaded]);
   const [businessOpen,setBusinessOpen]=useState(false);
   const [business,setBusiness]=useState<BusinessCardData>({name:"",opened:"",closed:"",services:[],location:"",licenseVerified:false,rating:null,reviewCount:0});
   const [businessDraft,setBusinessDraft]=useState({name:"",opened:"",closed:"",services:"",location:""});
-  useEffect(()=>{let live=true;AsyncStorage.getItem("jobin.business.card.v1").then(raw=>{if(live&&raw)setBusiness(JSON.parse(raw) as BusinessCardData);}).catch(()=>{});return()=>{live=false;};},[]);
+  useEffect(()=>{let live=true;void readCloudBusiness().then(row=>{if(live&&row)setBusiness(b=>({...b,...row}));}).catch(()=>{AsyncStorage.getItem("jobin.business.card.v1").then(raw=>{if(live&&raw)setBusiness(JSON.parse(raw) as BusinessCardData);}).catch(()=>{});});return()=>{live=false;};},[]);
   function editBusiness(){setBusinessDraft({name:business.name,opened:business.opened,closed:business.closed,services:business.services.join(", "),location:business.location});setBusinessOpen(true);}
-  function saveBusiness(){const services=businessDraft.services.split(",").map(x=>x.trim()).filter(Boolean);if(services.length>3){setNotice("Máximo tres servicios.");return;}const opened=businessDraft.opened.trim(),closed=businessDraft.closed.trim(),year=new Date().getFullYear();if((opened&&(!/^\\d{4}$/.test(opened)||Number(opened)>year||Number(opened)<1800))||(closed&&(!/^\\d{4}$/.test(closed)||Number(closed)>year||Number(closed)<Number(opened)))){setNotice("Revisa los años de apertura y cierre.");return;}const updated={...business,...businessDraft,services,licenseVerified:business.licenseVerified};setBusiness(updated);void AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(updated)).catch(()=>setNotice("No se pudo guardar el reverso."));setBusinessOpen(false);}
+  function saveBusiness(){const services=businessDraft.services.split(",").map(x=>x.trim()).filter(Boolean);if(services.length>3){setNotice("Máximo tres servicios.");return;}const opened=businessDraft.opened.trim(),closed=businessDraft.closed.trim(),year=new Date().getFullYear();if((opened&&(!/^\\d{4}$/.test(opened)||Number(opened)>year||Number(opened)<1800))||(closed&&(!/^\\d{4}$/.test(closed)||Number(closed)>year||Number(closed)<Number(opened)))){setNotice("Revisa los años de apertura y cierre.");return;}const updated={...business,...businessDraft,services,licenseVerified:business.licenseVerified};setBusiness(updated);void AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(updated)).catch(()=>setNotice("No se pudo guardar el reverso."));void writeCloudBusiness(updated).catch(()=>setNotice("Guardado localmente, pero no se pudo sincronizar."));setBusinessOpen(false);}
   const [sendOpen, setSendOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editingId,setEditingId] = useState<string|null>(null);
@@ -47,6 +49,8 @@ export default function Profile() {
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12" });
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace);
+  useEffect(()=>{let live=true;void readCloudHistory().then(rows=>{if(live&&rows.length)setHistory(rows);}).catch(()=>{});return()=>{live=false;};},[]);
+  useEffect(()=>{if(!workspace.data?.card.id)return;let live=true;const person=workspace.data.card.id,businessId=workspace.data.organization?.profile_id;void readRatings(person,businessId).then(rows=>{if(!live)return;const personal=rows.find(x=>x.subject_id===person),company=rows.find(x=>x.subject_id===businessId);setCloudRatings({personal:{rating:personal?.average_rating??null,count:personal?.review_count??0},business:{rating:company?.average_rating??null,count:company?.review_count??0}});}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id,workspace.data?.organization?.profile_id]);
   const p = DEMO_PROFILE;
 
   function openLive() {
@@ -74,6 +78,7 @@ export default function Profile() {
     }
     const updated:EmploymentEntry={id:editingId??Date.now()+"",company:draft.company.trim(),role:draft.role.trim(),professions:draft.profession.split(",").map(x=>x.trim()).filter(Boolean),fromMonth,toMonth,from,to,status:"pending",verifiedBy:null};
     setHistory(items=>editingId?items.map(entry=>entry.id===editingId?updated:entry):[...items,updated]);
+    void writeCloudHistory(updated).catch(()=>setNotice("Guardado localmente, pero no se pudo sincronizar. Revisa la conexión."));
     setDraft({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12" });
     setAddOpen(false);setEditingId(null);setFormError("");
     setNotice("Experiencia guardada. Cualquier cambio requiere una nueva verificación de la empresa.");
@@ -102,7 +107,7 @@ export default function Profile() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
-          <JobinCard card={{...workspace.data.card,seals,business,years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness}/>
+          <JobinCard card={{...workspace.data.card,seals,rating:cloudRatings.personal.rating,reviewCount:cloudRatings.personal.count,business:{...business,rating:cloudRatings.business.rating,reviewCount:cloudRatings.business.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness}/>
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
           <View style={{width:"100%",maxWidth:520,alignSelf:"center",gap:8}}>
             <Button title="Mi historial profesional · Agregar empleo" onPress={()=>{setMode("cv");openEmployment();}}/>
