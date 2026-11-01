@@ -196,11 +196,11 @@ export default function Profile() {
       <BottomSheet visible={addOpen} onClose={() => setAddOpen(false)} title={editingId?"Editar experiencia":"Agregar experiencia"}>
         <View style={{ gap: 12, paddingVertical: 16 }}>
           {(["company", "role", "from", "to"] as const).map(key => (
-            <TextInput key={key} accessibilityLabel={({ company: "Empresa", role: "Cargo", from: "Año de inicio", to: "Año de término (opcional)" })[key]}
+            <View key={key} style={{gap:6}}><Text style={s.muted}>{({company:"Empresa",role:"Cargo",from:"Año de inicio",to:"Año de término (opcional)"})[key]}</Text><TextInput accessibilityLabel={({ company: "Empresa", role: "Cargo", from: "Año de inicio", to: "Año de término (opcional)" })[key]}
               placeholder={({ company: "Empresa", role: "Cargo", from: "Año de inicio", to: "Año de término (opcional)" })[key]}
               placeholderTextColor={colors.muted} value={draft[key]} onChangeText={v => setDraft(d => ({ ...d, [key]: v }))}
               keyboardType={key === "from" || key === "to" ? "number-pad" : "default"}
-              style={{ color: colors.ink, borderColor: colors.line, borderWidth: 1, padding: 14, borderRadius: 10 }} />
+              style={{ color: colors.ink, borderColor: colors.line, borderWidth: 1, padding: 14, borderRadius: 10 }} /></View>
           ))}
           {!!formError&&<Text accessibilityRole="alert" style={{color:colors.reaction}}>{formError}</Text>}
           <TextInput accessibilityLabel="Profesiones (separadas por coma)" placeholder="Profesiones: HVAC, Electricidad" placeholderTextColor={colors.muted} value={draft.profession} onChangeText={v=>setDraft(d=>({...d,profession:v}))} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>
