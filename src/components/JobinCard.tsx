@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { router } from "expo-router";
 import { Animated, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,12 +9,13 @@ import { Avatar } from "./social-ui";
 import { Button, useUi } from "./ui";
 import { useTheme, type ThemeName } from "../state/ThemeProvider";
 import { displayedRating, jcardTier, sealRows, type CardData, type BusinessCardData } from "../lib/jcard";
+import {loadPublicContact} from "../lib/jcard-contact";
 import { experienceLabel } from "../lib/employment";
 import { jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
 
 export type { CardData } from "../lib/jcard";
 
-function CardFace({ card, theme, expanded = false, onEdit, onQr }: { card: CardData; theme: ThemeName; expanded?: boolean; onEdit?: () => void; onQr?: () => void }) {
+function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { card: CardData; theme: ThemeName; expanded?: boolean; onEdit?: () => void; onQr?: () => void; contact?:{email:string|null;phone:string|null} }) {
   const { s, fs } = useUi();
   const { fontScale } = useWindowDimensions();
   const [contentWidth, setContentWidth] = useState(0);
@@ -56,6 +57,8 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr }: { card: CardD
           {card.name} - @{card.handle}
         </Text>
         <Text style={{ color:finish.text, fontWeight:"700", fontSize:11, letterSpacing:1.2 }}>{card.status}</Text>
+        {!!contact?.email&&<Text selectable style={lineStyle}>{contact.email}</Text>}
+        {!!contact?.phone&&<Text selectable style={lineStyle}>{contact.phone}</Text>}
         <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>{card.role}{card.inAcademy ? " - In academy" : ""}{card.inAcademy && card.trainingVerified ? " ✓" : ""}</Text>
         {!card.inAcademy && <Text style={lineStyle}>{card.years} años de experiencia</Text>}
         {card.status === "ACTIVE" && card.employer && <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>Working in @{card.employer}</Text>}
@@ -104,8 +107,10 @@ function BusinessFace({card,theme,onEdit}:{card:CardData;theme:ThemeName;onEdit?
   </View>
  </View>;
 }
-export function JobinCard({card,previewTheme,onEditBusiness}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void}){
+export function JobinCard({card,previewTheme,onEditBusiness,ownerId}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;ownerId?:string}){
  const {theme}=useTheme();const {width}=useWindowDimensions();
+ const [contact,setContact]=useState<{email:string|null;phone:string|null}>({email:null,phone:null});
+ useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void loadPublicContact(ownerId).then(value=>{if(live)setContact(value);}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
  const [back,setBack]=useState(false),[shareOpen,setShareOpen]=useState(false),[qrOpen,setQrOpen]=useState(false),[faceHeight,setFaceHeight]=useState(340);
  const rotation=useRef(new Animated.Value(0)).current;
  const toggle=()=>{const next=!back;setBack(next);Animated.timing(rotation,{toValue:next?180:0,useNativeDriver:true,duration:500}).start();};
@@ -123,7 +128,7 @@ export function JobinCard({card,previewTheme,onEditBusiness}:{card:CardData;prev
    </View>
    <View {...responder.panHandlers}>
    <Animated.View onLayout={e=>setFaceHeight(e.nativeEvent.layout.height)} pointerEvents={back?"none":"auto"} style={{backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:frontRotate}]}}>
-    <CardFace card={card} theme={cardTheme} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)}/>
+    <CardFace card={card} theme={cardTheme} contact={contact} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)}/>
    </Animated.View>
    <Animated.View pointerEvents={back?"auto":"none"} style={{position:"absolute",top:0,left:0,right:0,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:backRotate}]}}>
     <View style={{height:faceHeight}}><BusinessFace card={card} theme={cardTheme} onEdit={onEditBusiness}/></View>
