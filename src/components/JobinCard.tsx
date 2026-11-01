@@ -23,6 +23,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
   const gradientId = "jcard" + useId().replace(/[^a-zA-Z0-9]/g, "");
   const finish = jcardTokens(theme, jcardTier(card.rating, card.reviewCount));
   const rating = displayedRating(card.rating, card.reviewCount);
+  const [info,setInfo]=useState<string|null>(null);
   const rows = sealRows(card.seals);
   const columns = Math.max(1, ...rows.map(row => row.length));
   const sealWidth = Math.max(Math.max(jcardLayout.minimumSealWidth, ...card.seals.map(seal => seal.label.length * 6 + 8)) * fontScale, (contentWidth - (columns - 1) * jcardLayout.gap) / columns);
@@ -37,14 +38,12 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
     </Svg>
     <View style={{ padding:jcardLayout.padding, gap:14 }}>
       <View style={{ paddingTop:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
-        <Text accessibilityRole="header" style={[s.h3, { position:"absolute", top:0, left:0, right:0, textAlign:"center", fontSize:Math.max(13,fs(14)), letterSpacing:0.3, fontStyle:"italic",fontFamily:"serif",fontWeight:"600",lineHeight:19,color:finish.text }]}>JCard\nPersonal</Text>
+        <Text accessibilityRole="header" style={[s.h3, { position:"absolute", top:0, left:0, right:0, textAlign:"center", fontSize:Math.max(13,fs(14)), letterSpacing:0.3, fontStyle:"italic",fontFamily:"serif",fontWeight:"600",lineHeight:19,color:finish.text }]}>{"JCard\nPersonal"}</Text>
         <View style={{ width:jcardLayout.avatar + 8, height:jcardLayout.qr + 8 }}>
           <Avatar uri={card.avatar} name={card.name} size={jcardLayout.avatar}/>
-          <View style={{ position:"absolute", right:0, top:jcardLayout.avatar - 16, borderRadius:12, paddingHorizontal:6, paddingVertical:3, backgroundColor:finish.sealFill, borderWidth:1, borderColor:finish.line }}>
-            <Text accessibilityLabel={rating === null ? "Sin reseñas" : rating.toFixed(1) + " de 5 estrellas"} style={{ color:finish.sealText, fontSize:11, fontWeight:"700" }}>
-              {rating === null ? "NUEVA" : "★ " + rating.toFixed(1)}
-            </Text>
-          </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Información sobre verificación de identidad" onPress={()=>setInfo("La identidad todavía no está verificada. La insignia de verificación se otorgará tras revisar documentación válida según el país y la región.")} style={{position:"absolute",right:0,top:jcardLayout.avatar-17,width:25,height:25,borderRadius:13,backgroundColor:finish.sealFill,borderWidth:2,borderColor:finish.start,alignItems:"center",justifyContent:"center"}}>
+           <Ionicons name="shield-outline" size={16} color={finish.sealText}/>
+          </Pressable>
         </View>
         <View style={{alignItems:"center",gap:7}}>
           <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR" onPress={event=>{event.stopPropagation();onQr?.();}} style={{ backgroundColor:jcardCommon.qrPaper, padding:jcardLayout.qrQuietZone, borderRadius:6 }}>
@@ -62,7 +61,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
         {!!contact?.email&&<Text selectable style={lineStyle}>{contact.email}</Text>}
         {!!contact?.phone&&<Text selectable style={lineStyle}>{contact.phone}</Text>}
         <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>{card.role}{card.inAcademy ? " · En formación" : ""}{card.inAcademy && card.trainingVerified ? " ✓" : ""}</Text>
-        {!card.inAcademy && <Text style={lineStyle}>{card.years} años de experiencia</Text>}
+
         {card.status === "ACTIVE" && card.employer && <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={lineStyle}>Trabaja en @{card.employer}</Text>}
         <View style={{flexDirection:"row",flexWrap:"wrap",gap:10,paddingTop:7}}>{card.languages.map((language,index)=><View key={language.name+index} style={{alignItems:"center",gap:3}}><LanguageRing name={language.name} value={language.fluency} color={finish.text} track={finish.line}/><Text style={{fontSize:10,color:finish.secondary}}>{language.name}</Text></View>)}</View>
       </View>
@@ -86,6 +85,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact }: { ca
         </ScrollView>
       </View>
     </View>
+    <Modal visible={info!==null} transparent animationType="fade" onRequestClose={()=>setInfo(null)}><View style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}><View style={{backgroundColor:jcardCommon.qrPaper,borderRadius:20,padding:24,gap:16}}><Text style={{fontSize:18,fontWeight:"700",color:jcardCommon.qrInk}}>Información de la insignia</Text><Text style={{fontSize:15,lineHeight:23,color:jcardCommon.qrInk}}>{info}</Text><Button title="Entendido" onPress={()=>setInfo(null)}/></View></View></Modal>
   </View>;
 }
 
