@@ -35,7 +35,7 @@ export default function Professional() {
   await saveContactPreferences({show_email:showEmail,show_phone:showPhone});
   await professionalMutation("jobin_save_jcard",{legal_name:name,handle,city,region,availability,languages:languages.map(l=>({name:l.name,fluency:Number(l.fluency)}))});
  },"JCard actualizada.");
- return <Screen demo={false} plainHeading showBadge={false} title="Editar mi JCard" subtitle="Personaliza tu identidad profesional, paso a paso.">
+ return <Screen demo={false} hideHeader hideFooter title="Editar mi JCard" subtitle="">
   {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
    {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
    <View style={{gap:6}}>
