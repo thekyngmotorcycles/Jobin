@@ -15,6 +15,7 @@ import { experienceLabel } from "../lib/employment";
 import {ProfessionGlyph} from "./ProfessionGlyph";
 import { LanguageRing, languageLabel, LANGUAGE_LEVELS } from "./LanguageRing";
 import { jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
+import {businessCategoryArt} from "../lib/business-category-art";
 
 export type { CardData } from "../lib/jcard";
 const wordmarkJ=WORDMARK_XML.replace('viewBox="300 76 616 275"','viewBox="300 76 160 275"').replace(/(<path[^>]*\/>)[\s\S]*?(<\/g>)/,"$1$2");
@@ -152,12 +153,14 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
  const company=!!b?.name.trim();const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
  const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
  const category=b?.category?.trim()||(/hvac|aire acondicionado|climatiz|refrigeraci/i.test([card.role,...(b?.services??[])].join(" "))?"Climatización":b?.services?.[0]||"Servicios profesionales");
+ const art=businessCategoryArt(category);
+ const voteLevel=(key:"service"|"prices"|"punctuality"|"professionalism"|"tenure")=>{const total=b?.excellenceReviewCount??0;const percent=total>0?100*(b?.excellenceVotes?.[key]??0)/total:0;return percent>63?3:percent>33?2:percent>0?1:0;};
  const awards=[
-  {label:"Atención al cliente",icon:"headset-outline" as const,level:rating===null?0:rating>=4.7?3:rating>=4.2?2:rating>=3.5?1:0},
-  {label:"Precios competitivos",icon:"cash-outline" as const,level:0},
-  {label:"Puntualidad",icon:"calendar-outline" as const,level:0},
-  {label:"Profesionalismo",icon:"person-outline" as const,level:0},
-  {label:"En el mercado",icon:"trophy-outline" as const,level:years>=10?3:years>=5?2:years>=1?1:0},
+  {label:"Atención al cliente",icon:"headset-outline" as const,level:voteLevel("service")},
+  {label:"Precios competitivos",icon:"cash-outline" as const,level:voteLevel("prices")},
+  {label:"Puntualidad",icon:"calendar-outline" as const,level:voteLevel("punctuality")},
+  {label:"Profesionalismo",icon:"person-outline" as const,level:voteLevel("professionalism")},
+  {label:"En el mercado",icon:"trophy-outline" as const,level:voteLevel("tenure")},
  ];
  return <View style={{flex:1,borderRadius:jcardLayout.radius,backgroundColor:finish.start,borderWidth:1,borderColor:finish.line,overflow:"hidden"}}>
   <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" viewBox="0 0 400 650" preserveAspectRatio="none" pointerEvents="none">
@@ -170,10 +173,10 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
    <View style={{height:118,marginTop:0,marginHorizontal:0,position:"relative",flexDirection:"row",alignItems:"center"}}>
     <View style={{position:"absolute",left:0,right:0,height:94,top:12,borderRadius:12,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
      {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:
-      <Svg width="100%" height="100%" viewBox="0 0 300 76" preserveAspectRatio="none"><Defs><LinearGradient id="businessBanner" x1="0" y1="0" x2="1" y2="1"><Stop offset="0%" stopColor={finish.sealFill}/><Stop offset="100%" stopColor={finish.end}/></LinearGradient></Defs><Rect width="300" height="76" fill="url(#businessBanner)"/></Svg>}
+      <View style={{flex:1,backgroundColor:art.tint,alignItems:"flex-end",justifyContent:"center",paddingRight:20}}><Ionicons name={art.icon} size={66} color="#ffffff" style={{opacity:0.55}}/></View>}
     </View>
     <View style={{position:"absolute",left:4,top:16,borderRadius:46,borderWidth:3,borderColor:finish.start,padding:3,backgroundColor:finish.start}}>
-     <Avatar uri={card.avatar} name={company?b!.name:card.name} size={78}/>
+     {card.avatar?<Avatar uri={card.avatar} name={company?b!.name:card.name} size={78}/>:<View style={{width:78,height:78,borderRadius:39,backgroundColor:"#7f858d",alignItems:"center",justifyContent:"center"}}><Ionicons name={art.icon} size={39} color="#ffffff"/></View>}
     </View>
    </View>
    <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"flex-start",gap:7,marginTop:4}}>
