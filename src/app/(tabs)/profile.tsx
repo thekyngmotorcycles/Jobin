@@ -47,14 +47,13 @@ export default function Profile() {
   function openEmployment(entry?:EmploymentEntry){
     setEditingId(entry?.id??null);
     setDraft(entry?{company:entry.company,role:entry.role,from:String(entry.from),to:entry.to===null?"":String(entry.to),profession:(entry.professions??[]).join(", "),fromMonth:String(entry.fromMonth??1),toMonth:String(entry.toMonth??12),address:entry.address??"",contact:entry.contact??""}:{company:"",role:"",from:"",to:"",profession:"",fromMonth:"1",toMonth:"12",address:"",contact:""});
-    setFormError("");setShowEmploymentProfessionPicker(false);setEmploymentProfessionQuery("");setAddOpen(true);
+    setFormError("");setShowEmploymentProfessionPicker(false);setAddOpen(true);
   }
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address:"", contact:"" });
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace);
   const professionCatalog=useProfessionalData(loadCatalog);
   const [showEmploymentProfessionPicker,setShowEmploymentProfessionPicker]=useState(false);
-  const [employmentProfessionQuery,setEmploymentProfessionQuery]=useState("");
   const catalogProfessions=professionCatalog.data?.professions??[];
   const findCatalogProfession=(value:string)=>catalogProfessions.find(p=>p.code===value||p.label.toLocaleLowerCase("es")===value.trim().toLocaleLowerCase("es"));
   const selectedEmploymentProfession=findCatalogProfession(draft.role);
