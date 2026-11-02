@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { router } from "expo-router";
-import { Animated, Linking, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Animated, Image, Linking, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Rect, Stop, Path, SvgXml } from "react-native-svg";
@@ -136,7 +136,7 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
  const b=card.business;const finish=jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0));
  const company=!!b?.name.trim();const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
  const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
- const category=/hvac|aire acondicionado|climatiz|refrigeraci/i.test([card.role,...(b?.services??[])].join(" "))?"Climatización":b?.services?.[0]||"Servicios profesionales";
+ const category=b?.category?.trim()||(/hvac|aire acondicionado|climatiz|refrigeraci/i.test([card.role,...(b?.services??[])].join(" "))?"Climatización":b?.services?.[0]||"Servicios profesionales");
  const awards=[
   {label:"Atención",icon:"headset-outline" as const,level:rating===null?0:rating>=4.7?3:rating>=4.2?2:rating>=3.5?1:0},
   {label:"Precios",icon:"pricetag-outline" as const,level:0},
@@ -144,7 +144,7 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
   {label:"Profesionalismo",icon:"ribbon-outline" as const,level:0},
   {label:"Trayectoria",icon:"time-outline" as const,level:years>=10?3:years>=5?2:years>=1?1:0},
  ];
- const sealColor=(level:number)=>level===3?"#c99a38":level===2?"#a9b0bb":level===1?"#a36b43":finish.secondary;
+ const sealColor=(level:number)=>level===3?jcardCommon.businessGold:level===2?jcardCommon.businessSilver:level===1?jcardCommon.businessBronze:finish.secondary;
  return <View style={{flex:1,borderRadius:jcardLayout.radius,backgroundColor:finish.start,borderWidth:1,borderColor:finish.line,overflow:"hidden"}}>
   <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" viewBox="0 0 400 650" preserveAspectRatio="none" pointerEvents="none">
    {Array.from({length:15},(_,i)=><Path key={"left"+i} d={`M ${-45+i*10} 330 C ${42+i*4} 235, ${-20+i*8} 116, ${78+i*7} -25`} stroke={finish.text} strokeOpacity={0.12+(i%3)*0.018} strokeWidth={0.8} fill="none"/>)}
@@ -153,11 +153,13 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
   </Svg>
   <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
   <View style={{flex:1,padding:14,gap:10}}>
-   <View style={{flexDirection:"row",alignItems:"center",gap:9,marginTop:16}}>
-    <View style={{borderRadius:42,borderWidth:2,borderColor:finish.line,padding:2}}><Avatar uri={card.avatar} name={company?b!.name:card.name} size={72}/></View>
-    <View style={{flex:1,height:64,borderRadius:12,borderWidth:1,borderColor:finish.line,backgroundColor:finish.sealFill,overflow:"hidden",justifyContent:"center",alignItems:"center"}}>
-     <Text numberOfLines={1} style={{color:finish.sealText,fontSize:15,fontWeight:"700",textAlign:"center",paddingHorizontal:6}}>{company?b!.name:card.name}</Text>
-     <Text numberOfLines={1} style={{color:finish.sealText,fontSize:10,opacity:0.8}}>{category}</Text>
+   <View style={{height:112,marginTop:8,position:"relative",flexDirection:"row",alignItems:"center"}}>
+    <View style={{position:"absolute",left:40,right:0,height:76,top:14,borderRadius:12,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
+     {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:
+      <Svg width="100%" height="100%" viewBox="0 0 300 76" preserveAspectRatio="none"><Defs><LinearGradient id="businessBanner" x1="0" y1="0" x2="1" y2="1"><Stop offset="0%" stopColor={finish.sealFill}/><Stop offset="100%" stopColor={finish.end}/></LinearGradient></Defs><Rect width="300" height="76" fill="url(#businessBanner)"/></Svg>}
+    </View>
+    <View style={{position:"absolute",left:0,top:9,borderRadius:42,borderWidth:2,borderColor:finish.line,padding:2,backgroundColor:finish.start}}>
+     <Avatar uri={card.avatar} name={company?b!.name:card.name} size={72}/>
     </View>
    </View>
    <View style={{flexDirection:"row",justifyContent:"space-between",gap:8}}>
@@ -198,12 +200,12 @@ export function JobinCard({card,previewTheme,onEditBusiness,ownerId,showOwnerAct
  const [back,setBack]=useState(false),[shareOpen,setShareOpen]=useState(false),[qrOpen,setQrOpen]=useState(false),[faceHeight,setFaceHeight]=useState(340);
  const rotation=useRef(new Animated.Value(0)).current;
  const angle=useRef(0);
- const rotate=(direction:number)=>{angle.current+=direction*180;setBack(v=>!v);Animated.timing(rotation,{toValue:angle.current,useNativeDriver:true,duration:500}).start();};
+ const rotate=(direction:number)=>{const next=angle.current+direction*180;angle.current=next;setBack(v=>!v);rotation.stopAnimation();Animated.timing(rotation,{toValue:next,useNativeDriver:true,duration:420}).start(({finished})=>{if(finished&&Math.abs(angle.current)>=1800){angle.current=angle.current%360;rotation.setValue(angle.current);}});};
  const toggle=()=>rotate(1);
  const responder=useRef(PanResponder.create({onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>28&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,onPanResponderRelease:(_,g)=>{if(Math.abs(g.dx)>65)toggleRef.current(g.dx<0?1:-1);}})).current;
  const toggleRef=useRef(rotate);toggleRef.current=rotate;
- const frontRotate=rotation.interpolate({inputRange:[-3600,3600],outputRange:["-3600deg","3600deg"]});
- const backRotate=rotation.interpolate({inputRange:[-3600,3600],outputRange:["-3420deg","3780deg"]});
+ const frontRotate=rotation.interpolate({inputRange:[-3600,3600],outputRange:["-3600deg","3600deg"],extrapolate:"extend"});
+ const backRotate=rotation.interpolate({inputRange:[-3600,3600],outputRange:["-3420deg","3780deg"],extrapolate:"extend"});
  const cardTheme=previewTheme??theme;
  const share=()=>void Share.share({message:`JCard de ${card.name} · ${card.profileUrl}`,url:card.profileUrl,title:`JCard · ${card.name}`});
  return <>
