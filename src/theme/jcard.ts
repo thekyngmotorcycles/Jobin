@@ -41,7 +41,7 @@ export const jcardLayout = {
 export const proficiencyColors = {low:'#d84b54',middle:'#e4af42',high:'#219765'};
 export const businessCardPaper = { background:"#ffffff", ink:"#111111", secondary:"#5d6165", border:"#dedede", muted:"#f5f5f5", outerBorder:"#e5e5e5" }; 
 export const jcardCommon = {
-  scrim: "#000000aa", qrPaper: "#ffffff", qrInk: "#111111", editBackground: "#e5e5e5", editInk: "#555555", flipShadow: "rgba(0,0,0,0.09)", flipSurface: "rgba(0,0,0,0.035)", flipOutline: "rgba(0,0,0,0.10)", flipShadowDark: "rgba(255,255,255,0.22)", flipSurfaceDark: "rgba(255,255,255,0.13)", flipOutlineDark: "rgba(255,255,255,0.32)", flipInkDark:"#ffffff", glintEdge:"#ffffff",glintCenter:"#ffffff", verifiedBubble: "#38bdf8", businessBronze:"#a36b43",businessSilver:"#a9b0bb",businessGold:"#c99a38",
+  scrim: "#000000aa", qrPaper: "#ffffff", qrInk: "#111111", editBackground: "#e5e5e5", editInk: "#555555", flipShadow: "rgba(0,0,0,0.09)", flipSurface: "rgba(0,0,0,0.035)", flipOutline: "rgba(0,0,0,0.10)", flipShadowDark: "rgba(255,255,255,0.22)", flipSurfaceDark: "rgba(255,255,255,0.13)", flipOutlineDark: "rgba(255,255,255,0.32)", flipInkDark:"#ffffff", glintEdge:"#ffffff",glintCenter:"#ffffff", verifiedBubble: "#38bdf8", unverifiedBubble: "#9ca3af", businessBronze:"#a36b43",businessSilver:"#a9b0bb",businessGold:"#c99a38",
 };
 export function jcardTokens(theme: ThemeName, tier: JCardTier) {
   // Rating-based silver and gold finishes remain unchanged in every appearance.
