@@ -1,3 +1,5 @@
+import {pickBusinessPhotos,uploadBusinessPhoto} from "../../lib/business-media";
+import {cloudOwner} from "../../lib/jcard-cloud";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { employmentMonths,experienceLabel } from "../../lib/employment";
 import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness,readBusinessRating,readBusinessExcellence } from "../../lib/jcard-cloud";
@@ -49,6 +51,8 @@ export default function Profile() {
   const [business,setBusiness]=useState<BusinessCardData>({name:"",opened:"",closed:"",services:[],location:"",licenseVerified:false,rating:null,reviewCount:0});
   const [businessDraft,setBusinessDraft]=useState({name:"",opened:"",closed:"",services:"",location:""});
   useEffect(()=>{let live=true;void readCloudBusiness().then(async row=>{if(!live)return;if(row){setBusiness(b=>({...b,...row}));return;}const raw=await AsyncStorage.getItem("jobin.business.card.v1");if(raw){const local=JSON.parse(raw) as BusinessCardData;await writeCloudBusiness(local);if(live)setBusiness(local);}}).catch(()=>{AsyncStorage.getItem("jobin.business.card.v1").then(raw=>{if(live&&raw)setBusiness(JSON.parse(raw) as BusinessCardData);}).catch(()=>{});});return()=>{live=false;};},[]);
+  const [businessImageBusy,setBusinessImageBusy]=useState(false);
+  async function replaceBusinessImage(slot:"banner"|"avatar"){if(businessImageBusy)return;setBusinessImageBusy(true);try{const photos=await pickBusinessPhotos(1);if(!photos.length)return;const owner=await cloudOwner();const uploaded=await uploadBusinessPhoto("business-profile-media",owner,photos[0],slot);const updated={...business,[slot==="banner"?"bannerUrl":"avatarUrl"]:uploaded.url};await writeCloudBusiness(updated);setBusiness(updated);await AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(updated));setNotice("Imagen empresarial actualizada.");}catch(e){setNotice(e instanceof Error?e.message:"No se pudo actualizar la imagen.");}finally{setBusinessImageBusy(false);}}
   function editBusiness(){setBusinessDraft({name:business.name,opened:business.opened,closed:business.closed,services:business.services.join(", "),location:business.location});setBusinessOpen(true);}
   function saveBusiness(){Keyboard.dismiss();const services=businessDraft.services.split(",").map(x=>x.trim()).filter(Boolean);if(services.length>3){setNotice("Máximo tres servicios.");return;}const opened=businessDraft.opened.trim(),closed=businessDraft.closed.trim(),year=new Date().getFullYear();if((opened&&(!/^\d{4}$/.test(opened)||Number(opened)>year||Number(opened)<1800))||(closed&&(!/^\d{4}$/.test(closed)||Number(closed)>year||Number(closed)<Number(opened)))){setNotice("Revisa los años de apertura y cierre.");return;}const updated={...business,...businessDraft,services,licenseVerified:business.licenseVerified};setBusiness(updated);void AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(updated)).catch(()=>setNotice("No se pudo guardar el reverso."));void writeCloudBusiness(updated).catch(()=>setNotice("Guardado localmente, pero no se pudo sincronizar."));setBusinessOpen(false);setNotice("Datos del negocio guardados.");}
   const [sendOpen, setSendOpen] = useState(false);
@@ -222,7 +226,7 @@ export default function Profile() {
 
       <BottomSheet visible={businessOpen} onClose={()=>setBusinessOpen(false)} title="Editar reverso de JCard">
        <View style={{gap:12,paddingVertical:12}}>
-        <Text style={s.muted}>Si no tienes empresa, deja el nombre vacío y usa esta cara para presentarte profesionalmente.</Text>
+        <Text style={s.muted}>Si no tienes empresa, deja el nombre vacío y usa esta cara para presentarte profesionalmente.</Text><Button secondary title={businessImageBusy?"Subiendo…":"Cambiar banner empresarial"} onPress={()=>void replaceBusinessImage("banner")}/><Button secondary title={businessImageBusy?"Subiendo…":"Cambiar foto empresarial"} onPress={()=>void replaceBusinessImage("avatar")}/>
         {(["name","opened","closed","services","location"] as const).map(key=><View key={key} style={{gap:4}}>
          <Text style={s.muted}>{{name:"Nombre de empresa (opcional)",opened:"Año de apertura",closed:"Año de cierre (opcional)",services:"Servicios (máximo 3, separados por comas)",location:"Dirección o localidad"}[key]}</Text>
          <TextInput accessibilityLabel={key} value={businessDraft[key]} onChangeText={v=>setBusinessDraft(d=>({...d,[key]:v}))} placeholderTextColor={colors.muted} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:12,borderRadius:10}}/>
