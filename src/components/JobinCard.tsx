@@ -116,11 +116,11 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
         <View style={{flex:1,paddingLeft:7,gap:10}}>
           <Text style={{fontSize:10,color:finish.secondary,textAlign:"center",letterSpacing:0.8}}>Otras profesiones</Text>
           <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:8}}>
-            {secondarySeals.map(seal=><Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\nEspecialidades: "+(seal.specialties?.length?seal.specialties.join(", "):"No declaradas")+"\nExperiencia registrada: "+experienceLabel(seal.months??0)+".\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:"44%",height:66,alignItems:"center",justifyContent:"center"}}>
-              <View style={{width:54,height:54,borderRadius:27,borderWidth:2,borderColor:seal.verified?finish.sealFill:finish.line,backgroundColor:finish.pendingFill,alignItems:"center",justifyContent:"center",elevation:4,shadowColor:finish.text,shadowOpacity:0.15,shadowRadius:5}}>
-                <View style={{width:46,height:46,borderRadius:23,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center",gap:1}}>
-                  <ProfessionGlyph profession={seal.profession} fallback={seal.icon} size={27} color={finish.text}/>
-                  <Text style={{fontSize:8,fontWeight:"700",color:finish.text}}>{experienceLabel(seal.months??0)}</Text>
+            {secondarySeals.map(seal=><Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\nEspecialidades: "+(seal.specialties?.length?seal.specialties.join(", "):"No declaradas")+"\nExperiencia registrada: "+experienceLabel(seal.months??0)+".\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:"44%",height:56,alignItems:"center",justifyContent:"center"}}>
+              <View style={{width:52,height:52,borderRadius:26,borderWidth:2,borderColor:seal.verified?finish.sealFill:finish.line,backgroundColor:finish.pendingFill,alignItems:"center",justifyContent:"center",elevation:4,shadowColor:finish.text,shadowOpacity:0.15,shadowRadius:5}}>
+                <View style={{width:44,height:44,borderRadius:22,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center",gap:0}}>
+                  <ProfessionGlyph profession={seal.profession} fallback={seal.icon} size={23} color={finish.text}/>
+                  <Text adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.7} style={{fontSize:7,fontWeight:"700",color:finish.text,textAlign:"center",maxWidth:40}}>{experienceLabel(seal.months??0)}</Text>
                 </View>
               </View>
             </Pressable>)}
@@ -165,10 +165,6 @@ export function JobinCard({card,previewTheme,onEditBusiness,ownerId,employerLink
  const share=()=>void Share.share({message:`JCard de ${card.name} · ${card.profileUrl}`,url:card.profileUrl,title:`JCard · ${card.name}`});
  return <>
   <View style={{width:"100%",maxWidth:520,alignSelf:"center"}}>
-   <View style={{flexDirection:"row",justifyContent:"flex-end",gap:10,paddingBottom:8}}>
-    <Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard" onPress={()=>setShareOpen(true)} style={{padding:9}}><Ionicons name="share-social-outline" size={23} color={jcardCommon.editInk}/></Pressable>
-    <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{padding:9}}><Ionicons name="create-outline" size={23} color={jcardCommon.editInk}/></Pressable>
-   </View>
    <View {...responder.panHandlers}>
    <Animated.View onLayout={e=>setFaceHeight(e.nativeEvent.layout.height)} pointerEvents={back?"none":"auto"} style={{backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:frontRotate}]}}>
     <CardFace card={card} theme={cardTheme} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)}/>
@@ -180,6 +176,10 @@ export function JobinCard({card,previewTheme,onEditBusiness,ownerId,employerLink
    <Pressable accessibilityRole="button" accessibilityLabel={back?"Ver cara personal":"Ver reverso de JCard"} onPress={toggle} style={{alignSelf:"center",padding:8,flexDirection:"row",gap:6,alignItems:"center"}}>
     <Ionicons name="sync-outline" size={18} color={jcardCommon.editInk}/><Text style={{color:jcardCommon.editInk,fontSize:12}}>{back?"Negocio / Presentación · Ver personal":"Personal · Ver reverso"}</Text>
    </Pressable>
+   <View style={{flexDirection:"row",justifyContent:"flex-end",gap:10,paddingTop:5}}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard" onPress={()=>setShareOpen(true)} style={{padding:9}}><Ionicons name="share-social-outline" size={23} color={jcardCommon.editInk}/></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{padding:9}}><Ionicons name="create-outline" size={23} color={jcardCommon.editInk}/></Pressable>
+   </View>
   </View>
   <Modal visible={shareOpen} transparent animationType="fade" onRequestClose={()=>setShareOpen(false)}>
    <SafeAreaView style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}>
