@@ -193,7 +193,7 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
     </View>
     <View style={{alignItems:"flex-end",gap:5,maxWidth:"39%"}}>
      <View style={{borderRadius:20,borderWidth:1,borderColor:finish.line,paddingVertical:4,paddingHorizontal:6,backgroundColor:finish.sealFill,alignItems:"center"}}>
-      <Text numberOfLines={1} adjustsFontSizeToFit style={{color:finish.text,fontSize:12,fontWeight:"700"}}>{ratingUnlocked?rating!.toFixed(1):"0.0"}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit style={{color:finish.text,fontSize:12,fontWeight:"700"}}>{ratingUnlocked?rating!.toFixed(1):"0.0"} <Text style={{color:ratingUnlocked?jcardCommon.businessGold:finish.secondary}}>{ratingUnlocked?"★★★★★":"☆☆☆☆☆"}</Text></Text>
      </View>
      <Text style={{color:finish.secondary,fontSize:10}}>{b?.reviewCount??0} reseñas</Text>
      {!!b?.opened&&<View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="calendar-outline" size={13} color={finish.secondary}/><Text style={{color:finish.secondary,fontSize:10}}>Desde {b.opened}</Text></View>}
