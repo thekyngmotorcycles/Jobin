@@ -118,8 +118,8 @@ export default function Profile() {
               <Button secondary title="Reseñas de empresas" onPress={()=>{setProfileToolsOpen(false);router.push("/reviews");}}/>
               <Button secondary title="Certificados y sellos" onPress={()=>{setProfileToolsOpen(false);router.push("/certificates");}}/>
               <Button secondary title="Oportunidades laborales" onPress={()=>{setProfileToolsOpen(false);router.push("/opportunities");}}/>
-              {!!workspace.data.organization&&<Button secondary title="Mi empresa o institución" onPress={()=>{setProfileToolsOpen(false);router.push("/company");}}/>}
-              {workspace.data.reviewer&&<Button secondary title="Revisar acreditaciones" onPress={()=>{setProfileToolsOpen(false);router.push("/credential-review");}}/>}
+              {!!workspace.data?.organization&&<Button secondary title="Mi empresa o institución" onPress={()=>{setProfileToolsOpen(false);router.push("/company");}}/>}
+              {workspace.data?.reviewer&&<Button secondary title="Revisar acreditaciones" onPress={()=>{setProfileToolsOpen(false);router.push("/credential-review");}}/>}
             </View>}
       <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
