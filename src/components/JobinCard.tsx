@@ -173,8 +173,11 @@ export function JobinCard({card,previewTheme,onEditBusiness,ownerId,employerLink
     <View style={{height:faceHeight}}><BusinessFace card={card} theme={cardTheme} onEdit={onEditBusiness}/></View>
    </Animated.View>
    </View>
-   <Pressable accessibilityRole="button" accessibilityLabel={back?"Ver cara personal":"Ver reverso de JCard"} onPress={toggle} style={{alignSelf:"center",padding:8,flexDirection:"row",gap:6,alignItems:"center"}}>
-    <Ionicons name="sync-outline" size={18} color={jcardCommon.editInk}/><Text style={{color:jcardCommon.editInk,fontSize:12}}>{back?"Negocio / Presentación · Ver personal":"Personal · Ver reverso"}</Text>
+   <Pressable accessibilityRole="button" accessibilityLabel={back?"Girar JCard a cara personal":"Girar JCard para ver el reverso"} accessibilityHint="Toca o desliza horizontalmente la tarjeta para girarla" onPress={toggle} style={{alignSelf:"center",width:"68%",height:31,justifyContent:"center",alignItems:"center",marginTop:1}}>
+    <View pointerEvents="none" style={{position:"absolute",top:0,width:"90%",height:12,borderRadius:100,backgroundColor:"rgba(0,0,0,0.09)",transform:[{scaleX:0.92}]}}/>
+    <View pointerEvents="none" style={{width:86,height:21,borderRadius:30,alignItems:"center",justifyContent:"center",backgroundColor:"rgba(0,0,0,0.035)",borderWidth:1,borderColor:"rgba(0,0,0,0.10)"}}>
+      <Ionicons name="sync-outline" size={16} color={jcardCommon.editInk}/>
+    </View>
    </Pressable>
    <View style={{flexDirection:"row",justifyContent:"flex-end",gap:10,paddingTop:5}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard" onPress={()=>setShareOpen(true)} style={{padding:9}}><Ionicons name="share-social-outline" size={23} color={jcardCommon.editInk}/></Pressable>
