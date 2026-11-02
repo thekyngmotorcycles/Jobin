@@ -154,7 +154,7 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
   <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
   <View style={{flex:1,padding:14,gap:10}}>
    <View style={{height:112,marginTop:8,position:"relative",flexDirection:"row",alignItems:"center"}}>
-    <View style={{position:"absolute",left:40,right:0,height:76,top:14,borderRadius:12,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
+    <View style={{position:"absolute",left:88,right:0,height:66,top:25,borderRadius:12,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
      {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:
       <Svg width="100%" height="100%" viewBox="0 0 300 76" preserveAspectRatio="none"><Defs><LinearGradient id="businessBanner" x1="0" y1="0" x2="1" y2="1"><Stop offset="0%" stopColor={finish.sealFill}/><Stop offset="100%" stopColor={finish.end}/></LinearGradient></Defs><Rect width="300" height="76" fill="url(#businessBanner)"/></Svg>}
     </View>
