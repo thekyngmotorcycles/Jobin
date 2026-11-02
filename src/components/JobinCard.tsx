@@ -206,8 +206,8 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
      {awards.map(a=><BusinessAward key={a.label} {...a} finish={finish}/>)}
     </View>
     <View style={{width:1,height:85,backgroundColor:finish.line,marginHorizontal:1}}/>
-    <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:7,borderRadius:9,backgroundColor:jcardCommon.qrPaper,borderWidth:1,borderColor:jcardCommon.qrBorder,alignSelf:"center"}}>
-     <QRCode value={card.profileUrl} size={70} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
+    <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:4,borderRadius:7,backgroundColor:jcardCommon.qrPaper,borderWidth:1,borderColor:jcardCommon.qrBorder,alignSelf:"center",flexShrink:0}}>
+     <QRCode value={card.profileUrl} size={60} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
     </Pressable>
    </View>
   </View>
