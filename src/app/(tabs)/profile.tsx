@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { employmentMonths,experienceLabel } from "../../lib/employment";
 import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness,readBusinessRating } from "../../lib/jcard-cloud";
 import { useTabClearance } from "../../theme/navigation";
+import {opacity} from "../../theme/color";
 import { MediaThumbnail } from "../../components/MediaThumbnail";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import { ProfessionalStatus } from "../../components/ProfessionalStatus";
@@ -10,7 +11,7 @@ import { ProfessionPicker } from "../../components/ProfessionPicker";
 import { useProfessionalData } from "../../state/useProfessionalData";
 import { useCallback,useEffect,useState } from "react";
 import {getEmployerLinks} from "../../lib/employer-links";
-import { Image, Keyboard, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Image, Keyboard, Modal, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router,useFocusEffect,useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,6 +29,7 @@ export default function Profile() {
   const { s, colors } = useUi();const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
   const [mode, setMode] = useState<Mode>("grid");
   const [profileToolsOpen,setProfileToolsOpen]=useState(false);
+  const {width:screenWidth}=useWindowDimensions();
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
   const [history, setHistory] = useState<EmploymentEntry[]>([]);
   const [historyLoaded,setHistoryLoaded] = useState(false);
@@ -114,13 +116,24 @@ export default function Profile() {
         <JobinWordmark width={92} style={{ alignSelf: "flex-start" }} />
         <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>setProfileToolsOpen(v=>!v)} style={{padding:10}}><Ionicons name="ellipsis-horizontal" size={24} color={colors.ink}/></Pressable>
       </View>
-      {profileToolsOpen&&<View style={{gap:8,padding:10,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
+      <Modal visible={profileToolsOpen} transparent animationType="slide" onRequestClose={()=>setProfileToolsOpen(false)} statusBarTranslucent={false}>
+        <View style={{flex:1,flexDirection:"row",backgroundColor:colors.scrim}}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú de perfil" onPress={()=>setProfileToolsOpen(false)} style={{flex:1}}/>
+          <SafeAreaView edges={["top","bottom"]} style={{width:Math.min(screenWidth*0.88,410),backgroundColor:opacity(colors.paper,0.88),borderTopLeftRadius:18,borderBottomLeftRadius:18,overflow:"hidden"}}>
+            <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:22,paddingBottom:32,gap:10}}>
+              <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingBottom:16}}>
+                <Text accessibilityRole="header" style={{color:colors.ink,fontWeight:"700",fontSize:22}}>Opciones del perfil</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={()=>setProfileToolsOpen(false)} style={{padding:8}}><Ionicons name="close" size={25} color={colors.ink}/></Pressable>
+              </View>
               <Button secondary title="Reseñas de empresas" onPress={()=>{setProfileToolsOpen(false);router.push("/reviews");}}/>
               <Button secondary title="Certificados y sellos" onPress={()=>{setProfileToolsOpen(false);router.push("/certificates");}}/>
               <Button secondary title="Oportunidades laborales" onPress={()=>{setProfileToolsOpen(false);router.push("/opportunities");}}/>
               {!!workspace.data?.organization&&<Button secondary title="Mi empresa o institución" onPress={()=>{setProfileToolsOpen(false);router.push("/company");}}/>}
-              {workspace.data?.reviewer&&<Button secondary title="Revisar acreditaciones" onPress={()=>{setProfileToolsOpen(false);router.push("/credential-review");}}/>}
-            </View>}
+              {!!workspace.data?.reviewer&&<Button secondary title="Revisar acreditaciones" onPress={()=>{setProfileToolsOpen(false);router.push("/credential-review");}}/>}
+            </ScrollView>
+          </SafeAreaView>
+        </View>
+      </Modal>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
