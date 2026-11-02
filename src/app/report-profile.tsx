@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {ActivityIndicator,Pressable,ScrollView,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Pressable,ScrollView,Text,TextInput} from "react-native";
 import {useLocalSearchParams,router} from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import {Ionicons} from "@expo/vector-icons";
@@ -15,7 +15,7 @@ export default function ReportProfile(){
  async function pick(){
   const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:["images"],base64:true,quality:0.7,allowsEditing:false});
   if(result.canceled||!result.assets[0]?.base64)return;
-  const asset=result.assets[0];setProof({base64:asset.base64,mime:asset.mimeType??"image/jpeg",name:asset.fileName??"captura.jpg"});
+  const asset=result.assets[0];setProof({base64:asset.base64!,mime:asset.mimeType??"image/jpeg",name:asset.fileName??"captura.jpg"});
  }
  async function submit(){
   if(!user||!/^[-0-9a-f]{36}$/i.test(user)){setStatus("El perfil no es válido.");return;}
