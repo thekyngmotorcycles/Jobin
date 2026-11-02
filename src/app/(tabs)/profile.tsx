@@ -27,6 +27,7 @@ type Mode = "grid" | "cv" | "videos";
 export default function Profile() {
   const { s, colors } = useUi();const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
   const [mode, setMode] = useState<Mode>("grid");
+  const [profileToolsOpen,setProfileToolsOpen]=useState(false);
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
   const [history, setHistory] = useState<EmploymentEntry[]>([]);
   const [historyLoaded,setHistoryLoaded] = useState(false);
@@ -123,12 +124,18 @@ export default function Profile() {
           <JobinCard card={{...workspace.data.card,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,rating:businessRating.rating,reviewCount:businessRating.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness} ownerId={workspace.data.card.id} employerLink={employerLink}/>
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
           <View style={{width:"100%",maxWidth:520,alignSelf:"center",gap:8}}>
-            <Button title="Mi historial profesional · Agregar empleo" onPress={()=>{setMode("cv");openEmployment();}}/>
-            <Button secondary title="Reseñas de empresas" onPress={()=>router.push("/reviews")}/>
-            <Button secondary title="Certificados y sellos" onPress={()=>router.push("/certificates")}/>
-            <Button secondary title="Oportunidades por ciudad y profesión" onPress={()=>router.push("/opportunities")}/>
-            {!!workspace.data.organization&&<Button secondary title="Mi empresa o institución" onPress={()=>router.push("/company")}/>}
-            {workspace.data.reviewer&&<Button secondary title="Revisar acreditaciones" onPress={()=>router.push("/credential-review")}/>}
+            <Pressable accessibilityRole="button" accessibilityLabel="Más opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>setProfileToolsOpen(v=>!v)} style={{alignSelf:"flex-end",flexDirection:"row",alignItems:"center",gap:6,paddingVertical:9,paddingHorizontal:14,borderWidth:1,borderColor:colors.line,borderRadius:22}}>
+              <Ionicons name="ellipsis-horizontal" size={21} color={colors.ink}/>
+              <Text style={{color:colors.ink,fontWeight:"600"}}>Más opciones</Text>
+              <Ionicons name={profileToolsOpen?"chevron-up":"chevron-down"} size={15} color={colors.ink}/>
+            </Pressable>
+            {profileToolsOpen&&<View style={{gap:8,padding:10,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
+              <Button secondary title="Reseñas de empresas" onPress={()=>{setProfileToolsOpen(false);router.push("/reviews");}}/>
+              <Button secondary title="Certificados y sellos" onPress={()=>{setProfileToolsOpen(false);router.push("/certificates");}}/>
+              <Button secondary title="Oportunidades laborales" onPress={()=>{setProfileToolsOpen(false);router.push("/opportunities");}}/>
+              {!!workspace.data.organization&&<Button secondary title="Mi empresa o institución" onPress={()=>{setProfileToolsOpen(false);router.push("/company");}}/>}
+              {workspace.data.reviewer&&<Button secondary title="Revisar acreditaciones" onPress={()=>{setProfileToolsOpen(false);router.push("/credential-review");}}/>}
+            </View>}
           </View>
         </View> : <ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>}
 
