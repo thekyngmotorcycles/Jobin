@@ -150,7 +150,7 @@ function BusinessFace({card,theme,onEdit}:{card:CardData;theme:ThemeName;onEdit?
   </View>
  </View>;
 }
-export function JobinCard({card,previewTheme,onEditBusiness,ownerId,employerLink}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;ownerId?:string;employerLink?:{id:string;name:string;handle:string}|null}){
+export function JobinCard({card,previewTheme,onEditBusiness,ownerId,showOwnerActions=false,employerLink}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;ownerId?:string;showOwnerActions?:boolean;employerLink?:{id:string;name:string;handle:string}|null}){
  const {theme}=useTheme();const {colors}=useUi();const {width}=useWindowDimensions();
  const [contact,setContact]=useState<{email:string|null;phone:string|null}>({email:null,phone:null});
  useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void loadPublicContact(ownerId).then(value=>{if(live)setContact(value);}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
@@ -185,14 +185,14 @@ export function JobinCard({card,previewTheme,onEditBusiness,ownerId,employerLink
       <Ionicons name="sync-outline" size={16} color={theme==="dark"?jcardCommon.flipInkDark:jcardCommon.editInk}/>
     </View>
    </Pressable>
-   <View style={{flexDirection:"row",gap:10,paddingTop:10}}>
+   {showOwnerActions&&<View style={{flexDirection:"row",gap:10,paddingTop:10}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard" onPress={()=>setShareOpen(true)} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,backgroundColor:colors.ink}}>
       <Ionicons name="share-social-outline" size={20} color={colors.paper}/><Text style={{color:colors.paper,fontWeight:"700"}}>Compartir</Text>
     </Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
       <Ionicons name="create-outline" size={20} color={colors.ink}/><Text style={{color:colors.ink,fontWeight:"700"}}>Editar JCard</Text>
     </Pressable>
-   </View>
+   </View>}
   </View>
   <Modal visible={shareOpen} transparent animationType="fade" onRequestClose={()=>setShareOpen(false)}>
    <SafeAreaView style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}>
