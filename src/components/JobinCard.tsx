@@ -207,7 +207,7 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
     </View>
     <View style={{width:1,height:85,backgroundColor:finish.line,marginHorizontal:1}}/>
     <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:4,borderRadius:7,backgroundColor:jcardCommon.qrPaper,borderWidth:1,borderColor:jcardCommon.qrBorder,alignSelf:"center",flexShrink:0}}>
-     <QRCode value={card.profileUrl} size={60} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
+     <QRCode value={card.profileUrl} size={52} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
     </Pressable>
    </View>
   </View>
