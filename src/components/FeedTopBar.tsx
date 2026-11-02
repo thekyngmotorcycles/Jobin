@@ -25,7 +25,7 @@ export function FeedTopBar({tab,onTab,onPlus,plusLabel,onSearch,overlay=false,vi
    {!videoMode&&icon("notifications-outline","Notificaciones",()=>router.push("/notifications"),unreadActivity>0)}
    <View style={{flex:1,flexDirection:"row",justifyContent:"center",gap:videoMode?8:12}}>
     {tabs.map(item=><Pressable key={item} accessibilityRole="tab" accessibilityState={{selected:tab===item}} onPress={()=>onTab(item)} style={{minHeight:44,justifyContent:"center",borderBottomWidth:tab===item?2:0,borderBottomColor:ink}}>
-     <Text style={{color:tab===item?ink:colors.muted,fontSize:videoMode?14:15,fontWeight:tab===item?"800":"500"}}>{item}</Text>
+     <Text style={{color:tab===item?ink:colors.muted,fontSize:videoMode?14:15,fontWeight:tab===item?"800":"500"}}>{videoMode&&item==="Following"?"Siguiendo":item}</Text>
     </Pressable>)}
    </View>
    {icon("search-outline","Buscar",onSearch)}
