@@ -112,27 +112,21 @@ export default function Profile() {
     <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8 }}>
         <JobinWordmark width={92} style={{ alignSelf: "flex-start" }} />
-        <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" onPress={()=>setProfileToolsOpen(v=>!v)} style={{padding:10}}><Ionicons name="ellipsis-horizontal" size={24} color={colors.ink}/></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>setProfileToolsOpen(v=>!v)} style={{padding:10}}><Ionicons name="ellipsis-horizontal" size={24} color={colors.ink}/></Pressable>
       </View>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
-        {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
-        {workspace.data?.card ? <View style={{gap:10}}>
-          <JobinCard card={{...workspace.data.card,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,rating:businessRating.rating,reviewCount:businessRating.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness} ownerId={workspace.data.card.id} employerLink={employerLink}/>
-          <ProfessionalTrustMark worker={workspace.data.card.id}/>
-          <View style={{width:"100%",maxWidth:520,alignSelf:"center",gap:8}}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Más opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>setProfileToolsOpen(v=>!v)} style={{alignSelf:"flex-end",flexDirection:"row",alignItems:"center",gap:6,paddingVertical:9,paddingHorizontal:14,borderWidth:1,borderColor:colors.line,borderRadius:22}}>
-              <Ionicons name="ellipsis-horizontal" size={21} color={colors.ink}/>
-              <Text style={{color:colors.ink,fontWeight:"600"}}>Más opciones</Text>
-              <Ionicons name={profileToolsOpen?"chevron-up":"chevron-down"} size={15} color={colors.ink}/>
-            </Pressable>
-            {profileToolsOpen&&<View style={{gap:8,padding:10,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
+      {profileToolsOpen&&<View style={{gap:8,padding:10,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
               <Button secondary title="Reseñas de empresas" onPress={()=>{setProfileToolsOpen(false);router.push("/reviews");}}/>
               <Button secondary title="Certificados y sellos" onPress={()=>{setProfileToolsOpen(false);router.push("/certificates");}}/>
               <Button secondary title="Oportunidades laborales" onPress={()=>{setProfileToolsOpen(false);router.push("/opportunities");}}/>
               {!!workspace.data.organization&&<Button secondary title="Mi empresa o institución" onPress={()=>{setProfileToolsOpen(false);router.push("/company");}}/>}
               {workspace.data.reviewer&&<Button secondary title="Revisar acreditaciones" onPress={()=>{setProfileToolsOpen(false);router.push("/credential-review");}}/>}
             </View>}
-          </View>
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
+        {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
+        {workspace.data?.card ? <View style={{gap:10}}>
+          <JobinCard card={{...workspace.data.card,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,rating:businessRating.rating,reviewCount:businessRating.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness} ownerId={workspace.data.card.id} employerLink={employerLink}/>
+          <ProfessionalTrustMark worker={workspace.data.card.id}/>
+
         </View> : <ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>}
 
 
