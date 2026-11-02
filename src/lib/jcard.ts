@@ -28,7 +28,7 @@ export interface CardData {
   seals: readonly JCardSeal[];
   business?: BusinessCardData;
 }
-export interface BusinessCardData { bannerUrl?:string|null; category?:string|null; name:string; opened:string; closed:string; services:string[]; location:string; licenseVerified:boolean; rating:number|null; reviewCount:number; }
+export interface BusinessCardData { excellenceVotes?:Partial<Record<"service"|"prices"|"punctuality"|"professionalism"|"tenure",number>>; excellenceReviewCount?:number; bannerUrl?:string|null; category?:string|null; name:string; opened:string; closed:string; services:string[]; location:string; licenseVerified:boolean; rating:number|null; reviewCount:number; }
 export function displayedRating(rating: number | null, reviewCount: number): number | null {
   if (!reviewCount || rating === null || !Number.isFinite(rating)) return null;
   return Math.round(Math.min(5, Math.max(1, rating)) * 10) / 10;
