@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { Animated, Image, Linking, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import Svg, { Defs, LinearGradient, Rect, Stop, Path, SvgXml } from "react-native-svg";
+import Svg, { Defs, LinearGradient, Rect, Stop, Path, Circle, SvgXml } from "react-native-svg";
 import {WORDMARK_XML} from "../theme/wordmark";
 import QRCode from "react-native-qrcode-svg";
 import { Avatar } from "./social-ui";
@@ -132,19 +132,33 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
   </View>;
 }
 
+function BusinessAward({label,icon,level,finish}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"];level:number;finish:ReturnType<typeof jcardTokens>}){
+ const tone=level===3?jcardCommon.businessGold:level===2?jcardCommon.businessSilver:level===1?jcardCommon.businessBronze:finish.secondary;
+ const points=Array.from({length:48},(_,i)=>{const t=i*Math.PI/24-Math.PI/2;const radius=i%2?23:25;return (27+radius*Math.cos(t)).toFixed(2)+","+(27+radius*Math.sin(t)).toFixed(2);}).join(" ");
+ const path="M"+points.replaceAll(" "," L")+" Z";
+ return <View accessibilityLabel={label+": "+(level===0?"Sin acreditar":level===1?"Bronce":level===2?"Plata":"Oro")} style={{flex:1,minWidth:0,alignItems:"center"}}>
+  <View style={{width:"100%",aspectRatio:1,alignItems:"center",justifyContent:"center"}}>
+   <Svg width="100%" height="100%" viewBox="0 0 54 54" style={{position:"absolute"}}><Path d={path} fill={finish.sealFill} stroke={tone} strokeWidth="1.4"/><Circle cx="27" cy="27" r="20.5" fill={finish.start} stroke={tone} strokeOpacity={0.55} strokeWidth="0.8"/></Svg>
+   <Ionicons name={icon} size={21} color={level===0?finish.secondary:tone}/>
+  </View>
+  <View style={{marginTop:-3,width:"115%",minHeight:19,borderRadius:5,borderWidth:0.6,borderColor:tone,backgroundColor:finish.sealFill,justifyContent:"center",paddingHorizontal:1}}>
+   <Text adjustsFontSizeToFit minimumFontScale={0.65} numberOfLines={2} style={{fontSize:6.3,fontWeight:"900",lineHeight:7.3,textAlign:"center",color:finish.text}}>{label.toUpperCase()}</Text>
+  </View>
+  <Text numberOfLines={1} style={{fontSize:10,color:tone,letterSpacing:-1}}>{level===0?"☆☆☆":"★".repeat(level)+"☆".repeat(3-level)}</Text>
+ </View>;
+}
 function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;contact?:{email:string|null;phone:string|null};onQr?:()=>void}){
  const b=card.business;const finish=jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0));
  const company=!!b?.name.trim();const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
  const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
  const category=b?.category?.trim()||(/hvac|aire acondicionado|climatiz|refrigeraci/i.test([card.role,...(b?.services??[])].join(" "))?"Climatización":b?.services?.[0]||"Servicios profesionales");
  const awards=[
-  {label:"Atención",icon:"headset-outline" as const,level:rating===null?0:rating>=4.7?3:rating>=4.2?2:rating>=3.5?1:0},
-  {label:"Precios",icon:"pricetag-outline" as const,level:0},
+  {label:"Atención al cliente",icon:"headset-outline" as const,level:rating===null?0:rating>=4.7?3:rating>=4.2?2:rating>=3.5?1:0},
+  {label:"Precios competitivos",icon:"cash-outline" as const,level:0},
   {label:"Puntualidad",icon:"calendar-outline" as const,level:0},
-  {label:"Profesionalismo",icon:"ribbon-outline" as const,level:0},
-  {label:"Trayectoria",icon:"time-outline" as const,level:years>=10?3:years>=5?2:years>=1?1:0},
+  {label:"Profesionalismo",icon:"person-outline" as const,level:0},
+  {label:"En el mercado",icon:"trophy-outline" as const,level:years>=10?3:years>=5?2:years>=1?1:0},
  ];
- const sealColor=(level:number)=>level===3?jcardCommon.businessGold:level===2?jcardCommon.businessSilver:level===1?jcardCommon.businessBronze:finish.secondary;
  return <View style={{flex:1,borderRadius:jcardLayout.radius,backgroundColor:finish.start,borderWidth:1,borderColor:finish.line,overflow:"hidden"}}>
   <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" viewBox="0 0 400 650" preserveAspectRatio="none" pointerEvents="none">
    {Array.from({length:15},(_,i)=><Path key={"left"+i} d={`M ${-45+i*10} 330 C ${42+i*4} 235, ${-20+i*8} 116, ${78+i*7} -25`} stroke={finish.text} strokeOpacity={0.12+(i%3)*0.018} strokeWidth={0.8} fill="none"/>)}
@@ -153,41 +167,43 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
   </Svg>
   <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
   <View style={{flex:1,padding:14,gap:10}}>
-   <View style={{height:118,marginTop:0,marginHorizontal:-14,position:"relative",flexDirection:"row",alignItems:"center"}}>
+   <View style={{height:118,marginTop:0,marginHorizontal:0,position:"relative",flexDirection:"row",alignItems:"center"}}>
     <View style={{position:"absolute",left:0,right:0,height:94,top:12,borderRadius:12,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
      {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:
       <Svg width="100%" height="100%" viewBox="0 0 300 76" preserveAspectRatio="none"><Defs><LinearGradient id="businessBanner" x1="0" y1="0" x2="1" y2="1"><Stop offset="0%" stopColor={finish.sealFill}/><Stop offset="100%" stopColor={finish.end}/></LinearGradient></Defs><Rect width="300" height="76" fill="url(#businessBanner)"/></Svg>}
     </View>
-    <View style={{position:"absolute",left:14,top:16,borderRadius:46,borderWidth:3,borderColor:finish.start,padding:3,backgroundColor:finish.start}}>
+    <View style={{position:"absolute",left:4,top:16,borderRadius:46,borderWidth:3,borderColor:finish.start,padding:3,backgroundColor:finish.start}}>
      <Avatar uri={card.avatar} name={company?b!.name:card.name} size={78}/>
     </View>
    </View>
-   <View style={{flexDirection:"row",justifyContent:"space-between",gap:8,marginTop:4}}>
-    <View style={{flex:1,gap:8}}>
-     <Text numberOfLines={2} style={{fontSize:22,fontWeight:"800",color:finish.text}}>{company?b!.name:card.name}</Text>
-     <Text style={{fontSize:13,fontWeight:"600",color:finish.secondary}}>{company?category:card.role}</Text>
-     {!!contact?.email&&<Text numberOfLines={1} style={{fontSize:11,color:finish.text}}>{contact.email}</Text>}
-     {!!contact?.phone&&<Text numberOfLines={1} style={{fontSize:11,color:finish.text}}>{contact.phone}</Text>}
-     {!!b?.location&&<Text numberOfLines={2} style={{fontSize:12,color:finish.secondary}}>{b.location}</Text>}
+   <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"flex-start",gap:7,marginTop:4}}>
+    <View style={{flex:1,minWidth:0,gap:7}}>
+     <View style={{flexDirection:"row",alignItems:"center",gap:5}}>
+      <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75} style={{flexShrink:1,fontSize:20,lineHeight:23,fontWeight:"800",color:finish.text}}>{company?b!.name:card.name}</Text>
+      <Ionicons name="checkmark-circle" size={18} color={b?.licenseVerified?jcardCommon.verifiedBubble:finish.secondary} accessibilityLabel={b?.licenseVerified?"Empresa verificada":"Empresa sin verificar"}/>
+     </View>
+     <View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="snow-outline" size={17} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:12,fontWeight:"600",color:finish.secondary}}>{company?category:card.role}</Text></View>
+     {!!contact?.email&&<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="mail-outline" size={16} color={finish.secondary}/><Text numberOfLines={1} style={{flex:1,fontSize:10.5,color:finish.text}}>{contact.email}</Text></View>}
+     {!!contact?.phone&&<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="call-outline" size={16} color={finish.secondary}/><Text numberOfLines={1} style={{flex:1,fontSize:11,color:finish.text}}>{contact.phone}</Text></View>}
+     {!!b?.location&&<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="location-outline" size={16} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:11,color:finish.secondary}}>{b.location}</Text></View>}
     </View>
-    <View style={{alignItems:"flex-end",gap:6,maxWidth:"40%"}}>
-     <Text style={{color:finish.text,fontSize:15,fontWeight:"800"}}>{rating===null?"Sin reseñas":`★ ${rating.toFixed(1)}`}</Text>
+    <View style={{alignItems:"flex-end",gap:5,maxWidth:"39%"}}>
+     <View style={{borderRadius:20,borderWidth:1,borderColor:finish.line,paddingVertical:4,paddingHorizontal:6,backgroundColor:finish.sealFill,alignItems:"center"}}>
+      <Text numberOfLines={1} adjustsFontSizeToFit style={{color:finish.text,fontSize:13,fontWeight:"800"}}>{rating===null?"Sin reseñas":rating.toFixed(1)+" ★★★★★"}</Text>
+     </View>
      <Text style={{color:finish.secondary,fontSize:10}}>{b?.reviewCount??0} reseñas</Text>
-     {!!b?.opened&&<Text style={{color:finish.secondary,fontSize:11}}>Desde {b.opened}</Text>}
-     {!!b?.licenseVerified&&<Ionicons name="checkmark-circle" size={19} color={jcardCommon.verifiedBubble}/>}
+     {!!b?.opened&&<View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="calendar-outline" size={13} color={finish.secondary}/><Text style={{color:finish.secondary,fontSize:10}}>Desde {b.opened}</Text></View>}
     </View>
    </View>
    <View style={{flex:1}}/>
+   <View style={{height:1,backgroundColor:finish.line,opacity:0.7,marginBottom:4}}/>
    <View style={{flexDirection:"row",alignItems:"flex-end",gap:7}}>
-    <View style={{flex:1,flexDirection:"row",justifyContent:"space-between",gap:2}}>
-     {awards.map(a=><View key={a.label} accessibilityLabel={a.label+": "+(a.level===0?"Sin acreditar":a.level===1?"Bronce":a.level===2?"Plata":"Oro")} style={{flex:1,alignItems:"center",gap:3}}>
-      <View style={{width:37,height:37,borderRadius:20,borderWidth:2,borderColor:sealColor(a.level),backgroundColor:finish.start,alignItems:"center",justifyContent:"center",opacity:a.level===0?0.5:1}}><Ionicons name={a.icon} size={20} color={sealColor(a.level)}/></View>
-      <Text numberOfLines={2} style={{fontSize:7.5,color:finish.text,textAlign:"center"}}>{a.label}</Text>
-      <Text style={{fontSize:8,color:sealColor(a.level)}}>{a.level===0?"—":a.level===1?"I":a.level===2?"II":"III"}</Text>
-     </View>)}
+    <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"flex-start",gap:2}}>
+     {awards.map(a=><BusinessAward key={a.label} {...a} finish={finish}/>)}
     </View>
-    <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:4,borderRadius:5,backgroundColor:jcardCommon.qrPaper}}>
-     <QRCode value={card.profileUrl} size={70} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
+    <View style={{width:1,height:78,backgroundColor:finish.line,marginHorizontal:1}}/>
+    <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:3,borderRadius:5,backgroundColor:jcardCommon.qrPaper}}>
+     <QRCode value={card.profileUrl} size={65} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
     </Pressable>
    </View>
   </View>
