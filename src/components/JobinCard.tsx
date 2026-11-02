@@ -174,8 +174,8 @@ export function JobinCard({card,previewTheme,onEditBusiness,ownerId,employerLink
    </Animated.View>
    </View>
    <Pressable accessibilityRole="button" accessibilityLabel={back?"Girar JCard a cara personal":"Girar JCard para ver el reverso"} accessibilityHint="Toca o desliza horizontalmente la tarjeta para girarla" onPress={toggle} style={{alignSelf:"center",width:"68%",height:31,justifyContent:"center",alignItems:"center",marginTop:1}}>
-    <View pointerEvents="none" style={{position:"absolute",top:0,width:"90%",height:12,borderRadius:100,backgroundColor:"rgba(0,0,0,0.09)",transform:[{scaleX:0.92}]}}/>
-    <View pointerEvents="none" style={{width:86,height:21,borderRadius:30,alignItems:"center",justifyContent:"center",backgroundColor:"rgba(0,0,0,0.035)",borderWidth:1,borderColor:"rgba(0,0,0,0.10)"}}>
+    <View pointerEvents="none" style={{position:"absolute",top:0,width:"90%",height:12,borderRadius:100,backgroundColor:jcardCommon.flipShadow,transform:[{scaleX:0.92}]}}/>
+    <View pointerEvents="none" style={{width:86,height:21,borderRadius:30,alignItems:"center",justifyContent:"center",backgroundColor:jcardCommon.flipSurface,borderWidth:1,borderColor:jcardCommon.flipOutline}}>
       <Ionicons name="sync-outline" size={16} color={jcardCommon.editInk}/>
     </View>
    </Pressable>
