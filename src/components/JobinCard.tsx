@@ -132,21 +132,62 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
   </View>;
 }
 
-function BusinessFace({card,theme,onEdit}:{card:CardData;theme:ThemeName;onEdit?:()=>void}){
- const {s}=useUi();const b=card.business;const finish=jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0));
- const company=!!b?.name.trim();
- return <View style={[s.panel,{flex:1,padding:22,borderRadius:jcardLayout.radius,backgroundColor:finish.start,borderColor:finish.line,gap:15,justifyContent:"space-between"}]}>
-  <View style={{gap:10}}>
-   <Text style={{fontSize:19,fontWeight:"700",color:finish.text,textAlign:"center"}}>{company?"JCard · Negocio":"JCard · Presentación profesional"}</Text>
-   <Text style={{fontSize:23,fontWeight:"700",color:finish.text}}>{company?b?.name:card.name}</Text>
-   {company?<Text style={{color:finish.secondary}}>{b?.opened||"Apertura no indicada"} – {b?.closed||"Actualidad"}</Text>:<Text style={{color:finish.secondary}}>{card.role}</Text>}
-   <Text style={{color:finish.text}}>{b?.services.length?b.services.join(" · "):"Agrega hasta tres servicios que ofreces"}</Text>
-   <Text style={{color:finish.secondary}}>{b?.location||"Ubicación por completar"}</Text>
-   <Text style={{color:finish.secondary}}>★ {displayedRating(b?.rating??null,b?.reviewCount??0)?.toFixed(1)??"Sin categoría"} · {b?.reviewCount??0} reseñas del negocio</Text>
-  </View>
-  <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
-   <View/>
-   {b?.licenseVerified&&<View accessibilityLabel="Licencia empresarial verificada" style={{width:28,height:28,borderRadius:14,backgroundColor:jcardCommon.verifiedBubble,alignItems:"center",justifyContent:"center"}}><Ionicons name="checkmark" size={19} color={jcardCommon.qrPaper}/></View>}
+function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;contact?:{email:string|null;phone:string|null};onQr?:()=>void}){
+ const b=card.business;const finish=jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0));
+ const company=!!b?.name.trim();const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
+ const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
+ const category=/hvac|aire acondicionado|climatiz|refrigeraci/i.test([card.role,...(b?.services??[])].join(" "))?"Climatización":b?.services?.[0]||"Servicios profesionales";
+ const awards=[
+  {label:"Atención",icon:"headset-outline" as const,level:rating===null?0:rating>=4.7?3:rating>=4.2?2:rating>=3.5?1:0},
+  {label:"Precios",icon:"pricetag-outline" as const,level:0},
+  {label:"Puntualidad",icon:"calendar-outline" as const,level:0},
+  {label:"Profesionalismo",icon:"ribbon-outline" as const,level:0},
+  {label:"Trayectoria",icon:"time-outline" as const,level:years>=10?3:years>=5?2:years>=1?1:0},
+ ];
+ const sealColor=(level:number)=>level===3?"#c99a38":level===2?"#a9b0bb":level===1?"#a36b43":finish.secondary;
+ return <View style={{flex:1,borderRadius:jcardLayout.radius,backgroundColor:finish.start,borderWidth:1,borderColor:finish.line,overflow:"hidden"}}>
+  <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" viewBox="0 0 400 650" preserveAspectRatio="none" pointerEvents="none">
+   {Array.from({length:15},(_,i)=><Path key={"left"+i} d={`M ${-45+i*10} 330 C ${42+i*4} 235, ${-20+i*8} 116, ${78+i*7} -25`} stroke={finish.text} strokeOpacity={0.12+(i%3)*0.018} strokeWidth={0.8} fill="none"/>)}
+   {Array.from({length:16},(_,i)=><Path key={"bottom"+i} d={`M ${-45+i*13} 675 C ${60+i*8} 540, ${235+i*4} 555, ${440+i*2} 395`} stroke={finish.text} strokeOpacity={0.13+(i%4)*0.018} strokeWidth={0.8} fill="none"/>)}
+   <Path d="M-20 420 C105 250 225 300 420 95" stroke={finish.text} strokeOpacity={0.12} strokeWidth="2" fill="none"/>
+  </Svg>
+  <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
+  <View style={{flex:1,padding:14,gap:10}}>
+   <View style={{flexDirection:"row",alignItems:"center",gap:9,marginTop:16}}>
+    <View style={{borderRadius:42,borderWidth:2,borderColor:finish.line,padding:2}}><Avatar uri={card.avatar} name={company?b!.name:card.name} size={72}/></View>
+    <View style={{flex:1,height:64,borderRadius:12,borderWidth:1,borderColor:finish.line,backgroundColor:finish.sealFill,overflow:"hidden",justifyContent:"center",alignItems:"center"}}>
+     <Text numberOfLines={1} style={{color:finish.sealText,fontSize:15,fontWeight:"700",textAlign:"center",paddingHorizontal:6}}>{company?b!.name:card.name}</Text>
+     <Text numberOfLines={1} style={{color:finish.sealText,fontSize:10,opacity:0.8}}>{category}</Text>
+    </View>
+   </View>
+   <View style={{flexDirection:"row",justifyContent:"space-between",gap:8}}>
+    <View style={{flex:1,gap:8}}>
+     <Text numberOfLines={2} style={{fontSize:22,fontWeight:"800",color:finish.text}}>{company?b!.name:card.name}</Text>
+     <Text style={{fontSize:13,fontWeight:"600",color:finish.secondary}}>{company?category:card.role}</Text>
+     {!!contact?.email&&<Text numberOfLines={1} style={{fontSize:11,color:finish.text}}>{contact.email}</Text>}
+     {!!contact?.phone&&<Text numberOfLines={1} style={{fontSize:11,color:finish.text}}>{contact.phone}</Text>}
+     {!!b?.location&&<Text numberOfLines={2} style={{fontSize:12,color:finish.secondary}}>{b.location}</Text>}
+    </View>
+    <View style={{alignItems:"flex-end",gap:6,maxWidth:"40%"}}>
+     <Text style={{color:finish.text,fontSize:15,fontWeight:"800"}}>{rating===null?"Sin reseñas":`★ ${rating.toFixed(1)}`}</Text>
+     <Text style={{color:finish.secondary,fontSize:10}}>{b?.reviewCount??0} reseñas</Text>
+     {!!b?.opened&&<Text style={{color:finish.secondary,fontSize:11}}>Desde {b.opened}</Text>}
+     {!!b?.licenseVerified&&<Ionicons name="checkmark-circle" size={19} color={jcardCommon.verifiedBubble}/>}
+    </View>
+   </View>
+   <View style={{flex:1}}/>
+   <View style={{flexDirection:"row",alignItems:"flex-end",gap:7}}>
+    <View style={{flex:1,flexDirection:"row",justifyContent:"space-between",gap:2}}>
+     {awards.map(a=><View key={a.label} accessibilityLabel={a.label+": "+(a.level===0?"Sin acreditar":a.level===1?"Bronce":a.level===2?"Plata":"Oro")} style={{flex:1,alignItems:"center",gap:3}}>
+      <View style={{width:37,height:37,borderRadius:20,borderWidth:2,borderColor:sealColor(a.level),backgroundColor:finish.start,alignItems:"center",justifyContent:"center",opacity:a.level===0?0.5:1}}><Ionicons name={a.icon} size={20} color={sealColor(a.level)}/></View>
+      <Text numberOfLines={2} style={{fontSize:7.5,color:finish.text,textAlign:"center"}}>{a.label}</Text>
+      <Text style={{fontSize:8,color:sealColor(a.level)}}>{a.level===0?"—":a.level===1?"I":a.level===2?"II":"III"}</Text>
+     </View>)}
+    </View>
+    <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:4,borderRadius:5,backgroundColor:jcardCommon.qrPaper}}>
+     <QRCode value={card.profileUrl} size={70} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
+    </Pressable>
+   </View>
   </View>
  </View>;
 }
@@ -156,11 +197,13 @@ export function JobinCard({card,previewTheme,onEditBusiness,ownerId,showOwnerAct
  useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void loadPublicContact(ownerId).then(value=>{if(live)setContact(value);}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
  const [back,setBack]=useState(false),[shareOpen,setShareOpen]=useState(false),[qrOpen,setQrOpen]=useState(false),[faceHeight,setFaceHeight]=useState(340);
  const rotation=useRef(new Animated.Value(0)).current;
- const toggle=()=>{const next=!back;setBack(next);Animated.timing(rotation,{toValue:next?180:0,useNativeDriver:true,duration:500}).start();};
- const responder=useRef(PanResponder.create({onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>28&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,onPanResponderRelease:(_,g)=>{if(Math.abs(g.dx)>65)toggleRef.current();}})).current;
- const toggleRef=useRef(toggle);toggleRef.current=toggle;
- const frontRotate=rotation.interpolate({inputRange:[0,180],outputRange:["0deg","180deg"]});
- const backRotate=rotation.interpolate({inputRange:[0,180],outputRange:["180deg","360deg"]});
+ const angle=useRef(0);
+ const rotate=(direction:number)=>{angle.current+=direction*180;setBack(v=>!v);Animated.timing(rotation,{toValue:angle.current,useNativeDriver:true,duration:500}).start();};
+ const toggle=()=>rotate(1);
+ const responder=useRef(PanResponder.create({onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>28&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,onPanResponderRelease:(_,g)=>{if(Math.abs(g.dx)>65)toggleRef.current(g.dx<0?1:-1);}})).current;
+ const toggleRef=useRef(rotate);toggleRef.current=rotate;
+ const frontRotate=rotation.interpolate({inputRange:[-3600,3600],outputRange:["-3600deg","3600deg"]});
+ const backRotate=rotation.interpolate({inputRange:[-3600,3600],outputRange:["-3420deg","3780deg"]});
  const cardTheme=previewTheme??theme;
  const share=()=>void Share.share({message:`JCard de ${card.name} · ${card.profileUrl}`,url:card.profileUrl,title:`JCard · ${card.name}`});
  return <>
@@ -170,7 +213,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,ownerId,showOwnerAct
     <CardFace card={card} theme={cardTheme} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)}/>
    </Animated.View>
    <Animated.View pointerEvents={back?"auto":"none"} style={{position:"absolute",top:0,left:0,right:0,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:backRotate}]}}>
-    <View style={{height:faceHeight}}><BusinessFace card={card} theme={cardTheme} onEdit={onEditBusiness}/></View>
+    <View style={{height:faceHeight}}><BusinessFace card={card} theme={cardTheme} contact={contact} onQr={()=>setQrOpen(true)}/></View>
    </Animated.View>
 
    </View>
