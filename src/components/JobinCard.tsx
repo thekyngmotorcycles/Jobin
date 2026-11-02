@@ -152,7 +152,7 @@ function BusinessAward({label,icon,level,finish}:{label:string;icon:React.Compon
 function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;contact?:{email:string|null;phone:string|null};onQr?:()=>void}){
  const b=card.business;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:businessCardPaper.background,end:businessCardPaper.background,text:businessCardPaper.ink,secondary:businessCardPaper.secondary,line:businessCardPaper.border,sealFill:businessCardPaper.muted};
  const company=!!b?.name.trim();const businessName=(company?b!.name:card.name).trim().slice(0,60);const nameFontSize=Math.max(14,Math.min(21,Math.round(400/Math.max(19,businessName.length))));const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
- const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
+ const reviewCount=b?.reviewCount??0;const ratingUnlocked=reviewCount>=10&&rating!==null;const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
  const category=b?.category?.trim()||(/hvac|aire acondicionado|climatiz|refrigeraci/i.test([card.role,...(b?.services??[])].join(" "))?"Climatización":b?.services?.[0]||"Servicios profesionales");
  const art=businessCategoryArt(category);
  const voteLevel=(key:"service"|"prices"|"punctuality"|"professionalism"|"tenure")=>{const total=b?.excellenceReviewCount??0;const percent=total>0?100*(b?.excellenceVotes?.[key]??0)/total:0;return (b?.reviewCount??0)<20||!(b?.excellenceVotes?.[key]??0)?0:percent>63?3:percent>33?2:1;};
