@@ -18,10 +18,11 @@ export const HOME_MENU_ITEMS=[
  {slug:"icono-app",label:"Ícono de la app",icon:"apps-outline",description:"Personaliza el ícono de Jobin."},
  {slug:"uso-datos",label:"Uso de datos del celular",icon:"phone-portrait-outline",description:"Administra el consumo de datos móviles."},
 ] as const;
-export function HomeSideMenu({visible,onClose}:{visible:boolean;onClose:()=>void}){
+export function HomeSideMenu({visible,onClose,onNavigate}:{visible:boolean;onClose:()=>void;onNavigate?:()=>void}){
  const {colors}=useUi();const {width}=useWindowDimensions();const panelWidth=Math.min(width*0.88,410);
  const touchStart=useRef<{x:number;y:number}|null>(null);
  const [mounted,setMounted]=useState(visible);
+ const [atBottom,setAtBottom]=useState(false);
  const slide=useRef(new Animated.Value(visible?1:0)).current;
  const backdrop=useRef(new Animated.Value(visible?1:0)).current;
  useEffect(()=>{
@@ -38,15 +39,15 @@ export function HomeSideMenu({visible,onClose}:{visible:boolean;onClose:()=>void
   <View style={{flex:1,flexDirection:"row"}}>
    <Animated.View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:colors.scrim,opacity:backdrop}}/>
    <Animated.View style={{width:panelWidth,transform:[{translateX:slide.interpolate({inputRange:[0,1],outputRange:[-panelWidth,0]})}]}}>
-    <SafeAreaView edges={["top","bottom"]} onTouchStart={event=>{touchStart.current={x:event.nativeEvent.pageX,y:event.nativeEvent.pageY};}} onTouchEnd={event=>{const start=touchStart.current;if(start&&start.x-event.nativeEvent.pageX>70&&Math.abs(start.y-event.nativeEvent.pageY)<70)onClose();touchStart.current=null;}} style={{flex:1,backgroundColor:opacity(colors.paper,0.69),borderTopRightRadius:18,borderBottomRightRadius:18,overflow:"hidden"}}>
-     <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:22,paddingBottom:32,gap:10}}>
+    <SafeAreaView edges={["top","bottom"]} onTouchStart={event=>{touchStart.current={x:event.nativeEvent.pageX,y:event.nativeEvent.pageY};}} onTouchEnd={event=>{const start=touchStart.current;if(start&&start.x-event.nativeEvent.pageX>70&&Math.abs(start.y-event.nativeEvent.pageY)<70)onClose();touchStart.current=null;}} style={{flex:1,backgroundColor:opacity(colors.paper,0.69),borderTopRightRadius:18,borderBottomRightRadius:atBottom?18:0,overflow:"hidden"}}>
+     <ScrollView onScroll={event=>{const {layoutMeasurement,contentOffset,contentSize}=event.nativeEvent;setAtBottom(contentOffset.y+layoutMeasurement.height>=contentSize.height-12);}} scrollEventThrottle={100} contentContainerStyle={{paddingHorizontal:18,paddingTop:22,paddingBottom:32,gap:10,alignItems:"stretch"}}>
       <View style={{flexDirection:"row",alignItems:"flex-start",justifyContent:"space-between",paddingBottom:16,gap:8}}>
        <Text accessibilityRole="header" style={{color:colors.ink,fontWeight:"700",fontSize:22,lineHeight:30,flex:1}}>Configuración y privacidad</Text>
        <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={onClose} style={{padding:8}}><Text style={{color:colors.ink,fontSize:24}}>×</Text></Pressable>
       </View>
       {HOME_MENU_ITEMS.map(item=><Pressable key={item.slug} accessibilityRole="button" accessibilityLabel={item.label}
-       onPress={()=>{onClose();router.push({pathname:"/menu/[section]",params:{section:item.slug}});}}
-       style={({pressed})=>({flexDirection:"row",alignItems:"center",paddingHorizontal:14,paddingVertical:16,minHeight:60,gap:14,borderRadius:12,backgroundColor:opacity(colors.paper,0.85),opacity:pressed?0.65:1})}>
+       onPress={()=>{onNavigate?.();onClose();router.push({pathname:"/menu/[section]",params:{section:item.slug}});}}
+       style={({pressed})=>({flexDirection:"row",alignItems:"center",paddingHorizontal:14,paddingVertical:16,minHeight:60,gap:14,borderRadius:12,backgroundColor:opacity(colors.paper,0.85),width:"100%",alignSelf:"center",opacity:pressed?0.65:1})}>
        <View style={{width:32,alignItems:"center",flexShrink:0}}><JobinMenuIcon name={item.slug} size={25} color={colors.ink}/></View>
        <Text style={{color:colors.ink,fontSize:16,flex:1,fontWeight:"600"}}>{item.label}</Text>
       </Pressable>)}
