@@ -31,7 +31,6 @@ function languageDetails(name:string,fluency:number){
 function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employerLink }: { card: CardData; theme: ThemeName; expanded?: boolean; onEdit?: () => void; onQr?: () => void; contact?:{email:string|null;phone:string|null}; employerLink?:{id:string;name:string;handle:string}|null }) {
   const { s, fs } = useUi();
   const { fontScale } = useWindowDimensions();
-  const [contentWidth, setContentWidth] = useState(0);
   const gradientId = "jcard" + useId().replace(/[^a-zA-Z0-9]/g, "");
   const shineId=gradientId+"shine";
   const finish = jcardTokens(theme, jcardTier(card.rating, card.reviewCount));
@@ -42,10 +41,6 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
   const primaryProfession=card.role.trim().replace(/^Técnico HVAC\s*\/\s*climatización y aire acondicionado$/i,"Técnico HVAC").replace(/\s*[-–/]\s*aire acondicionado\s*$/i,"").trim();
   const primarySeal=card.seals.find(seal=>/hvac/i.test(primaryProfession)?/hvac|aire acondicionado/i.test(seal.profession):seal.profession.trim().toLocaleLowerCase()===primaryProfession.toLocaleLowerCase());
   const secondarySeals=card.seals.filter(seal=>!(/hvac/i.test(primaryProfession)&&/hvac|aire acondicionado/i.test(seal.profession))&&seal.profession.trim().toLocaleLowerCase()!==primaryProfession.toLocaleLowerCase());
-  const rows = sealRows(secondarySeals);
-  const columns = Math.max(1, ...rows.map(row => row.length));
-  const sealGap = 5;
-  const sealWidth = Math.min(72,Math.max(48,(contentWidth - (columns - 1) * sealGap) / columns));
   const bodySize = Math.max(12, fs(expanded ? 14 : 13));
   const lineStyle = { color:finish.text, fontSize:bodySize, lineHeight:bodySize * 1.5 };
   return <View style={[s.panel, { padding:0, gap:0, borderRadius:jcardLayout.radius, borderColor:finish.line, backgroundColor:finish.start, overflow:"hidden" }]}>
@@ -82,9 +77,13 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
       </View>
 
       <View style={{ gap:5 }}>
-        <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[s.h3, { color:finish.text, fontSize:Math.max(18,fs(expanded ? 20 : 19)), lineHeight:Math.max(25,fs(expanded ? 28 : 27)) }]}>
-          {card.name}
-        </Text>
+        <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
+          <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[s.h3,{color:finish.text,fontSize:Math.max(18,fs(expanded?20:19)),lineHeight:Math.max(25,fs(expanded?28:27)),flex:1,flexShrink:1}]}>{card.name}</Text>
+          {!!card.years&&<Pressable accessibilityRole="button" accessibilityLabel="Información sobre experiencia general" onPress={()=>setInfo("Experiencia general\nEs el tiempo total trabajado en todas las profesiones y sectores registrados. Los períodos que coinciden se cuentan una sola vez.")} style={{alignItems:"flex-end",maxWidth:"38%"}}>
+            <Text style={{fontSize:11,fontWeight:"600",color:finish.secondary,textAlign:"right"}}>{card.years} {card.years===1?"año":"años"}</Text>
+            <Text style={{fontSize:9,color:finish.secondary,textAlign:"right"}}>Experiencia general</Text>
+          </Pressable>}
+        </View>
         <Text style={{color:finish.secondary,fontSize:11}}>@{card.handle}</Text>
         <View style={{flexDirection:"row",alignItems:"center",gap:7,width:"100%"}}>
           <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[lineStyle,{fontWeight:"600",flexShrink:1,flexGrow:0}]}>{primaryProfession}{!!card.primarySpecialties?.length?" / Especializado":""}</Text>
@@ -93,7 +92,9 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
           </Pressable>
         </View>
         <View style={{flexDirection:"row",alignItems:"center",flexWrap:"wrap",gap:8}}>
-          {!!card.years&&<Pressable accessibilityRole="button" accessibilityLabel="Información sobre experiencia general" onPress={()=>setInfo("Experiencia general\nEs el tiempo total trabajado en todas las profesiones y sectores registrados. Los períodos que coinciden se cuentan una sola vez.")}><Text style={{color:finish.secondary,fontSize:11,textDecorationLine:"underline"}}>{card.years} {card.years===1?"año":"años"} de experiencia ⓘ</Text></Pressable>}
+          <Pressable accessibilityRole="button" accessibilityLabel="Experiencia en la profesión principal" onPress={()=>setInfo("Experiencia en "+primaryProfession+"\n"+(primarySeal?.months?experienceLabel(primarySeal.months):"Sin experiencia registrada")+"\nSe calcula a partir de los períodos laborales asociados a esta profesión, sin duplicar meses coincidentes.")}>
+            <Text style={{color:finish.secondary,fontSize:11,textDecorationLine:"underline"}}>{primarySeal?.months?experienceLabel(primarySeal.months):"Sin experiencia registrada"} · Profesión principal</Text>
+          </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="Información sobre disponibilidad" onPress={()=>setInfo(card.status==="ACTIVE"?"Trabajando actualmente\nLa persona indica que tiene un trabajo activo. Esto no significa que Jobin haya confirmado su relación laboral.":"Disponible para trabajar\nLa persona indica que está abierta a nuevas oportunidades laborales o solicitudes de clientes.")}><Text style={{color:finish.text,fontWeight:"700",fontSize:10,letterSpacing:0.7,textDecorationLine:"underline"}}>{card.status==="ACTIVE"?"TRABAJANDO":"DISPONIBLE"} ⓘ</Text></Pressable>
         </View>
         {!!contact?.email&&<Pressable accessibilityRole="link" accessibilityLabel={"Enviar correo a "+contact.email} onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(contact.email!)).catch(()=>setInfo("No se encontró una aplicación de correo disponible."))} onLongPress={()=>void Share.share({message:contact.email!})}><Text selectable style={[lineStyle,{textDecorationLine:"underline"}]}>{contact.email}</Text></Pressable>}
@@ -101,27 +102,31 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
 
         {card.status==="ACTIVE"&&employerLink&&<Pressable accessibilityRole="link" onPress={()=>router.push({pathname:"/company",params:{id:employerLink.id}})}><Text style={[lineStyle,{textDecorationLine:"underline"}]}>Trabaja en {employerLink.name} · @{employerLink.handle} ↗</Text><Text style={{fontSize:10,color:finish.secondary}}>Vínculo laboral verificado por la empresa</Text></Pressable>}
 
-        <Text style={{fontSize:10,color:finish.secondary,textAlign:"center",letterSpacing:1.5,marginTop:9}}>Idiomas</Text>
-        <View style={{flexDirection:"row",flexWrap:"wrap",gap:10,paddingTop:2}}>{card.languages.map((language,index)=><Pressable key={language.name+index} accessibilityRole="button" accessibilityLabel={"Información de idioma "+language.name+", "+languageLabel(language.fluency)} onPress={()=>setInfo(languageDetails(language.name,language.fluency))} style={{alignItems:"center",gap:3,padding:3}}><LanguageRing name={language.name} value={language.fluency} color={finish.text} track={finish.line}/><Text style={{fontSize:10,color:finish.secondary,textDecorationLine:"underline"}}>{language.name} ⓘ</Text></Pressable>)}</View>
       </View>
-
-      {secondarySeals.length>0&&<View onLayout={event => setContentWidth(event.nativeEvent.layout.width)} style={{ paddingTop:12, borderTopWidth:1, borderTopColor:finish.line }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityLabel="Sellos profesionales" contentContainerStyle={{ minWidth:"100%" }}>
-          <View style={{ gap:sealGap }}>
-            {rows.map((row, index) => <View key={index} style={{ flexDirection:"row", gap:sealGap }}>
-              {row.map(seal => <Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\nEspecialidades: "+(seal.specialties?.length?seal.specialties.join(", "):"No declaradas")+"\nExperiencia registrada: "+experienceLabel(seal.months??0)+".\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:sealWidth,height:70,alignItems:"center",justifyContent:"center",gap:2}}>
-                <View style={{width:54,height:54,borderRadius:27,borderWidth:2,borderColor:seal.verified?finish.sealFill:finish.line,backgroundColor:finish.pendingFill,alignItems:"center",justifyContent:"center",elevation:4,shadowColor:finish.text,shadowOpacity:0.15,shadowRadius:5}}>
-                 <View style={{width:46,height:46,borderRadius:23,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center",gap:1}}>
+      <View style={{flexDirection:"row",borderTopWidth:1,borderTopColor:finish.line,paddingTop:12,minHeight:105}}>
+        <View style={{flex:1,paddingRight:7,gap:10}}>
+          <Text style={{fontSize:10,color:finish.secondary,textAlign:"center",letterSpacing:1.2}}>Idiomas</Text>
+          <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:8}}>
+            {card.languages.map((language,index)=><Pressable key={language.name+index} accessibilityRole="button" accessibilityLabel={"Idioma "+language.name+", "+languageLabel(language.fluency)+". Ver detalles"} onPress={()=>setInfo(languageDetails(language.name,language.fluency))} style={{alignItems:"center",justifyContent:"center",width:"44%",paddingVertical:3}}>
+              <LanguageRing name={language.name} value={language.fluency} color={finish.text} track={finish.line}/>
+            </Pressable>)}
+          </View>
+        </View>
+        <View style={{width:1,backgroundColor:finish.line,opacity:0.65,alignSelf:"stretch"}}/>
+        <View style={{flex:1,paddingLeft:7,gap:10}}>
+          <Text style={{fontSize:10,color:finish.secondary,textAlign:"center",letterSpacing:0.8}}>Otras profesiones</Text>
+          <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:8}}>
+            {secondarySeals.map(seal=><Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\nEspecialidades: "+(seal.specialties?.length?seal.specialties.join(", "):"No declaradas")+"\nExperiencia registrada: "+experienceLabel(seal.months??0)+".\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:"44%",height:66,alignItems:"center",justifyContent:"center"}}>
+              <View style={{width:54,height:54,borderRadius:27,borderWidth:2,borderColor:seal.verified?finish.sealFill:finish.line,backgroundColor:finish.pendingFill,alignItems:"center",justifyContent:"center",elevation:4,shadowColor:finish.text,shadowOpacity:0.15,shadowRadius:5}}>
+                <View style={{width:46,height:46,borderRadius:23,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center",gap:1}}>
                   <ProfessionGlyph profession={seal.profession} fallback={seal.icon} size={27} color={finish.text}/>
                   <Text style={{fontSize:8,fontWeight:"700",color:finish.text}}>{experienceLabel(seal.months??0)}</Text>
-                 </View>
                 </View>
-
-              </Pressable>)}
-            </View>)}
+              </View>
+            </Pressable>)}
           </View>
-        </ScrollView>
-      </View>}
+        </View>
+      </View>
     </View>
     <Modal visible={info!==null} transparent animationType="fade" onRequestClose={()=>setInfo(null)}><View style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}><View style={{backgroundColor:jcardCommon.qrPaper,borderRadius:20,padding:24,gap:16}}><Text style={{fontSize:18,fontWeight:"700",color:jcardCommon.qrInk}}>Información</Text><Text style={{fontSize:15,lineHeight:23,color:jcardCommon.qrInk}}>{info}</Text><Button title="Entendido" onPress={()=>setInfo(null)}/></View></View></Modal>
   </View>;
