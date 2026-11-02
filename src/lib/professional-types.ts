@@ -4,7 +4,7 @@ export interface ProfessionalCatalog { categories:{code:string;label:string}[]; 
 export type OrganizationKind="company"|"education"|"government";
 export interface RealCard extends CardData { id:string; accountType:"personal"|"company" }
 export interface PersonProfession {
- id:string; profession_code:string; label:string; training_status:"in_academy"|"graduado";
+ id:string; profession_code:string; label:string; training_status:"in_academy"|"graduado"|"practica";
  institution_id:string|null; school:string|null; specialties?:string[]; verified_at:string|null; verified:boolean; primary_profession:boolean;
 }
 export interface CredentialRequest {
