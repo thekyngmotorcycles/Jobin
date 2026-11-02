@@ -180,7 +180,7 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
      {b?.avatarUrl?<Avatar uri={b.avatarUrl} name={company?b!.name:card.name} size={74}/>:<View style={{width:74,height:74,borderRadius:37,backgroundColor:BUSINESS_MEDAL_COLORS[20],alignItems:"center",justifyContent:"center"}}><Ionicons name={art.icon} size={34} color={BUSINESS_MEDAL_COLORS[1]}/></View>}
     </View>
    </View>
-   <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"flex-start",gap:7,marginTop:4}}>
+   <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"flex-start",gap:3,marginTop:4}}>
     <View style={{flex:1,minWidth:0,gap:7}} onLayout={e=>{const w=Math.floor(e.nativeEvent.layout.width)-22;if(w>0&&Math.abs(w-businessNameWidth)>2)setBusinessNameWidth(w);}}>
      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"flex-start",gap:3}}>
       <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.9} style={{flexShrink:1,fontSize:nameFontSize,lineHeight:nameFontSize*1.2,fontWeight:"700",color:finish.text}}>{businessName}</Text>
@@ -191,8 +191,8 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
      {!!contact?.phone&&<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="call-outline" size={16} color={finish.secondary}/><Text numberOfLines={1} style={{flex:1,fontSize:12,color:finish.text}}>{contact.phone}</Text></View>}
      {!!b?.location&&<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="location-outline" size={16} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:12,color:finish.secondary}}>{b.location}</Text></View>}
     </View>
-    <View style={{alignItems:"flex-end",gap:5,maxWidth:"39%"}}>
-     <View style={{borderRadius:20,borderWidth:1,borderColor:finish.line,paddingVertical:4,paddingHorizontal:6,backgroundColor:finish.sealFill,alignItems:"center"}}>
+    <View style={{alignItems:"flex-end",gap:5,maxWidth:"35%",marginRight:-4}}>
+     <View style={{borderRadius:20,borderWidth:1,borderColor:finish.line,paddingVertical:4,paddingHorizontal:3,backgroundColor:finish.sealFill,alignItems:"center"}}>
       <Text numberOfLines={1} adjustsFontSizeToFit style={{color:finish.text,fontSize:12,fontWeight:"700"}}>{ratingUnlocked?rating!.toFixed(1):"0.0"} <Text style={{color:ratingUnlocked?jcardCommon.businessGold:finish.secondary}}>{ratingUnlocked?"★★★★★":"☆☆☆☆☆"}</Text></Text>
      </View>
      <Text style={{color:finish.secondary,fontSize:10}}>{b?.reviewCount??0} reseñas</Text>
