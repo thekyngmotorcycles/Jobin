@@ -153,16 +153,16 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
   </Svg>
   <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
   <View style={{flex:1,padding:14,gap:10}}>
-   <View style={{height:112,marginTop:8,position:"relative",flexDirection:"row",alignItems:"center"}}>
-    <View style={{position:"absolute",left:88,right:0,height:66,top:25,borderRadius:12,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
+   <View style={{height:118,marginTop:0,marginHorizontal:-14,position:"relative",flexDirection:"row",alignItems:"center"}}>
+    <View style={{position:"absolute",left:0,right:0,height:94,top:12,borderRadius:12,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
      {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:
       <Svg width="100%" height="100%" viewBox="0 0 300 76" preserveAspectRatio="none"><Defs><LinearGradient id="businessBanner" x1="0" y1="0" x2="1" y2="1"><Stop offset="0%" stopColor={finish.sealFill}/><Stop offset="100%" stopColor={finish.end}/></LinearGradient></Defs><Rect width="300" height="76" fill="url(#businessBanner)"/></Svg>}
     </View>
-    <View style={{position:"absolute",left:0,top:9,borderRadius:42,borderWidth:2,borderColor:finish.line,padding:2,backgroundColor:finish.start}}>
-     <Avatar uri={card.avatar} name={company?b!.name:card.name} size={72}/>
+    <View style={{position:"absolute",left:14,top:16,borderRadius:46,borderWidth:3,borderColor:finish.start,padding:3,backgroundColor:finish.start}}>
+     <Avatar uri={card.avatar} name={company?b!.name:card.name} size={78}/>
     </View>
    </View>
-   <View style={{flexDirection:"row",justifyContent:"space-between",gap:8}}>
+   <View style={{flexDirection:"row",justifyContent:"space-between",gap:8,marginTop:4}}>
     <View style={{flex:1,gap:8}}>
      <Text numberOfLines={2} style={{fontSize:22,fontWeight:"800",color:finish.text}}>{company?b!.name:card.name}</Text>
      <Text style={{fontSize:13,fontWeight:"600",color:finish.secondary}}>{company?category:card.role}</Text>
