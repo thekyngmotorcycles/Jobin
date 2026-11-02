@@ -151,7 +151,7 @@ function BusinessFace({card,theme,onEdit}:{card:CardData;theme:ThemeName;onEdit?
  </View>;
 }
 export function JobinCard({card,previewTheme,onEditBusiness,ownerId,employerLink}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;ownerId?:string;employerLink?:{id:string;name:string;handle:string}|null}){
- const {theme}=useTheme();const {width}=useWindowDimensions();
+ const {theme}=useTheme();const {colors}=useUi();const {width}=useWindowDimensions();
  const [contact,setContact]=useState<{email:string|null;phone:string|null}>({email:null,phone:null});
  useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void loadPublicContact(ownerId).then(value=>{if(live)setContact(value);}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
  const [back,setBack]=useState(false),[shareOpen,setShareOpen]=useState(false),[qrOpen,setQrOpen]=useState(false),[faceHeight,setFaceHeight]=useState(340);
