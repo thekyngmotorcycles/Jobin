@@ -39,7 +39,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
   const embossInk=finish.text;
   const embossStrength=finish.start===finish.end?0.20:0.12;
   const [info,setInfo]=useState<string|null>(null);
-  const primaryProfession=card.role.trim().replace(/\s*[-–/]\s*aire acondicionado\s*$/i,"").trim();
+  const primaryProfession=card.role.trim().replace(/^Técnico HVAC\s*\/\s*climatización y aire acondicionado$/i,"Técnico HVAC").replace(/\s*[-–/]\s*aire acondicionado\s*$/i,"").trim();
   const primarySeal=card.seals.find(seal=>/hvac/i.test(primaryProfession)?/hvac|aire acondicionado/i.test(seal.profession):seal.profession.trim().toLocaleLowerCase()===primaryProfession.toLocaleLowerCase());
   const secondarySeals=card.seals.filter(seal=>!(/hvac/i.test(primaryProfession)&&/hvac|aire acondicionado/i.test(seal.profession))&&seal.profession.trim().toLocaleLowerCase()!==primaryProfession.toLocaleLowerCase());
   const rows = sealRows(secondarySeals);
@@ -86,9 +86,9 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
           {card.name}
         </Text>
         <Text style={{color:finish.secondary,fontSize:11}}>@{card.handle}</Text>
-        <View style={{flexDirection:"row",alignItems:"center",flexWrap:"wrap",gap:7}}>
-          <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[lineStyle,{fontWeight:"600"}]}>{primaryProfession}{!!card.primarySpecialties?.length?" / Especializado":""}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="Detalles de la profesión principal" onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nEspecialidades: "+(card.primarySpecialties?.length?card.primarySpecialties.join(", "):"No declaradas")+"\nExperiencia en esta profesión: "+(primarySeal&&primarySeal.months?experienceLabel(primarySeal.months):"Sin experiencia registrada")+".\n"+(primarySeal?.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{padding:3,borderWidth:1,borderColor:finish.line,borderRadius:18}}>
+        <View style={{flexDirection:"row",alignItems:"center",gap:7,width:"100%"}}>
+          <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[lineStyle,{fontWeight:"600",flexShrink:1,flexGrow:0}]}>{primaryProfession}{!!card.primarySpecialties?.length?" / Especializado":""}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="Detalles de la profesión principal" onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nEspecialidades: "+(card.primarySpecialties?.length?card.primarySpecialties.join(", "):"No declaradas")+"\nExperiencia en esta profesión: "+(primarySeal&&primarySeal.months?experienceLabel(primarySeal.months):"Sin experiencia registrada")+".\n"+(primarySeal?.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{padding:3,borderWidth:1,borderColor:finish.line,borderRadius:18,flexShrink:0}}>
             <ProfessionGlyph profession={card.role} fallback={primarySeal?.icon??"briefcase-outline"} size={19} color={finish.text}/>
           </Pressable>
         </View>
