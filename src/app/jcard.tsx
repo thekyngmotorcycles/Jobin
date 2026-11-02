@@ -1,3 +1,4 @@
+import { ProfileCommunityActions } from "../components/ProfileCommunityActions";
 import { ProfessionalTrustMark } from "../components/ProfessionalTrustMark";
 import { useCallback } from "react";
 import { useLocalSearchParams } from "expo-router";
@@ -14,6 +15,6 @@ export default function PublicJCard(){
   return loadPublicCard(user);
  },[user]));
  return <Screen demo={false} title="JCard." subtitle="Identidad profesional pública.">
-  {resource.data?<View><JobinCard card={resource.data}/><ProfessionalTrustMark worker={resource.data.id}/></View>:<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>}
+  {resource.data?<View><JobinCard card={resource.data}/><ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/><ProfessionalTrustMark worker={resource.data.id}/></View>:<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>}
  </Screen>;
 }
