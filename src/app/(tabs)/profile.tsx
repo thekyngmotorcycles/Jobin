@@ -22,7 +22,7 @@ import { Button, Notice, useUi } from "../../components/ui";
 import { canSendHistory } from "../../lib/rules";
 import { DEMO_PROFILE, DEMO_REQUESTING_COMPANIES, DEMO_VIDEOS, type EmploymentEntry } from "../../lib/me";
 
-type Mode = "grid" | "cv" | "videos";
+type Mode = "grid" | "cv" | "videos" | "live";
 
 export default function Profile() {
   const { s, colors } = useUi();const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
@@ -64,7 +64,7 @@ export default function Profile() {
   const p = DEMO_PROFILE;
 
   function openLive() {
-    if (p.streamingNow) router.push({ pathname: "/stream/[id]", params: { id: p.streamId } });
+    setMode("live");
   }
 
   function send(company: string) {
@@ -104,7 +104,7 @@ export default function Profile() {
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected: active }}
       onPress={() => (value === "live" ? openLive() : setMode(value))}
       style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: active ? colors.ink : colors.transparent }}>
-      <Ionicons name={icon} size={22} color={value === "live" ? (p.streamingNow ? colors.statusLive : colors.statusInactive) : active ? colors.inverse : colors.ink} />
+      <Ionicons name={icon} size={22} color={active ? colors.inverse : colors.ink} />
     </Pressable>
   );
 
@@ -112,11 +112,7 @@ export default function Profile() {
     <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8 }}>
         <JobinWordmark width={92} style={{ alignSelf: "flex-start" }} />
-        <View style={{ flexDirection: "row", gap: 4 }}>
-          {tabIcon("school-outline", "Historial profesional", "cv", mode === "cv")}
-          {tabIcon("play-outline", "Videos", "videos", mode === "videos")}
-          {tabIcon("radio-outline", p.streamingNow ? "En vivo" : "Sin transmisión", "live", false)}
-        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" onPress={()=>setProfileToolsOpen(v=>!v)} style={{padding:10}}><Ionicons name="ellipsis-horizontal" size={24} color={colors.ink}/></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
@@ -140,6 +136,19 @@ export default function Profile() {
         </View> : <ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>}
 
 
+        <View style={{flexDirection:"row",justifyContent:"space-around",alignItems:"center",borderBottomWidth:1,borderBottomColor:colors.line,paddingVertical:8}}>
+          {tabIcon("school-outline","Historial profesional","cv",mode==="cv")}
+          {tabIcon("play-outline","Videos","videos",mode==="videos")}
+          {tabIcon("radio-outline","Transmisiones en vivo","live",mode==="live")}
+        </View>
+        {mode==="live"&&<View style={{gap:12,padding:14,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
+          <Text style={s.h3}>Transmisiones en vivo</Text>
+          <Text style={s.muted}>Cuando este perfil transmita, aparecerá aquí la vista previa para entrar al directo.</Text>
+          <View style={{height:145,backgroundColor:colors.accent,borderRadius:12,justifyContent:"center",alignItems:"center",gap:8}}>
+            <Ionicons name="radio-outline" size={35} color={colors.muted}/>
+            <Text style={s.muted}>Sin transmisión activa verificada</Text>
+          </View>
+        </View>}
         {mode === "cv" && (
           <View style={{ gap: 14 }}>
             <Text style={s.h2}>Historial profesional</Text>
