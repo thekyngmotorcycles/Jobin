@@ -176,7 +176,7 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
       <View style={{flex:1,backgroundColor:art.tint,alignItems:"flex-end",justifyContent:"center",paddingRight:20}}><Ionicons name={art.icon} size={66} color="#ffffff" style={{opacity:0.55}}/></View>}
     </View>
     <View style={{position:"absolute",left:4,top:16,borderRadius:46,borderWidth:3,borderColor:finish.start,padding:3,backgroundColor:finish.start}}>
-     {card.avatar?<Avatar uri={card.avatar} name={company?b!.name:card.name} size={78}/>:<View style={{width:78,height:78,borderRadius:39,backgroundColor:"#7f858d",alignItems:"center",justifyContent:"center"}}><Ionicons name={art.icon} size={39} color="#ffffff"/></View>}
+     {b?.avatarUrl?<Avatar uri={b.avatarUrl} name={company?b!.name:card.name} size={78}/>:<View style={{width:78,height:78,borderRadius:39,backgroundColor:"#7f858d",alignItems:"center",justifyContent:"center"}}><Ionicons name={art.icon} size={39} color="#ffffff"/></View>}
     </View>
    </View>
    <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"flex-start",gap:7,marginTop:4}}>
