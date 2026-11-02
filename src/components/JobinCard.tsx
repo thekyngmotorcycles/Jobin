@@ -175,10 +175,10 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
    <View style={{height:118,marginTop:0,marginHorizontal:0,position:"relative",flexDirection:"row",alignItems:"center"}}>
     <View style={{position:"absolute",left:48,right:0,height:94,top:12,borderRadius:12,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
      {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:
-      <View style={{flex:1,backgroundColor:art.tint,alignItems:"flex-end",justifyContent:"center",paddingRight:20}}><Ionicons name={art.icon} size={66} color=BUSINESS_MEDAL_COLORS[1] style={{opacity:0.55}}/></View>}
+      <View style={{flex:1,backgroundColor:art.tint,alignItems:"flex-end",justifyContent:"center",paddingRight:20}}><Ionicons name={art.icon} size={66} color={BUSINESS_MEDAL_COLORS[1]} style={{opacity:0.55}}/></View>}
     </View>
     <View style={{position:"absolute",left:0,top:12,borderRadius:48,borderWidth:3,borderColor:finish.start,padding:3,backgroundColor:finish.start}}>
-     {b?.avatarUrl?<Avatar uri={b.avatarUrl} name={company?b!.name:card.name} size={84}/>:<View style={{width:84,height:84,borderRadius:42,backgroundColor:BUSINESS_MEDAL_COLORS[20],alignItems:"center",justifyContent:"center"}}><Ionicons name={art.icon} size={39} color=BUSINESS_MEDAL_COLORS[1]/></View>}
+     {b?.avatarUrl?<Avatar uri={b.avatarUrl} name={company?b!.name:card.name} size={84}/>:<View style={{width:84,height:84,borderRadius:42,backgroundColor:BUSINESS_MEDAL_COLORS[20],alignItems:"center",justifyContent:"center"}}><Ionicons name={art.icon} size={39} color={BUSINESS_MEDAL_COLORS[1]}/></View>}
     </View>
    </View>
    <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"flex-start",gap:7,marginTop:4}}>
