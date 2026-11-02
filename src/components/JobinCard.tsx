@@ -138,9 +138,9 @@ function BusinessAward({label,icon,level,finish}:{label:string;icon:React.Compon
  const tone=level===3?jcardCommon.businessGold:level===2?jcardCommon.businessSilver:level===1?jcardCommon.businessBronze:finish.secondary;
  const points=Array.from({length:48},(_,i)=>{const t=i*Math.PI/24-Math.PI/2;const radius=i%2?23:25;return (27+radius*Math.cos(t)).toFixed(2)+","+(27+radius*Math.sin(t)).toFixed(2);}).join(" ");
  const path="M"+points.replaceAll(" "," L")+" Z";
- return <View accessibilityLabel={label+": "+(level===0?"Sin acreditar":level===1?"Bronce":level===2?"Plata":"Oro")} style={{flex:1,minWidth:0,alignItems:"center"}}>
-  <View style={{width:"100%",aspectRatio:1,alignItems:"center",justifyContent:"center"}}>
-   <Svg width="100%" height="100%" viewBox="0 0 54 54" style={{position:"absolute"}}><Defs><LinearGradient id={"metal-"+label.replace(/\\W/g,"")} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={level===3?BUSINESS_MEDAL_COLORS[0]:level===2?BUSINESS_MEDAL_COLORS[1]:level===1?BUSINESS_MEDAL_COLORS[2]:BUSINESS_MEDAL_COLORS[3]}/><Stop offset="24%" stopColor={level===3?BUSINESS_MEDAL_COLORS[4]:level===2?BUSINESS_MEDAL_COLORS[5]:level===1?BUSINESS_MEDAL_COLORS[6]:BUSINESS_MEDAL_COLORS[7]}/><Stop offset="53%" stopColor={level===3?BUSINESS_MEDAL_COLORS[8]:level===2?BUSINESS_MEDAL_COLORS[9]:level===1?BUSINESS_MEDAL_COLORS[10]:BUSINESS_MEDAL_COLORS[11]}/><Stop offset="77%" stopColor={level===3?BUSINESS_MEDAL_COLORS[12]:level===2?BUSINESS_MEDAL_COLORS[13]:level===1?BUSINESS_MEDAL_COLORS[14]:BUSINESS_MEDAL_COLORS[15]}/><Stop offset="100%" stopColor={level===3?BUSINESS_MEDAL_COLORS[16]:level===2?BUSINESS_MEDAL_COLORS[17]:level===1?BUSINESS_MEDAL_COLORS[18]:BUSINESS_MEDAL_COLORS[19]}/></LinearGradient></Defs><Path d={path} fill={"url(#metal-"+label.replace(/\\W/g,"")+")"} stroke={tone} strokeWidth="1.4"/><Circle cx="27" cy="27" r="21" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.65" strokeWidth="1.3"/><Circle cx="27" cy="27" r="19.2" fill={finish.start} stroke={tone} strokeWidth="1.4"/><Path d="M 12 26 A 15 15 0 0 1 41 23" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.45" strokeWidth="2"/></Svg>
+ return <View accessibilityLabel={label+": "+(level===0?"Sin acreditar":level===1?"Bronce":level===2?"Plata":"Oro")} style={{flex:1,minWidth:0,alignItems:"center",minHeight:83}}>
+  <View style={{width:"100%",minHeight:45,aspectRatio:1,alignItems:"center",justifyContent:"center"}}>
+   <Svg width="100%" height="100%" viewBox="0 0 54 54" style={{position:"absolute"}}><Defs><LinearGradient id={"metal-"+label.replace(/[^a-zA-Z0-9]/g,"")} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={level===3?BUSINESS_MEDAL_COLORS[0]:level===2?BUSINESS_MEDAL_COLORS[1]:level===1?BUSINESS_MEDAL_COLORS[2]:BUSINESS_MEDAL_COLORS[3]}/><Stop offset="24%" stopColor={level===3?BUSINESS_MEDAL_COLORS[4]:level===2?BUSINESS_MEDAL_COLORS[5]:level===1?BUSINESS_MEDAL_COLORS[6]:BUSINESS_MEDAL_COLORS[7]}/><Stop offset="53%" stopColor={level===3?BUSINESS_MEDAL_COLORS[8]:level===2?BUSINESS_MEDAL_COLORS[9]:level===1?BUSINESS_MEDAL_COLORS[10]:BUSINESS_MEDAL_COLORS[11]}/><Stop offset="77%" stopColor={level===3?BUSINESS_MEDAL_COLORS[12]:level===2?BUSINESS_MEDAL_COLORS[13]:level===1?BUSINESS_MEDAL_COLORS[14]:BUSINESS_MEDAL_COLORS[15]}/><Stop offset="100%" stopColor={level===3?BUSINESS_MEDAL_COLORS[16]:level===2?BUSINESS_MEDAL_COLORS[17]:level===1?BUSINESS_MEDAL_COLORS[18]:BUSINESS_MEDAL_COLORS[19]}/></LinearGradient></Defs><Path d={path} fill={"url(#metal-"+label.replace(/\\W/g,"")+")"} stroke={tone} strokeWidth="1.4"/><Circle cx="27" cy="27" r="21" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.65" strokeWidth="1.3"/><Circle cx="27" cy="27" r="19.2" fill={finish.start} stroke={tone} strokeWidth="1.4"/><Path d="M 12 26 A 15 15 0 0 1 41 23" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.45" strokeWidth="2"/></Svg>
    <Ionicons name={icon} size={21} color={level===0?finish.secondary:tone}/>
   </View>
   <View style={{marginTop:-3,width:"115%",minHeight:19,borderRadius:5,borderWidth:0.6,borderColor:tone,backgroundColor:finish.sealFill,justifyContent:"center",paddingHorizontal:1}}>
@@ -171,21 +171,20 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
   </Svg>
   <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
   <View style={{flex:1,padding:14,gap:10}}>
-   <Text style={{textAlign:"center",fontFamily:"serif",fontStyle:"italic",fontSize:24,color:businessCardPaper.ink,marginTop:0,marginBottom:1}}>JCard · Negocio</Text>
-   <View style={{height:118,marginTop:0,marginHorizontal:0,position:"relative",flexDirection:"row",alignItems:"center"}}>
-    <View style={{position:"absolute",left:48,right:0,height:94,top:12,borderRadius:12,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
+   <View style={{height:108,marginTop:0,marginHorizontal:0,position:"relative",flexDirection:"row",alignItems:"center"}}>
+    <View style={{position:"absolute",left:48,right:0,height:94,top:7,borderRadius:24,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
      {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:
       <View style={{flex:1,backgroundColor:art.tint,alignItems:"flex-end",justifyContent:"center",paddingRight:20}}><Ionicons name={art.icon} size={66} color={BUSINESS_MEDAL_COLORS[1]} style={{opacity:0.55}}/></View>}
     </View>
-    <View style={{position:"absolute",left:0,top:12,borderRadius:48,borderWidth:3,borderColor:finish.start,padding:3,backgroundColor:finish.start}}>
+    <View style={{position:"absolute",left:0,top:7,borderRadius:48,borderWidth:3,borderColor:finish.start,padding:3,backgroundColor:finish.start}}>
      {b?.avatarUrl?<Avatar uri={b.avatarUrl} name={company?b!.name:card.name} size={84}/>:<View style={{width:84,height:84,borderRadius:42,backgroundColor:BUSINESS_MEDAL_COLORS[20],alignItems:"center",justifyContent:"center"}}><Ionicons name={art.icon} size={39} color={BUSINESS_MEDAL_COLORS[1]}/></View>}
     </View>
    </View>
    <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"flex-start",gap:7,marginTop:4}}>
     <View style={{flex:1,minWidth:0,gap:7}}>
      <View style={{flexDirection:"row",alignItems:"center",gap:5}}>
-      <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75} style={{flexShrink:1,fontSize:23,lineHeight:28,fontWeight:"800",color:finish.text}}>{company?b!.name:card.name}</Text>
-      <Ionicons name="checkmark-circle" size={18} color={b?.licenseVerified?jcardCommon.verifiedBubble:finish.secondary} accessibilityLabel={b?.licenseVerified?"Empresa verificada":"Empresa sin verificar"}/>
+      <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75} style={{flexShrink:1,fontSize:19,lineHeight:25,fontWeight:"700",color:finish.text}}>{company?b!.name:card.name}</Text>
+      <Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={19} color={b?.licenseVerified?jcardCommon.verifiedBubble:"#9ca3af"} accessibilityLabel={b?.licenseVerified?"Empresa verificada":"Empresa sin verificar"}/>
      </View>
      <View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name={art.icon} size={19} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:14,fontWeight:"600",color:finish.secondary}}>{company?category:card.role}</Text></View>
      {!!contact?.email&&<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="mail-outline" size={16} color={finish.secondary}/><Text numberOfLines={1} style={{flex:1,fontSize:12,color:finish.text}}>{contact.email}</Text></View>}
@@ -194,7 +193,7 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
     </View>
     <View style={{alignItems:"flex-end",gap:5,maxWidth:"39%"}}>
      <View style={{borderRadius:20,borderWidth:1,borderColor:finish.line,paddingVertical:4,paddingHorizontal:6,backgroundColor:finish.sealFill,alignItems:"center"}}>
-      <Text numberOfLines={1} adjustsFontSizeToFit style={{color:finish.text,fontSize:15,fontWeight:"800"}}>{rating===null?"Sin reseñas":rating.toFixed(1)+" ★★★★★"}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit style={{color:finish.text,fontSize:12,fontWeight:"700"}}>{rating===null?"Sin reseñas":rating.toFixed(1)+" ★★★★★"}</Text>
      </View>
      <Text style={{color:finish.secondary,fontSize:10}}>{b?.reviewCount??0} reseñas</Text>
      {!!b?.opened&&<View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="calendar-outline" size={13} color={finish.secondary}/><Text style={{color:finish.secondary,fontSize:10}}>Desde {b.opened}</Text></View>}
@@ -202,13 +201,13 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
    </View>
    <View style={{flex:1,minHeight:14}}/>
    <View style={{height:1,backgroundColor:finish.line,opacity:0.7,marginBottom:4}}/>
-   <View style={{flexDirection:"row",alignItems:"flex-end",gap:5}}>
+   <View style={{flexDirection:"row",alignItems:"center",gap:5,minHeight:100}}>
     <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"flex-start",gap:2}}>
      {awards.map(a=><BusinessAward key={a.label} {...a} finish={finish}/>)}
     </View>
     <View style={{width:1,height:85,backgroundColor:finish.line,marginHorizontal:1}}/>
-    <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:3,borderRadius:5,backgroundColor:jcardCommon.qrPaper}}>
-     <QRCode value={card.profileUrl} size={58} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
+    <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:7,borderRadius:9,backgroundColor:jcardCommon.qrPaper,borderWidth:1,borderColor:"#d1d5db",alignSelf:"center"}}>
+     <QRCode value={card.profileUrl} size={70} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
     </Pressable>
    </View>
   </View>
