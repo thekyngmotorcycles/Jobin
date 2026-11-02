@@ -15,7 +15,7 @@ import {loadPublicContact} from "../lib/jcard-contact";
 import { experienceLabel } from "../lib/employment";
 import {ProfessionGlyph} from "./ProfessionGlyph";
 import { LanguageRing, languageLabel, LANGUAGE_LEVELS } from "./LanguageRing";
-import { jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
+import { businessCardPaper, jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
 import {businessCategoryArt} from "../lib/business-category-art";
 
 export type { CardData } from "../lib/jcard";
@@ -150,7 +150,7 @@ function BusinessAward({label,icon,level,finish}:{label:string;icon:React.Compon
  </View>;
 }
 function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;contact?:{email:string|null;phone:string|null};onQr?:()=>void}){
- const b=card.business;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:"#ffffff",end:"#ffffff",text:"#111111",secondary:"#5d6165",line:"#dedede",sealFill:"#f5f5f5"};
+ const b=card.business;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:businessCardPaper.background,end:businessCardPaper.background,text:businessCardPaper.ink,secondary:businessCardPaper.secondary,line:businessCardPaper.border,sealFill:businessCardPaper.muted};
  const company=!!b?.name.trim();const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
  const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
  const category=b?.category?.trim()||(/hvac|aire acondicionado|climatiz|refrigeraci/i.test([card.role,...(b?.services??[])].join(" "))?"Climatización":b?.services?.[0]||"Servicios profesionales");
@@ -163,7 +163,7 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
   {label:"Profesionalismo",icon:"person-outline" as const,level:voteLevel("professionalism")},
   {label:"En el mercado",icon:"trophy-outline" as const,level:voteLevel("tenure")},
  ];
- return <View style={{flex:1,borderRadius:30,backgroundColor:"#ffffff",borderWidth:2,borderColor:"#e5e5e5",overflow:"hidden"}}>
+ return <View style={{flex:1,borderRadius:30,backgroundColor:businessCardPaper.background,borderWidth:2,borderColor:businessCardPaper.outerBorder,overflow:"hidden"}}>
   <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" viewBox="0 0 400 650" preserveAspectRatio="none" pointerEvents="none">
    {Array.from({length:15},(_,i)=><Path key={"left"+i} d={`M ${-45+i*10} 330 C ${42+i*4} 235, ${-20+i*8} 116, ${78+i*7} -25`} stroke={finish.text} strokeOpacity={0.12+(i%3)*0.018} strokeWidth={0.8} fill="none"/>)}
    {Array.from({length:16},(_,i)=><Path key={"bottom"+i} d={`M ${-45+i*13} 675 C ${60+i*8} 540, ${235+i*4} 555, ${440+i*2} 395`} stroke={finish.text} strokeOpacity={0.13+(i%4)*0.018} strokeWidth={0.8} fill="none"/>)}
@@ -171,7 +171,7 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
   </Svg>
   <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
   <View style={{flex:1,padding:14,gap:10}}>
-   <Text style={{textAlign:"center",fontFamily:"serif",fontStyle:"italic",fontSize:24,color:"#111111",marginTop:0,marginBottom:1}}>JCard · Negocio</Text>
+   <Text style={{textAlign:"center",fontFamily:"serif",fontStyle:"italic",fontSize:24,color:businessCardPaper.ink,marginTop:0,marginBottom:1}}>JCard · Negocio</Text>
    <View style={{height:118,marginTop:0,marginHorizontal:0,position:"relative",flexDirection:"row",alignItems:"center"}}>
     <View style={{position:"absolute",left:48,right:0,height:94,top:12,borderRadius:12,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
      {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:
