@@ -183,7 +183,7 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
    <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"flex-start",gap:7,marginTop:4}}>
     <View style={{flex:1,minWidth:0,gap:7}}>
      <View style={{flexDirection:"row",alignItems:"center",gap:5}}>
-      <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75} style={{flexShrink:1,fontSize:19,lineHeight:25,fontWeight:"700",color:finish.text}}>{company?b!.name:card.name}</Text>
+      <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.9} style={{flexShrink:1,fontSize:nameFontSize,lineHeight:nameFontSize*1.2,fontWeight:"700",color:finish.text}}>{businessName}</Text>
       <Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={19} color={b?.licenseVerified?jcardCommon.verifiedBubble :jcardCommon.unverifiedBubble} accessibilityLabel={b?.licenseVerified?"Empresa verificada":"Empresa sin verificar"}/>
      </View>
      <View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name={art.icon} size={19} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:14,fontWeight:"600",color:finish.secondary}}>{company?category:card.role}</Text></View>
