@@ -40,7 +40,7 @@ export const jcardLayout = {
 };
 export const proficiencyColors = {low:'#d84b54',middle:'#e4af42',high:'#219765'};
 export const jcardCommon = {
-  scrim: "#000000aa", qrPaper: "#ffffff", qrInk: "#111111", editBackground: "#e5e5e5", editInk: "#555555", flipShadow: "rgba(0,0,0,0.09)", flipSurface: "rgba(0,0,0,0.035)", flipOutline: "rgba(0,0,0,0.10)", verifiedBubble: "#38bdf8",
+  scrim: "#000000aa", qrPaper: "#ffffff", qrInk: "#111111", editBackground: "#e5e5e5", editInk: "#555555", flipShadow: "rgba(0,0,0,0.09)", flipSurface: "rgba(0,0,0,0.035)", flipOutline: "rgba(0,0,0,0.10)", flipShadowDark: "rgba(255,255,255,0.22)", flipSurfaceDark: "rgba(255,255,255,0.13)", flipOutlineDark: "rgba(255,255,255,0.32)", flipInkDark:"#ffffff", glintEdge:"#ffffff",glintCenter:"#ffffff", verifiedBubble: "#38bdf8",
 };
 export function jcardTokens(theme: ThemeName, tier: JCardTier) {
   // Rating-based silver and gold finishes remain unchanged in every appearance.
