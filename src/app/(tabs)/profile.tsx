@@ -131,6 +131,7 @@ export default function Profile() {
                 <Text accessibilityRole="header" style={{color:colors.ink,fontWeight:"700",fontSize:22}}>Opciones del perfil</Text>
                 <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={()=>setProfileToolsOpen(false)} style={{padding:8}}><Ionicons name="close" size={25} color={colors.ink}/></Pressable>
               </View>
+              <Button secondary title="Ver perfil ficticio (demo)" onPress={()=>{closeProfileMenu();router.push("/demo-profile");}}/>
               <Button secondary title="Reseñas de empresas" onPress={()=>{closeProfileMenu();router.push("/reviews");}}/>
               <Button secondary title="Certificados y sellos" onPress={()=>{setProfileToolsOpen(false);router.push("/certificates");}}/>
               <Button secondary title="Oportunidades laborales" onPress={()=>{setProfileToolsOpen(false);router.push("/opportunities");}}/>
@@ -143,7 +144,7 @@ export default function Profile() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
-          <JobinCard card={{...workspace.data.card,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,rating:businessRating.rating,reviewCount:businessRating.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness} ownerId={workspace.data.card.id} employerLink={employerLink}/>
+          <JobinCard card={{...workspace.data.card,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,rating:businessRating.rating,reviewCount:businessRating.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
 
         </View> : <ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>}
