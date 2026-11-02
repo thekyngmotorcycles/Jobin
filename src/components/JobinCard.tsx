@@ -156,32 +156,42 @@ export function JobinCard({card,previewTheme,onEditBusiness,ownerId,employerLink
  useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void loadPublicContact(ownerId).then(value=>{if(live)setContact(value);}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
  const [back,setBack]=useState(false),[shareOpen,setShareOpen]=useState(false),[qrOpen,setQrOpen]=useState(false),[faceHeight,setFaceHeight]=useState(340);
  const rotation=useRef(new Animated.Value(0)).current;
+ const idleTilt=useRef(new Animated.Value(0)).current;
+ const idleShine=useRef(new Animated.Value(0)).current;
+ useEffect(()=>{const loop=Animated.loop(Animated.sequence([Animated.delay(2200),Animated.parallel([Animated.sequence([Animated.timing(idleTilt,{toValue:1,duration:480,useNativeDriver:true}),Animated.timing(idleTilt,{toValue:0,duration:560,useNativeDriver:true})]),Animated.sequence([Animated.timing(idleShine,{toValue:1,duration:480,useNativeDriver:true}),Animated.timing(idleShine,{toValue:0,duration:560,useNativeDriver:true})])]) ]));loop.start();return()=>loop.stop();},[idleTilt,idleShine]);
  const toggle=()=>{const next=!back;setBack(next);Animated.timing(rotation,{toValue:next?180:0,useNativeDriver:true,duration:500}).start();};
  const responder=useRef(PanResponder.create({onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>28&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,onPanResponderRelease:(_,g)=>{if(Math.abs(g.dx)>65)toggleRef.current();}})).current;
  const toggleRef=useRef(toggle);toggleRef.current=toggle;
  const frontRotate=rotation.interpolate({inputRange:[0,180],outputRange:["0deg","180deg"]});
  const backRotate=rotation.interpolate({inputRange:[0,180],outputRange:["180deg","360deg"]});
  const cardTheme=previewTheme??theme;
+ const idleAngle=idleTilt.interpolate({inputRange:[0,1],outputRange:["0deg","2deg"]});
+ const shineOpacity=idleShine.interpolate({inputRange:[0,1],outputRange:[0,0.48]});
  const share=()=>void Share.share({message:`JCard de ${card.name} · ${card.profileUrl}`,url:card.profileUrl,title:`JCard · ${card.name}`});
  return <>
   <View style={{width:"100%",maxWidth:520,alignSelf:"center"}}>
-   <View {...responder.panHandlers}>
+   <Animated.View {...responder.panHandlers} style={{transform:[{perspective:1100},{rotateY:idleAngle}]}}>
    <Animated.View onLayout={e=>setFaceHeight(e.nativeEvent.layout.height)} pointerEvents={back?"none":"auto"} style={{backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:frontRotate}]}}>
     <CardFace card={card} theme={cardTheme} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)}/>
    </Animated.View>
    <Animated.View pointerEvents={back?"auto":"none"} style={{position:"absolute",top:0,left:0,right:0,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:backRotate}]}}>
     <View style={{height:faceHeight}}><BusinessFace card={card} theme={cardTheme} onEdit={onEditBusiness}/></View>
    </Animated.View>
-   </View>
+   <Animated.View pointerEvents="none" style={{position:"absolute",top:0,left:0,right:0,height:faceHeight,opacity:shineOpacity,borderRadius:jcardLayout.radius,overflow:"hidden"}}><Svg width="100%" height="100%" viewBox="0 0 320 420" preserveAspectRatio="none"><Defs><LinearGradient id="jcardIdleGlint" x1="0" y1="0" x2="1" y2="0"><Stop offset="0" stopColor={jcardCommon.glintEdge} stopOpacity="0"/><Stop offset="0.46" stopColor={jcardCommon.glintCenter} stopOpacity="0.06"/><Stop offset="0.52" stopColor={jcardCommon.glintCenter} stopOpacity="0.35"/><Stop offset="0.60" stopColor={jcardCommon.glintCenter} stopOpacity="0.03"/><Stop offset="1" stopColor={jcardCommon.glintEdge} stopOpacity="0"/></LinearGradient></Defs><Rect width="320" height="420" fill="url(#jcardIdleGlint)"/></Svg></Animated.View>
+   </Animated.View>
    <Pressable accessibilityRole="button" accessibilityLabel={back?"Girar JCard a cara personal":"Girar JCard para ver el reverso"} accessibilityHint="Toca o desliza horizontalmente la tarjeta para girarla" onPress={toggle} style={{alignSelf:"center",width:"68%",height:31,justifyContent:"center",alignItems:"center",marginTop:1}}>
-    <View pointerEvents="none" style={{position:"absolute",top:0,width:"90%",height:12,borderRadius:100,backgroundColor:jcardCommon.flipShadow,transform:[{scaleX:0.92}]}}/>
-    <View pointerEvents="none" style={{width:86,height:21,borderRadius:30,alignItems:"center",justifyContent:"center",backgroundColor:jcardCommon.flipSurface,borderWidth:1,borderColor:jcardCommon.flipOutline}}>
-      <Ionicons name="sync-outline" size={16} color={jcardCommon.editInk}/>
+    <View pointerEvents="none" style={{position:"absolute",top:0,width:"90%",height:12,borderRadius:100,backgroundColor:theme==="dark"?jcardCommon.flipShadowDark:jcardCommon.flipShadow,transform:[{scaleX:0.92}]}}/>
+    <View pointerEvents="none" style={{width:86,height:21,borderRadius:30,alignItems:"center",justifyContent:"center",backgroundColor:theme==="dark"?jcardCommon.flipSurfaceDark:jcardCommon.flipSurface,borderWidth:1,borderColor:theme==="dark"?jcardCommon.flipOutlineDark:jcardCommon.flipOutline}}>
+      <Ionicons name="sync-outline" size={16} color={theme==="dark"?jcardCommon.flipInkDark:jcardCommon.editInk}/>
     </View>
    </Pressable>
-   <View style={{flexDirection:"row",justifyContent:"flex-end",gap:10,paddingTop:5}}>
-    <Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard" onPress={()=>setShareOpen(true)} style={{padding:9}}><Ionicons name="share-social-outline" size={23} color={jcardCommon.editInk}/></Pressable>
-    <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{padding:9}}><Ionicons name="create-outline" size={23} color={jcardCommon.editInk}/></Pressable>
+   <View style={{flexDirection:"row",gap:10,paddingTop:10}}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard" onPress={()=>setShareOpen(true)} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,backgroundColor:colors.ink}}>
+      <Ionicons name="share-social-outline" size={20} color={colors.paper}/><Text style={{color:colors.paper,fontWeight:"700"}}>Compartir</Text>
+    </Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
+      <Ionicons name="create-outline" size={20} color={colors.ink}/><Text style={{color:colors.ink,fontWeight:"700"}}>Editar JCard</Text>
+    </Pressable>
    </View>
   </View>
   <Modal visible={shareOpen} transparent animationType="fade" onRequestClose={()=>setShareOpen(false)}>
