@@ -32,10 +32,10 @@ export default function Profile() {
   const [profileToolsOpen,setProfileToolsOpen]=useState(false);
   const [menuMounted,setMenuMounted]=useState(false);
   const openProfileMenu=()=>{setMenuMounted(true);setProfileToolsOpen(true);};
-  const closeProfileMenu=()=>{setProfileToolsOpen(false);setTimeout(()=>setMenuMounted(false),270);};
+  const closeProfileMenu=()=>{setProfileToolsOpen(false);};
   const {width:screenWidth}=useWindowDimensions();
   const menuSlide=useRef(new Animated.Value(0)).current;
-  useEffect(()=>{Animated.timing(menuSlide,{toValue:profileToolsOpen?1:0,duration:profileToolsOpen?290:260,useNativeDriver:true}).start();},[profileToolsOpen,menuSlide]);
+  useEffect(()=>{menuSlide.stopAnimation();Animated.timing(menuSlide,{toValue:profileToolsOpen?1:0,duration:profileToolsOpen?290:240,useNativeDriver:true}).start(({finished})=>{if(finished&&!profileToolsOpen)setMenuMounted(false);});return()=>menuSlide.stopAnimation();},[profileToolsOpen,menuSlide]);
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
   const [history, setHistory] = useState<EmploymentEntry[]>([]);
   const [historyLoaded,setHistoryLoaded] = useState(false);
