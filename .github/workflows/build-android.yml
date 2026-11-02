@@ -1,0 +1,48 @@
+name: Build Jobin Android APK (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jobin-android-preview
+  cancel-in-progress: false
+
+jobs:
+  build-android:
+    name: Build preview APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: preview
+    steps:
+      - name: Checkout development
+        uses: actions/checkout@v4
+        with:
+          ref: development
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Expo token exists
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Add EXPO_TOKEN to the GitHub Actions secrets before requesting an APK."
+            exit 1
+          fi
+
+      - name: Build Android preview APK on EAS
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          CI: '1'
+        run: npx --yes eas-cli@27.1.0 build --platform android --profile preview --non-interactive --no-wait
