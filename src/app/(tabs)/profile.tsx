@@ -35,7 +35,8 @@ export default function Profile() {
   const closeProfileMenu=()=>{setProfileToolsOpen(false);};
   const {width:screenWidth}=useWindowDimensions();
   const menuSlide=useRef(new Animated.Value(0)).current;
-  useEffect(()=>{menuSlide.stopAnimation();Animated.timing(menuSlide,{toValue:profileToolsOpen?1:0,duration:profileToolsOpen?290:240,useNativeDriver:true}).start(({finished})=>{if(finished&&!profileToolsOpen)setMenuMounted(false);});return()=>menuSlide.stopAnimation();},[profileToolsOpen,menuSlide]);
+  const menuBackdrop=useRef(new Animated.Value(0)).current;
+  useEffect(()=>{menuBackdrop.stopAnimation();menuBackdrop.setValue(profileToolsOpen?1:0);menuSlide.stopAnimation();Animated.timing(menuSlide,{toValue:profileToolsOpen?1:0,duration:profileToolsOpen?290:240,useNativeDriver:true}).start(({finished})=>{if(finished&&!profileToolsOpen)setMenuMounted(false);});return()=>menuSlide.stopAnimation();},[profileToolsOpen,menuSlide,menuBackdrop]);
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
   const [history, setHistory] = useState<EmploymentEntry[]>([]);
   const [historyLoaded,setHistoryLoaded] = useState(false);
@@ -123,7 +124,8 @@ export default function Profile() {
         <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>profileToolsOpen?closeProfileMenu():openProfileMenu()} style={{padding:10}}><Ionicons name="ellipsis-horizontal" size={24} color={colors.ink}/></Pressable>
       </View>
       <Modal visible={menuMounted} transparent animationType="none" onRequestClose={closeProfileMenu} statusBarTranslucent={false}>
-        <View style={{flex:1,flexDirection:"row",backgroundColor:colors.scrim}}>
+        <View style={{flex:1,flexDirection:"row"}}>
+          <Animated.View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:colors.scrim,opacity:menuBackdrop}}/>
           <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú de perfil" onPress={closeProfileMenu} style={{flex:1}}/>
           <Animated.View style={{width:Math.min(screenWidth*0.88,410),transform:[{translateX:menuSlide.interpolate({inputRange:[0,1],outputRange:[Math.min(screenWidth*0.88,410),0]})}]}}><SafeAreaView edges={["top","bottom"]} style={{flex:1,backgroundColor:opacity(colors.paper,0.69),borderTopLeftRadius:18,borderBottomLeftRadius:18,overflow:"hidden"}}>
             <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:22,paddingBottom:32,gap:10}}>
