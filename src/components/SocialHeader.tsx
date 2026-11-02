@@ -1,5 +1,6 @@
 import { AccountAvatar } from "./AccountAvatar";
-import { useMemo, useState } from "react";
+import { useCallback,useMemo,useRef,useState } from "react";
+import {useFocusEffect} from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import { IconButton } from "./social-ui";
@@ -15,6 +16,8 @@ export function SocialHeader() {
   const { s, colors } = useUi();
   const { likedPosts, following } = useSocial();
   const [menu, setMenu] = useState(false);
+  const reopenMenuOnReturn=useRef(false);
+  useFocusEffect(useCallback(()=>{if(reopenMenuOnReturn.current){reopenMenuOnReturn.current=false;setMenu(true);}},[]));
   const interactions = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const id of likedPosts) {
@@ -44,7 +47,7 @@ export function SocialHeader() {
           </Pressable>
         ))}
       </ScrollView>
-      <HomeSideMenu visible={menu} onClose={() => setMenu(false)}/>
+      <HomeSideMenu visible={menu} onClose={() => setMenu(false)} onNavigate={()=>{reopenMenuOnReturn.current=true;}}/>
     </View>
   );
 }
