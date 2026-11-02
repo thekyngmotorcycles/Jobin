@@ -5,7 +5,8 @@ import { useTabClearance } from "../../theme/navigation";
 import { MediaThumbnail } from "../../components/MediaThumbnail";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import { ProfessionalStatus } from "../../components/ProfessionalStatus";
-import { loadWorkspace } from "../../lib/professional-api";
+import { loadCatalog,loadWorkspace } from "../../lib/professional-api";
+import { ProfessionPicker } from "../../components/ProfessionPicker";
 import { useProfessionalData } from "../../state/useProfessionalData";
 import { useCallback,useEffect,useState } from "react";
 import {getEmployerLinks} from "../../lib/employer-links";
@@ -46,11 +47,17 @@ export default function Profile() {
   function openEmployment(entry?:EmploymentEntry){
     setEditingId(entry?.id??null);
     setDraft(entry?{company:entry.company,role:entry.role,from:String(entry.from),to:entry.to===null?"":String(entry.to),profession:(entry.professions??[]).join(", "),fromMonth:String(entry.fromMonth??1),toMonth:String(entry.toMonth??12),address:entry.address??"",contact:entry.contact??""}:{company:"",role:"",from:"",to:"",profession:"",fromMonth:"1",toMonth:"12",address:"",contact:""});
-    setFormError("");setAddOpen(true);
+    setFormError("");setShowEmploymentProfessionPicker(false);setEmploymentProfessionQuery("");setAddOpen(true);
   }
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address:"", contact:"" });
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace);
+  const professionCatalog=useProfessionalData(loadCatalog);
+  const [showEmploymentProfessionPicker,setShowEmploymentProfessionPicker]=useState(false);
+  const [employmentProfessionQuery,setEmploymentProfessionQuery]=useState("");
+  const catalogProfessions=professionCatalog.data?.professions??[];
+  const findCatalogProfession=(value:string)=>catalogProfessions.find(p=>p.code===value||p.label.toLocaleLowerCase("es")===value.trim().toLocaleLowerCase("es"));
+  const selectedEmploymentProfession=findCatalogProfession(draft.role);
   useFocusEffect(useCallback(()=>{let live=true;void getEmployerLinks().then(rows=>{if(live){const verified=rows.find(row=>row.worker_id===workspace.data?.card.id&&row.status==="approved");setEmployerLink(verified?{id:verified.company_id,name:verified.name,handle:verified.handle}:null);}}).catch(()=>{if(live)setEmployerLink(null);});return()=>{live=false;};},[workspace.data?.card.id]));
   useEffect(()=>{let live=true;void readCloudHistory().then(async rows=>{if(!live)return;if(rows.length){const rawLocal=await AsyncStorage.getItem("jobin.professional.history.v1");const local=rawLocal?JSON.parse(rawLocal) as EmploymentEntry[]:[];setHistory(rows.map(row=>{const saved=local.find(entry=>entry.id===row.id);return {...row,address:saved?.address??row.address,contact:saved?.contact??row.contact};}));return;}const raw=await AsyncStorage.getItem("jobin.professional.history.v1");const local=raw?JSON.parse(raw) as EmploymentEntry[]:[];for(const item of local)await writeCloudHistory(item);if(live)setHistory(local);}).catch(()=>setNotice("No se pudo recuperar el historial en la nube."));return()=>{live=false;};},[]);
   useEffect(()=>{let live=true;void readBusinessRating(workspace.data?.card.id??"").then(value=>{if(live)setBusinessRating(value);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
@@ -75,16 +82,17 @@ export default function Profile() {
     const fromMonth=Number(draft.fromMonth),toMonth=Number(draft.toMonth);
     if(!Number.isInteger(fromMonth)||fromMonth<1||fromMonth>12||!Number.isInteger(toMonth)||toMonth<1||toMonth>12){setFormError("Los meses deben estar entre 1 y 12.");return;}
     if (to!==null && to===from && toMonth<fromMonth){setFormError("El mes de término debe ser posterior al de inicio.");return;}
+    if (!selectedEmploymentProfession){setFormError("Selecciona un cargo del catálogo de profesiones.");return;}
     if (!draft.company.trim() || !draft.role.trim() || !draft.from.trim() || !Number.isInteger(from) || from < 1950 || from > currentYear || (to!==null&&(!Number.isInteger(to)||to<from||to>currentYear))) {
       setFormError("Completa empresa, cargo y años válidos (el final no puede ser anterior al inicio).");
       return;
     }
     Keyboard.dismiss();
-    const updated:EmploymentEntry={id:editingId??Date.now()+"",company:draft.company.trim(),role:draft.role.trim(),professions:draft.profession.split(",").map(x=>x.trim()).filter(Boolean),fromMonth,toMonth,from,to,address:draft.address.trim(),contact:draft.contact.trim(),status:"pending",verifiedBy:null};
+    const updated:EmploymentEntry={id:editingId??Date.now()+"",company:draft.company.trim(),role:selectedEmploymentProfession.label,professions:[selectedEmploymentProfession.label],fromMonth,toMonth,from,to,address:draft.address.trim(),contact:draft.contact.trim(),status:"pending",verifiedBy:null};
     setHistory(items=>editingId?items.map(entry=>entry.id===editingId?updated:entry):[...items,updated]);
     void writeCloudHistory(updated).catch(()=>setNotice("Guardado localmente, pero no se pudo sincronizar. Revisa la conexión."));
     setDraft({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address: "", contact: "" });
-    setAddOpen(false);setEditingId(null);setFormError("");
+    setAddOpen(false);setEditingId(null);setFormError("");setShowEmploymentProfessionPicker(false);
     setNotice("Experiencia guardada. Cualquier cambio requiere una nueva verificación de la empresa.");
   }
 
@@ -200,17 +208,25 @@ export default function Profile() {
 
       <BottomSheet visible={addOpen} onClose={() => setAddOpen(false)} title={editingId?"Editar experiencia":"Agregar experiencia"}>
         <View style={{ gap: 12, paddingVertical: 16 }}>
-          {(["company", "role", "from", "to"] as const).map(key => (
-            <View key={key} style={{gap:6}}><Text style={s.muted}>{({company:"Empresa",role:"Cargo",from:"Año de inicio",to:"Año de término (opcional)"})[key]}</Text><TextInput accessibilityLabel={({ company: "Empresa", role: "Cargo", from: "Año de inicio", to: "Año de término (opcional)" })[key]}
-              placeholder={({ company: "Empresa", role: "Cargo", from: "Año de inicio", to: "Año de término (opcional)" })[key]}
-              placeholderTextColor={colors.muted} value={draft[key]} onChangeText={v => setDraft(d => ({ ...d, [key]: v }))}
-              keyboardType={key === "from" || key === "to" ? "number-pad" : "default"}
-              style={{ color: colors.ink, borderColor: colors.line, borderWidth: 1, padding: 14, borderRadius: 10 }} /></View>
-          ))}
+          <View style={{gap:6}}><Text style={s.muted}>Empresa</Text>
+           <TextInput accessibilityLabel="Empresa" placeholder="Empresa" placeholderTextColor={colors.muted} value={draft.company} onChangeText={v=>setDraft(d=>({...d,company:v}))} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>
+          </View>
+          <View style={{gap:8}}>
+           <Text style={s.muted}>Cargo / profesión ejercida</Text>
+           <Pressable accessibilityRole="button" accessibilityLabel="Elegir cargo del catálogo" onPress={()=>setShowEmploymentProfessionPicker(v=>!v)} style={{borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10,flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}>
+            <Text style={{color:selectedEmploymentProfession?colors.ink:colors.muted,flex:1}}>{selectedEmploymentProfession?.label??"Selecciona una profesión"}</Text>
+            <Ionicons name={showEmploymentProfessionPicker?"chevron-up":"chevron-down"} size={20} color={colors.ink}/>
+           </Pressable>
+           {showEmploymentProfessionPicker&&<ProfessionPicker catalog={professionCatalog.data??null} value={selectedEmploymentProfession?.code??""} onChange={code=>{const match=catalogProfessions.find(p=>p.code===code);if(match){setDraft(d=>({...d,role:match.label,profession:match.label}));setShowEmploymentProfessionPicker(false);setFormError("");}}}/>}
+           {!selectedEmploymentProfession&&!!draft.role&&<Text style={s.muted}>El cargo anterior no coincide con el catálogo. Selecciona uno para vincular los años de experiencia.</Text>}
+          </View>
+          {(["from","to"] as const).map(key=><View key={key} style={{gap:6}}>
+           <Text style={s.muted}>{key==="from"?"Año de inicio":"Año de término (opcional)"}</Text>
+           <TextInput accessibilityLabel={key==="from"?"Año de inicio":"Año de término"} placeholder="AAAA" placeholderTextColor={colors.muted} value={draft[key]} onChangeText={v=>setDraft(d=>({...d,[key]:v}))} keyboardType="number-pad" style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>
+          </View>)}
           {!!formError&&<Text accessibilityRole="alert" style={{color:colors.reaction}}>{formError}</Text>}
-          <TextInput accessibilityLabel="Profesiones (separadas por coma)" placeholder="Profesiones: HVAC, Electricidad" placeholderTextColor={colors.muted} value={draft.profession} onChangeText={v=>setDraft(d=>({...d,profession:v}))} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>
           <Text style={[s.h3,{fontSize:15}]}>Meses de trabajo</Text>
-          <Text style={s.muted}>Selecciona el mes de inicio y de finalización. Enero = 1; diciembre = 12.</Text>
+          <Text style={s.muted}>Selecciona el mes de inicio y de finalización.</Text>
           {(["fromMonth","toMonth"] as const).map(key=><View key={key} style={{gap:6}}>
            <Text style={s.muted}>{key==="fromMonth"?"Mes de inicio":"Mes de término"}</Text>
            <View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}>{["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((month,index)=><Pressable key={month} accessibilityRole="button" accessibilityState={{selected:Number(draft[key])===index+1}} onPress={()=>setDraft(d=>({...d,[key]:String(index+1)}))} style={{minWidth:"22%",minHeight:42,borderWidth:1,borderColor:colors.line,borderRadius:10,alignItems:"center",justifyContent:"center",backgroundColor:Number(draft[key])===index+1?colors.ink:colors.card}}><Text style={{color:Number(draft[key])===index+1?colors.inverse:colors.ink,fontWeight:Number(draft[key])===index+1?"800":"400"}}>{Number(draft[key])===index+1?"✓ "+month:month}</Text></Pressable>)}</View>
