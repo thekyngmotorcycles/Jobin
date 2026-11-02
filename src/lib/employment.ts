@@ -12,5 +12,5 @@ export function employmentMonths(entries:readonly EmploymentEntry[],profession?:
 export function experienceLabel(months:number):string{
  const years=Math.floor(months/12),remaining=months%12;
  if(years===0)return remaining+"M";
- return years+"Años"+(remaining?" + "+remaining+"M":"");
+ return years+" "+(years===1?"Año":"Años")+(remaining?" + "+remaining+" M":"");
 }
