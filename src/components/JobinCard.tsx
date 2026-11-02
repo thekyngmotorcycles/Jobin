@@ -151,7 +151,7 @@ function BusinessAward({label,icon,level,finish}:{label:string;icon:React.Compon
 }
 function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;contact?:{email:string|null;phone:string|null};onQr?:()=>void}){
  const b=card.business;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:businessCardPaper.background,end:businessCardPaper.background,text:businessCardPaper.ink,secondary:businessCardPaper.secondary,line:businessCardPaper.border,sealFill:businessCardPaper.muted};
- const company=!!b?.name.trim();const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
+ const company=!!b?.name.trim();const businessName=(company?b!.name:card.name).trim().slice(0,60);const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
  const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
  const category=b?.category?.trim()||(/hvac|aire acondicionado|climatiz|refrigeraci/i.test([card.role,...(b?.services??[])].join(" "))?"Climatización":b?.services?.[0]||"Servicios profesionales");
  const art=businessCategoryArt(category);
@@ -171,13 +171,13 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
   </Svg>
   <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
   <View style={{flex:1,padding:14,gap:10}}>
-   <View style={{height:108,marginTop:0,marginHorizontal:0,position:"relative",flexDirection:"row",alignItems:"center"}}>
-    <View style={{position:"absolute",left:48,right:0,height:94,top:7,borderRadius:24,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
+   <View style={{height:92,marginTop:0,marginHorizontal:0,position:"relative",flexDirection:"row",alignItems:"center"}}>
+    <View style={{position:"absolute",left:43,right:0,height:72,top:10,borderRadius:24,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
      {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:
       <View style={{flex:1,backgroundColor:art.tint,alignItems:"flex-end",justifyContent:"center",paddingRight:20}}><Ionicons name={art.icon} size={66} color={BUSINESS_MEDAL_COLORS[1]} style={{opacity:0.55}}/></View>}
     </View>
-    <View style={{position:"absolute",left:0,top:7,borderRadius:48,borderWidth:3,borderColor:finish.start,padding:3,backgroundColor:finish.start}}>
-     {b?.avatarUrl?<Avatar uri={b.avatarUrl} name={company?b!.name:card.name} size={84}/>:<View style={{width:84,height:84,borderRadius:42,backgroundColor:BUSINESS_MEDAL_COLORS[20],alignItems:"center",justifyContent:"center"}}><Ionicons name={art.icon} size={39} color={BUSINESS_MEDAL_COLORS[1]}/></View>}
+    <View style={{position:"absolute",left:0,top:5,borderRadius:43,borderWidth:3,borderColor:finish.start,padding:3,backgroundColor:finish.start}}>
+     {b?.avatarUrl?<Avatar uri={b.avatarUrl} name={company?b!.name:card.name} size={74}/>:<View style={{width:74,height:74,borderRadius:37,backgroundColor:BUSINESS_MEDAL_COLORS[20],alignItems:"center",justifyContent:"center"}}><Ionicons name={art.icon} size={34} color={BUSINESS_MEDAL_COLORS[1]}/></View>}
     </View>
    </View>
    <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"flex-start",gap:7,marginTop:4}}>
@@ -218,7 +218,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,ownerId,showOwnerAct
  const [contact,setContact]=useState<{email:string|null;phone:string|null}>({email:null,phone:null});
  useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void loadPublicContact(ownerId).then(value=>{if(live)setContact(value);}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
  const [back,setBack]=useState(false),[shareOpen,setShareOpen]=useState(false),[qrOpen,setQrOpen]=useState(false);
- const cardHeight = 420;
+ const cardHeight = 470;
  const rotation=useRef(new Animated.Value(0)).current;
  const angle=useRef(0);
  const rotate=(direction:number)=>{const next=angle.current+direction*180;angle.current=next;setBack(v=>!v);rotation.stopAnimation();Animated.timing(rotation,{toValue:next,useNativeDriver:true,duration:420}).start(({finished})=>{if(finished&&Math.abs(angle.current)>=1800){angle.current=angle.current%360;rotation.setValue(angle.current);}});};
