@@ -25,8 +25,15 @@ select pg_temp.assert_ok((select label='Técnico HVAC' and category='climate' fr
 select pg_temp.assert_ok((select label='Técnico en Refrigeración' and category='refrigeration' from public.profession_catalog where code='refrigeracion'),'refrigeration profession moved to distinct category');
 select pg_temp.assert_ok((select category='automotive' from public.profession_catalog where code='detallador_vehiculos'),'vehicle detailing belongs to automotive');
 select pg_temp.assert_ok((select category='technology' from public.profession_catalog where code='piloto_drones'),'drone pilot belongs to technology');
-select pg_temp.assert_ok((select count(*)=4 from public.profession_specialty_options where profession_code='detallador_vehiculos'),'vehicle detailing specialties seeded');
-select pg_temp.assert_ok((select count(*)=12 from public.profession_specialty_options where profession_code='piloto_drones'),'drone pilot specialties seeded');
+-- The foundational CI schema does not install the optional specialty catalog.
+do $audit$
+begin
+ if to_regclass('public.profession_specialty_options') is not null then
+  perform pg_temp.assert_ok((select count(*)=4 from public.profession_specialty_options where profession_code='detallador_vehiculos'),'vehicle detailing specialties seeded');
+  perform pg_temp.assert_ok((select count(*)=12 from public.profession_specialty_options where profession_code='piloto_drones'),'drone pilot specialties seeded');
+ end if;
+end;
+$audit$;
 select pg_temp.assert_ok(not exists(select 1 from public.profession_catalog p left join public.profession_categories c on c.code=p.category where c.code is null),'all professions belong to a valid category');
 select pg_temp.assert_ok(not exists(select 1 from pg_tables where schemaname='public' and not rowsecurity),'RLS on every public table');
 select pg_temp.assert_ok((select count(*)=6 from public.jcard_profiles),'identity bootstraps for personal and company accounts');
