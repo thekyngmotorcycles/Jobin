@@ -5,7 +5,7 @@ export type SearchTarget="Profesionales"|"Empresas"|"Flashes"|"Streams";
 const clean=(value:string)=>value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
 const distance=(a:string,b:string)=>{if(Math.abs(a.length-b.length)>2)return 3;let row=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){const next=[i];for(let j=1;j<=b.length;j++)next[j]=Math.min(next[j-1]+1,row[j]+1,row[j-1]+(a[i-1]===b[j-1]?0:1));row=next;}return row[b.length];};
 const approximate=(a:string,b:string)=>a===b||(a.length>=5&&b.length>=5&&distance(a,b)<=(Math.max(a.length,b.length)>=8?2:1));
-const aliases:Record<string,string[]={
+const aliases:Record<string,string[]>={
  electricista:["electricista","electricistas","electrician","electricians","electrisista"],
  "tecnico hvac":["hvac","aire acondicionado","climatizacion","air conditioning"],
  mecanico:["mecanico","mecanica","mechanic"],
