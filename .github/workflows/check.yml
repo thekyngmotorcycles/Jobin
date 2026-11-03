@@ -54,3 +54,4 @@ jobs:
             psql -v ON_ERROR_STOP=1 -f "$migration"
           done
       - run: psql -v ON_ERROR_STOP=1 -f tests/database.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/catalog-migration-idempotence.test.sql
