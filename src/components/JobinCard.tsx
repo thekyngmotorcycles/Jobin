@@ -199,6 +199,7 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
      {!!b?.opened&&<View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="calendar-outline" size={13} color={finish.secondary}/><Text style={{color:finish.secondary,fontSize:10}}>Desde {b.opened}</Text></View>}
     </View>
    </View>
+   {!!b?.services?.length&&<View style={{alignSelf:"stretch",alignItems:"center",justifyContent:"center",paddingHorizontal:8,marginTop:4}}><Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:11,lineHeight:15,textAlign:"center",color:finish.secondary}}>{b.services.join(" · ")}</Text></View>}
    <View style={{flex:1,minHeight:8}}/>
    <View style={{height:1,backgroundColor:finish.line,opacity:0.7,marginBottom:4}}/>
    <View style={{flexDirection:"row",alignItems:"center",gap:4,minHeight:100}}>
