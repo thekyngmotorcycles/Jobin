@@ -10,6 +10,13 @@ begin
  if not exists(select 1 from public.person_professions
   where worker_id=auth.uid() and profession_code=old_profession and not primary_profession) then
   raise exception 'The original secondary profession is no longer available'; end if;
+ -- Never turn an existing primary trade into a secondary replacement or alter its credentials.
+ if old_profession<>new_profession and exists(
+  select 1 from public.person_professions
+  where worker_id=auth.uid() and profession_code=new_profession
+ ) then
+  raise exception 'The replacement profession is already on your JCard';
+ end if;
  if old_profession<>new_profession then
   perform public.jobin_remove_unverified_profession(old_profession);
  end if;
