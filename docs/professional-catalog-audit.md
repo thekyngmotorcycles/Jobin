@@ -50,3 +50,11 @@ Cada especialidad pertenece a un `profession_code` existente. No inferir especia
 - Supabase: **0 especialidades huérfanas**; **10 especialidades** pertenecen a profesiones inactivas (conservar para no romper historial).
 - La base activa aún no tiene `detallador_vehiculos` ni `piloto_drones`, y no tiene aplicada la corrección de `ebanista`; la aprobación CI no equivale a despliegue.
 - Se agregaron aserciones automáticas sobre códigos/categorías obligatorios, nombres únicos de profesiones activas y categorías, especialidades sin referencias huérfanas y especialidades no duplicadas dentro de cada profesión. La comprobación de especialidades es condicional porque el fixture CI base no siempre instala esa tabla.
+
+## Quinta pasada — especialidades y clasificación
+- Commit `20a7d037`: ambas ejecuciones CI completaron con éxito.
+- Consulta de integridad de Supabase: 0 especialidades huérfanas; 10 especialidades de profesiones inactivas.
+- Cinco profesiones activas tienen 4 especialidades (el resto tiene 5 o más): `valet_parking`, `farmaceutico`, `paseador_de_perros`, `repartidor_alimentos_insumos` y `repartidor_cartas_paqueteria`. **Cuatro no es un error por sí solo**; revisar cobertura de especialidades por calidad, no por cantidad.
+- `joyero_relojero`, `tapicero` y `zapatero` están en `fashion`; mantener provisionalmente: la artesanía, el calzado y la tapicería pueden tener ámbitos de moda/interiorismo. La asignación no es inequívocamente errónea.
+- Se confirmó que Supabase activo aún mantiene `ebanista` en `fashion`; la migración de corrección aprobada por CI no se ha desplegado.
+- Pendiente: pruebas funcionales de reemplazo de profesión principal y lectura pública de JCard; la aprobación de CI actual no garantiza ese flujo.
