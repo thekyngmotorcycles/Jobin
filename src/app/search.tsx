@@ -8,19 +8,26 @@ import {visiblePosts} from "../lib/feed";
 import {browseStreams} from "../lib/streams";
 import {findProfessionals,type ProfessionalSearchResult} from "../lib/professional-api";
 
-type SearchKind="Profesionales"|"Videos"|"Live";
+type SearchKind="Profesionales"|"Empresas"|"Flashes"|"Streams";
+const normalize=(value:string)=>value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+const tokenize=(value:string)=>normalize(value).split(/\s+/).filter(word=>word.length>2&&!["busco","quiero","estoy","viendo","video","vivo","directo","stream","streams","una","uno","en","de","un","el","la","los","las","por","para","haciendo"].includes(word));
+const matchesWords=(text:string,terms:string[])=>terms.every(term=>normalize(text).includes(term));
 export default function Search(){
  const {mode}=useLocalSearchParams<{mode?:string}>();
  const {s,colors}=useUi();
  const [query,setQuery]=useState("");
  const [city,setCity]=useState("");
  const [specialty,setSpecialty]=useState("");
- const [kind,setKind]=useState<SearchKind>(mode==="live"?"Live":"Profesionales");
+ const [kind,setKind]=useState<SearchKind>(mode==="live"?"Streams":"Profesionales");
+ const [filtersOpen,setFiltersOpen]=useState(false);
  const [results,setResults]=useState<ProfessionalSearchResult[]>([]);
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState("");
  const [searched,setSearched]=useState(false);
- const posts=visiblePosts("Para ti",[],query),streams=browseStreams("Popular","Todas",query);
+ const words=tokenize(query);
+ const posts=visiblePosts("Para ti",[],query);
+ const streams=browseStreams("Popular","Todas","").filter(room=>matchesWords([room.title,room.host,room.city].join(" "),words));
+ const displayedResults=results.filter(person=>kind==="Empresas"?person.account_type==="company":person.account_type==="personal");
  async function runSearch(){
   if(!query.trim()&&!city.trim()&&!specialty.trim()){setError("Escribe qué profesional buscas o indica una ciudad.");return;}
   setLoading(true);setError("");setSearched(true);
@@ -31,26 +38,27 @@ export default function Search(){
  return <SafeAreaView style={s.screen}>
   <View style={{flexDirection:"row",alignItems:"center",padding:12,gap:6}}>
    <IconButton icon="arrow-back" label="Volver" onPress={()=>router.canGoBack()?router.back():router.replace("/")}/>
-   <TextInput accessibilityLabel="Buscar en Jobin" placeholder="Ej. Técnico HVAC VRF en Miami" placeholderTextColor={colors.muted} value={query} onChangeText={setQuery} onSubmitEditing={()=>{if(kind==="Profesionales")void runSearch();}} returnKeyType="search" style={{flex:1,minHeight:46,borderRadius:24,backgroundColor:colors.accent,paddingHorizontal:18,color:colors.ink}}/>
+   <TextInput accessibilityLabel="Buscar en Jobin" placeholder="Ej. electricista en vivo en Miami" placeholderTextColor={colors.muted} value={query} onChangeText={setQuery} onSubmitEditing={()=>{if(kind==="Profesionales"||kind==="Empresas")void runSearch();}} returnKeyType="search" style={{flex:1,minHeight:46,borderRadius:24,backgroundColor:colors.accent,paddingHorizontal:18,color:colors.ink}}/>
    {!!query&&<IconButton icon="close" label="Borrar búsqueda" onPress={()=>{setQuery("");setResults([]);setSearched(false);}}/>}
   </View>
   <View style={{paddingHorizontal:16,paddingBottom:12}}>
-   <Chips values={["Profesionales","Videos","Live"] as const} value={kind} onChange={setKind} label="Tipo de búsqueda"/>
+   <Pressable accessibilityRole="button" accessibilityState={{expanded:filtersOpen}} onPress={()=>setFiltersOpen(v=>!v)} style={{flexDirection:"row",alignItems:"center",padding:10,borderRadius:12,borderWidth:1,borderColor:colors.line}}><Text style={{color:colors.ink,flex:1}}>Buscar en: {kind} (opcional)</Text><Text style={{color:colors.ink}}>{filtersOpen?"▲":"▼"}</Text></Pressable>
+   {filtersOpen&&<Chips values={["Profesionales","Empresas","Flashes","Streams"] as const} value={kind} onChange={v=>{setKind(v);setResults([]);setSearched(false);setError("");setFiltersOpen(false);}} label="Tipo de búsqueda"/>}
   </View>
   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:20,gap:16}}>
-   {kind==="Profesionales"?<>
-    <Text style={s.h3}>Encuentra profesionales por profesión, especialidad y ciudad</Text>
+   {(kind==="Profesionales"||kind==="Empresas")?<>
+    <Text style={s.h3}>{kind==="Empresas"?"Encuentra empresas por sector, servicio y ciudad":"Encuentra profesionales por profesión, especialidad y ciudad"}</Text>
     <Text style={s.muted}>Describe lo que necesitas: «Técnico de aire acondicionado especializado en VRF en Miami».</Text>
     <TextInput accessibilityLabel="Ciudad" value={city} onChangeText={setCity} placeholder="Ciudad (opcional si la escribiste arriba)" placeholderTextColor={colors.muted} style={{minHeight:48,paddingHorizontal:14,borderWidth:1,borderColor:colors.line,borderRadius:12,color:colors.ink}}/>
     <TextInput accessibilityLabel="Especialidad" value={specialty} onChangeText={setSpecialty} placeholder="Especialidad (opcional, ej. VRF)" placeholderTextColor={colors.muted} style={{minHeight:48,paddingHorizontal:14,borderWidth:1,borderColor:colors.line,borderRadius:12,color:colors.ink}}/>
     <Pressable accessibilityRole="button" onPress={()=>void runSearch()} disabled={loading} style={{padding:15,borderRadius:14,backgroundColor:colors.ink,alignItems:"center"}}>
-     <Text style={{color:colors.paper,fontWeight:"700"}}>{loading?"Buscando…":"Buscar profesionales"}</Text>
+     <Text style={{color:colors.paper,fontWeight:"700"}}>{loading?"Buscando…":kind==="Empresas"?"Buscar empresas":"Buscar profesionales"}</Text>
     </Pressable>
     <Text style={s.muted}>Primero coincidencia con tu búsqueda; después credenciales y reconocimientos verificados. Las cuentas personales no tienen puntuación por estrellas.</Text>
     {loading&&<ActivityIndicator color={colors.ink}/>}
     {!!error&&<Text style={{color:colors.ink}}>{error}</Text>}
-    {searched&&!loading&&!error&&<Text style={s.muted}>{results.length} resultados encontrados</Text>}
-    {results.map(person=><Pressable key={person.id+":"+person.profession_code} accessibilityRole="button" onPress={()=>router.push({pathname:"/jcard",params:{user:person.id}})} style={{padding:14,borderWidth:1,borderColor:colors.line,borderRadius:16,gap:5}}>
+    {searched&&!loading&&!error&&<Text style={s.muted}>{displayedResults.length} resultados encontrados</Text>}
+    {displayedResults.map(person=><Pressable key={person.id+":"+person.profession_code} accessibilityRole="button" onPress={()=>router.push({pathname:"/jcard",params:{user:person.id}})} style={{padding:14,borderWidth:1,borderColor:colors.line,borderRadius:16,gap:5}}>
      <Text style={s.h3}>{person.name}</Text>
      <Text style={s.text}>{person.profession}</Text>
      <Text style={s.muted}>{[person.city,person.region].filter(Boolean).join(", ")||"Ubicación no especificada"}</Text>
@@ -60,14 +68,14 @@ export default function Search(){
      {person.account_type==="company"&&person.business_reviews>0&&<Text style={s.muted}>Empresa: {person.business_rating.toFixed(1)}/5 ({person.business_reviews} reseñas)</Text>}
      <Text style={s.muted}>Ver JCard →</Text>
     </Pressable>)}
-    {searched&&!loading&&!error&&results.length===0&&<Text style={s.text}>No encontramos perfiles que coincidan. Prueba otra ciudad o una especialidad más amplia.</Text>}
-   </>:kind==="Videos"?<>
-    <Text style={s.muted}>{query?"Resultados de videos":"Explorar videos de demostración"}</Text>
-    {posts.map(post=><Pressable key={post.postId} accessibilityRole="button" onPress={()=>router.replace({pathname:"/",params:{post:post.postId}})} style={{flexDirection:"row",gap:14,alignItems:"center",paddingVertical:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
+    {searched&&!loading&&!error&&displayedResults.length===0&&<Text style={s.text}>No encontramos perfiles que coincidan. Prueba otra ciudad o una especialidad más amplia.</Text>}
+   </>:kind==="Flashes"?<>
+    <Text style={s.muted}>{query?"Resultados de Flashes":"Explorar Flashes"}</Text>
+    {posts.map(post=><Pressable key={post.postId} accessibilityRole="button" onPress={()=>router.replace({pathname:"/videos",params:{post:post.postId}})} style={{flexDirection:"row",gap:14,alignItems:"center",paddingVertical:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
      <Avatar uri={post.avatar} name={post.author}/><View style={{flex:1,gap:5}}><Text style={s.h3}>@{post.handle}</Text><Text style={s.muted} numberOfLines={2}>{post.caption}</Text></View>
     </Pressable>)}
    </>:<>
-    <Text style={s.muted}>{query?"Resultados de transmisiones":"Explorar transmisiones de demostración"}</Text>
+    <Text style={s.muted}>{query?"Resultados de Streams":"Explorar Streams"}</Text>
     {streams.map(room=><Pressable key={room.id} accessibilityRole="button" onPress={()=>router.replace({pathname:"/stream/[id]",params:{id:room.id}})} style={{flexDirection:"row",gap:14,alignItems:"center",paddingVertical:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
      <Avatar uri={room.avatar} name={room.host}/><View style={{flex:1,gap:5}}><Text style={s.h3}>{room.title}</Text><Text style={s.muted}>{room.host} · {room.city} · Demo room</Text></View>
     </Pressable>)}
