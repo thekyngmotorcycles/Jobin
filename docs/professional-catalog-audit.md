@@ -66,3 +66,10 @@ Cada especialidad pertenece a un `profession_code` existente. No inferir especia
 - **Puerta de auditoría previa a fase 1:** revisión semántica de profesiones y especialidades, duplicados, categorías y códigos estables; contrastar 196 profesiones / 1.040 especialidades activas de Supabase con el catálogo de migraciones; revisar referencias de perfiles antes de actualizar.
 - **Puerta de fase 1:** separar profesiones declaradas de sellos y credenciales; eliminar límites globales de sellos sin relajar verificaciones legales; probar 1 principal + 10 secundarias sin documentos, cambios, borrados, credenciales y JCard pública. No comenzar fase 2 hasta CI y pruebas de integración aprobadas.
 - **Seguridad:** no desplegar migraciones pendientes a Supabase activo hasta verificar reconciliación, dependencias y compatibilidad. No generar APK.
+
+## Auditoría adicional — 2026-11-03
+- Supabase activo: 196 profesiones, 1040 especialidades, 1 asociación de profesión de usuario, 2 sellos, 0 categorías huérfanas y 0 especialidades huérfanas.
+- Última migración activa: 20261103050942. Cambios posteriores del catálogo están pendientes.
+- La base activa tiene 24 categorías, frente a las 16 del entorno de pruebas. No se deben reemplazar los datos activos con los datos de prueba.
+- Ebanista sigue clasificado como moda en el catálogo activo; la corrección existe en desarrollo.
+- Se requiere revisar la compatibilidad de las migraciones y los datos activos antes de implementar la fase 1.
