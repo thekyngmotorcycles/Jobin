@@ -150,7 +150,6 @@ function BusinessAward({label,icon,level,finish}:{label:string;icon:React.Compon
  </View>;
 }
 function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{card:CardData;theme:ThemeName;contact?:{email:string|null;phone:string|null};onQr?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void}){
- const bannerClipId=useId().replace(/:/g,"");
  const b=card.business;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:businessCardPaper.background,end:businessCardPaper.background,text:businessCardPaper.ink,secondary:businessCardPaper.secondary,line:businessCardPaper.border,sealFill:businessCardPaper.muted};
  const company=!!b?.name.trim();const businessName=(company?b!.name:card.name).trim().slice(0,30);const [businessNameWidth,setBusinessNameWidth]=useState(180);const nameFontSize=Math.max(14,Math.min(21,Math.floor(businessNameWidth/Math.max(8,businessName.length)*1.65)));const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
  const reviewCount=b?.reviewCount??0;const ratingUnlocked=reviewCount>=10&&rating!==null;const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
@@ -177,19 +176,11 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
   </Svg>
 
   <View style={{flex:1,paddingHorizontal:0,paddingTop:0,paddingBottom:0,gap:0}}>
-   <View style={{height:104,position:"relative",zIndex:1}}>
-    <Svg width="100%" height="104" viewBox="0 0 400 104" preserveAspectRatio="none" pointerEvents="none">
-     <Defs>
-      <ClipPath id={bannerClipId}>
-       <Path d="M0 0 H400 V78 Q400 104 374 104 H361 Q340 104 340 83 H60 Q60 104 39 104 H26 Q0 104 0 78 Z"/>
-      </ClipPath>
-     </Defs>
-     <SvgImage href={b?.bannerUrl?{uri:b.bannerUrl}:undefined} x="0" y="0" width="400" height="104" preserveAspectRatio="xMidYMid slice" clipPath={`url(#${bannerClipId})`}/>
-     {!b?.bannerUrl&&<Path d="M0 0 H400 V78 Q400 104 374 104 H361 Q340 104 340 83 H60 Q60 104 39 104 H26 Q0 104 0 78 Z" fill={art.tint}/>}
-    </Svg>
+   <View style={{height:104,position:"relative",zIndex:0}}>
+    {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:<View style={{flex:1,backgroundColor:art.tint,alignItems:"flex-end",justifyContent:"center",paddingRight:20}}><Ionicons name={art.icon} size={66} color={BUSINESS_MEDAL_COLORS[1]} style={{opacity:0.55}}/></View>}
     {canEditMedia&&onEditMedia&&<Pressable accessibilityRole="button" accessibilityLabel="Cambiar banner empresarial desde la galería" onPress={()=>onEditMedia("banner")} style={{position:"absolute",right:9,top:9,width:25,height:25,borderRadius:13,backgroundColor:jcardCommon.editBackground,alignItems:"center",justifyContent:"center"}}><Ionicons name="pencil-outline" size={13} color={jcardCommon.editInk}/></Pressable>}
    </View>
-   <View style={{flex:1,paddingHorizontal:14,paddingTop:0,paddingBottom:10,gap:5}}>
+   <View style={{flex:1,marginTop:-18,borderTopLeftRadius:26,borderTopRightRadius:26,backgroundColor:businessCardPaper.background,paddingHorizontal:14,paddingTop:18,paddingBottom:10,gap:5,zIndex:2}}>
    <View style={{flexDirection:"row",alignItems:"flex-start",gap:6,marginTop:-2}}>
     <View style={{flex:1,minWidth:0}} onLayout={e=>{const w=Math.floor(e.nativeEvent.layout.width)-22;if(w>0&&Math.abs(w-businessNameWidth)>2)setBusinessNameWidth(w);}}>
      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"flex-start",gap:3}}>
