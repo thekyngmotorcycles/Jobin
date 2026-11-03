@@ -25,6 +25,7 @@ select pg_temp.assert_ok((select label='Técnico HVAC' and category='climate' fr
 select pg_temp.assert_ok((select label='Técnico en Refrigeración' and category='refrigeration' from public.profession_catalog where code='refrigeracion'),'refrigeration profession moved to distinct category');
 select pg_temp.assert_ok((select category='automotive' from public.profession_catalog where code='detallador_vehiculos'),'vehicle detailing belongs to automotive');
 select pg_temp.assert_ok((select category='technology' from public.profession_catalog where code='piloto_drones'),'drone pilot belongs to technology');
+select pg_temp.assert_ok((select category='construction' from public.profession_catalog where code='ebanista'),'cabinetmaker belongs to construction and woodworking');
 -- The foundational CI schema does not install the optional specialty catalog.
 do $audit$
 begin
