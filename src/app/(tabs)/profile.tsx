@@ -51,7 +51,7 @@ export default function Profile() {
   async function refreshCV(){try{const id=await cloudOwner();setIncomingCV((await cvRequests()).filter(r=>r.owner_id===id));}catch(e){setNotice(e instanceof Error?e.message:"No se pudieron cargar solicitudes.");}}
   async function answerCV(id:string,approve:boolean){try{await respondCV(id,approve);await refreshCV();}catch(e){setNotice(String(e));}}
   async function cancelCV(id:string){try{await revokeCV(id);await refreshCV();}catch(e){setNotice(String(e));}}
-  async function shareCV(){const message=["Historial profesional de Jobin",...history.map(e=>`${e.role} · ${e.company} · ${e.from}/${e.fromMonth??1} - ${e.to??"Actualidad"}/${e.toMonth??12}`)].join("\\n");try{await Share.share({message});}catch(e){setNotice(String(e));}}
+  async function shareCV(){const message=["Historial profesional de Jobin",...history.map(e=>`${e.role} · ${e.company} · ${e.from}/${e.fromMonth??1} - ${e.to??"Actualidad"}/${e.toMonth??12}`)].join("\n");try{await Share.share({message});}catch(e){setNotice(String(e));}}
   useEffect(()=>{void refreshCV();},[]);
   const [historyLoaded,setHistoryLoaded] = useState(false);
   const [employerLink,setEmployerLink]=useState<{id:string;name:string;handle:string}|null>(null);
