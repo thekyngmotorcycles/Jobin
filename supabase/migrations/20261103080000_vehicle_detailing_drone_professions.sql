@@ -10,7 +10,9 @@ begin
   ('piloto_drones','technology','Piloto de drones','Drones','airplane-outline',200,true)
   on conflict(code) do update set category=excluded.category,label=excluded.label,short_label=excluded.short_label,icon=excluded.icon,active=true;
  end if;
- if to_regclass('public.profession_specialty_options') is not null then
+ if to_regclass('public.profession_specialty_options') is not null
+    and exists(select 1 from public.profession_catalog where code='detallador_vehiculos')
+    and exists(select 1 from public.profession_catalog where code='piloto_drones') then
   insert into public.profession_specialty_options(profession_code,label,sort_order) values
   ('detallador_vehiculos','Lavado a detalle de autos',1),
   ('detallador_vehiculos','Lavado a detalle de motos',2),
