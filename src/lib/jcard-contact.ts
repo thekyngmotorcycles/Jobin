@@ -26,6 +26,11 @@ export async function loadPersonalContactDetails(ownerId?:string):Promise<Person
  if(error)throw error;
  return {email_primary:data?.email_primary??"",email_secondary:data?.email_secondary??"",phone_primary:data?.phone_primary??"",phone_secondary:data?.phone_secondary??""};
 }
+export async function loadVisiblePersonalContactDetails(ownerId:string):Promise<PersonalContactDetails>{
+ const {data,error}=await (requireSupabase() as any).rpc("jcard_public_contact_details",{target:ownerId});
+ if(error)throw error;
+ return {email_primary:data?.email_primary??"",email_secondary:data?.email_secondary??"",phone_primary:data?.phone_primary??"",phone_secondary:data?.phone_secondary??""};
+}
 export async function savePersonalContactDetails(details:PersonalContactDetails):Promise<void>{
  const db=requireSupabase();const {data:{user},error:authError}=await db.auth.getUser();
  if(authError||!user)throw new Error("Inicia sesión para guardar los contactos.");
