@@ -1,3 +1,4 @@
+import {cvRequests,respondCV,revokeCV,type CVRequest} from "../../lib/cv-access";
 import {pickBusinessGalleryPhoto,uploadBusinessPhoto} from "../../lib/business-media";
 import {cloudOwner} from "../../lib/jcard-cloud";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -14,7 +15,7 @@ import { ProfessionPicker } from "../../components/ProfessionPicker";
 import { useProfessionalData } from "../../state/useProfessionalData";
 import { useCallback,useEffect,useState } from "react";
 import {getEmployerLinks} from "../../lib/employer-links";
-import { Animated, Image, Keyboard, Modal, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Animated, Image, Keyboard, Modal, Share, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router,useFocusEffect,useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -46,6 +47,12 @@ export default function Profile() {
   useEffect(()=>{menuBackdrop.stopAnimation();menuBackdrop.setValue(profileToolsOpen?1:0);menuSlide.stopAnimation();Animated.timing(menuSlide,{toValue:profileToolsOpen?1:0,duration:profileToolsOpen?290:240,useNativeDriver:true}).start(({finished})=>{if(finished&&!profileToolsOpen)setMenuMounted(false);});return()=>menuSlide.stopAnimation();},[profileToolsOpen,menuSlide,menuBackdrop]);
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
   const [history, setHistory] = useState<EmploymentEntry[]>([]);
+  const [incomingCV,setIncomingCV]=useState<CVRequest[]>([]);
+  async function refreshCV(){try{const id=await cloudOwner();setIncomingCV((await cvRequests()).filter(r=>r.owner_id===id));}catch(e){setNotice(e instanceof Error?e.message:"No se pudieron cargar solicitudes.");}}
+  async function answerCV(id:string,approve:boolean){try{await respondCV(id,approve);await refreshCV();}catch(e){setNotice(String(e));}}
+  async function cancelCV(id:string){try{await revokeCV(id);await refreshCV();}catch(e){setNotice(String(e));}}
+  async function shareCV(){const message=["Historial profesional de Jobin",...history.map(e=>`${e.role} · ${e.company} · ${e.from}/${e.fromMonth??1} - ${e.to??"Actualidad"}/${e.toMonth??12}`)].join("\\n");try{await Share.share({message});}catch(e){setNotice(String(e));}}
+  useEffect(()=>{void refreshCV();},[]);
   const [historyLoaded,setHistoryLoaded] = useState(false);
   const [employerLink,setEmployerLink]=useState<{id:string;name:string;handle:string}|null>(null);
   const [businessRating,setBusinessRating]=useState<{rating:number|null;count:number}>({rating:null,count:0});
@@ -206,8 +213,9 @@ export default function Profile() {
                 </View>
               </View>
             ))}
+            <View style={{gap:8}}><Button secondary title="Actualizar solicitudes de CV" onPress={()=>void refreshCV()}/>{incomingCV.map(req=><View key={req.id} style={{gap:6,padding:10,borderWidth:1,borderColor:colors.line,borderRadius:10}}><Text style={s.text}>Solicitud {req.requester_id.slice(0,8)} · {req.status}</Text>{req.status==="pending"&&<View style={s.row}><Button title="Autorizar" onPress={()=>void answerCV(req.id,true)}/><Button secondary title="Rechazar" onPress={()=>void answerCV(req.id,false)}/></View>}{req.status==="approved"&&<Button secondary title="Revocar acceso" onPress={()=>void cancelCV(req.id)}/>}</View>)}</View>
             <View style={s.row}>
-              <Button secondary title="Enviar" onPress={() => setSendOpen(true)} />
+              <Button secondary title="Compartir CV" onPress={() => void shareCV()} />
               <Button title="Agregar" onPress={() => openEmployment()} />
             </View>
           </View>
