@@ -38,3 +38,9 @@ Cada especialidad pertenece a un `profession_code` existente. No inferir especia
 - **HVAC y Refrigeración**: 24 y 11 especialidades respectivamente en Supabase; ambos códigos siguen bajo `climate` en la base activa. No desplegar sin validar la migración y la compatibilidad de perfiles.
 - **Calidad de la auditoría**: comprobación estructural de todas las filas realizada; la revisión semántica individual de las 1.040 especialidades sigue abierta. No presentar como concluida.
 - **CI**: las ejecuciones `4f068774` pasaron tanto Universal app checks como Expo development preview, antes de la nueva corrección de Ebanista.
+
+## Tercera pasada — integridad y CI (2026-11-03)
+- Falló la prueba «cabinetmaker belongs to construction and woodworking»: el fixture de CI clasifica originalmente `ebanista` como `design`, mientras Supabase activo lo clasifica como `fashion`. La migración ahora cambia a `construction` desde cualquier categoría previa, preservando código y especialidades.
+- Se revisaron las 8 profesiones inactivas: instalador de cerámica y porcelanato, operador de excavadora, técnico de calderas/calefacción, vigilador y cuatro variantes de repartidor. No se reactivaron automáticamente: requieren decisión semántica sobre redundancia y alcance.
+- No se encontraron nombres de profesión idénticos (normalizados) entre las profesiones activas, incluso comparando distintas categorías.
+- Las pruebas del commit `d4e225cd` están pendientes al registrar esta nota. No se ha desplegado nada en Supabase.
