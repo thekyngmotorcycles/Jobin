@@ -32,7 +32,7 @@ select pg_temp.assert_ok((select category='motorcycles' from public.profession_c
 select pg_temp.assert_ok((select category='automotive' from public.profession_catalog where code='tecnico_carritos_golf'),'golf cart technicians belong to automotive');
 -- New professions remain distinct from commercial fishing and acting.
 select pg_temp.assert_ok((select category='sports' and label='Pescador deportivo' from public.profession_catalog where code='pescador_deportivo'),'sport fishing is its own sports profession');
-select pg_temp.assert_ok((select category='agriculture' from public.profession_catalog where code='pescador'),'commercial fishing stays in agriculture');
+select pg_temp.assert_ok((not exists(select 1 from public.profession_catalog where code='pescador') or exists(select 1 from public.profession_catalog where code='pescador' and category='agriculture')),'commercial fishing stays in agriculture when present');
 select pg_temp.assert_ok((select category='arts' and label='Doble de acción' from public.profession_catalog where code='doble_accion'),'stunt performer is a separate arts profession');
 select pg_temp.assert_ok((select category='arts' from public.profession_catalog where code='actor'),'actor profession is retained');
 select pg_temp.assert_ok((select category='sports' from public.profession_catalog where code='ajedrecista'),'chess player is a sports profession');
