@@ -1,7 +1,7 @@
 -- Three-level catalog: category > profession > specialty. Never infer credentials from declarations.
 do $jobin_catalog$
 begin
- if to_regclass('public.profession_catalog') is null or to_regclass('public.profession_specialty_options') is null then return; end if;
+ if to_regclass('public.profession_catalog') is null then return; end if;
  if exists(select 1 from public.profession_catalog where code in ('mecanico_motocicletas','electricista_motocicletas','tecnico_atv_utv','especialista_suspensiones_motocicletas','detallador_motocicletas','mecanico_competicion_motocicletas','tecnico_carritos_golf','mecanico_competicion_automovilismo','tecnico_mantenimiento_aeronautico','tecnico_avionica','mecanico_motores_aeronaves','mecanico_naval','electricista_naval','tecnico_motores_marinos','mecanico_maquinaria_pesada','tecnico_hidraulica_maquinaria_pesada','mecanico_ferroviario','electricista_ferroviario','tecnico_mantenimiento_ferroviario','piloto_profesional_automovilismo','piloto_profesional_motociclismo','piloto_competicion_nautica','piloto_competicion_aerea') and (code,category,label) not in (values ('mecanico_motocicletas','motorcycles','Mecánico de motocicletas'),('electricista_motocicletas','motorcycles','Electricista de motocicletas'),('tecnico_atv_utv','motorcycles','Técnico de ATV y UTV'),('especialista_suspensiones_motocicletas','motorcycles','Especialista en suspensiones de motocicletas'),('detallador_motocicletas','motorcycles','Detallador de motocicletas'),('mecanico_competicion_motocicletas','motorcycles','Mecánico de competición de motocicletas'),('tecnico_carritos_golf','automotive','Técnico de carritos de golf'),('mecanico_competicion_automovilismo','automotive','Mecánico de competición automovilística'),('tecnico_mantenimiento_aeronautico','aviation','Técnico de mantenimiento aeronáutico'),('tecnico_avionica','aviation','Técnico de aviónica'),('mecanico_motores_aeronaves','aviation','Mecánico de motores de aeronaves'),('mecanico_naval','maritime','Mecánico naval'),('electricista_naval','maritime','Electricista naval'),('tecnico_motores_marinos','maritime','Técnico de motores marinos'),('mecanico_maquinaria_pesada','heavy_equipment','Mecánico de maquinaria pesada'),('tecnico_hidraulica_maquinaria_pesada','heavy_equipment','Técnico hidráulico de maquinaria pesada'),('mecanico_ferroviario','railway','Mecánico ferroviario'),('electricista_ferroviario','railway','Electricista ferroviario'),('tecnico_mantenimiento_ferroviario','railway','Técnico de mantenimiento ferroviario'),('piloto_profesional_automovilismo','sports','Piloto profesional de automovilismo'),('piloto_profesional_motociclismo','sports','Piloto profesional de motociclismo'),('piloto_competicion_nautica','sports','Piloto de competición náutica'),('piloto_competicion_aerea','sports','Piloto de competición aérea'))) then raise exception 'PROFESSION CODE COLLISION'; end if;
  insert into public.profession_catalog(code,category,label,short_label,icon,sort_order,active) values
 ('mecanico_motocicletas','motorcycles','Mecánico de motocicletas','Mec. mot','construct-outline',300,true),
@@ -28,6 +28,7 @@ begin
 ('piloto_competicion_nautica','sports','Piloto de competición náutica','Piloto n','boat-outline',321,true),
 ('piloto_competicion_aerea','sports','Piloto de competición aérea','Piloto a','airplane-outline',322,true)
  on conflict(code) do nothing;
+ if to_regclass('public.profession_specialty_options') is not null then
  insert into public.profession_specialty_options(profession_code,label,sort_order) values
 ('mecanico_motocicletas','Motores',1),
 ('mecanico_motocicletas','Transmisión y embrague',2),
@@ -125,5 +126,6 @@ begin
 ('piloto_competicion_aerea','Acrobacia aérea',1),
 ('piloto_competicion_aerea','Carreras aéreas',2)
  on conflict(profession_code,label) do nothing;
+ end if;
 end;
 $jobin_catalog$;
