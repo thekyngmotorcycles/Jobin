@@ -175,14 +175,15 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
    <Path d="M-20 420 C105 250 225 300 420 95" stroke={finish.text} strokeOpacity={0.12} strokeWidth="2" fill="none"/>
   </Svg>
   <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
-  <View style={{flex:1,paddingHorizontal:14,paddingTop:9,paddingBottom:14,gap:5}}>
+  <View style={{flex:1,paddingHorizontal:0,paddingTop:0,paddingBottom:0,gap:0}}>
    <View style={{height:88,position:"relative",justifyContent:"center"}}>
-    <View style={{height:82,borderRadius:24,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
+    <View style={{height:88,borderBottomLeftRadius:28,borderBottomRightRadius:28,overflow:"hidden",backgroundColor:finish.sealFill}}>
      {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:
       <View style={{flex:1,backgroundColor:art.tint,alignItems:"flex-end",justifyContent:"center",paddingRight:20}}><Ionicons name={art.icon} size={66} color={BUSINESS_MEDAL_COLORS[1]} style={{opacity:0.55}}/></View>}
     </View>
-    {canEditMedia&&onEditMedia&&<Pressable accessibilityRole="button" accessibilityLabel="Cambiar banner empresarial desde la galería" onPress={()=>onEditMedia("banner")} style={{position:"absolute",left:0,right:0,top:3,height:82,borderRadius:24,justifyContent:"flex-start",alignItems:"flex-end",padding:5}}><View style={{width:23,height:23,borderRadius:12,backgroundColor:jcardCommon.editBackground,opacity:0.92,alignItems:"center",justifyContent:"center"}}><Ionicons name="pencil-outline" size={13} color={jcardCommon.editInk}/></View></Pressable>}
+    {canEditMedia&&onEditMedia&&<Pressable accessibilityRole="button" accessibilityLabel="Cambiar banner empresarial desde la galería" onPress={()=>onEditMedia("banner")} style={{position:"absolute",left:0,right:0,top:0,height:88,borderBottomLeftRadius:28,borderBottomRightRadius:28,justifyContent:"flex-start",alignItems:"flex-end",padding:5}}><View style={{width:23,height:23,borderRadius:12,backgroundColor:jcardCommon.editBackground,opacity:0.92,alignItems:"center",justifyContent:"center"}}><Ionicons name="pencil-outline" size={13} color={jcardCommon.editInk}/></View></Pressable>}
    </View>
+   <View style={{flex:1,paddingHorizontal:14,paddingTop:3,paddingBottom:14,gap:5}}>
    <View style={{flexDirection:"row",alignItems:"flex-start",gap:6,marginTop:-2}}>
     <View style={{flex:1,minWidth:0}} onLayout={e=>{const w=Math.floor(e.nativeEvent.layout.width)-22;if(w>0&&Math.abs(w-businessNameWidth)>2)setBusinessNameWidth(w);}}>
      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"flex-start",gap:3}}>
@@ -216,6 +217,7 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
      <QRCode value={card.profileUrl} size={46} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
     </Pressable>
    </View>
+  </View>
   </View>
  </View>;
 }
