@@ -90,6 +90,14 @@ select pg_temp.expect_error($q$select public.jobin_set_profession('electricista'
 select public.jobin_set_profession('electricista','practica');
 select pg_temp.assert_ok(exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='electricista' and training_status='practica'),'self-taught training is persisted');
 select public.jobin_set_profession('electricista','graduado');
+select public.jobin_set_profession('pintor','graduado',null,false);
+select pg_temp.expect_error($q$select public.jobin_replace_unverified_secondary_profession('pintor','inexistente','graduado')$q$,'active professional');
+select pg_temp.assert_ok(exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='pintor' and not primary_profession),'failed secondary replacement preserves original');
+select public.jobin_replace_unverified_secondary_profession('pintor','plomero','graduado');
+select pg_temp.assert_ok(not exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='pintor'),'successful secondary replacement removes old trade');
+select pg_temp.assert_ok(exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='plomero' and not primary_profession),'replacement remains secondary');
+select pg_temp.assert_ok((public.jobin_jcard_data()->>'role')='Electricista','secondary replacement preserves public primary role');
+
 select pg_temp.assert_ok(not exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='carpintero'),'replacement removes unverified original profession');
 
 select pg_temp.expect_error($q$select public.jobin_set_profession('carpintero','graduado')$q$,'seal limit');
