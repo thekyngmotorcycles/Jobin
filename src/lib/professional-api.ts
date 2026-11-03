@@ -23,6 +23,12 @@ function decode<T>(data:Json|null,error:{message:string}|null):T {
  if(data===null)throw new Error("No se encontró el perfil.");
  return data as unknown as T;
 }
+export async function replacePrimaryProfession(oldProfession:string,newProfession:string,training:"graduado"|"in_academy"|"practica",institution:string|null):Promise<void> {
+ const {error}=await (requireSupabase() as any).rpc("jobin_replace_unverified_profession",{
+  old_profession:oldProfession,new_profession:newProfession,training,institution
+ });
+ if(error)throw new Error(error.message);
+}
 export async function loadCatalog():Promise<ProfessionalCatalog> {
  const {data,error}=await requireSupabase().rpc("jobin_professional_catalog");
  const catalog=decode<ProfessionalCatalog>(data,error);
@@ -37,7 +43,9 @@ export async function loadWorkspace():Promise<ProfessionalWorkspace|null> {
  const {data,error}=await client.rpc("jobin_professional_workspace");
  const result=decode<ProfessionalWorkspace>(data,error);
  if(!result.card)throw new Error("El perfil no está disponible.");
- return {...result,professions:result.professions.map(p=>({...p,label:professionDisplayName(p.profession_code,p.label)}))};
+ const professions=result.professions.map(p=>({...p,label:professionDisplayName(p.profession_code,p.label)}));
+ const primary=professions.find(p=>p.primary_profession);
+ return {...result,professions,card:primary?{...result.card,role:primary.label}:result.card};
 }
 export async function loadPublicCard(id:string):Promise<RealCard> {
  const {data,error}=await requireSupabase().rpc("jobin_jcard_data",{target:id});
