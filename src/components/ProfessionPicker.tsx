@@ -37,6 +37,7 @@ export function ProfessionPicker({catalog,value,onChange}:{catalog:ProfessionalC
  const [category,setCategory]=useState<string|null>(null);
  const [categoriesOpen,setCategoriesOpen]=useState(false);
  const [categoryQuery,setCategoryQuery]=useState("");
+ const [professionListOpen,setProfessionListOpen]=useState(!value);
  const q=normalize(query);
  const categories=useMemo(()=>[...(catalog?.categories??[])].sort((a,b)=>a.label.localeCompare(b.label,"es")),[catalog]);
  const visible=useMemo(()=>{
@@ -62,7 +63,8 @@ export function ProfessionPicker({catalog,value,onChange}:{catalog:ProfessionalC
     </Pressable>)}
    </ScrollView>
   </View>}
-  <Text style={[s.eyebrow,{fontSize:12}]}>2. Buscá y seleccioná tu profesión</Text>
+  <Pressable accessibilityRole="button" accessibilityState={{expanded:professionListOpen}} onPress={()=>setProfessionListOpen(v=>!v)} style={{minHeight:48,flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:12,borderWidth:1,borderColor:colors.line,borderRadius:10}}><Text style={{color:colors.ink,flex:1}}>{selected?"Profesión: "+professionLabel(selected.code,selected.label):"2. Buscá y seleccioná tu profesión"}</Text><Ionicons name={professionListOpen?"chevron-up":"chevron-down"} size={20} color={colors.ink}/></Pressable>
+  {professionListOpen&&<>
   <View style={{flexDirection:"row",alignItems:"center",borderColor:colors.line,borderWidth:1,borderRadius:10,paddingHorizontal:10}}>
    <Ionicons name="search-outline" size={19} color={colors.muted}/>
    <TextInput accessibilityLabel="Buscar profesión" placeholder="Ej.: electricista, futbolista, mecanico…" placeholderTextColor={colors.muted} autoCorrect={false} value={query} onChangeText={setQuery} style={{color:colors.ink,flex:1,padding:12}}/>
@@ -72,7 +74,7 @@ export function ProfessionPicker({catalog,value,onChange}:{catalog:ProfessionalC
   {!catalog?<Text style={s.muted}>El catálogo todavía no está disponible.</Text>:<>
    <Text style={s.muted}>{visible.length} {visible.length===1?"profesión encontrada":"profesiones encontradas"}{visible.length>35?" · Mostrando las primeras 35; escribí para precisar":""}</Text>
    <ScrollView style={{maxHeight:270}} nestedScrollEnabled keyboardShouldPersistTaps="handled">
-    {displayed.map(({profession:p})=><Pressable key={p.code} accessibilityRole="button" accessibilityState={{selected:value===p.code}} onPress={()=>onChange(p.code)} style={{padding:12,minHeight:48,borderRadius:8,marginBottom:5,backgroundColor:value===p.code?colors.ink:colors.accent}}>
+    {displayed.map(({profession:p})=><Pressable key={p.code} accessibilityRole="button" accessibilityState={{selected:value===p.code}} onPress={()=>{onChange(p.code);setProfessionListOpen(false);setCategoriesOpen(false);setQuery("");setCategoryQuery("");}} style={{padding:12,minHeight:48,borderRadius:8,marginBottom:5,backgroundColor:value===p.code?colors.ink:colors.accent}}>
      <View style={{flexDirection:"row",alignItems:"center",gap:12}}>
       <ProfessionGlyph profession={p.code} fallback={p.icon as ComponentProps<typeof Ionicons>["name"]} size={22} color={value===p.code?colors.inverse:colors.ink}/>
       <View style={{flex:1,gap:2}}><Text style={{color:value===p.code?colors.inverse:colors.ink,fontSize:14}}>{professionLabel(p.code,p.label)}</Text>{!category&&<Text style={{color:value===p.code?colors.inverse:colors.muted,fontSize:11}}>{categories.find(c=>c.code===p.category)?.label??p.category}</Text>}</View>
@@ -81,6 +83,7 @@ export function ProfessionPicker({catalog,value,onChange}:{catalog:ProfessionalC
     </Pressable>)}
     {!visible.length&&<Text style={s.muted}>Sin resultados. Probá con otra palabra o elegí «Todas» las categorías.</Text>}
    </ScrollView>
+  </>}
   </>}
  </View>;
 }
