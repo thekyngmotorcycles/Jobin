@@ -2,28 +2,79 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useUi } from "./ui";
 import { Ionicons } from "@expo/vector-icons";
-import type {ComponentProps} from "react";
-import {ProfessionGlyph} from "./ProfessionGlyph";
+import type { ComponentProps } from "react";
+import { ProfessionGlyph } from "./ProfessionGlyph";
 import type { ProfessionalCatalog } from "../lib/professional-types";
+
+const normalize=(text:string)=>text.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("es").replace(/[^a-z0-9]+/g," ").trim();
+const distance=(a:string,b:string,limit=2)=>{
+ if(Math.abs(a.length-b.length)>limit)return limit+1;
+ let prev=Array.from({length:b.length+1},(_,i)=>i);
+ for(let i=1;i<=a.length;i++){
+  const next=[i];
+  for(let j=1;j<=b.length;j++)next[j]=Math.min(next[j-1]+1,prev[j]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));
+  prev=next;
+  if(Math.min(...prev)>limit)return limit+1;
+ }
+ return prev[b.length];
+};
+const score=(label:string,query:string)=>{
+ const name=normalize(label);
+ if(!query)return 0;
+ if(name===query)return 0;
+ if(name.startsWith(query))return 1;
+ if(name.includes(query))return 2;
+ const words=name.split(" "),terms=query.split(" ").filter(Boolean);
+ if(terms.every(term=>words.some(word=>word.startsWith(term))))return 3;
+ if(terms.every(term=>words.some(word=>term.length>=4&&distance(term,word,term.length>6?2:1)<= (term.length>6?2:1))))return 4;
+ return Infinity;
+};
+const professionLabel=(code:string,label:string)=>code==="tecnico_hvac_aire_acondicionado"?"Técnico HVAC":code==="refrigeracion"?"Técnico en Refrigeración":label;
+
 export function ProfessionPicker({catalog,value,onChange}:{catalog:ProfessionalCatalog|null;value:string;onChange:(code:string)=>void}) {
- const {s,colors}=useUi();const [query,setQuery]=useState("");
- const professionLabel=(code:string,label:string)=>code==="tecnico_hvac_aire_acondicionado"?"Técnico HVAC":code==="refrigeracion"?"Técnico en Refrigeración":label;
- const visible=useMemo(()=>catalog?.professions.filter(p=>professionLabel(p.code,p.label).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))??[],[catalog,query]);
+ const {s,colors}=useUi();
+ const [query,setQuery]=useState("");
+ const [category,setCategory]=useState<string|null>(null);
+ const q=normalize(query);
+ const categories=useMemo(()=>[...(catalog?.categories??[])].sort((a,b)=>a.label.localeCompare(b.label,"es")),[catalog]);
+ const visible=useMemo(()=>{
+  const matches=(catalog?.professions??[]).filter(p=>!category||p.category===category).map(p=>({
+   profession:p,
+   rank:Math.min(score(professionLabel(p.code,p.label),q),score(p.code.replace(/_/g," "),q))
+  })).filter(item=>Number.isFinite(item.rank));
+  return matches.sort((a,b)=>a.rank-b.rank||professionLabel(a.profession.code,a.profession.label).localeCompare(professionLabel(b.profession.code,b.profession.label),"es"));
+ },[catalog,category,q]);
+ const selected=catalog?.professions.find(p=>p.code===value);
+ const displayed=visible.slice(0,35);
  return <View style={{gap:10}}>
-  <TextInput accessibilityLabel="Buscar profesión" placeholder="Buscar profesión u oficio" placeholderTextColor={colors.muted} value={query} onChangeText={setQuery} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:12,borderRadius:10}}/>
-  {!catalog?<Text style={s.muted}>El catálogo todavía no está disponible.</Text>:
-  <ScrollView style={{maxHeight:240}} nestedScrollEnabled keyboardShouldPersistTaps="handled">
-   {[...catalog.categories].sort((a,b)=>a.label.localeCompare(b.label,"es")).map(category=>{
-    const professions=visible.filter(p=>p.category===category.code).sort((a,b)=>professionLabel(a.code,a.label).localeCompare(professionLabel(b.code,b.label),"es"));
-    if(!professions.length)return null;
-    return <View key={category.code} style={{gap:6,marginBottom:14}}>
-     <Text style={[s.eyebrow,{fontSize:12}]}>{category.label}</Text>
-     {professions.map(p=><Pressable key={p.code} accessibilityRole="button" accessibilityState={{selected:value===p.code}} onPress={()=>onChange(p.code)} style={{padding:12,minHeight:44,borderRadius:8,marginBottom:3,backgroundColor:value===p.code?colors.ink:colors.accent}}>
-      <View style={{flexDirection:"row",alignItems:"center",gap:12}}><ProfessionGlyph profession={p.code} fallback={p.icon as ComponentProps<typeof Ionicons>["name"]} size={22} color={value===p.code?colors.inverse:colors.ink}/><Text style={{color:value===p.code?colors.inverse:colors.ink,fontSize:13,flex:1}}>{professionLabel(p.code,p.label)}</Text></View>
-     </Pressable>)}
-    </View>;
+  <Text style={[s.eyebrow,{fontSize:12}]}>1. Elegí una categoría</Text>
+  <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{gap:7,paddingVertical:3}}>
+   {[{code:"",label:"Todas"},...categories].map(item=>{
+    const active=(category??"")===item.code;
+    return <Pressable key={item.code||"all"} accessibilityRole="button" accessibilityState={{selected:active}} onPress={()=>setCategory(item.code||null)} style={{paddingHorizontal:12,paddingVertical:10,minHeight:44,justifyContent:"center",borderRadius:20,borderWidth:1,borderColor:active?colors.ink:colors.line,backgroundColor:active?colors.ink:colors.paper}}>
+     <Text style={{color:active?colors.inverse:colors.ink,fontSize:13}}>{item.label}</Text>
+    </Pressable>;
    })}
-   {visible.length===0&&<Text style={s.muted}>No hay profesiones que coincidan.</Text>}
-  </ScrollView>}
+  </ScrollView>
+  <Text style={[s.eyebrow,{fontSize:12}]}>2. Buscá y seleccioná tu profesión</Text>
+  <View style={{flexDirection:"row",alignItems:"center",borderColor:colors.line,borderWidth:1,borderRadius:10,paddingHorizontal:10}}>
+   <Ionicons name="search-outline" size={19} color={colors.muted}/>
+   <TextInput accessibilityLabel="Buscar profesión" placeholder="Ej.: electricista, futbolista, mecanico…" placeholderTextColor={colors.muted} autoCorrect={false} value={query} onChangeText={setQuery} style={{color:colors.ink,flex:1,padding:12}}/>
+   {!!query&&<Pressable accessibilityRole="button" accessibilityLabel="Limpiar búsqueda" onPress={()=>setQuery("")} style={{padding:7}}><Ionicons name="close-circle" size={20} color={colors.muted}/></Pressable>}
+  </View>
+  {!!selected&&<Text style={{color:colors.ink,fontSize:13}}>Seleccionada: {professionLabel(selected.code,selected.label)}</Text>}
+  {!catalog?<Text style={s.muted}>El catálogo todavía no está disponible.</Text>:<>
+   <Text style={s.muted}>{visible.length} {visible.length===1?"profesión encontrada":"profesiones encontradas"}{visible.length>35?" · Mostrando las primeras 35; escribí para precisar":""}</Text>
+   <ScrollView style={{maxHeight:270}} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+    {displayed.map(({profession:p})=><Pressable key={p.code} accessibilityRole="button" accessibilityState={{selected:value===p.code}} onPress={()=>onChange(p.code)} style={{padding:12,minHeight:48,borderRadius:8,marginBottom:5,backgroundColor:value===p.code?colors.ink:colors.accent}}>
+     <View style={{flexDirection:"row",alignItems:"center",gap:12}}>
+      <ProfessionGlyph profession={p.code} fallback={p.icon as ComponentProps<typeof Ionicons>["name"]} size={22} color={value===p.code?colors.inverse:colors.ink}/>
+      <View style={{flex:1,gap:2}}><Text style={{color:value===p.code?colors.inverse:colors.ink,fontSize:14}}>{professionLabel(p.code,p.label)}</Text>{!category&&<Text style={{color:value===p.code?colors.inverse:colors.muted,fontSize:11}}>{categories.find(c=>c.code===p.category)?.label??p.category}</Text>}</View>
+      {value===p.code&&<Ionicons name="checkmark-circle" size={21} color={colors.inverse}/>}
+     </View>
+    </Pressable>)}
+    {!visible.length&&<Text style={s.muted}>Sin resultados. Probá con otra palabra o elegí «Todas» las categorías.</Text>}
+   </ScrollView>
+  </>}
  </View>;
 }
