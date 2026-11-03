@@ -79,6 +79,18 @@ select pg_temp.assert_upgrade(not exists(
  select * from upgrade_specialties_before
  except select profession_code,label,sort_order from public.profession_specialty_options
 ),'upgrading must preserve all preexisting specialty selections');
+-- A second execution must not duplicate specialty options or change user records.
+\ir ../supabase/migrations/20261103070000_split_hvac_refrigeration_professions.sql
+\ir ../supabase/migrations/20261103080000_vehicle_detailing_drone_professions.sql
+\ir ../supabase/migrations/20261103100000_audit_ebanista_category.sql
+select pg_temp.assert_upgrade(
+ (select count(*)=4 from public.profession_specialty_options where profession_code='detallador_vehiculos')
+ and (select count(*)=12 from public.profession_specialty_options where profession_code='piloto_drones'),
+ 'repeated upgrade must not duplicate specialty options');
+select pg_temp.assert_upgrade(not exists(
+ select * from upgrade_specialties_before
+ except select profession_code,label,sort_order from public.profession_specialty_options
+),'repeated upgrade must preserve preexisting specialty options');
 select pg_temp.assert_upgrade(not exists(
  select * from upgrade_seals_before except select id,worker_id,profession_code,status from public.profession_seals
 ),'upgrading must preserve existing seals');
