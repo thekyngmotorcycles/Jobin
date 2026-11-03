@@ -41,3 +41,23 @@ Se inspeccionaron las etiquetas individuales de todas las especialidades activas
 - `detallador_vehiculos` sigue pendiente de incorporación por migración, por lo que no se cuenta entre las cuatro profesiones automotrices activas de producción.
 
 **Progreso acumulado: 169 / 1.040 especialidades revisadas; 871 pendientes.** La revisión no implica que las migraciones pendientes se hayan aplicado.
+
+## Lote 3 — Arte, negocios, comercio y diseño (173 especialidades)
+
+Revisión de las etiquetas de especialidades de cuatro categorías activas mediante consultas solo lectura al catálogo de producción.
+
+| Categoría | Profesiones | Especialidades | Evaluación |
+| --- | ---: | ---: | --- |
+| `arts` | 11 | 55 | Actividades coherentes: interpretación, danza, música, producción, dirección, ilustración y sonido. |
+| `business` | 9 | 52 | Coherentes: administración, finanzas, contabilidad, proyectos, marketing, recursos humanos, atención, secretariado y trading. |
+| `commerce` | 5 | 46 | Coherentes: inmobiliaria, seguros, ventas, comercio electrónico e indumentaria. |
+| `design` | 4 | 20 | Coherentes: diseño interior, gráfico, fotografía y edición audiovisual. |
+
+### Consideraciones de producto y seguridad
+- «Mezcla» figura tanto en productor musical como en técnico de sonido; no es un duplicado incorrecto porque se refiere a profesiones distintas.
+- `trader_mercados_financieros` agrupa instrumentos financieros y técnicas de trading: declararse trader no debe equivaler a acreditación para asesorar inversiones o gestionar fondos ajenos.
+- `agente_inmobiliario` y `corredor_de_seguros` pueden requerir autorización local; las especialidades no prueban licencias.
+- `especialista_comercio_electronico` incluye herramientas/plataformas (Shopify, WooCommerce, Amazon Seller Central): conservarlas como habilidades, no como certificaciones otorgadas por dichas plataformas.
+- `ilustrador` está en `arts` y `disenador_grafico` en `design`; no fusionar por similitud de herramientas.
+
+**Progreso acumulado: 342 / 1.040 especialidades revisadas; 698 pendientes.** No se aplicaron migraciones a producción.
