@@ -130,3 +130,16 @@ Se inspeccionaron las **1.040 especialidades activas únicas** en las 24 categor
 El lote 5 duplicó **15**, no cinco, especialidades ya inspeccionadas en el lote 1: cinco de `ebanista`, cinco de `panadero_pastelero` y cinco de `repostero`. Por ello el lote 5 aportó **419** especialidades únicas nuevas (434 − 15), y el acumulado real es **1.030/1.030 especialidades de profesiones activas**. Las **10 especialidades asociadas a profesiones inactivas siguen pendientes de revisión semántica específica**, aunque sus filas deben preservarse por compatibilidad histórica.
 
 Esta conciliación se comprobó con `count(*) filter (where p.active)` y `count(*) filter (where not p.active)` sobre `profession_specialty_options` unida a `profession_catalog`. Ningún registro fue modificado.
+
+## Lote 6 — Diez especialidades históricas de profesiones inactivas
+
+Consulta solo lectura de las ocho profesiones inactivas. Solo dos conservan filas de especialidad:
+
+| Profesión inactiva | Especialidades | Evaluación |
+| --- | --- | --- |
+| `instalador_ceramica_porcelanato` | Cerámica; Porcelanato; Mosaicos; Pisos; Revestimientos de paredes | Cinco opciones coherentes. Mantener códigos y filas históricas; el catálogo activo `instalador_de_pisos` ya cubre cerámica y porcelanato. |
+| `operador_excavadora` | Excavadoras hidráulicas; Miniexcavadoras; Movimiento de tierras; Zanjeo; Demolición | Cinco opciones coherentes. Mantener códigos y filas históricas; `operador_de_maquinaria_pesada` cubre excavadoras actualmente. |
+
+Las otras seis profesiones inactivas no tienen especialidades asociadas: `mensajero_en_motocicleta`, `repartidor`, `repartidor_en_automovil`, `repartidor_en_bicicleta`, `tecnico_de_calderas_calefaccion`, `vigilador`.
+
+**Cierre corregido y conciliado: 1.040/1.040 especialidades históricas revisadas semánticamente, 1.030 en profesiones activas y 10 en profesiones inactivas.** No reactivar profesiones antiguas ni eliminar datos asociados; los reemplazos visibles deben tratarse como opciones nuevas, nunca como conversiones automáticas de perfiles históricos.
