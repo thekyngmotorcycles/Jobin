@@ -72,6 +72,14 @@ select pg_temp.assert_upgrade(
  and (select label='Técnico HVAC' from public.profession_catalog where code='tecnico_hvac_aire_acondicionado'),
  'older catalog classifications must migrate correctly');
 select pg_temp.assert_upgrade(
+ (select category='automotive' and active from public.profession_catalog where code='detallador_vehiculos')
+ and (select category='technology' and active from public.profession_catalog where code='piloto_drones'),
+ 'new professions must be active and belong to their intended categories');
+select pg_temp.assert_upgrade(
+ not exists(select 1 from public.profession_catalog p left join public.profession_categories c on c.code=p.category where c.code is null)
+ and not exists(select 1 from public.profession_specialty_options s left join public.profession_catalog p on p.code=s.profession_code where p.code is null),
+ 'catalog upgrade must leave no orphan professions or specialties');
+select pg_temp.assert_upgrade(
  (select count(*)=4 from public.profession_specialty_options where profession_code='detallador_vehiculos')
  and (select count(*)=12 from public.profession_specialty_options where profession_code='piloto_drones'),
  'new professions and their specialties must be inserted');
