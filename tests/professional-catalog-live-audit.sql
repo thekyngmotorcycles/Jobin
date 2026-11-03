@@ -25,6 +25,16 @@ with issues as (
   group by 1,2 having count(*)>1
  ) d
  union all
+ select 'empty_specialty_label',count(*) from public.profession_specialty_options
+ where label is null or btrim(label)=''
+ union all
+ select 'empty_category_label',count(*) from public.profession_categories
+ where label is null or btrim(label)=''
+ union all
+ select 'active_profession_in_inactive_category',count(*) from public.profession_catalog p
+ join public.profession_categories c on c.code=p.category
+ where p.active and not c.active
+ union all
  select 'orphan_person_profession',count(*) from public.person_professions pp
  left join public.profession_catalog p on p.code=pp.profession_code where p.code is null
  union all
