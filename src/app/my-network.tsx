@@ -1,0 +1,13 @@
+import {useCallback,useState} from "react";
+import {Pressable,Text,TextInput,View} from "react-native";
+import {router,useFocusEffect} from "expo-router";
+import {Ionicons} from "@expo/vector-icons";
+import {Screen,useUi} from "../components/ui";
+import {requireSupabase} from "../lib/supabase";
+type Row={id:string;name:string;handle:string};
+export default function MyNetwork(){
+ const {s,colors}=useUi();const [tab,setTab]=useState<"followers"|"following">("followers");const [rows,setRows]=useState<Row[]>([]);const [query,setQuery]=useState("");const [error,setError]=useState("");
+ const load=useCallback(async()=>{try{const db=requireSupabase();const {data:{user}}=await db.auth.getUser();if(!user)return;const col=tab==="followers"?"followed_id":"follower_id",other=tab==="followers"?"follower_id":"followed_id";const {data,error:e}=await db.from("profile_follows" as never).select("*").eq(col,user.id);if(e)throw e;const ids=(data as any[]??[]).map(r=>r[other] as string);if(!ids.length){setRows([]);return;}const {data:profiles,error:pe}=await db.from("profiles").select("id,handle").in("id",ids);if(pe)throw pe;setRows((profiles??[]).map(p=>({id:p.id,handle:p.handle??"",name:p.handle??"Usuario"})));setError("");}catch(e){setError(e instanceof Error?e.message:"No se pudo cargar tu red.");}},[tab]);
+ useFocusEffect(useCallback(()=>{void load();},[load]));
+ return <Screen title="Mi red" subtitle="Tus conexiones son privadas."><View style={{flexDirection:"row",gap:8}}>{(["followers","following"] as const).map(t=><Pressable key={t} onPress={()=>setTab(t)} style={{flex:1,padding:13,borderRadius:10,backgroundColor:tab===t?colors.ink:colors.accent}}><Text style={{color:tab===t?colors.inverse:colors.ink,textAlign:"center"}}>{t==="followers"?"Seguidores":"Siguiendo"}</Text></Pressable>)}</View><TextInput accessibilityLabel="Buscar en mi red" placeholder="Buscar personas" placeholderTextColor={colors.muted} value={query} onChangeText={setQuery} style={{borderWidth:1,borderColor:colors.line,color:colors.ink,padding:12,borderRadius:10,marginVertical:12}}/>{rows.filter(r=>(r.name+" "+r.handle).toLowerCase().includes(query.toLowerCase())).map(row=><Pressable key={row.id} onPress={()=>router.push({pathname:"/jcard",params:{user:row.id}})} style={{padding:14,flexDirection:"row",gap:12,alignItems:"center",borderBottomWidth:1,borderColor:colors.line}}><Ionicons name="person-circle-outline" size={30} color={colors.ink}/><Text style={s.text}>@{row.handle}</Text><Ionicons name="chevron-forward" size={18} color={colors.muted}/></Pressable>)}{!rows.length&&<Text style={s.muted}>Todavía no hay personas en esta lista.</Text>}{!!error&&<Text style={s.muted}>{error}</Text>}</Screen>;
+}
