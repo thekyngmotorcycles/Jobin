@@ -9,12 +9,12 @@ import { ProfessionalStatus } from "../components/ProfessionalStatus";
 import { loadPublicCard } from "../lib/professional-api";
 import { useProfessionalData } from "../state/useProfessionalData";
 export default function PublicJCard(){
- const {user}=useLocalSearchParams<{user?:string}>();
+ const {user,card}=useLocalSearchParams<{user?:string;card?:string}>();
  const resource=useProfessionalData(useCallback(()=>{
   if(!user||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user))return Promise.reject(new Error("Enlace de JCard inválido."));
   return loadPublicCard(user);
  },[user]));
  return <Screen demo={false} title="JCard." subtitle="Identidad profesional pública.">
-  {resource.data?<View><JobinCard card={resource.data} ownerId={resource.data.id}/><ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/><ProfessionalTrustMark worker={resource.data.id}/></View>:<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>}
+  {resource.data?<View><JobinCard card={resource.data} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/><ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/><ProfessionalTrustMark worker={resource.data.id}/></View>:<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>}
  </Screen>;
 }
