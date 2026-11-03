@@ -10,6 +10,9 @@ begin
              where code='automotive' and label is distinct from 'Automotriz') then
    raise exception 'CATALOG CATEGORY COLLISION: automotive has a different label';
   end if;
+  if not exists (select 1 from public.profession_categories where code='technology') then
+   raise exception 'CATALOG MISSING CATEGORY: technology is required for piloto_drones';
+  end if;
   insert into public.profession_catalog(code,category,label,short_label,icon,sort_order,active) values
   ('detallador_vehiculos','automotive','Detallador de vehículos','Detail','car-sport-outline',200,true),
   ('piloto_drones','technology','Piloto de drones','Drones','airplane-outline',200,true)
