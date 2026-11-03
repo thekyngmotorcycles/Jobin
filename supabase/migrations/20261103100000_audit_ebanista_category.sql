@@ -7,7 +7,7 @@ begin
   update public.profession_catalog
      set category='construction'
    where code='ebanista'
-     and category='fashion'
+     and category <> 'construction'
      and exists (select 1 from public.profession_categories where code='construction');
  end if;
 end;
