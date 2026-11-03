@@ -106,3 +106,35 @@ select pg_temp.assert_upgrade(not exists(
  select * from upgrade_people_before except select id,worker_id,profession_code,primary_profession from public.person_professions
 ),'upgrading must preserve existing user professions');
 rollback;
+
+-- Future catalog expansion contract: additive category, profession and specialties.
+-- No production rows are touched; the whole transaction is rolled back.
+begin;
+insert into public.profession_categories(code,label,sort_order,active)
+ values ('future_category_test','Categoría futura de prueba',9999,true);
+insert into public.profession_catalog(code,category,label,short_label,icon,sort_order,active)
+ values ('future_profession_test','future_category_test','Profesión futura de prueba','Futura','briefcase-outline',9999,true);
+insert into public.profession_specialty_options(profession_code,label,sort_order)
+ values ('future_profession_test','Especialidad futura A',1),
+        ('future_profession_test','Especialidad futura B',2);
+do $$
+begin
+ if (select count(*) from public.profession_specialty_options where profession_code='future_profession_test')<>2
+    or (select category from public.profession_catalog where code='future_profession_test')<>'future_category_test'
+ then raise exception 'FUTURE CATALOG FAILED: additive category/profession/specialties'; end if;
+ -- A stable code must never be reassigned to a second profession.
+ begin
+  insert into public.profession_catalog(code,category,label,short_label,icon,sort_order,active)
+   values ('future_profession_test','future_category_test','Otra profesión','Otra','briefcase-outline',9998,true);
+  raise exception 'FUTURE CATALOG FAILED: duplicate profession code accepted';
+ exception when unique_violation then null;
+ end;
+ -- Specialties must not reference missing profession codes.
+ begin
+  insert into public.profession_specialty_options(profession_code,label,sort_order)
+   values ('missing_profession_test','Especialidad huérfana',1);
+  raise exception 'FUTURE CATALOG FAILED: orphan specialty accepted';
+ exception when foreign_key_violation then null;
+ end;
+end $$;
+rollback;
