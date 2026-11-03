@@ -100,6 +100,9 @@ insert into public.profession_seals(worker_id,profession_code,status,origin)
 set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000006',true);
 select public.jobin_set_profession('pintor','graduado',null,false);
+select pg_temp.expect_error($q$select public.jobin_replace_unverified_profession('electricista','pintor','practica')$q$,'already on your JCard');
+select pg_temp.assert_ok(exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='electricista' and primary_profession and training_status='graduado'),'primary collision preserves original primary training');
+select pg_temp.assert_ok(exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='pintor' and not primary_profession and training_status='graduado'),'primary collision preserves secondary training');
 select pg_temp.expect_error($q$select public.jobin_replace_unverified_secondary_profession('pintor','inexistente','graduado')$q$,'active professional');
 select pg_temp.assert_ok(exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='pintor' and not primary_profession),'failed secondary replacement preserves original');
 select pg_temp.expect_error($q$select public.jobin_replace_unverified_secondary_profession('pintor','electricista','practica')$q$,'already on your JCard');
