@@ -36,6 +36,39 @@ begin
 end;
 $audit$;
 select pg_temp.assert_ok(not exists(select 1 from public.profession_catalog p left join public.profession_categories c on c.code=p.category where c.code is null),'all professions belong to a valid category');
+
+-- Catalog invariants: codes are stable keys, each profession has one valid category.
+select pg_temp.assert_ok(not exists(
+ select 1 from public.profession_catalog
+ where code is null or btrim(code)='' or category is null
+),'profession codes and categories are mandatory');
+select pg_temp.assert_ok(not exists(
+ select 1 from public.profession_catalog
+ where active
+ group by lower(btrim(label))
+ having count(*)>1
+),'active profession names must be unique across categories');
+select pg_temp.assert_ok(not exists(
+ select 1 from public.profession_categories
+ group by lower(btrim(label))
+ having count(*)>1
+),'category names must be unique');
+do $catalog_audit$
+begin
+ if to_regclass('public.profession_specialty_options') is not null then
+  perform pg_temp.assert_ok(not exists(
+   select 1 from public.profession_specialty_options s
+   left join public.profession_catalog p on p.code=s.profession_code
+   where p.code is null
+  ),'every specialty references an existing profession');
+  perform pg_temp.assert_ok(not exists(
+   select 1 from public.profession_specialty_options
+   group by profession_code,lower(btrim(label))
+   having count(*)>1
+  ),'specialty labels unique within each profession');
+ end if;
+end;
+$catalog_audit$;
 select pg_temp.assert_ok(not exists(select 1 from pg_tables where schemaname='public' and not rowsecurity),'RLS on every public table');
 select pg_temp.assert_ok((select count(*)=6 from public.jcard_profiles),'identity bootstraps for personal and company accounts');
 set local role authenticated;
