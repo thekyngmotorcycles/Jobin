@@ -2,6 +2,9 @@
 do $migration$
 begin
  if to_regclass('public.profession_catalog') is not null and to_regclass('public.profession_categories') is not null then
+  insert into public.profession_categories(code,label,sort_order,active)
+  values ('automotive','Automotriz',50,true)
+  on conflict(code) do nothing;
   insert into public.profession_catalog(code,category,label,short_label,icon,sort_order,active) values
   ('detallador_vehiculos','automotive','Detallador de vehículos','Detail','car-sport-outline',200,true),
   ('piloto_drones','technology','Piloto de drones','Drones','airplane-outline',200,true)
