@@ -9,6 +9,10 @@ begin
   ('detallador_vehiculos','automotive','Detallador de vehículos','Detail','car-sport-outline',200,true),
   ('piloto_drones','technology','Piloto de drones','Drones','airplane-outline',200,true)
   on conflict(code) do nothing; -- Never overwrite a pre-existing profession with the same permanent code.
+  if exists (select 1 from public.profession_catalog where code='detallador_vehiculos' and (category is distinct from 'automotive' or label is distinct from 'Detallador de vehículos'))
+     or exists (select 1 from public.profession_catalog where code='piloto_drones' and (category is distinct from 'technology' or label is distinct from 'Piloto de drones')) then
+   raise exception 'CATALOG CODE COLLISION: existing profession code has a different category or label';
+  end if;
  end if;
  if to_regclass('public.profession_specialty_options') is not null
     and to_regclass('public.profession_catalog') is not null then
