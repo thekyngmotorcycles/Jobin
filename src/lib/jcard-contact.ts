@@ -16,3 +16,19 @@ export async function loadPublicContact(id:string):Promise<{email:string|null;ph
  const {data,error}=await (requireSupabase() as any).rpc("jcard_public_contact",{target:id});
  if(error)throw error;return {email:data?.email??null,phone:data?.phone??null};
 }
+
+export type PersonalContactDetails={email_primary:string;email_secondary:string;phone_primary:string;phone_secondary:string};
+export async function loadPersonalContactDetails(ownerId?:string):Promise<PersonalContactDetails>{
+ const db=requireSupabase();
+ const id=ownerId??(await db.auth.getUser()).data.user?.id;
+ if(!id)return {email_primary:"",email_secondary:"",phone_primary:"",phone_secondary:""};
+ const {data,error}=await (db as any).from("jcard_personal_contacts").select("email_primary,email_secondary,phone_primary,phone_secondary").eq("owner_id",id).maybeSingle();
+ if(error)throw error;
+ return {email_primary:data?.email_primary??"",email_secondary:data?.email_secondary??"",phone_primary:data?.phone_primary??"",phone_secondary:data?.phone_secondary??""};
+}
+export async function savePersonalContactDetails(details:PersonalContactDetails):Promise<void>{
+ const db=requireSupabase();const {data:{user},error:authError}=await db.auth.getUser();
+ if(authError||!user)throw new Error("Inicia sesión para guardar los contactos.");
+ const {error}=await (db as any).from("jcard_personal_contacts").upsert({owner_id:user.id,...details,updated_at:new Date().toISOString()},{onConflict:"owner_id"});
+ if(error)throw error;
+}
