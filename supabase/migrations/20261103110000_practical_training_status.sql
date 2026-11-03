@@ -11,6 +11,7 @@ create or replace function public.jobin_set_profession(profession text,training 
  perform 1 from public.jcard_profiles where profile_id=auth.uid() for update;
  if training is null or training not in ('in_academy','graduado','practica') or not exists(
  select 1 from public.profession_catalog pc join public.profession_categories cat on cat.code=pc.category where pc.code=profession and pc.active and cat.active) then raise exception 'Choose an active professional trade and valid training status'; end if;
+ if training='practica' and institution is not null then raise exception 'Practical training cannot have an education institution'; end if;
  if institution is not null and not exists(select 1 from public.organizations o join public.organization_scopes os on os.organization_id=o.profile_id
  where o.profile_id=institution and o.kind='education' and os.active and os.profession_code=profession) then raise exception 'Choose a preapproved education institution for this profession'; end if;
  if make_primary then update public.person_professions set primary_profession=false where worker_id=auth.uid(); end if;
