@@ -73,3 +73,10 @@ Cada especialidad pertenece a un `profession_code` existente. No inferir especia
 - La base activa tiene 24 categorías, frente a las 16 del entorno de pruebas. No se deben reemplazar los datos activos con los datos de prueba.
 - Ebanista sigue clasificado como moda en el catálogo activo; la corrección existe en desarrollo.
 - Se requiere revisar la compatibilidad de las migraciones y los datos activos antes de implementar la fase 1.
+
+## Octava pasada — cobertura y migraciones pendientes
+- Consultas de solo lectura a Supabase: **ninguna profesión activa carece de especialidades**. No se detectaron especialidades huérfanas en la pasada anterior.
+- Verificado que los códigos `detallador_vehiculos` y `piloto_drones` todavía **no existen** en la base activa; sí figuran en migración de development, con 4 y 12 especialidades previstas.
+- Verificado que `ebanista` aún figura en `fashion`, y HVAC/Refrigeración continúan bajo `climate` en la base activa. La migración de separación mantiene los códigos originales y crea `refrigeration` de forma aditiva.
+- Revisada la migración de drones: la especialidad «Lavado a presión de estructuras y edificios» describe un servicio especializado, pero no implica automáticamente una habilitación legal; cualquier futura regulación debe aplicarse por actividad y jurisdicción, no por nombre de profesión.
+- **Pendiente crítico:** el entorno CI usa un catálogo de referencia reducido, por lo que sus aprobaciones no certifican la migración sobre los 196 registros activos. Preparar un ensayo de migraciones contra una copia representativa antes de aplicar cambios a la base activa.
