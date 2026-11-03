@@ -2,7 +2,8 @@
 -- Declaring a sport never verifies professional status, titles or competition participation.
 do $sports$
 begin
- if to_regclass('public.profession_catalog') is null then return; end if;
+ if to_regclass('public.profession_catalog') is null or to_regclass('public.profession_categories') is null then return; end if;
+ insert into public.profession_categories(code,label,sort_order,active) values ('sports','Deportes y actividad física',16,true) on conflict(code) do nothing;
  if exists(select 1 from public.profession_catalog where code in ('futbolista','basquetbolista','ajedrecista','tenista','voleibolista','boxeador','peleador_mma','nadador_competicion','atleta_atletismo','ciclista_competicion','golfista','beisbolista','jugador_softbol','jugador_rugby','jugador_futbol_americano','jugador_hockey_cesped','jugador_hockey_hielo','jugador_balonmano','jugador_waterpolo','jugador_padel','jugador_badminton','jugador_tenis_mesa','gimnasta_artistica','gimnasta_ritmica','patinador_artistico','patinador_velocidad','esquiador_competicion','snowboarder_competicion','surfista','remero_competicion','palista_competicion','triatleta','luchador_olimpico','judoca','karateca','taekwondista','esgrimista','levantador_pesas','arquero_deportivo','tirador_deportivo','jinete_competicion','escalador_deportivo','jugador_criquet','jugador_lacrosse','jugador_squash') and category<>'sports') then raise exception 'SPORT PROFESSION CODE COLLISION'; end if;
  insert into public.profession_catalog(code,category,label,short_label,icon,sort_order,active) values
 ('futbolista','sports','Futbolista','Futbolis','trophy-outline',400,true),
