@@ -90,6 +90,15 @@ select pg_temp.expect_error($q$select public.jobin_set_profession('electricista'
 select public.jobin_set_profession('electricista','practica');
 select pg_temp.assert_ok(exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='electricista' and training_status='practica'),'self-taught training is persisted');
 select public.jobin_set_profession('electricista','graduado');
+-- A secondary trade requires the primary seal to be verified (one unverified seal maximum).
+-- Use a separate personal test account so later credential assertions remain unchanged.
+reset role;
+insert into public.person_professions(worker_id,profession_code,training_status,primary_profession)
+ values('10000000-0000-4000-8000-000000000006','electricista','graduado',true);
+insert into public.profession_seals(worker_id,profession_code,status,origin)
+ values('10000000-0000-4000-8000-000000000006','electricista','verificado','certificado');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000006',true);
 select public.jobin_set_profession('pintor','graduado',null,false);
 select pg_temp.expect_error($q$select public.jobin_replace_unverified_secondary_profession('pintor','inexistente','graduado')$q$,'active professional');
 select pg_temp.assert_ok(exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='pintor' and not primary_profession),'failed secondary replacement preserves original');
@@ -97,6 +106,7 @@ select public.jobin_replace_unverified_secondary_profession('pintor','plomero','
 select pg_temp.assert_ok(not exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='pintor'),'successful secondary replacement removes old trade');
 select pg_temp.assert_ok(exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='plomero' and not primary_profession),'replacement remains secondary');
 select pg_temp.assert_ok((public.jobin_jcard_data()->>'role')='Electricista','secondary replacement preserves public primary role');
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 
 select pg_temp.assert_ok(not exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='carpintero'),'replacement removes unverified original profession');
 
