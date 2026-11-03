@@ -100,7 +100,7 @@ export default function Professional() {
     {w.card.accountType==="personal"&&<View onLayout={e=>{positions.current.professions=e.nativeEvent.layout.y;}} style={s.panel}>
      {sectionRow("professions","Profesiones y formación","Oficios, estudios y verificación","school-outline")}
      {section==="professions"&&<View style={{gap:14,paddingBottom:12}}>
-      <Text style={s.muted}>Hasta 10 profesiones verificadas y una sin verificar. Los certificados requieren revisión.</Text>
+      <Text style={s.muted}>Puedes declarar tus profesiones sin un límite global. Una es principal y las demás secundarias. Declarar una profesión no verifica tus credenciales: los certificados se revisan por separado.</Text>
       {w.professions.map(p=><View key={p.id} style={{gap:10,borderWidth:1,borderColor:colors.line,borderRadius:12,padding:12}}>
        <View style={{flexDirection:"row",alignItems:"flex-start",gap:12}}>
         <View style={{flex:1,gap:5}}><Text style={[s.h3,{fontSize:17}]}><ProfessionGlyph profession={p.profession_code} size={20} color={colors.ink}/>  {p.label}{p.primary_profession?" · Principal":""}</Text><Text style={s.muted}>{p.training_status==="in_academy"?"En formación":p.training_status==="practica"?"Aprendido en la práctica":"Graduado"} · {p.verified?"Verificado":"Sin verificar"}{p.school?" · "+p.school:""}</Text></View>
