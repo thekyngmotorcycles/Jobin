@@ -5,6 +5,11 @@ begin
   insert into public.profession_categories(code,label,sort_order,active)
   values ('automotive','Automotriz',50,true)
   on conflict(code) do nothing;
+  -- Reject category-code reuse before inserting any professions.
+  if exists (select 1 from public.profession_categories
+             where code='automotive' and label is distinct from 'Automotriz') then
+   raise exception 'CATALOG CATEGORY COLLISION: automotive has a different label';
+  end if;
   insert into public.profession_catalog(code,category,label,short_label,icon,sort_order,active) values
   ('detallador_vehiculos','automotive','Detallador de vehículos','Detail','car-sport-outline',200,true),
   ('piloto_drones','technology','Piloto de drones','Drones','airplane-outline',200,true)
