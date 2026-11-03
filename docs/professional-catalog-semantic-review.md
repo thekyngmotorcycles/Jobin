@@ -20,3 +20,24 @@ Fecha: 2026-11-03. Fuente: consultas **solo lectura** al catálogo de Supabase a
 
 ## Riesgos para fase 1
 Las profesiones declaradas deben permanecer separadas de credenciales y sellos; el límite de profesiones no se elimina hasta verificar los RPC, la vista pública de JCard y las pruebas de regresión. La aprobación de CI sobre datos sintéticos no acredita seguridad de despliegue en producción.
+
+## Lote 2 — Agricultura, animales, automotriz y belleza (119 especialidades)
+
+Se inspeccionaron las etiquetas individuales de todas las especialidades activas de estas cuatro categorías mediante consulta solo lectura al catálogo alojado.
+
+| Categoría | Profesiones | Especialidades | Evaluación |
+| --- | ---: | ---: | --- |
+| `agriculture` | 5 | 29 | Coherentes: cultivos, apicultura, ganadería, pesca y técnico agropecuario. |
+| `animals` | 5 | 24 | Coherentes: adiestramiento, cuidado, paseo, peluquería y veterinaria. |
+| `automotive` | 4 | 23 | Coherentes: carrocería, electricidad automotriz, mecánica y neumáticos. |
+| `beauty` | 8 | 43 | Coherentes: cejas, pestañas, estética, uñas, maquillaje, masaje, peluquería y tatuaje. |
+
+### Observaciones semánticas y regulatorias
+- `mecanico` incluye «Mecánica de motocicletas» y «Mecánica de automóviles»: mantener ambas como especialidades de una profesión genérica; no inventar códigos nuevos.
+- «Diagnóstico electrónico» aparece tanto en `mecanico` como en `electricista_automotriz`. Es una habilidad compartida válida, no un duplicado dentro de una misma profesión.
+- `adiestrador_de_perros` incluye «Perros de asistencia». La etiqueta de especialidad no debe interpretarse como acreditación para entrenar animales de asistencia.
+- `veterinario`, `masajista`, `tatuador` y técnicas estéticas pueden tener requisitos legales según jurisdicción; declarar una profesión no equivale a autorización para ejercer.
+- «Microblading» está dentro de especialista en cejas; conservar sin inferir licencia sanitaria.
+- `detallador_vehiculos` sigue pendiente de incorporación por migración, por lo que no se cuenta entre las cuatro profesiones automotrices activas de producción.
+
+**Progreso acumulado: 169 / 1.040 especialidades revisadas; 871 pendientes.** La revisión no implica que las migraciones pendientes se hayan aplicado.
