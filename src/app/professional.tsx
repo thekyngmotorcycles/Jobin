@@ -6,7 +6,7 @@ import { ProfessionPicker } from "../components/ProfessionPicker";
 import { ProfessionalStatus } from "../components/ProfessionalStatus";
 import { loadCatalog, loadEducation, loadSpecialtyCatalog, loadWorkspace, professionalMutation, saveProfessionSpecialties } from "../lib/professional-api";
 import { useProfessionalAction, useProfessionalData } from "../state/useProfessionalData";
-import {loadContactPreferences,saveContactPreferences} from "../lib/jcard-contact";
+import {loadContactPreferences,saveContactPreferences,loadPersonalContactDetails,savePersonalContactDetails} from "../lib/jcard-contact";
 import {LanguageRing,LANGUAGE_LEVELS,languageLabel} from "../components/LanguageRing";
 import {LanguagePicker} from "../components/LanguagePicker";
 import {canonicalLanguage} from "../lib/languages";
@@ -37,6 +37,8 @@ export default function Professional() {
  useEffect(()=>{if(!section)return;const t=setTimeout(()=>scrollRef.current?.scrollTo({y:Math.max(0,(positions.current[section]??0)-18),animated:true}),160);return()=>clearTimeout(t);},[section]);
  const [showEmail,setShowEmail]=useState(false);const [showPhone,setShowPhone]=useState(false);
  useEffect(()=>{let live=true;void loadContactPreferences().then(p=>{if(live){setShowEmail(p.show_email);setShowPhone(p.show_phone);}}).catch(()=>{});return()=>{live=false;};},[]);
+ const [personalContacts,setPersonalContacts]=useState({email_primary:"",email_secondary:"",phone_primary:"",phone_secondary:""});
+ useEffect(()=>{let live=true;void loadPersonalContactDetails().then(c=>{if(live)setPersonalContacts(c);}).catch(()=>{});return()=>{live=false;};},[]);
  const [name,setName]=useState("");const [handle,setHandle]=useState("");const [city,setCity]=useState("");const [region,setRegion]=useState("");
  const [availability,setAvailability]=useState<JCardStatus>("AVAILABLE");
 
@@ -55,9 +57,11 @@ export default function Professional() {
  const save=()=>void action.run(async()=>{
   if(languages.some(l=>!canonicalLanguage(l.name)||!Number.isInteger(Number(l.fluency))||Number(l.fluency)<0||Number(l.fluency)>100))throw new Error("Completa el idioma y selecciona un nivel válido.");
   if(new Set(languages.map(l=>canonicalLanguage(l.name))).size!==languages.length)throw new Error("No puedes agregar el mismo idioma dos veces.");
+  for(const key of ["email_primary","email_secondary"] as const){const v=personalContacts[key].trim();if(v&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))throw new Error("Revisa el correo electrónico.");}
+  await savePersonalContactDetails(personalContacts);
   await saveContactPreferences({show_email:showEmail,show_phone:showPhone});
   await professionalMutation("jobin_save_jcard",{legal_name:name,handle,city,region,availability,languages:languages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))});
- },"JCard actualizada.");
+ },"JCard actualizada.").then(ok=>{if(ok)router.replace("/(tabs)/profile");});
  return <Screen demo={false} hideHeader hideFooter scrollRef={scrollRef} title="Editar mi JCard" subtitle="">
   {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
    {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
@@ -70,6 +74,7 @@ export default function Professional() {
       <Text style={s.muted}>Nombre de usuario</Text><TextInput accessibilityLabel="Nombre de usuario" value={handle} onChangeText={setHandle} autoCapitalize="none" style={input}/>
       <Text style={s.muted}>Ciudad</Text><TextInput accessibilityLabel="Ciudad" value={city} onChangeText={setCity} style={input}/>
       <Text style={s.muted}>Estado o región</Text><TextInput accessibilityLabel="Estado o región" value={region} onChangeText={setRegion} style={input}/>
+      {(["email_primary","email_secondary","phone_primary","phone_secondary"] as const).map(key=><View key={key} style={{gap:5}}><Text style={s.muted}>{{email_primary:"Correo electrónico principal (opcional)",email_secondary:"Correo electrónico secundario (opcional)",phone_primary:"Teléfono principal (opcional)",phone_secondary:"Teléfono secundario (opcional)"}[key]}</Text><TextInput accessibilityLabel={key} value={personalContacts[key]} onChangeText={value=>setPersonalContacts(p=>({...p,[key]:value}))} keyboardType={key.startsWith("email")?"email-address":"phone-pad"} autoCapitalize="none" maxLength={key.startsWith("email")?254:40} style={input}/></View>)}
       <Text style={s.muted}>Disponibilidad profesional</Text><Chips values={["AVAILABLE","ACTIVE"] as const} value={availability} onChange={setAvailability} getLabel={v=>v==="AVAILABLE"?"Disponible para trabajar":"Trabajando actualmente"} label="Disponibilidad profesional"/>
       <View style={{gap:8,padding:12,borderWidth:1,borderColor:colors.line,borderRadius:12}}><Text style={s.muted}>{availability==="ACTIVE"?"Para mostrar una empresa en tu JCard, envíale una solicitud. Solo aparecerá después de que la empresa la apruebe.":"Puedes administrar o finalizar vínculos laborales anteriores. El nombre de la empresa solo se muestra mientras indiques que estás trabajando."}</Text><Button secondary title="Gestionar vínculos laborales" onPress={()=>router.push("/employer-links")}/></View>
      </View>}
