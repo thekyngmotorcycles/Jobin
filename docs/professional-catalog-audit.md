@@ -31,3 +31,10 @@ Cada especialidad pertenece a un `profession_code` existente. No inferir especia
 - Examinar individualmente los 196 nombres de profesión, las 24 categorías y las 1040 especialidades para identificar equivalencias, solapamientos y asignaciones discutibles.
 - Verificar que las pruebas de reemplazo transaccional funcionen en la base de datos de desarrollo y que el nombre de la profesión principal aparezca correctamente en la JCard pública, no solo en el editor.
 - No confundir aprobación de CI con despliegue en Supabase.
+
+## Segunda pasada: clasificación semántica
+- **Ebanista** (código `ebanista`): se encontró en `fashion` pese a especialidades de muebles, madera, enchapados y restauración. Corregido en migración de desarrollo para `construction`, sin cambiar código ni especialidades.
+- **Panadero** (`panadero_pastelero`): incluye «Pastelería» entre especialidades, mientras «Repostero» es profesión independiente. Mantener temporalmente ambas opciones: pueden coexistir como habilidades; revisar si hay duplicación funcional antes de retirar una especialidad.
+- **HVAC y Refrigeración**: 24 y 11 especialidades respectivamente en Supabase; ambos códigos siguen bajo `climate` en la base activa. No desplegar sin validar la migración y la compatibilidad de perfiles.
+- **Calidad de la auditoría**: comprobación estructural de todas las filas realizada; la revisión semántica individual de las 1.040 especialidades sigue abierta. No presentar como concluida.
+- **CI**: las ejecuciones `4f068774` pasaron tanto Universal app checks como Expo development preview, antes de la nueva corrección de Ebanista.
