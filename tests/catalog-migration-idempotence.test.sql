@@ -44,6 +44,14 @@ insert into public.profession_categories(code,label,sort_order,active) values ('
 update public.profession_catalog set category='fashion' where code='ebanista';
 update public.profession_catalog set category='climate',label='Refrigeración' where code='refrigeracion';
 update public.profession_catalog set label='Climatización HVAC' where code='tecnico_hvac_aire_acondicionado';
+-- The minimal CI fixture does not include the optional hosted specialty table.
+-- Add only its catalog-shaped schema here to test the hosted upgrade path.
+create table if not exists public.profession_specialty_options (
+ profession_code text not null references public.profession_catalog(code),
+ label text not null,
+ sort_order integer not null default 0,
+ unique(profession_code,label)
+);
 delete from public.profession_specialty_options where profession_code in ('detallador_vehiculos','piloto_drones');
 delete from public.profession_catalog where code in ('detallador_vehiculos','piloto_drones');
 delete from public.profession_categories where code='refrigeration';
