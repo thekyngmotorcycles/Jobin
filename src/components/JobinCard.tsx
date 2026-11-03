@@ -150,7 +150,7 @@ function BusinessAward({label,icon,level,finish}:{label:string;icon:React.Compon
  </View>;
 }
 function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{card:CardData;theme:ThemeName;contact?:{email:string|null;phone:string|null};onQr?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void}){
- const b=card.business;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:businessCardPaper.background,end:businessCardPaper.background,text:businessCardPaper.ink,secondary:businessCardPaper.secondary,line:businessCardPaper.border,sealFill:businessCardPaper.muted};
+ const bannerClipId=useId().replace(/:/g,"");\n const b=card.business;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:businessCardPaper.background,end:businessCardPaper.background,text:businessCardPaper.ink,secondary:businessCardPaper.secondary,line:businessCardPaper.border,sealFill:businessCardPaper.muted};
  const company=!!b?.name.trim();const businessName=(company?b!.name:card.name).trim().slice(0,30);const [businessNameWidth,setBusinessNameWidth]=useState(180);const nameFontSize=Math.max(14,Math.min(21,Math.floor(businessNameWidth/Math.max(8,businessName.length)*1.65)));const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
  const reviewCount=b?.reviewCount??0;const ratingUnlocked=reviewCount>=10&&rating!==null;const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
  const category=b?.category?.trim()||(/hvac|aire acondicionado|climatiz|refrigeraci/i.test([card.role,...(b?.services??[])].join(" "))?"Climatización":b?.services?.[0]||"Servicios profesionales");
@@ -179,11 +179,11 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
    <View style={{height:104,position:"relative",zIndex:1}}>
     <Svg width="100%" height="104" viewBox="0 0 400 104" preserveAspectRatio="none" pointerEvents="none">
      <Defs>
-      <ClipPath id="businessBannerFangs">
+      <ClipPath id={bannerClipId}>
        <Path d="M0 0 H400 V78 Q400 104 374 104 H361 Q340 104 340 83 H60 Q60 104 39 104 H26 Q0 104 0 78 Z"/>
       </ClipPath>
      </Defs>
-     <SvgImage href={b?.bannerUrl?{uri:b.bannerUrl}:undefined} x="0" y="0" width="400" height="104" preserveAspectRatio="xMidYMid slice" clipPath="url(#businessBannerFangs)"/>
+     <SvgImage href={b?.bannerUrl?{uri:b.bannerUrl}:undefined} x="0" y="0" width="400" height="104" preserveAspectRatio="xMidYMid slice" clipPath={`url(#${bannerClipId})`}/>
      {!b?.bannerUrl&&<Path d="M0 0 H400 V78 Q400 104 374 104 H361 Q340 104 340 83 H60 Q60 104 39 104 H26 Q0 104 0 78 Z" fill={art.tint}/>}
     </Svg>
     {canEditMedia&&onEditMedia&&<Pressable accessibilityRole="button" accessibilityLabel="Cambiar banner empresarial desde la galería" onPress={()=>onEditMedia("banner")} style={{position:"absolute",right:9,top:9,width:25,height:25,borderRadius:13,backgroundColor:jcardCommon.editBackground,alignItems:"center",justifyContent:"center"}}><Ionicons name="pencil-outline" size={13} color={jcardCommon.editInk}/></Pressable>}
