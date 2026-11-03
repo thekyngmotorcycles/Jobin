@@ -84,3 +84,41 @@ Inspección individual de etiquetas agrupadas por profesión en Supabase activo 
 - La categoría `construction` incluye «Asistencia en climatización» en `ayudante_helper_tecnico`; no convertirlo en credencial HVAC.
 
 **Progreso acumulado: 611 / 1.040 especialidades revisadas; 429 pendientes.** Esta revisión semántica no sustituye comprobaciones de migraciones ni verificación legal.
+
+## Lote 5 — 12 categorías restantes (429 especialidades nuevas)
+
+Revisión de etiquetas agrupadas por profesión de las categorías restantes, con consultas solo lectura.
+
+| Categoría | Profesiones activas | Especialidades |
+| --- | ---: | ---: |
+| `education` | 9 | 47 |
+| `engineering` | 8 | 41 |
+| `fashion` | 8 | 40 |
+| `hospitality` | 9 | 48 |
+| `hotels` | 8 | 39 |
+| `industry` | 5 | 25 |
+| `legal` | 4 | 25 |
+| `logistics` | 4 | 20 |
+| `maintenance` | 8 | 41 |
+| `security` | 3 | 15 |
+| `sports` | 7 | 35 |
+| `transport` | 12 | 58 |
+| **Total de filas revisadas en lote** | **85** | **434** |
+
+**Control de doble conteo:** las cinco especialidades de `ebanista` (en `fashion` activo) ya fueron revisadas en el lote 1. Por tanto, este lote aporta **429 especialidades únicas nuevas**, no 434. **Total acumulado: 1.040/1.040 especialidades activas únicas revisadas por correspondencia semántica con su profesión.**
+
+### Hallazgos y decisiones
+- **Clasificación pendiente:** `ebanista` en `fashion` debe pasar a `construction` con la migración ya preparada, sin cambiar su código ni sus cinco especialidades.
+- **Tapicero:** incluye muebles, automotriz y náutica. `fashion` funciona como agrupación de oficios textiles, pero puede merecer categoría transversal futura; no migrar sin investigación de búsqueda y filtros.
+- **Zapatero:** «Calzado ortopédico» es una habilidad declarada, no acreditación clínica.
+- **Abogado, juez y notario:** especialidades jurídicas no equivalen a matrícula, nombramiento ni competencia jurisdiccional.
+- **Piloto de avión/helicóptero, capitán marítimo, conductor profesional, operador de grúa:** la profesión declarada y las especialidades no deben presentar habilitación para operar vehículos o maquinaria.
+- **Fumigador, técnico de ascensores y montacarguista:** requieren evaluar formación, permisos y seguros por región.
+- **Instructor de natación:** «Natación terapéutica» no debe presentarse como licencia sanitaria.
+- **Panadero/Repostero:** conservar el solapamiento de Pastelería (ya revisado en lote 1).
+- **Docente, ingeniero y arquitecto:** distinguir credenciales académicas, títulos habilitantes y atribuciones locales.
+
+### Cierre de la revisión semántica inicial
+Se inspeccionaron las **1.040 especialidades activas únicas** en las 24 categorías de Supabase. La inspección fue una revisión de pertinencia por profesión, **no** una certificación de calidad terminológica, cobertura exhaustiva de oficios, cumplimiento legal o compatibilidad de todas las migraciones.
+
+**Bloqueos antes de fase 1:** confirmar el estado de migraciones pendientes, reconciliar fixture GitHub (116 profesiones) con producción (196), probar preservación de asociaciones y sellos en una base de prueba representativa y auditar límites de profesiones en RPC/UI. No ejecutar migraciones en Supabase activo sin autorización.
