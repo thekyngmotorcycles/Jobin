@@ -86,6 +86,7 @@ select pg_temp.expect_error($q$select public.jobin_replace_unverified_profession
 select pg_temp.assert_ok(exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='carpintero' and primary_profession),'failed replacement retains original primary profession');
 select public.jobin_replace_unverified_profession('carpintero','electricista','graduado');
 select pg_temp.assert_ok((public.jobin_jcard_data()->>'role')='Electricista','public JCard reflects replaced primary profession');
+select pg_temp.expect_error($q$select public.jobin_set_profession('electricista','practica','10000000-0000-4000-8000-000000000003')$q$,'Practical training cannot have an education institution');
 select public.jobin_set_profession('electricista','practica');
 select pg_temp.assert_ok(exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='electricista' and training_status='practica'),'self-taught training is persisted');
 select public.jobin_set_profession('electricista','graduado');
