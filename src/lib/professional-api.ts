@@ -29,6 +29,12 @@ export async function replacePrimaryProfession(oldProfession:string,newProfessio
  });
  if(error)throw new Error(error.message);
 }
+export async function replaceSecondaryProfession(oldProfession:string,newProfession:string,training:"graduado"|"in_academy"|"practica",institution:string|null):Promise<void> {
+ const {error}=await requireSupabase().rpc("jobin_replace_unverified_secondary_profession",{
+  old_profession:oldProfession,new_profession:newProfession,training,institution
+ });
+ if(error)throw new Error(error.message);
+}
 export async function loadCatalog():Promise<ProfessionalCatalog> {
  const {data,error}=await requireSupabase().rpc("jobin_professional_catalog");
  const catalog=decode<ProfessionalCatalog>(data,error);
