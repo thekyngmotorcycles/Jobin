@@ -24,7 +24,7 @@ function decode<T>(data:Json|null,error:{message:string}|null):T {
  return data as unknown as T;
 }
 export async function replacePrimaryProfession(oldProfession:string,newProfession:string,training:"graduado"|"in_academy"|"practica",institution:string|null):Promise<void> {
- const {error}=await (requireSupabase() as any).rpc("jobin_replace_unverified_profession",{
+ const {error}=await requireSupabase().rpc("jobin_replace_unverified_profession",{
   old_profession:oldProfession,new_profession:newProfession,training,institution
  });
  if(error)throw new Error(error.message);
