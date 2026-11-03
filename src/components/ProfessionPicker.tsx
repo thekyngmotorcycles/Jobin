@@ -35,6 +35,8 @@ export function ProfessionPicker({catalog,value,onChange}:{catalog:ProfessionalC
  const {s,colors}=useUi();
  const [query,setQuery]=useState("");
  const [category,setCategory]=useState<string|null>(null);
+ const [categoriesOpen,setCategoriesOpen]=useState(false);
+ const [categoryQuery,setCategoryQuery]=useState("");
  const q=normalize(query);
  const categories=useMemo(()=>[...(catalog?.categories??[])].sort((a,b)=>a.label.localeCompare(b.label,"es")),[catalog]);
  const visible=useMemo(()=>{
@@ -48,14 +50,18 @@ export function ProfessionPicker({catalog,value,onChange}:{catalog:ProfessionalC
  const displayed=visible.slice(0,35);
  return <View style={{gap:10}}>
   <Text style={[s.eyebrow,{fontSize:12}]}>1. Elegí una categoría</Text>
-  <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{gap:7,paddingVertical:3}}>
-   {[{code:"",label:"Todas"},...categories].map(item=>{
-    const active=(category??"")===item.code;
-    return <Pressable key={item.code||"all"} accessibilityRole="button" accessibilityState={{selected:active}} onPress={()=>setCategory(item.code||null)} style={{paddingHorizontal:12,paddingVertical:10,minHeight:44,justifyContent:"center",borderRadius:20,borderWidth:1,borderColor:active?colors.ink:colors.line,backgroundColor:active?colors.ink:colors.paper}}>
-     <Text style={{color:active?colors.inverse:colors.ink,fontSize:13}}>{item.label}</Text>
-    </Pressable>;
-   })}
-  </ScrollView>
+  <Pressable accessibilityRole="button" accessibilityState={{expanded:categoriesOpen}} onPress={()=>setCategoriesOpen(open=>!open)} style={{minHeight:48,paddingHorizontal:12,borderWidth:1,borderColor:colors.line,borderRadius:10,flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
+   <Text style={{color:colors.ink,flex:1}}>{category?categories.find(c=>c.code===category)?.label??"Categoría":"Todas las categorías"}</Text>
+   <Ionicons name={categoriesOpen?"chevron-up":"chevron-down"} size={20} color={colors.ink}/>
+  </Pressable>
+  {categoriesOpen&&<View style={{gap:8,borderWidth:1,borderColor:colors.line,borderRadius:10,padding:10}}>
+   <TextInput accessibilityLabel="Buscar categoría" placeholder="Filtrar categorías…" placeholderTextColor={colors.muted} value={categoryQuery} onChangeText={setCategoryQuery} style={{color:colors.ink,borderWidth:1,borderColor:colors.line,borderRadius:8,padding:10}}/>
+   <ScrollView style={{maxHeight:220}} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+    {[{code:"",label:"Todas las categorías"},...categories].filter(item=>normalize(item.label).includes(normalize(categoryQuery))).map(item=><Pressable key={item.code||"all"} accessibilityRole="button" accessibilityState={{selected:(category??"")===item.code}} onPress={()=>{setCategory(item.code||null);setCategoriesOpen(false);setCategoryQuery("");}} style={{padding:12,minHeight:44,borderRadius:8,backgroundColor:(category??"")===item.code?colors.ink:colors.paper}}>
+     <Text style={{color:(category??"")===item.code?colors.inverse:colors.ink}}>{item.label}</Text>
+    </Pressable>)}
+   </ScrollView>
+  </View>}
   <Text style={[s.eyebrow,{fontSize:12}]}>2. Buscá y seleccioná tu profesión</Text>
   <View style={{flexDirection:"row",alignItems:"center",borderColor:colors.line,borderWidth:1,borderRadius:10,paddingHorizontal:10}}>
    <Ionicons name="search-outline" size={19} color={colors.muted}/>
