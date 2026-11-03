@@ -110,6 +110,12 @@ rollback;
 -- Future catalog expansion contract: additive category, profession and specialties.
 -- No production rows are touched; the whole transaction is rolled back.
 begin;
+create table if not exists public.profession_specialty_options (
+ profession_code text not null references public.profession_catalog(code),
+ label text not null,
+ sort_order integer not null default 0,
+ unique(profession_code,label)
+);
 insert into public.profession_categories(code,label,sort_order,active)
  values ('future_category_test','Categoría futura de prueba',9999,true);
 insert into public.profession_catalog(code,category,label,short_label,icon,sort_order,active)
