@@ -79,7 +79,15 @@ select pg_temp.expect_error($q$select public.jobin_save_jcard('Worker','Worker_O
 select pg_temp.expect_error($q$select public.jobin_save_jcard('Worker','Worker_One','[{"name":"English","fluency":50},{"name":"english","fluency":60}]','AVAILABLE','Miami','FL')$q$,'duplicate');
 select pg_temp.expect_error($q$update public.profession_seals set status='verificado'$q$,'permission denied');
 select pg_temp.expect_error($q$select public.jobin_set_profession('influencer','graduado')$q$,'active professional');
-select public.jobin_set_profession('electricista','graduado');
+-- Atomic primary replacement must update the public JCard role and preserve the original on failure.
+select public.jobin_set_profession('carpintero','graduado');
+select pg_temp.assert_ok((public.jobin_jcard_data()->>'role')='Carpintero','public JCard initially shows primary profession');
+select pg_temp.expect_error($q$select public.jobin_replace_unverified_profession('carpintero','inexistente','graduado')$q$,'active professional');
+select pg_temp.assert_ok(exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='carpintero' and primary_profession),'failed replacement retains original primary profession');
+select public.jobin_replace_unverified_profession('carpintero','electricista','graduado');
+select pg_temp.assert_ok((public.jobin_jcard_data()->>'role')='Electricista','public JCard reflects replaced primary profession');
+select pg_temp.assert_ok(not exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code='carpintero'),'replacement removes unverified original profession');
+
 select pg_temp.expect_error($q$select public.jobin_set_profession('carpintero','graduado')$q$,'seal limit');
 select pg_temp.expect_error($q$select public.jobin_set_profession('electricista','in_academy','10000000-0000-4000-8000-000000000003')$q$,'education institution');
 insert into storage.objects(bucket_id,name) values('professional-certificates','10000000-0000-4000-8000-000000000001/worker.pdf');
