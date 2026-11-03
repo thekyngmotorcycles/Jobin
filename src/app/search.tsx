@@ -26,7 +26,7 @@ export default function Search(){
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState("");
  const [searched,setSearched]=useState(false);
- const intent=interpretJobinSearch(query,["Miami","Orlando"],catalog.data,specialtyCatalog.data??undefined);
+ const intent=interpretJobinSearch(query,["Miami","Miami Beach","Orlando","Fort Lauderdale","New York","Los Angeles","Chicago","Houston","Dallas","Tampa","Buenos Aires","Ciudad de México","Lima","Bogotá","Medellín","Santiago","Madrid","Barcelona"],catalog.data,specialtyCatalog.data??undefined);
  const words=intent.terms;
  const posts=visiblePosts("Para ti",[],query);
  const streams=browseStreams("Popular","Todas","").filter(room=>(!intent.city||room.city.toLowerCase()===intent.city.toLowerCase())&&matchJobinTerms([room.title,room.host,room.city,room.profession].join(" "),words));
