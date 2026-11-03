@@ -149,7 +149,7 @@ function BusinessAward({label,icon,level,finish}:{label:string;icon:React.Compon
   <Text numberOfLines={1} style={{fontSize:10,color:tone,letterSpacing:-1}}>{level===0?"☆☆☆":"★".repeat(level)+"☆".repeat(3-level)}</Text>
  </View>;
 }
-function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;contact?:{email:string|null;phone:string|null};onQr?:()=>void}){
+function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{card:CardData;theme:ThemeName;contact?:{email:string|null;phone:string|null};onQr?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void}){
  const b=card.business;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:businessCardPaper.background,end:businessCardPaper.background,text:businessCardPaper.ink,secondary:businessCardPaper.secondary,line:businessCardPaper.border,sealFill:businessCardPaper.muted};
  const company=!!b?.name.trim();const businessName=(company?b!.name:card.name).trim().slice(0,30);const [businessNameWidth,setBusinessNameWidth]=useState(180);const nameFontSize=Math.max(14,Math.min(21,Math.floor(businessNameWidth/Math.max(8,businessName.length)*1.65)));const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
  const reviewCount=b?.reviewCount??0;const ratingUnlocked=reviewCount>=10&&rating!==null;const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
@@ -170,7 +170,7 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
    <Path d="M-20 420 C105 250 225 300 420 95" stroke={finish.text} strokeOpacity={0.12} strokeWidth="2" fill="none"/>
   </Svg>
   <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
-  <View style={{flex:1,padding:14,gap:8}}>
+  <View style={{flex:1,padding:14,gap:5}}>
    <View style={{height:92,marginTop:0,marginHorizontal:0,position:"relative",flexDirection:"row",alignItems:"center"}}>
     <View style={{position:"absolute",left:58,right:0,height:82,top:2,borderRadius:24,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
      {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:
@@ -179,25 +179,28 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
     <View style={{position:"absolute",left:0,top:8,borderRadius:jcardLayout.avatar/2,borderWidth:0,padding:0,backgroundColor:finish.start,elevation:3}}>
      {b?.avatarUrl?<Avatar uri={b.avatarUrl} name={company?b!.name:card.name} size={jcardLayout.avatar}/>:<View style={{width:jcardLayout.avatar,height:jcardLayout.avatar,borderRadius:jcardLayout.avatar/2,backgroundColor:BUSINESS_MEDAL_COLORS[20],alignItems:"center",justifyContent:"center"}}><Ionicons name={art.icon} size={34} color={BUSINESS_MEDAL_COLORS[1]}/></View>}
     </View>
+    {canEditMedia&&onEditMedia&&<><Pressable accessibilityRole="button" accessibilityLabel="Cambiar banner empresarial desde la galería" onPress={()=>onEditMedia("banner")} style={{position:"absolute",left:58,right:0,top:2,height:82,borderRadius:24,justifyContent:"flex-start",alignItems:"flex-end",padding:5}}><View style={{width:23,height:23,borderRadius:12,backgroundColor:"rgba(238,240,242,0.9)",alignItems:"center",justifyContent:"center"}}><Ionicons name="pencil-outline" size={13} color="#62676B"/></View></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Cambiar foto empresarial desde la galería" onPress={()=>onEditMedia("avatar")} style={{position:"absolute",left:0,top:8,width:jcardLayout.avatar,height:jcardLayout.avatar,borderRadius:jcardLayout.avatar/2,justifyContent:"flex-start",alignItems:"flex-end",padding:1}}><View style={{width:22,height:22,borderRadius:11,backgroundColor:"rgba(238,240,242,0.9)",alignItems:"center",justifyContent:"center"}}><Ionicons name="pencil-outline" size={12} color="#62676B"/></View></Pressable></>}
    </View>
-   <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"flex-start",gap:3,marginTop:1}}>
-    <View style={{flex:1,minWidth:0,gap:7}} onLayout={e=>{const w=Math.floor(e.nativeEvent.layout.width)-22;if(w>0&&Math.abs(w-businessNameWidth)>2)setBusinessNameWidth(w);}}>
+   <View style={{flexDirection:"row",alignItems:"flex-start",gap:6,marginTop:-2}}>
+    <View style={{flex:1,minWidth:0}} onLayout={e=>{const w=Math.floor(e.nativeEvent.layout.width)-22;if(w>0&&Math.abs(w-businessNameWidth)>2)setBusinessNameWidth(w);}}>
      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"flex-start",gap:3}}>
       <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.9} style={{flexShrink:1,fontSize:nameFontSize,lineHeight:nameFontSize*1.2,fontWeight:"700",color:finish.text}}>{businessName}</Text>
       <Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={16} color={b?.licenseVerified?jcardCommon.verifiedBubble :jcardCommon.unverifiedBubble} accessibilityLabel={b?.licenseVerified?"Empresa verificada":"Empresa sin verificar"}/>
      </View>
-     <View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name={art.icon} size={19} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:14,fontWeight:"600",color:finish.secondary}}>{company?category:card.role}</Text></View>
-     {!!b?.email&&<Pressable accessibilityRole="link" accessibilityLabel={"Enviar correo a "+b.email} onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(b.email!)).catch(()=>{})} style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="mail-outline" size={16} color={finish.secondary}/><Text numberOfLines={1} ellipsizeMode="tail" style={{flex:1,fontSize:12,color:finish.text}}>{b.email}</Text></Pressable>}
-     {!!b?.phone&&<Pressable accessibilityRole="link" onPress={()=>void Linking.openURL("tel:"+b.phone!.replace(/[^+\d]/g,"")).catch(()=>{})} style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="call-outline" size={16} color={finish.secondary}/><Text numberOfLines={1} style={{flex:1,fontSize:12,color:finish.text}}>{b.phone}</Text></Pressable>}
-     {!!b?.location&&<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="location-outline" size={16} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:12,color:finish.secondary}}>{b.location}</Text></View>}
     </View>
-    <View style={{alignItems:"center",gap:4,maxWidth:"35%",marginRight:-4}}>
+    <View style={{alignItems:"center",gap:4,width:"33%",marginRight:-4,marginTop:-2}}>
      <View style={{borderRadius:20,borderWidth:1,borderColor:finish.line,paddingVertical:4,paddingHorizontal:3,backgroundColor:finish.sealFill,alignItems:"center",elevation:2}}>
       <Text numberOfLines={1} adjustsFontSizeToFit style={{color:finish.text,fontSize:12,fontWeight:"700"}}>{ratingUnlocked?rating!.toFixed(1):"0.0"} <Text style={{color:ratingUnlocked?jcardCommon.businessGold:finish.secondary}}>{ratingUnlocked?"★★★★★":"☆☆☆☆☆"}</Text></Text>
      </View>
      <Text style={{color:finish.secondary,fontSize:10,textAlign:"center"}}>({reviewCount} {reviewCount===1?"reseña":"reseñas"})</Text>
      {!!b?.opened&&<View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="calendar-outline" size={13} color={finish.secondary}/><Text style={{color:finish.secondary,fontSize:10}}>Desde {b.opened}</Text></View>}
     </View>
+   </View>
+   <View style={{gap:6,alignSelf:"stretch"}}>
+     <View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name={art.icon} size={19} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:14,fontWeight:"600",color:finish.secondary}}>{company?category:card.role}</Text></View>
+     {!!b?.email&&<Pressable accessibilityRole="link" accessibilityLabel={"Enviar correo a "+b.email} onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(b.email!)).catch(()=>{})} style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="mail-outline" size={16} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:12,color:finish.text}}>{b.email}</Text></Pressable>}
+     {!!b?.phone&&<Pressable accessibilityRole="link" onPress={()=>void Linking.openURL("tel:"+b.phone!.replace(/[^+\d]/g,"")).catch(()=>{})} style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="call-outline" size={16} color={finish.secondary}/><Text numberOfLines={1} style={{flex:1,fontSize:12,color:finish.text}}>{b.phone}</Text></Pressable>}
+     {!!b?.location&&<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="location-outline" size={16} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:12,color:finish.secondary}}>{b.location}</Text></View>}
    </View>
    {!!b?.services?.length&&<View style={{alignSelf:"stretch",alignItems:"center",justifyContent:"center",paddingHorizontal:8,marginTop:4}}><Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:11,lineHeight:15,textAlign:"center",color:finish.secondary}}>{b.services.join(" · ")}</Text></View>}
    <View style={{flex:1,minHeight:8}}/>
@@ -214,12 +217,12 @@ function BusinessFace({card,theme,contact,onQr}:{card:CardData;theme:ThemeName;c
   </View>
  </View>;
 }
-export function JobinCard({card,previewTheme,onEditBusiness,ownerId,showOwnerActions=false,employerLink}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;ownerId?:string;showOwnerActions?:boolean;employerLink?:{id:string;name:string;handle:string}|null}){
+export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,ownerId,showOwnerActions=false,employerLink}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;onEditBusinessMedia?:(slot:"banner"|"avatar")=>void;ownerId?:string;showOwnerActions?:boolean;employerLink?:{id:string;name:string;handle:string}|null}){
  const {theme}=useTheme();const {colors}=useUi();const {width}=useWindowDimensions();
  const [contact,setContact]=useState<{email:string|null;phone:string|null}>({email:null,phone:null});
  useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void loadPublicContact(ownerId).then(value=>{if(live)setContact(value);}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
  const [back,setBack]=useState(false),[shareOpen,setShareOpen]=useState(false),[qrOpen,setQrOpen]=useState(false);
- const cardHeight = 470;
+ const cardHeight = 450;
  const rotation=useRef(new Animated.Value(0)).current;
  const angle=useRef(0);
  const rotate=(direction:number)=>{const next=angle.current+direction*180;angle.current=next;setBack(v=>!v);rotation.stopAnimation();Animated.timing(rotation,{toValue:next,useNativeDriver:true,duration:420}).start(({finished})=>{if(finished&&Math.abs(angle.current)>=1800){angle.current=angle.current%360;rotation.setValue(angle.current);}});};
@@ -237,7 +240,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,ownerId,showOwnerAct
     <CardFace card={card} theme={cardTheme} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)}/>
    </Animated.View>
    <Animated.View pointerEvents={back?"auto":"none"} style={{position:"absolute",top:0,left:0,right:0,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:backRotate}]}}>
-    <View style={{height:cardHeight}}><BusinessFace card={card} theme={cardTheme} contact={contact} onQr={()=>setQrOpen(true)}/></View>
+    <View style={{height:cardHeight}}><BusinessFace card={card} theme={cardTheme} contact={contact} onQr={()=>setQrOpen(true)} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia}/></View>
    </Animated.View>
 
    </View>
