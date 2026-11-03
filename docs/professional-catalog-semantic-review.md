@@ -61,3 +61,26 @@ Revisión de las etiquetas de especialidades de cuatro categorías activas media
 - `ilustrador` está en `arts` y `disenador_grafico` en `design`; no fusionar por similitud de herramientas.
 
 **Progreso acumulado: 342 / 1.040 especialidades revisadas; 698 pendientes.** No se aplicaron migraciones a producción.
+
+## Lote 4 — Construcción, salud y tecnología (269 especialidades)
+
+Inspección individual de etiquetas agrupadas por profesión en Supabase activo (solo lectura).
+
+| Categoría | Profesiones activas | Especialidades | Evaluación |
+| --- | ---: | ---: | --- |
+| `construction` | 23 | 125 | Oficios y especialidades congruentes; `ebanista` pendiente de mover desde `fashion`. |
+| `health` | 12 | 67 | Especialidades médicas, odontológicas, farmacéuticas, terapéuticas y técnicas congruentes; alta sensibilidad regulatoria. |
+| `technology` | 15 | 77 | Software, sistemas, datos, redes, soporte, IA y seguridad congruentes; `piloto_drones` pendiente de migración. |
+
+### Riesgos y decisiones
+- `plomero` incluye «Gas domiciliario»: **no** inferir habilitación de gasista a partir de esa especialidad. Exigir revisión de licencia por jurisdicción en fase 2.
+- `electricista` incluye «Media tensión», «Instalaciones de emergencia» y «Energía solar»: una declaración no habilita a trabajar en instalaciones reguladas.
+- `instalador_sistemas_contra_incendios` y `inspector_construccion` requieren tratamiento de permisos y atribuciones legales independiente del catálogo.
+- `medico` incluye once especialidades clínicas (incluidas cirugía y psiquiatría); **no** mostrar ninguna como certificación de especialidad médica sin verificación de credenciales.
+- `farmaceutico`, `enfermero_a`, `odontologo`, `psicologo`, `paramedico` y otras profesiones de salud requieren verificación jurisdiccional antes de conceder insignias de habilitación.
+- `tecnico_de_celulares` especifica «Software y desbloqueo legítimo»; conservar ese alcance y evitar presentar acceso no autorizado como servicio.
+- `ciberseguridad` contiene «Análisis de vulnerabilidades»: la declaración de especialidad no autoriza pruebas contra sistemas ajenos.
+- `ingeniero_de_software` y `desarrollador_de_software` comparten Frontend/Backend: superposición legítima, no fusionar.
+- La categoría `construction` incluye «Asistencia en climatización» en `ayudante_helper_tecnico`; no convertirlo en credencial HVAC.
+
+**Progreso acumulado: 611 / 1.040 especialidades revisadas; 429 pendientes.** Esta revisión semántica no sustituye comprobaciones de migraciones ni verificación legal.
