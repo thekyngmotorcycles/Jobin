@@ -3090,6 +3090,15 @@ export type Database = {
         Args: { kind: string }
         Returns: undefined
       }
+      jobin_replace_unverified_profession: {
+        Args: {
+          old_profession: string
+          new_profession: string
+          training: string
+          institution?: string | null
+        }
+        Returns: string
+      }
       jobin_set_profession: {
         Args: {
           institution?: string
