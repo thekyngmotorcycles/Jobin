@@ -43,7 +43,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contac
   const primaryProfession=card.role.trim().replace(/^Técnico HVAC\s*\/\s*climatización y aire acondicionado$/i,"Técnico HVAC").replace(/\s*[-–/]\s*aire acondicionado\s*$/i,"").trim();
   const primarySeal=card.seals.find(seal=>/hvac/i.test(primaryProfession)?/hvac|aire acondicionado/i.test(seal.profession):seal.profession.trim().toLocaleLowerCase()===primaryProfession.toLocaleLowerCase());
   const secondarySeals=card.seals.filter(seal=>!(/hvac/i.test(primaryProfession)&&/hvac|aire acondicionado/i.test(seal.profession))&&seal.profession.trim().toLocaleLowerCase()!==primaryProfession.toLocaleLowerCase());
-  const sealCount = Math.max(card.languages.length, secondarySeals.length);
+  const sealCount = Math.max(card.languages.length, Math.min(secondarySeals.length, 5));
   const sealColumns = sealCount > 8 ? 4 : sealCount > 4 ? 3 : 2;
   const sealDiameter = sealCount > 12 ? 24 : sealCount > 8 ? 29 : sealCount > 4 ? 35 : 44;
   const sealGap = sealCount > 8 ? 2 : 5;
@@ -120,7 +120,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contac
         <View style={{flex:1,paddingLeft:7,gap:10}}>
           <Text style={{fontSize:10,color:finish.secondary,textAlign:"center",letterSpacing:0.8}}>Otras profesiones</Text>
           <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:sealGap}}>
-            {secondarySeals.map(seal=><Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\nEspecialidades: "+(seal.specialties?.length?seal.specialties.join(", "):"No declaradas")+"\nExperiencia registrada: "+experienceLabel(seal.months??0)+".\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:`${100/sealColumns-3}%`,height:sealDiameter+4,alignItems:"center",justifyContent:"center"}}>
+            {secondarySeals.slice(0,5).map(seal=><Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\nEspecialidades: "+(seal.specialties?.length?seal.specialties.join(", "):"No declaradas")+"\nExperiencia registrada: "+experienceLabel(seal.months??0)+".\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:`${100/sealColumns-3}%`,height:sealDiameter+4,alignItems:"center",justifyContent:"center"}}>
               <View style={{width:sealDiameter,height:sealDiameter,borderRadius:sealDiameter/2,borderWidth:2,borderColor:seal.verified?finish.sealFill:finish.line,backgroundColor:finish.pendingFill,alignItems:"center",justifyContent:"center",elevation:4,shadowColor:finish.text,shadowOpacity:0.15,shadowRadius:5}}>
                 <View style={{width:sealDiameter-8,height:sealDiameter-8,borderRadius:(sealDiameter-8)/2,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center",gap:0}}>
                   <ProfessionGlyph profession={seal.profession} fallback={seal.icon} size={Math.max(12,sealDiameter*0.48)} color={finish.text}/>
@@ -128,6 +128,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contac
               </View>
             </Pressable>)}
           </View>
+          {secondarySeals.length>5&&<Pressable accessibilityRole="button" accessibilityLabel="Ver todas las profesiones secundarias" onPress={()=>setInfo("Profesiones secundarias ("+secondarySeals.length+"):\n"+secondarySeals.map((seal,index)=>(index+1)+". "+seal.profession+(seal.verified?" · Verificada":" · Declarada, sin verificar")).join("\n"))}><Text style={{fontSize:11,color:finish.text,textAlign:"center",textDecorationLine:"underline"}}>Ver todas ({secondarySeals.length})</Text></Pressable>}
         </View>
       </View>
     </View>
