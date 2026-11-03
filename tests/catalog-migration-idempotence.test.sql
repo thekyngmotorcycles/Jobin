@@ -53,6 +53,12 @@ create table if not exists public.profession_specialty_options (
  unique(profession_code,label)
 );
 delete from public.profession_specialty_options where profession_code in ('detallador_vehiculos','piloto_drones');
+insert into public.profession_specialty_options(profession_code,label,sort_order)
+values ('tecnico_hvac_aire_acondicionado','Existing HVAC user specialty',999),
+       ('refrigeracion','Existing refrigeration specialty',999),
+       ('ebanista','Existing cabinetmaker specialty',999);
+create temp table upgrade_specialties_before as
+ select profession_code,label,sort_order from public.profession_specialty_options;
 delete from public.profession_catalog where code in ('detallador_vehiculos','piloto_drones');
 delete from public.profession_categories where code='refrigeration';
 create temp table upgrade_seals_before as select id,worker_id,profession_code,status from public.profession_seals;
@@ -69,6 +75,10 @@ select pg_temp.assert_upgrade(
  (select count(*)=4 from public.profession_specialty_options where profession_code='detallador_vehiculos')
  and (select count(*)=12 from public.profession_specialty_options where profession_code='piloto_drones'),
  'new professions and their specialties must be inserted');
+select pg_temp.assert_upgrade(not exists(
+ select * from upgrade_specialties_before
+ except select profession_code,label,sort_order from public.profession_specialty_options
+),'upgrading must preserve all preexisting specialty selections');
 select pg_temp.assert_upgrade(not exists(
  select * from upgrade_seals_before except select id,worker_id,profession_code,status from public.profession_seals
 ),'upgrading must preserve existing seals');
