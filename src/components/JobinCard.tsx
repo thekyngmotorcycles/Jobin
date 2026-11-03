@@ -30,7 +30,7 @@ function languageDetails(name:string,fluency:number){
  const international=level?.code??(fluency<35?"A1–A2":fluency<55?"B1":fluency<75?"B2":fluency<95?"C1":"C2");
  return "Idioma: "+name+"\nNivel: "+languageLabel(fluency)+"\nReferencia internacional (MCER): "+international+".\nEl nivel es declarado por el usuario y no está verificado mediante examen.";
 }
-function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employerLink }: { card: CardData; theme: ThemeName; expanded?: boolean; onEdit?: () => void; onQr?: () => void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null }) {
+function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contact, employerLink }: { card: CardData; theme: ThemeName; expanded?: boolean; onEdit?: () => void; onQr?: () => void; onShare?: () => void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null }) {
   const { s, fs } = useUi();
   const { fontScale } = useWindowDimensions();
   const gradientId = "jcard" + useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -75,7 +75,8 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
            <SvgXml xml={jobinGlyph(finish.sealText)} width={22} height={22}/>
           </Pressable>
         </View>
-        <View style={{alignItems:"center",gap:7}}>
+        <View style={{alignItems:"center",gap:7,position:"relative"}}>
+          {onShare&&<Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard personal" onPress={event=>{event.stopPropagation();onShare();}} style={{position:"absolute",right:0,top:-30,width:28,height:28,alignItems:"center",justifyContent:"center",zIndex:2}}><Ionicons name="share-social-outline" size={18} color={finish.text}/></Pressable>}
           <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR" onPress={event=>{event.stopPropagation();onQr?.();}} style={{ backgroundColor:jcardCommon.qrPaper, padding:jcardLayout.qrQuietZone, borderRadius:6 }}>
             <QRCode value={card.profileUrl} size={jcardLayout.qr} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
           </Pressable>
@@ -149,7 +150,7 @@ function BusinessAward({label,icon,level,finish}:{label:string;icon:React.Compon
   <Text numberOfLines={1} style={{fontSize:10,color:tone,letterSpacing:-1}}>{level===0?"☆☆☆":"★".repeat(level)+"☆".repeat(3-level)}</Text>
  </View>;
 }
-function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{card:CardData;theme:ThemeName;contact?:{email:string|null;phone:string|null};onQr?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void}){
+function BusinessFace({card,theme,contact,onQr,onShare,canEditMedia=false,onEditMedia}:{card:CardData;theme:ThemeName;contact?:{email:string|null;phone:string|null};onQr?:()=>void;onShare?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void}){
  const b=card.business;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:businessCardPaper.background,end:businessCardPaper.background,text:businessCardPaper.ink,secondary:businessCardPaper.secondary,line:businessCardPaper.border,sealFill:businessCardPaper.muted};
  const company=!!b?.name.trim();const businessName=(company?b!.name:card.name).trim().slice(0,30);const [businessNameWidth,setBusinessNameWidth]=useState(180);const nameFontSize=Math.max(14,Math.min(21,Math.floor(businessNameWidth/Math.max(8,businessName.length)*1.65)));const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
  const reviewCount=b?.reviewCount??0;const ratingUnlocked=reviewCount>=10&&rating!==null;const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
@@ -210,9 +211,12 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
      {awards.map(a=><BusinessAward key={a.label} {...a} finish={finish}/>)}
     </View>
     <View style={{width:1,height:85,backgroundColor:finish.line,marginHorizontal:2}}/>
+    <View style={{position:"relative",alignSelf:"center"}}>
+     {onShare&&<Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard de negocio" onPress={event=>{event.stopPropagation();onShare();}} style={{position:"absolute",right:2,top:-30,width:28,height:28,alignItems:"center",justifyContent:"center",zIndex:2}}><Ionicons name="share-social-outline" size={18} color={businessContactInk}/></Pressable>}
     <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:3,borderRadius:7,backgroundColor:jcardCommon.qrPaper,borderWidth:1,borderColor:jcardCommon.qrBorder,alignSelf:"center",flexShrink:0}}>
      <QRCode value={card.profileUrl} size={46} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
     </Pressable>
+    </View>
    </View>
   </View>
   </View>
@@ -233,15 +237,20 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const frontRotate=rotation.interpolate({inputRange:[-3600,3600],outputRange:["-3600deg","3600deg"],extrapolate:"extend"});
  const backRotate=rotation.interpolate({inputRange:[-3600,3600],outputRange:["-3420deg","3780deg"],extrapolate:"extend"});
  const cardTheme=previewTheme??theme;
- const share=()=>void Share.share({message:`JCard de ${card.name} · ${card.profileUrl}`,url:card.profileUrl,title:`JCard · ${card.name}`});
+ const share=async (side:"personal"|"business")=>{
+  const label=side==="business"?(card.business?.name?.trim()||card.name):card.name;
+  const separator=card.profileUrl.includes("?")?"&":"?";
+  const link=card.profileUrl+separator+"card="+side;
+  try {await Share.share({message:`JCard ${side==="business"?"de negocio":"personal"} de ${label}: ${link}`,title:`JCard ${side==="business"?"de negocio":"personal"} · ${label}`});} catch(error){console.warn("No se pudo abrir el menú para compartir la JCard",error);}
+ };
  return <>
   <View style={{width:"100%",maxWidth:520,alignSelf:"center"}}>
    <View {...responder.panHandlers}>
    <Animated.View pointerEvents={back?"none":"auto"} style={{height:cardHeight,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:frontRotate}]}}>
-    <CardFace card={card} theme={cardTheme} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)}/>
+    <CardFace card={card} theme={cardTheme} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>
    </Animated.View>
    <Animated.View pointerEvents={back?"auto":"none"} style={{position:"absolute",top:0,left:0,right:0,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:backRotate}]}}>
-    <View style={{height:cardHeight}}><BusinessFace card={card} theme={cardTheme} contact={contact} onQr={()=>setQrOpen(true)} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia}/></View>
+    <View style={{height:cardHeight}}><BusinessFace card={card} theme={cardTheme} contact={contact} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia}/></View>
    </Animated.View>
 
    </View>
@@ -252,7 +261,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
     </View>
    </Pressable>
    {showOwnerActions&&<View style={{flexDirection:"row",gap:10,paddingTop:10}}>
-    <Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard" onPress={()=>setShareOpen(true)} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,backgroundColor:colors.ink}}>
+    <Pressable accessibilityRole="button" accessibilityLabel={back?"Compartir JCard de negocio":"Compartir JCard personal"} onPress={()=>setShareOpen(true)} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,backgroundColor:colors.ink}}>
       <Ionicons name="share-social-outline" size={20} color={colors.paper}/><Text style={{color:colors.paper,fontWeight:"700"}}>Compartir</Text>
     </Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
@@ -264,7 +273,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
    <SafeAreaView style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}>
     <View style={{padding:22,borderRadius:18,backgroundColor:jcardCommon.qrPaper,gap:14}}>
      <Text style={{fontSize:20,fontWeight:"700",color:jcardCommon.qrInk}}>Compartir JCard</Text>
-     <Button title="Compartir enlace" onPress={()=>{setShareOpen(false);share();}}/>
+     <Button title="Compartir enlace" onPress={()=>{setShareOpen(false);void share(back?"business":"personal");}}/>
      <Text style={{color:jcardCommon.qrInk}}>Guardar imagen JPG — disponible próximamente</Text>
      <Text style={{color:jcardCommon.qrInk}}>Agregar a Apple Wallet — requiere un pase digital firmado</Text>
      <Button title="Cerrar" onPress={()=>setShareOpen(false)}/>
