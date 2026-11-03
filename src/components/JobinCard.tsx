@@ -226,7 +226,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const {theme}=useTheme();const {colors}=useUi();const {width}=useWindowDimensions();
  const [contact,setContact]=useState<{email:string|null;phone:string|null;details?:PersonalContactDetails}>({email:null,phone:null});
  useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void Promise.all([loadPublicContact(ownerId),loadVisiblePersonalContactDetails(ownerId)]).then(([value,details])=>{if(live)setContact({...value,details});}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
- const [back,setBack]=useState(initialSide==="business"),[shareOpen,setShareOpen]=useState(false),[qrOpen,setQrOpen]=useState(false);
+ const [back,setBack]=useState(initialSide==="business"),[qrOpen,setQrOpen]=useState(false);
  const cardHeight = 450;
  const rotation=useRef(new Animated.Value(initialSide==="business"?180:0)).current;
  const angle=useRef(initialSide==="business"?180:0);
@@ -261,7 +261,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
     </View>
    </Pressable>
    {showOwnerActions&&<View style={{flexDirection:"row",gap:10,paddingTop:10}}>
-    <Pressable accessibilityRole="button" accessibilityLabel={back?"Compartir JCard de negocio":"Compartir JCard personal"} onPress={()=>setShareOpen(true)} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,backgroundColor:colors.ink}}>
+    <Pressable accessibilityRole="button" accessibilityLabel={back?"Compartir JCard de negocio":"Compartir JCard personal"} onPress={()=>void share(back?"business":"personal")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,backgroundColor:colors.ink}}>
       <Ionicons name="share-social-outline" size={20} color={colors.paper}/><Text style={{color:colors.paper,fontWeight:"700"}}>Compartir</Text>
     </Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
@@ -269,17 +269,6 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
     </Pressable>
    </View>}
   </View>
-  <Modal visible={shareOpen} transparent animationType="fade" onRequestClose={()=>setShareOpen(false)}>
-   <SafeAreaView style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}>
-    <View style={{padding:22,borderRadius:18,backgroundColor:jcardCommon.qrPaper,gap:14}}>
-     <Text style={{fontSize:20,fontWeight:"700",color:jcardCommon.qrInk}}>Compartir JCard</Text>
-     <Button title="Compartir enlace" onPress={()=>{setShareOpen(false);void share(back?"business":"personal");}}/>
-     <Text style={{color:jcardCommon.qrInk}}>Guardar imagen JPG — disponible próximamente</Text>
-     <Text style={{color:jcardCommon.qrInk}}>Agregar a Apple Wallet — requiere un pase digital firmado</Text>
-     <Button title="Cerrar" onPress={()=>setShareOpen(false)}/>
-    </View>
-   </SafeAreaView>
-  </Modal>
   <Modal visible={qrOpen} transparent animationType="fade" onRequestClose={()=>setQrOpen(false)}>
    <SafeAreaView style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",alignItems:"center",padding:16}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar QR" onPress={()=>setQrOpen(false)} style={StyleSheet.absoluteFill}/>
