@@ -40,6 +40,7 @@ rollback;
 begin;
 create function pg_temp.assert_upgrade(ok boolean, message text) returns void language plpgsql as $$
 begin if not coalesce(ok,false) then raise exception 'CATALOG UPGRADE FAILED: %',message; end if; end $$;
+insert into public.profession_categories(code,label,sort_order,active) values ('fashion','Moda, artesanía y oficios textiles',90,true) on conflict(code) do nothing;
 update public.profession_catalog set category='fashion' where code='ebanista';
 update public.profession_catalog set category='climate',label='Refrigeración' where code='refrigeracion';
 update public.profession_catalog set label='Climatización HVAC' where code='tecnico_hvac_aire_acondicionado';
