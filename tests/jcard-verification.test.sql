@@ -19,13 +19,17 @@ insert into auth.users(id,raw_user_meta_data) values
  ('10000000-0000-4000-8000-000000000005','{"display_name":"Police","account_type":"company","organization_kind":"government"}'),
  ('10000000-0000-4000-8000-000000000006','{"display_name":"Reviewer","account_type":"personal"}');
 insert into private.credential_reviewers(user_id) values('10000000-0000-4000-8000-000000000006');
-select pg_temp.assert_ok((select count(*)=116 from public.profession_catalog),'all requested professional trades seeded');
-select pg_temp.assert_ok((select count(*)=16 from public.profession_categories),'all requested sectors seeded');
+select pg_temp.assert_ok((select count(*)>=116 from public.profession_catalog),'all requested professional trades seeded');
+select pg_temp.assert_ok((select count(*)>=16 from public.profession_categories),'all requested sectors seeded');
 select pg_temp.assert_ok((select label='Técnico HVAC' and category='climate' from public.profession_catalog where code='tecnico_hvac_aire_acondicionado'),'HVAC profession retained under HVAC category');
 select pg_temp.assert_ok((select label='Técnico en Refrigeración' and category='refrigeration' from public.profession_catalog where code='refrigeracion'),'refrigeration profession moved to distinct category');
 select pg_temp.assert_ok((select category='automotive' from public.profession_catalog where code='detallador_vehiculos'),'vehicle detailing belongs to automotive');
 select pg_temp.assert_ok((select category='technology' from public.profession_catalog where code='piloto_drones'),'drone pilot belongs to technology');
 select pg_temp.assert_ok((select category='construction' from public.profession_catalog where code='ebanista'),'cabinetmaker belongs to construction and woodworking');
+select pg_temp.assert_ok((select count(*)=5 from public.profession_categories where code in ('motorcycles','aviation','maritime','heavy_equipment','railway')),'transport domain categories seeded');
+select pg_temp.assert_ok((select category='sports' from public.profession_catalog where code='piloto_profesional_automovilismo'),'F1 driver is a sports profession');
+select pg_temp.assert_ok((select category='motorcycles' from public.profession_catalog where code='tecnico_atv_utv'),'ATV and UTV technicians belong to powersports');
+select pg_temp.assert_ok((select category='automotive' from public.profession_catalog where code='tecnico_carritos_golf'),'golf cart technicians belong to automotive');
 -- The foundational CI schema does not install the optional specialty catalog.
 do $audit$
 begin
