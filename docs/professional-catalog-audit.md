@@ -44,3 +44,9 @@ Cada especialidad pertenece a un `profession_code` existente. No inferir especia
 - Se revisaron las 8 profesiones inactivas: instalador de cerámica y porcelanato, operador de excavadora, técnico de calderas/calefacción, vigilador y cuatro variantes de repartidor. No se reactivaron automáticamente: requieren decisión semántica sobre redundancia y alcance.
 - No se encontraron nombres de profesión idénticos (normalizados) entre las profesiones activas, incluso comparando distintas categorías.
 - Las pruebas del commit `d4e225cd` están pendientes al registrar esta nota. No se ha desplegado nada en Supabase.
+
+## Cuarta pasada — CI y especialidades
+- `4f366b6f`: **Universal app checks** y **Expo development preview** aprobados.
+- Supabase: **0 especialidades huérfanas**; **10 especialidades** pertenecen a profesiones inactivas (conservar para no romper historial).
+- La base activa aún no tiene `detallador_vehiculos` ni `piloto_drones`, y no tiene aplicada la corrección de `ebanista`; la aprobación CI no equivale a despliegue.
+- Se agregaron aserciones automáticas sobre códigos/categorías obligatorios, nombres únicos de profesiones activas y categorías, especialidades sin referencias huérfanas y especialidades no duplicadas dentro de cada profesión. La comprobación de especialidades es condicional porque el fixture CI base no siempre instala esa tabla.
