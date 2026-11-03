@@ -170,16 +170,13 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
    <Path d="M-20 420 C105 250 225 300 420 95" stroke={finish.text} strokeOpacity={0.12} strokeWidth="2" fill="none"/>
   </Svg>
   <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
-  <View style={{flex:1,padding:14,gap:5}}>
-   <View style={{height:92,marginTop:0,marginHorizontal:0,position:"relative",flexDirection:"row",alignItems:"center"}}>
-    <View style={{position:"absolute",left:58,right:0,height:82,top:2,borderRadius:24,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
+  <View style={{flex:1,paddingHorizontal:14,paddingTop:9,paddingBottom:14,gap:5}}>
+   <View style={{height:88,position:"relative",justifyContent:"center"}}>
+    <View style={{height:82,borderRadius:24,borderWidth:1,borderColor:finish.line,overflow:"hidden",backgroundColor:finish.sealFill}}>
      {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:
       <View style={{flex:1,backgroundColor:art.tint,alignItems:"flex-end",justifyContent:"center",paddingRight:20}}><Ionicons name={art.icon} size={66} color={BUSINESS_MEDAL_COLORS[1]} style={{opacity:0.55}}/></View>}
     </View>
-    <View style={{position:"absolute",left:0,top:8,borderRadius:jcardLayout.avatar/2,borderWidth:0,padding:0,backgroundColor:finish.start,elevation:3}}>
-     {b?.avatarUrl?<Avatar uri={b.avatarUrl} name={company?b!.name:card.name} size={jcardLayout.avatar}/>:<View style={{width:jcardLayout.avatar,height:jcardLayout.avatar,borderRadius:jcardLayout.avatar/2,backgroundColor:BUSINESS_MEDAL_COLORS[20],alignItems:"center",justifyContent:"center"}}><Ionicons name={art.icon} size={34} color={BUSINESS_MEDAL_COLORS[1]}/></View>}
-    </View>
-    {canEditMedia&&onEditMedia&&<><Pressable accessibilityRole="button" accessibilityLabel="Cambiar banner empresarial desde la galería" onPress={()=>onEditMedia("banner")} style={{position:"absolute",left:58,right:0,top:2,height:82,borderRadius:24,justifyContent:"flex-start",alignItems:"flex-end",padding:5}}><View style={{width:23,height:23,borderRadius:12,backgroundColor:jcardCommon.editBackground,opacity:0.92,alignItems:"center",justifyContent:"center"}}><Ionicons name="pencil-outline" size={13} color={jcardCommon.editInk}/></View></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Cambiar foto empresarial desde la galería" onPress={()=>onEditMedia("avatar")} style={{position:"absolute",left:0,top:8,width:jcardLayout.avatar,height:jcardLayout.avatar,borderRadius:jcardLayout.avatar/2,justifyContent:"flex-start",alignItems:"flex-end",padding:1}}><View style={{width:22,height:22,borderRadius:11,backgroundColor:jcardCommon.editBackground,opacity:0.92,alignItems:"center",justifyContent:"center"}}><Ionicons name="pencil-outline" size={12} color={jcardCommon.editInk}/></View></Pressable></>}
+    {canEditMedia&&onEditMedia&&<Pressable accessibilityRole="button" accessibilityLabel="Cambiar banner empresarial desde la galería" onPress={()=>onEditMedia("banner")} style={{position:"absolute",left:0,right:0,top:3,height:82,borderRadius:24,justifyContent:"flex-start",alignItems:"flex-end",padding:5}}><View style={{width:23,height:23,borderRadius:12,backgroundColor:jcardCommon.editBackground,opacity:0.92,alignItems:"center",justifyContent:"center"}}><Ionicons name="pencil-outline" size={13} color={jcardCommon.editInk}/></View></Pressable>}
    </View>
    <View style={{flexDirection:"row",alignItems:"flex-start",gap:6,marginTop:-2}}>
     <View style={{flex:1,minWidth:0}} onLayout={e=>{const w=Math.floor(e.nativeEvent.layout.width)-22;if(w>0&&Math.abs(w-businessNameWidth)>2)setBusinessNameWidth(w);}}>
@@ -187,6 +184,7 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
       <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.9} style={{flexShrink:1,fontSize:nameFontSize,lineHeight:nameFontSize*1.2,fontWeight:"700",color:finish.text}}>{businessName}</Text>
       <Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={16} color={b?.licenseVerified?jcardCommon.verifiedBubble :jcardCommon.unverifiedBubble} accessibilityLabel={b?.licenseVerified?"Empresa verificada":"Empresa sin verificar"}/>
      </View>
+     <View style={{flexDirection:"row",alignItems:"center",gap:6,marginTop:5}}><Ionicons name={art.icon} size={18} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:13,fontWeight:"600",color:finish.secondary}}>{company?category:card.role}</Text></View>
     </View>
     <View style={{alignItems:"center",gap:3,width:"33%",marginRight:-4,marginTop:-3}}>
      <View style={{borderRadius:20,borderWidth:1,borderColor:finish.line,paddingVertical:3,paddingHorizontal:3,backgroundColor:finish.sealFill,alignItems:"center",elevation:2}}>
@@ -197,7 +195,6 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
     </View>
    </View>
    <View style={{gap:6,alignSelf:"stretch"}}>
-     <View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name={art.icon} size={19} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:14,fontWeight:"600",color:finish.secondary}}>{company?category:card.role}</Text></View>
      {!!b?.email&&<Pressable accessibilityRole="link" accessibilityLabel={"Enviar correo a "+b.email} onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(b.email!)).catch(()=>{})} style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="mail-outline" size={16} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:12,color:finish.text}}>{b.email}</Text></Pressable>}
      {!!b?.phone&&<Pressable accessibilityRole="link" onPress={()=>void Linking.openURL("tel:"+b.phone!.replace(/[^+\d]/g,"")).catch(()=>{})} style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="call-outline" size={16} color={finish.secondary}/><Text numberOfLines={1} style={{flex:1,fontSize:12,color:finish.text}}>{b.phone}</Text></Pressable>}
      {!!b?.location&&<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="location-outline" size={16} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:12,color:finish.secondary}}>{b.location}</Text></View>}
