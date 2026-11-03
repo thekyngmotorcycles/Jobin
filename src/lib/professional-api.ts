@@ -2,6 +2,11 @@ import { requireSupabase } from "./supabase";
 import type { Database, Json } from "./database.types";
 import type { ProfessionalCatalog, ProfessionalWorkspace, RealCard, CredentialRequest, EducationOption, OrganizationData, CareerResult } from "./professional-types";
 
+export function professionDisplayName(code:string,label:string):string {
+ if(code==="tecnico_hvac_aire_acondicionado")return "Técnico HVAC";
+ if(code==="refrigeracion")return "Técnico en Refrigeración";
+ return label;
+}
 type Functions=Database["public"]["Functions"];
 type Phase2Rpc=Extract<keyof Functions,
  "jobin_save_jcard"|"jobin_set_profession"|"jobin_remove_unverified_profession"|"jobin_set_organization_kind"|"jobin_submit_credential"|
@@ -20,7 +25,8 @@ function decode<T>(data:Json|null,error:{message:string}|null):T {
 }
 export async function loadCatalog():Promise<ProfessionalCatalog> {
  const {data,error}=await requireSupabase().rpc("jobin_professional_catalog");
- return decode<ProfessionalCatalog>(data,error);
+ const catalog=decode<ProfessionalCatalog>(data,error);
+ return {...catalog,professions:catalog.professions.map(p=>({...p,label:professionDisplayName(p.code,p.label)}))};
 }
 export async function loadWorkspace():Promise<ProfessionalWorkspace|null> {
  const client=requireSupabase();const {data:{session}}=await client.auth.getSession();
@@ -31,7 +37,7 @@ export async function loadWorkspace():Promise<ProfessionalWorkspace|null> {
  const {data,error}=await client.rpc("jobin_professional_workspace");
  const result=decode<ProfessionalWorkspace>(data,error);
  if(!result.card)throw new Error("El perfil no está disponible.");
- return result;
+ return {...result,professions:result.professions.map(p=>({...p,label:professionDisplayName(p.profession_code,p.label)}))};
 }
 export async function loadPublicCard(id:string):Promise<RealCard> {
  const {data,error}=await requireSupabase().rpc("jobin_jcard_data",{target:id});
