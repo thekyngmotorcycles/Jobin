@@ -23,9 +23,9 @@ export function useProfessionalData<T>(loader:()=>Promise<T>) {
 export function useProfessionalAction(reload:()=>void) {
  const guard=useRef(false);const [busy,setBusy]=useState(false);const [notice,setNotice]=useState("");
  async function run(action:()=>Promise<unknown>,success:string) {
-  if(guard.current)return;guard.current=true;setBusy(true);setNotice("");
-  try {await action();setNotice(success);reload();}
-  catch(cause){setNotice(cause instanceof Error?cause.message:String(cause));}
+  if(guard.current)return false;guard.current=true;setBusy(true);setNotice("");
+  try {await action();setNotice(success);reload();return true;}
+  catch(cause){setNotice(cause instanceof Error?cause.message:String(cause));return false;}
   finally{guard.current=false;setBusy(false);}
  }
  return {run,busy,notice,setNotice};
