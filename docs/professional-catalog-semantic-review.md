@@ -122,3 +122,11 @@ Revisión de etiquetas agrupadas por profesión de las categorías restantes, co
 Se inspeccionaron las **1.040 especialidades activas únicas** en las 24 categorías de Supabase. La inspección fue una revisión de pertinencia por profesión, **no** una certificación de calidad terminológica, cobertura exhaustiva de oficios, cumplimiento legal o compatibilidad de todas las migraciones.
 
 **Bloqueos antes de fase 1:** confirmar el estado de migraciones pendientes, reconciliar fixture GitHub (116 profesiones) con producción (196), probar preservación de asociaciones y sellos en una base de prueba representativa y auditar límites de profesiones en RPC/UI. No ejecutar migraciones en Supabase activo sin autorización.
+
+## Corrección de conciliación de conteos (2026-11-03)
+
+**Corrección importante del cierre anterior:** Supabase confirma **1.040 especialidades históricas en total, de las cuales 1.030 pertenecen a profesiones activas y 10 a profesiones inactivas**. El cierre previo de «1.040 especialidades activas» era incorrecto.
+
+El lote 5 duplicó **15**, no cinco, especialidades ya inspeccionadas en el lote 1: cinco de `ebanista`, cinco de `panadero_pastelero` y cinco de `repostero`. Por ello el lote 5 aportó **419** especialidades únicas nuevas (434 − 15), y el acumulado real es **1.030/1.030 especialidades de profesiones activas**. Las **10 especialidades asociadas a profesiones inactivas siguen pendientes de revisión semántica específica**, aunque sus filas deben preservarse por compatibilidad histórica.
+
+Esta conciliación se comprobó con `count(*) filter (where p.active)` y `count(*) filter (where not p.active)` sobre `profession_specialty_options` unida a `profession_catalog`. Ningún registro fue modificado.
