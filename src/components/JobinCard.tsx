@@ -15,7 +15,7 @@ import {loadPublicContact,loadVisiblePersonalContactDetails,type PersonalContact
 import { experienceLabel } from "../lib/employment";
 import {ProfessionGlyph} from "./ProfessionGlyph";
 import { LanguageRing, languageLabel, LANGUAGE_LEVELS } from "./LanguageRing";
-import { businessCardPaper, jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
+import { businessCardAccents, businessCardPaper, jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
 import {businessCategoryArt} from "../lib/business-category-art";
 
 export type { CardData } from "../lib/jcard";
