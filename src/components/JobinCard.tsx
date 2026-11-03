@@ -158,8 +158,8 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
  const hvacCategory=/hvac|climatiz|aire acondicionado/i.test(category)&&!/refrigeraci/i.test(category);
  const refrigerationCategory=/refrigeraci/i.test(category)&&!/climatiz/i.test(category);
  const categoryIcon=hvacCategory?"aperture-outline":refrigerationCategory?"snow-outline":art.icon;
- const businessContactInk="#354553";
- const businessIconInk="#416477";
+ const businessContactInk=businessCardAccents.contact;
+ const businessIconInk=businessCardAccents.icon;
  const voteLevel=(key:"service"|"prices"|"punctuality"|"professionalism"|"tenure")=>{const total=b?.excellenceReviewCount??0;const percent=total>0?100*(b?.excellenceVotes?.[key]??0)/total:0;return (b?.reviewCount??0)<20||!(b?.excellenceVotes?.[key]??0)?0:percent>63?3:percent>33?2:1;};
  const awards=[
   {label:"Atención al cliente",icon:"headset-outline" as const,level:voteLevel("service")},
@@ -186,10 +186,10 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
    <View style={{flexDirection:"row",alignItems:"flex-start",gap:6,marginTop:-2}}>
     <View style={{flex:1,minWidth:0}} onLayout={e=>{const w=Math.floor(e.nativeEvent.layout.width)-22;if(w>0&&Math.abs(w-businessNameWidth)>2)setBusinessNameWidth(w);}}>
      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"flex-start",gap:3}}>
-      <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.9} style={{flexShrink:1,fontSize:nameFontSize,lineHeight:nameFontSize*1.2,fontWeight:"700",color:"#151B24"}}>{businessName}</Text>
+      <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.9} style={{flexShrink:1,fontSize:nameFontSize,lineHeight:nameFontSize*1.2,fontWeight:"700",color:businessCardAccents.name}}>{businessName}</Text>
       <Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={16} color={b?.licenseVerified?jcardCommon.verifiedBubble :jcardCommon.unverifiedBubble} accessibilityLabel={b?.licenseVerified?"Empresa verificada":"Empresa sin verificar"}/>
      </View>
-     <View style={{flexDirection:"row",alignItems:"center",gap:6,marginTop:5}}>{hvacCategory?<View style={{width:20,height:20,alignItems:"center",justifyContent:"center"}}><Ionicons name="snow-outline" size={20} color={businessIconInk}/><Ionicons name="aperture-outline" size={11} color={businessIconInk} style={{position:"absolute"}}/></View>:<Ionicons name={categoryIcon} size={18} color={businessIconInk}/>}<Text numberOfLines={2} style={{flex:1,fontSize:13,fontWeight:"600",color:"#465B6C"}}>{company?category:card.role}</Text></View>
+     <View style={{flexDirection:"row",alignItems:"center",gap:6,marginTop:5}}>{hvacCategory?<View style={{width:20,height:20,alignItems:"center",justifyContent:"center"}}><Ionicons name="snow-outline" size={20} color={businessIconInk}/><Ionicons name="aperture-outline" size={11} color={businessIconInk} style={{position:"absolute"}}/></View>:<Ionicons name={categoryIcon} size={18} color={businessIconInk}/>}<Text numberOfLines={2} style={{flex:1,fontSize:13,fontWeight:"600",color:businessCardAccents.category}}>{company?category:card.role}</Text></View>
     </View>
     <View style={{alignItems:"center",gap:3,width:"33%",marginRight:-4,marginTop:-3}}>
      <View style={{borderRadius:20,borderWidth:1,borderColor:finish.line,paddingVertical:3,paddingHorizontal:3,backgroundColor:finish.sealFill,alignItems:"center",elevation:2}}>
