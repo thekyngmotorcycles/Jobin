@@ -7,6 +7,13 @@ begin
  if old_profession is null or new_profession is null then raise exception 'Choose both professions'; end if;
  if not exists(select 1 from public.person_professions where worker_id=auth.uid() and profession_code=old_profession and primary_profession) then
   raise exception 'The original primary profession is no longer available'; end if;
+ -- Do not promote an already-listed secondary trade and silently change its training or seals.
+ if old_profession<>new_profession and exists(
+  select 1 from public.person_professions
+  where worker_id=auth.uid() and profession_code=new_profession
+ ) then
+  raise exception 'The replacement profession is already on your JCard';
+ end if;
  if old_profession<>new_profession then
   perform public.jobin_remove_unverified_profession(old_profession);
  end if;
