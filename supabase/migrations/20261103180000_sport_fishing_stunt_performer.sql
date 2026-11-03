@@ -7,8 +7,8 @@ begin
  on conflict(code) do nothing;
  if exists(select 1 from public.profession_catalog where (code='pescador_deportivo' and (category<>'sports' or label<>'Pescador deportivo')) or (code='doble_accion' and (category<>'arts' or label<>'Doble de acción'))) then raise exception 'Profession code collision'; end if;
  insert into public.profession_catalog(code,category,label,short_label,icon,sort_order,active) values
- ('pescador_deportivo','sports','Pescador deportivo','Pesca dep','fish-outline',455,true),
- ('doble_accion','arts','Doble de acción','Doble acc','film-outline',456,true)
+ ('pescador_deportivo','sports','Pescador deportivo','PescaDep','fish-outline',455,true),
+ ('doble_accion','arts','Doble de acción','DobAcc','film-outline',456,true)
  on conflict(code) do nothing;
  if to_regclass('public.profession_specialty_options') is not null then
  insert into public.profession_specialty_options(profession_code,label,sort_order) values
