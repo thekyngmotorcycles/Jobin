@@ -3,6 +3,7 @@ import {router} from "expo-router";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Button, Chips, Notice, Screen, useUi } from "../components/ui";
 import { ProfessionPicker } from "../components/ProfessionPicker";
+import { SpecialtyPicker } from "../components/SpecialtyPicker";
 import { ProfessionalStatus } from "../components/ProfessionalStatus";
 import { loadCatalog, loadEducation, loadSpecialtyCatalog, loadWorkspace, professionalMutation, replacePrimaryProfession, replaceSecondaryProfession, saveProfessionSpecialties } from "../lib/professional-api";
 import { useProfessionalAction, useProfessionalData } from "../state/useProfessionalData";
@@ -116,7 +117,7 @@ export default function Professional() {
        <ProfessionPicker catalog={catalog.data} value={profession} onChange={choose}/>
        <Text style={[s.h3,{fontSize:15}]}>Especialidades (opcional)</Text>
        <Text style={s.muted}>Selecciona las áreas en las que trabajas. Aparecerán en la información de tu profesión, no como una lista en la JCard. Son declaradas por el usuario.</Text>
-       {(specialtyCatalog.data?.[profession]??[]).length>0?<View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{(specialtyCatalog.data?.[profession]??[]).map(item=><Pressable key={item} accessibilityRole="checkbox" accessibilityState={{checked:specialties.includes(item)}} onPress={()=>setSpecialties(old=>old.includes(item)?old.filter(x=>x!==item):old.length<20?[...old,item]:old)} style={{borderWidth:1,borderColor:colors.line,borderRadius:12,paddingHorizontal:10,paddingVertical:9,backgroundColor:specialties.includes(item)?colors.accent:colors.paper}}><Text style={{color:colors.ink,fontSize:13}}>{specialties.includes(item)?"✓ ":""}{item}</Text></Pressable>)}</View>:<Text style={s.muted}>{specialtyCatalog.loading?"Cargando especialidades…":"Sin especialidades disponibles para esta profesión."}</Text>}
+       <SpecialtyPicker key={profession} options={specialtyCatalog.data?.[profession]??[]} selected={specialties} onChange={setSpecialties} loading={specialtyCatalog.loading}/>
        <Chips values={["graduado","in_academy","practica"] as const} value={training} onChange={v=>{setTraining(v);if(v==="practica")setInstitution(null);}} getLabel={v=>v==="graduado"?"Graduado":v==="in_academy"?"En formación":"Aprendido en la práctica"} label="Formación"/>
        {training!=="practica"&&<Text style={s.muted}>Institución educativa (opcional)</Text>}
        {training!=="practica"&&<Button secondary title={institution?"Quitar institución":"Sin institución seleccionada"} onPress={()=>setInstitution(null)}/>}
