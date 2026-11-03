@@ -21,21 +21,37 @@ create policy personal_contacts_owner_insert on public.jcard_personal_contacts f
 create policy personal_contacts_owner_update on public.jcard_personal_contacts for update to authenticated using ((select auth.uid())=owner_id) with check ((select auth.uid())=owner_id);
 grant select,insert,update on public.jcard_personal_contacts to authenticated;
 revoke all on public.jcard_personal_contacts from anon;
-alter table public.jcard_business_details add column if not exists email_secondary text;
-alter table public.jcard_business_details add column if not exists phone_secondary text;
-alter table public.jcard_business_details add column if not exists phone_label text;
-alter table public.jcard_business_details add column if not exists phone_secondary_label text;
+-- The business-details table is provisioned outside the foundation migrations in some environments.
+-- Keep fresh database CI compatible without creating a partial replacement table.
+do $$
+begin
+ if to_regclass('public.jcard_business_details') is not null then
+  alter table public.jcard_business_details add column if not exists email_secondary text;
+  alter table public.jcard_business_details add column if not exists phone_secondary text;
+  alter table public.jcard_business_details add column if not exists phone_label text;
+  alter table public.jcard_business_details add column if not exists phone_secondary_label text;
+ end if;
+end $$;
 -- Public reads honor existing user-controlled contact visibility settings.
 create or replace function public.jcard_public_contact_details(target uuid)
-returns jsonb language sql security definer set search_path=public as $$
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare result jsonb;
+begin
+ if to_regclass('public.jcard_contact_preferences') is null then
+  return jsonb_build_object('email_primary','','email_secondary','','phone_primary','','phone_secondary','');
+ end if;
+ execute $query$
  select jsonb_build_object(
   'email_primary',case when coalesce(p.show_email,false) then coalesce(c.email_primary,'') else '' end,
   'email_secondary',case when coalesce(p.show_email,false) then coalesce(c.email_secondary,'') else '' end,
   'phone_primary',case when coalesce(p.show_phone,false) then coalesce(c.phone_primary,'') else '' end,
   'phone_secondary',case when coalesce(p.show_phone,false) then coalesce(c.phone_secondary,'') else '' end
- ) from (select target as id) x
+ ) from (select $1::uuid as id) x
  left join public.jcard_personal_contacts c on c.owner_id=x.id
- left join public.jcard_contact_preferences p on p.owner_id=x.id;
+ left join public.jcard_contact_preferences p on p.owner_id=x.id
+ $query$ into result using target;
+ return result;
+end;
 $$;
 revoke all on function public.jcard_public_contact_details(uuid) from public;
 grant execute on function public.jcard_public_contact_details(uuid) to anon,authenticated;
