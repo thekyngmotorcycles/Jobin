@@ -110,7 +110,7 @@ export default function Profile() {
       return;
     }
     Keyboard.dismiss();
-    const updated:EmploymentEntry={id:editingId??Date.now()+"",company:draft.company.trim(),role:selectedEmploymentProfession.label,professions:[selectedEmploymentProfession.label],fromMonth,toMonth,from,to,address:draft.address.trim(),contact:draft.contact.trim(),status:"pending",verifiedBy:null};
+    const updated:EmploymentEntry={id:editingId??Date.now()+"",company:draft.company.trim(),role:selectedEmploymentProfession.label,professions:[selectedEmploymentProfession.code],fromMonth,toMonth,from,to,address:draft.address.trim(),contact:draft.contact.trim(),status:"pending",verifiedBy:null};
     setHistory(items=>editingId?items.map(entry=>entry.id===editingId?updated:entry):[...items,updated]);
     void writeCloudHistory(updated).catch(()=>setNotice("Guardado localmente, pero no se pudo sincronizar. Revisa la conexión."));
     setDraft({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address: "", contact: "" });
@@ -118,16 +118,20 @@ export default function Profile() {
     setNotice("Experiencia guardada. Cualquier cambio requiere una nueva verificación de la empresa.");
   }
 
-  // The professional JCard owns the seals. Employment records only contribute time;
-  // they must never create a second, unverified seal for the same profession.
+  // The JCard owns the seals. Work history contributes elapsed time only.
+  // Match canonical catalog codes and legacy labels without merging distinct trades.
   const normalizeProfession=(value:string)=>value.toLocaleLowerCase("es").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]/g,"").trim();
+  const professionKey=(value:string)=>{
+    const normalized=normalizeProfession(value);
+    return catalogProfessions.find(p=>p.code===value||normalizeProfession(p.label)===normalized)?.code??normalized;
+  };
   const seals: JCardSeal[] = workspace.data?.card.seals.map(seal=>{
-    const matchingCatalog=catalogProfessions.find(p=>normalizeProfession(p.label)===normalizeProfession(seal.profession)||p.code===seal.profession);
-    const labels=[seal.profession,matchingCatalog?.label].filter((v):v is string=>Boolean(v));
-    const matchingHistory=history.filter(entry=>(entry.professions??[]).some(p=>labels.some(label=>normalizeProfession(p)===normalizeProfession(label))));
-    return {...seal,months:matchingHistory.length?employmentMonths(matchingHistory,matchingCatalog?.label??seal.profession):employmentMonths(history,seal.profession)};
+    const key=professionKey(seal.profession);
+    const matchingHistory=history.filter(entry=>(entry.professions?.length?entry.professions:[entry.role]).some(value=>professionKey(value)===key));
+    const months=employmentMonths(matchingHistory);
+    return {...seal,months};
   })??[];
-  const uniqueSeals=seals.filter((seal,index)=>seals.findIndex(other=>normalizeProfession(other.profession)===normalizeProfession(seal.profession))===index);
+  const uniqueSeals=seals.filter((seal,index)=>seals.findIndex(other=>professionKey(other.profession)===professionKey(seal.profession))===index);
   const tabIcon = (icon: keyof typeof Ionicons.glyphMap, label: string, value: Mode | "live", active: boolean) => (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected: active }}
       onPress={() => (value === "live" ? openLive() : setMode(value))}
