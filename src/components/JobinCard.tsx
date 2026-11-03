@@ -11,7 +11,7 @@ import { Avatar } from "./social-ui";
 import { Button, useUi } from "./ui";
 import { useTheme, type ThemeName } from "../state/ThemeProvider";
 import { displayedRating, jcardTier, sealRows, type CardData, type BusinessCardData } from "../lib/jcard";
-import {loadPublicContact} from "../lib/jcard-contact";
+import {loadPublicContact,loadPersonalContactDetails,type PersonalContactDetails} from "../lib/jcard-contact";
 import { experienceLabel } from "../lib/employment";
 import {ProfessionGlyph} from "./ProfessionGlyph";
 import { LanguageRing, languageLabel, LANGUAGE_LEVELS } from "./LanguageRing";
@@ -30,7 +30,7 @@ function languageDetails(name:string,fluency:number){
  const international=level?.code??(fluency<35?"A1–A2":fluency<55?"B1":fluency<75?"B2":fluency<95?"C1":"C2");
  return "Idioma: "+name+"\nNivel: "+languageLabel(fluency)+"\nReferencia internacional (MCER): "+international+".\nEl nivel es declarado por el usuario y no está verificado mediante examen.";
 }
-function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employerLink }: { card: CardData; theme: ThemeName; expanded?: boolean; onEdit?: () => void; onQr?: () => void; contact?:{email:string|null;phone:string|null}; employerLink?:{id:string;name:string;handle:string}|null }) {
+function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employerLink }: { card: CardData; theme: ThemeName; expanded?: boolean; onEdit?: () => void; onQr?: () => void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null }) {
   const { s, fs } = useUi();
   const { fontScale } = useWindowDimensions();
   const gradientId = "jcard" + useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -100,8 +100,8 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, contact, employ
         <View style={{flexDirection:"row",alignItems:"center",flexWrap:"wrap",gap:8}}>
           <Pressable accessibilityRole="button" accessibilityLabel="Información sobre disponibilidad" onPress={()=>setInfo(card.status==="ACTIVE"?"Trabajando actualmente\nLa persona indica que tiene un trabajo activo. Esto no significa que Jobin haya confirmado su relación laboral.":"Disponible para trabajar\nLa persona indica que está abierta a nuevas oportunidades laborales o solicitudes de clientes.")}><Text style={{color:finish.text,fontWeight:"700",fontSize:10,letterSpacing:0.7,textDecorationLine:"underline"}}>{card.status==="ACTIVE"?"TRABAJANDO":"DISPONIBLE"} ⓘ</Text></Pressable>
         </View>
-        {!!contact?.email&&<Pressable accessibilityRole="link" accessibilityLabel={"Enviar correo a "+contact.email} onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(contact.email!)).catch(()=>setInfo("No se encontró una aplicación de correo disponible."))} onLongPress={()=>void Share.share({message:contact.email!})}><Text selectable style={[lineStyle,{textDecorationLine:"underline"}]}>{contact.email}</Text></Pressable>}
-        {!!contact?.phone&&<Text selectable style={lineStyle}>{contact.phone}</Text>}
+        {(contact?.details?.email_primary||contact?.email?[contact?.details?.email_primary||contact.email,contact?.details?.email_secondary].filter(Boolean):[]).map((email,i)=><Pressable key={"email"+i} accessibilityRole="link" onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>setInfo("No se encontró una aplicación de correo disponible."))} style={{alignSelf:"stretch"}}><Text numberOfLines={1} ellipsizeMode="tail" style={[lineStyle,{textDecorationLine:"underline"}]}>{email}</Text></Pressable>)}
+        {!!(contact?.details?.phone_primary||contact?.phone||contact?.details?.phone_secondary)&&<View style={{flexDirection:"row",alignItems:"center",gap:5,alignSelf:"stretch"}}>{[contact?.details?.phone_primary||contact?.phone,contact?.details?.phone_secondary].filter(Boolean).map((phone,i)=><View key={"phone"+i} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:4}}>{i>0&&<View style={{width:1,height:15,backgroundColor:finish.line}}/>}<Pressable accessibilityRole="link" style={{flex:1}} onPress={()=>void Linking.openURL("tel:"+phone!.replace(/[^+\d]/g,"")).catch(()=>{})}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={lineStyle}>{phone}</Text></Pressable></View>)}</View>}
 
         {card.status==="ACTIVE"&&employerLink&&<Pressable accessibilityRole="link" onPress={()=>router.push({pathname:"/company",params:{id:employerLink.id}})}><Text style={[lineStyle,{textDecorationLine:"underline"}]}>Trabaja en {employerLink.name} · @{employerLink.handle} ↗</Text><Text style={{fontSize:10,color:finish.secondary}}>Vínculo laboral verificado por la empresa</Text></Pressable>}
 
@@ -195,8 +195,8 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
     </View>
    </View>
    <View style={{gap:6,alignSelf:"stretch"}}>
-     {!!b?.email&&<Pressable accessibilityRole="link" accessibilityLabel={"Enviar correo a "+b.email} onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(b.email!)).catch(()=>{})} style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="mail-outline" size={16} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:12,color:finish.text}}>{b.email}</Text></Pressable>}
-     {!!b?.phone&&<Pressable accessibilityRole="link" onPress={()=>void Linking.openURL("tel:"+b.phone!.replace(/[^+\d]/g,"")).catch(()=>{})} style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="call-outline" size={16} color={finish.secondary}/><Text numberOfLines={1} style={{flex:1,fontSize:12,color:finish.text}}>{b.phone}</Text></Pressable>}
+     {[b?.email,b?.emailSecondary].filter(Boolean).map((email,i)=><Pressable key={"business-email"+i} accessibilityRole="link" accessibilityLabel={"Enviar correo a "+email} onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>{})} style={{flexDirection:"row",alignItems:"center",gap:6,alignSelf:"stretch"}}><Ionicons name="mail-outline" size={15} color={finish.secondary}/><Text numberOfLines={1} ellipsizeMode="tail" style={{flex:1,fontSize:12,color:finish.text}}>{email}</Text></Pressable>)}
+     {!!(b?.phone||b?.phoneSecondary)&&<View style={{flexDirection:"row",alignItems:"center",gap:4,alignSelf:"stretch"}}><Ionicons name="call-outline" size={15} color={finish.secondary}/>{[{number:b?.phone,label:b?.phoneLabel},{number:b?.phoneSecondary,label:b?.phoneSecondaryLabel}].filter(x=>!!x.number).map((item,i)=><View key={"business-phone"+i} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:3}}>{i>0&&<View style={{height:16,width:1,backgroundColor:finish.line,marginHorizontal:2}}/>}<Pressable accessibilityRole="link" style={{flex:1}} onPress={()=>void Linking.openURL("tel:"+item.number!.replace(/[^+\d]/g,"")).catch(()=>{})}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontSize:12,color:finish.text}}>{item.label?item.label+" ":""}{item.number}</Text></Pressable></View>)}</View>}
      {!!b?.location&&<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="location-outline" size={16} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:12,color:finish.secondary}}>{b.location}</Text></View>}
    </View>
    {!!b?.services?.length&&<View style={{alignSelf:"stretch",alignItems:"center",justifyContent:"center",paddingHorizontal:8,marginTop:4}}><Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:11,lineHeight:15,textAlign:"center",color:finish.secondary}}>{b.services.join(" · ")}</Text></View>}
@@ -216,8 +216,8 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
 }
 export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,ownerId,showOwnerActions=false,employerLink}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;onEditBusinessMedia?:(slot:"banner"|"avatar")=>void;ownerId?:string;showOwnerActions?:boolean;employerLink?:{id:string;name:string;handle:string}|null}){
  const {theme}=useTheme();const {colors}=useUi();const {width}=useWindowDimensions();
- const [contact,setContact]=useState<{email:string|null;phone:string|null}>({email:null,phone:null});
- useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void loadPublicContact(ownerId).then(value=>{if(live)setContact(value);}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
+ const [contact,setContact]=useState<{email:string|null;phone:string|null;details?:PersonalContactDetails}>({email:null,phone:null});
+ useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void Promise.all([loadPublicContact(ownerId),loadPersonalContactDetails(ownerId)]).then(([value,details])=>{if(live)setContact({...value,details});}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
  const [back,setBack]=useState(false),[shareOpen,setShareOpen]=useState(false),[qrOpen,setQrOpen]=useState(false);
  const cardHeight = 450;
  const rotation=useRef(new Animated.Value(0)).current;
