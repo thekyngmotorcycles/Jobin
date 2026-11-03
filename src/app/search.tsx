@@ -7,12 +7,15 @@ import {Chips,useUi} from "../components/ui";
 import {visiblePosts} from "../lib/feed";
 import {browseStreams} from "../lib/streams";
 import {interpretJobinSearch,matchJobinTerms} from "../lib/jobin-search";
-import {findProfessionals,type ProfessionalSearchResult} from "../lib/professional-api";
+import {findProfessionals,loadCatalog,loadSpecialtyCatalog,type ProfessionalSearchResult} from "../lib/professional-api";
+import {useProfessionalData} from "../state/useProfessionalData";
 
 type SearchKind="Profesionales"|"Empresas"|"Flashes"|"Streams";
 export default function Search(){
  const {mode}=useLocalSearchParams<{mode?:string}>();
  const {s,colors}=useUi();
+ const catalog=useProfessionalData(loadCatalog);
+ const specialtyCatalog=useProfessionalData(loadSpecialtyCatalog);
  const [query,setQuery]=useState("");
  const [city,setCity]=useState("");
  const [specialty,setSpecialty]=useState("");
@@ -23,7 +26,7 @@ export default function Search(){
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState("");
  const [searched,setSearched]=useState(false);
- const intent=interpretJobinSearch(query,["Miami","Orlando"]);
+ const intent=interpretJobinSearch(query,["Miami","Orlando"],catalog.data,specialtyCatalog.data??undefined);
  const words=intent.terms;
  const posts=visiblePosts("Para ti",[],query);
  const streams=browseStreams("Popular","Todas","").filter(room=>(!intent.city||room.city.toLowerCase()===intent.city.toLowerCase())&&matchJobinTerms([room.title,room.host,room.city,room.profession].join(" "),words));
@@ -32,7 +35,7 @@ export default function Search(){
  async function runSearch(){
   if(!query.trim()&&!city.trim()&&!specialty.trim()){setError("Escribe qué profesional buscas o indica una ciudad.");return;}
   setLoading(true);setError("");setSearched(true);
-  try{setResults(await findProfessionals(query,city||intent.city,"",specialty));}
+  try{setResults(await findProfessionals(query,city||intent.city,intent.professionCode,specialty||intent.specialty));}
   catch(e){setResults([]);setError(e instanceof Error?e.message:"No se pudo buscar profesionales.");}
   finally{setLoading(false);}
  }
@@ -43,7 +46,7 @@ export default function Search(){
    {!!query&&<IconButton icon="close" label="Borrar búsqueda" onPress={()=>{setQuery("");setResults([]);setSearched(false);}}/>}
   </View>
   <View style={{paddingHorizontal:16,paddingBottom:12}}>
-   {!!query.trim()&&intent.target&&!filterChosen&&<Text style={[s.muted,{paddingTop:6}]}>Búsqueda detectada: {intent.target}{intent.city?" · "+intent.city:""}</Text>}
+   {!!query.trim()&&(intent.target||intent.professionCode||intent.specialty)&&<Text style={[s.muted,{paddingTop:6}]}>Detectado: {[!filterChosen?intent.target:null,intent.profession,intent.specialty,intent.city].filter(Boolean).join(" · ")}</Text>}
    <Pressable accessibilityRole="button" accessibilityState={{expanded:filtersOpen}} onPress={()=>setFiltersOpen(v=>!v)} style={{flexDirection:"row",alignItems:"center",padding:10,borderRadius:12,borderWidth:1,borderColor:colors.line}}><Text style={{color:colors.ink,flex:1}}>Buscar en: {effectiveKind} (opcional)</Text><Text style={{color:colors.ink}}>{filtersOpen?"▲":"▼"}</Text></Pressable>
    {filtersOpen&&<Chips values={["Profesionales","Empresas","Flashes","Streams"] as const} value={kind} onChange={v=>{setKind(v);setFilterChosen(true);setResults([]);setSearched(false);setError("");setFiltersOpen(false);}} label="Tipo de búsqueda"/>}
   </View>
