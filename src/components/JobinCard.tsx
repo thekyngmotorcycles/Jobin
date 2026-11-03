@@ -155,6 +155,11 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
  const reviewCount=b?.reviewCount??0;const ratingUnlocked=reviewCount>=10&&rating!==null;const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
  const category=b?.category?.trim()||(/hvac|aire acondicionado|climatiz|refrigeraci/i.test([card.role,...(b?.services??[])].join(" "))?"Climatización":b?.services?.[0]||"Servicios profesionales");
  const art=businessCategoryArt(category);
+ const hvacCategory=/hvac|climatiz|aire acondicionado/i.test(category)&&!/refrigeraci/i.test(category);
+ const refrigerationCategory=/refrigeraci/i.test(category)&&!/climatiz/i.test(category);
+ const categoryIcon=hvacCategory?"aperture-outline":refrigerationCategory?"snow-outline":art.icon;
+ const businessContactInk="#354553";
+ const businessIconInk="#416477";
  const voteLevel=(key:"service"|"prices"|"punctuality"|"professionalism"|"tenure")=>{const total=b?.excellenceReviewCount??0;const percent=total>0?100*(b?.excellenceVotes?.[key]??0)/total:0;return (b?.reviewCount??0)<20||!(b?.excellenceVotes?.[key]??0)?0:percent>63?3:percent>33?2:1;};
  const awards=[
   {label:"Atención al cliente",icon:"headset-outline" as const,level:voteLevel("service")},
@@ -181,10 +186,10 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
    <View style={{flexDirection:"row",alignItems:"flex-start",gap:6,marginTop:-2}}>
     <View style={{flex:1,minWidth:0}} onLayout={e=>{const w=Math.floor(e.nativeEvent.layout.width)-22;if(w>0&&Math.abs(w-businessNameWidth)>2)setBusinessNameWidth(w);}}>
      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"flex-start",gap:3}}>
-      <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.9} style={{flexShrink:1,fontSize:nameFontSize,lineHeight:nameFontSize*1.2,fontWeight:"700",color:finish.text}}>{businessName}</Text>
+      <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.9} style={{flexShrink:1,fontSize:nameFontSize,lineHeight:nameFontSize*1.2,fontWeight:"700",color:"#151B24"}}>{businessName}</Text>
       <Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={16} color={b?.licenseVerified?jcardCommon.verifiedBubble :jcardCommon.unverifiedBubble} accessibilityLabel={b?.licenseVerified?"Empresa verificada":"Empresa sin verificar"}/>
      </View>
-     <View style={{flexDirection:"row",alignItems:"center",gap:6,marginTop:5}}><Ionicons name={art.icon} size={18} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:13,fontWeight:"600",color:finish.secondary}}>{company?category:card.role}</Text></View>
+     <View style={{flexDirection:"row",alignItems:"center",gap:6,marginTop:5}}><Ionicons name={categoryIcon} size={18} color={businessIconInk}/><Text numberOfLines={2} style={{flex:1,fontSize:13,fontWeight:"600",color:"#465B6C"}}>{company?category:card.role}</Text></View>
     </View>
     <View style={{alignItems:"center",gap:3,width:"33%",marginRight:-4,marginTop:-3}}>
      <View style={{borderRadius:20,borderWidth:1,borderColor:finish.line,paddingVertical:3,paddingHorizontal:3,backgroundColor:finish.sealFill,alignItems:"center",elevation:2}}>
@@ -194,12 +199,12 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
      {!!b?.opened&&<View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="calendar-outline" size={13} color={finish.secondary}/><Text style={{color:finish.secondary,fontSize:10}}>Desde {b.opened}</Text></View>}
     </View>
    </View>
-   <View style={{gap:6,alignSelf:"stretch"}}>
-     {[b?.email,b?.emailSecondary].filter(Boolean).map((email,i)=><Pressable key={"business-email"+i} accessibilityRole="link" accessibilityLabel={"Enviar correo a "+email} onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>{})} style={{flexDirection:"row",alignItems:"center",gap:6,alignSelf:"stretch"}}><Ionicons name="mail-outline" size={15} color={finish.secondary}/><Text numberOfLines={1} ellipsizeMode="tail" style={{flex:1,fontSize:12,color:finish.text}}>{email}</Text></Pressable>)}
-     {!!(b?.phone||b?.phoneSecondary)&&<View style={{flexDirection:"row",alignItems:"center",gap:4,alignSelf:"stretch"}}><Ionicons name="call-outline" size={15} color={finish.secondary}/>{[{number:b?.phone,label:b?.phoneLabel},{number:b?.phoneSecondary,label:b?.phoneSecondaryLabel}].filter(x=>!!x.number).map((item,i)=><View key={"business-phone"+i} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:3}}>{i>0&&<View style={{height:16,width:1,backgroundColor:finish.line,marginHorizontal:2}}/>}<Pressable accessibilityRole="link" style={{flex:1}} onPress={()=>void Linking.openURL("tel:"+item.number!.replace(/[^+\d]/g,"")).catch(()=>{})}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontSize:12,color:finish.text}}>{item.label?item.label+" ":""}{item.number}</Text></Pressable></View>)}</View>}
-     {!!b?.location&&<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="location-outline" size={16} color={finish.secondary}/><Text numberOfLines={2} style={{flex:1,fontSize:12,color:finish.secondary}}>{b.location}</Text></View>}
+   <View style={{flex:1,justifyContent:"space-evenly",paddingVertical:7,minHeight:0,alignSelf:"stretch"}}>\n    <View style={{gap:5,alignSelf:"stretch"}}>
+     {[b?.email,b?.emailSecondary].filter(Boolean).map((email,i)=><Pressable key={"business-email"+i} accessibilityRole="link" accessibilityLabel={"Enviar correo a "+email} onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>{})} style={{flexDirection:"row",alignItems:"center",gap:6,alignSelf:"stretch"}}><Ionicons name="mail-outline" size={14} color={businessIconInk}/><Text numberOfLines={1} ellipsizeMode="tail" style={{flex:1,fontSize:11,color:businessContactInk}}>{email}</Text></Pressable>)}
+     {!!(b?.phone||b?.phoneSecondary)&&<View style={{flexDirection:"row",alignItems:"center",gap:4,alignSelf:"stretch"}}><Ionicons name="call-outline" size={14} color={businessIconInk}/>{[{number:b?.phone,label:b?.phoneLabel},{number:b?.phoneSecondary,label:b?.phoneSecondaryLabel}].filter(x=>!!x.number).map((item,i)=><View key={"business-phone"+i} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:3}}>{i>0&&<View style={{height:16,width:1,backgroundColor:finish.line,marginHorizontal:2}}/>}<Pressable accessibilityRole="link" style={{flex:1}} onPress={()=>void Linking.openURL("tel:"+item.number!.replace(/[^+\d]/g,"")).catch(()=>{})}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontSize:11,color:businessContactInk}}>{item.label?item.label+" ":""}{item.number}</Text></Pressable></View>)}</View>}
+     {!!b?.location&&<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="location-outline" size={15} color={businessIconInk}/><Text numberOfLines={2} style={{flex:1,fontSize:11,color:businessContactInk}}>{b.location}</Text></View>}
    </View>
-   {!!b?.services?.length&&<View style={{alignSelf:"stretch",alignItems:"center",justifyContent:"center",paddingHorizontal:8,marginTop:4}}><Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:11,lineHeight:15,textAlign:"center",color:finish.secondary}}>{b.services.join(" · ")}</Text></View>}
+    {!!b?.services?.length&&<View style={{alignSelf:"stretch",alignItems:"center",justifyContent:"center",paddingHorizontal:8,marginTop:4}}><Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:10,lineHeight:14,textAlign:"center",color:businessContactInk}}>{b.services.join(" · ")}</Text></View>}
    <View style={{flex:1,minHeight:8}}/>
    <View style={{height:1,backgroundColor:finish.line,opacity:0.7,marginBottom:4}}/>
    <View style={{flexDirection:"row",alignItems:"center",gap:4,minHeight:100}}>
