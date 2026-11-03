@@ -80,3 +80,10 @@ Cada especialidad pertenece a un `profession_code` existente. No inferir especia
 - Verificado que `ebanista` aún figura en `fashion`, y HVAC/Refrigeración continúan bajo `climate` en la base activa. La migración de separación mantiene los códigos originales y crea `refrigeration` de forma aditiva.
 - Revisada la migración de drones: la especialidad «Lavado a presión de estructuras y edificios» describe un servicio especializado, pero no implica automáticamente una habilitación legal; cualquier futura regulación debe aplicarse por actividad y jurisdicción, no por nombre de profesión.
 - **Pendiente crítico:** el entorno CI usa un catálogo de referencia reducido, por lo que sus aprobaciones no certifican la migración sobre los 196 registros activos. Preparar un ensayo de migraciones contra una copia representativa antes de aplicar cambios a la base activa.
+
+## Novena pasada — integridad de perfiles existentes
+- Las dos verificaciones GitHub del commit `4b4d8c99` terminaron aprobadas.
+- Se amplió la auditoría SQL de 7 a **10 comprobaciones**, agregando asociaciones de profesiones de usuarios, sellos y unicidad de profesión principal.
+- Se ejecutaron las 10 consultas de solo lectura en Supabase: **0 incidencias en todas**.
+- Hay **1 asociación de usuario a la profesión HVAC** y **2 sellos asociados al mismo código** `tecnico_hvac_aire_acondicionado`. La separación de categorías debe mantener este código exactamente para conservar estas referencias.
+- La auditoría no prueba todavía que las migraciones pendientes sean seguras al ejecutarse sobre una réplica del catálogo activo. No desplegar a producción ni iniciar fase 1 hasta superar esa prueba.
