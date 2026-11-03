@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { Animated, Image, Linking, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import Svg, { Defs, LinearGradient, Rect, Stop, Path, Circle, SvgXml } from "react-native-svg";
+import Svg, { Defs, LinearGradient, Rect, Stop, Path, Circle, SvgXml, ClipPath, Image as SvgImage } from "react-native-svg";
 import {WORDMARK_XML} from "../theme/wordmark";
 import QRCode from "react-native-qrcode-svg";
 import { Avatar } from "./social-ui";
@@ -168,22 +168,27 @@ function BusinessFace({card,theme,contact,onQr,canEditMedia=false,onEditMedia}:{
   {label:"Profesionalismo",icon:"person-outline" as const,level:voteLevel("professionalism")},
   {label:"En el mercado",icon:"trophy-outline" as const,level:voteLevel("tenure")},
  ];
- return <View style={{flex:1,borderRadius:30,backgroundColor:businessCardPaper.background,borderWidth:2,borderColor:businessCardPaper.outerBorder,overflow:"hidden"}}>
+ return <View style={{flex:1,borderRadius:30,backgroundColor:businessCardPaper.background,overflow:"hidden"}}>
   <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" viewBox="0 0 400 650" preserveAspectRatio="none" pointerEvents="none">
    {Array.from({length:15},(_,i)=><Path key={"left"+i} d={`M ${-45+i*10} 330 C ${42+i*4} 235, ${-20+i*8} 116, ${78+i*7} -25`} stroke={finish.text} strokeOpacity={0.12+(i%3)*0.018} strokeWidth={0.8} fill="none"/>)}
    {Array.from({length:16},(_,i)=><Path key={"bottom"+i} d={`M ${-45+i*13} 675 C ${60+i*8} 540, ${235+i*4} 555, ${440+i*2} 395`} stroke={finish.text} strokeOpacity={0.13+(i%4)*0.018} strokeWidth={0.8} fill="none"/>)}
    <Path d="M-20 420 C105 250 225 300 420 95" stroke={finish.text} strokeOpacity={0.12} strokeWidth="2" fill="none"/>
   </Svg>
-  <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
+
   <View style={{flex:1,paddingHorizontal:0,paddingTop:0,paddingBottom:0,gap:0}}>
-   <View style={{height:88,position:"relative",justifyContent:"center"}}>
-    <View style={{height:88,borderBottomLeftRadius:28,borderBottomRightRadius:28,overflow:"hidden",backgroundColor:finish.sealFill}}>
-     {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:
-      <View style={{flex:1,backgroundColor:art.tint,alignItems:"flex-end",justifyContent:"center",paddingRight:20}}><Ionicons name={art.icon} size={66} color={BUSINESS_MEDAL_COLORS[1]} style={{opacity:0.55}}/></View>}
-    </View>
-    {canEditMedia&&onEditMedia&&<Pressable accessibilityRole="button" accessibilityLabel="Cambiar banner empresarial desde la galería" onPress={()=>onEditMedia("banner")} style={{position:"absolute",left:0,right:0,top:0,height:88,borderBottomLeftRadius:28,borderBottomRightRadius:28,justifyContent:"flex-start",alignItems:"flex-end",padding:5}}><View style={{width:23,height:23,borderRadius:12,backgroundColor:jcardCommon.editBackground,opacity:0.92,alignItems:"center",justifyContent:"center"}}><Ionicons name="pencil-outline" size={13} color={jcardCommon.editInk}/></View></Pressable>}
+   <View style={{height:104,position:"relative",zIndex:1}}>
+    <Svg width="100%" height="104" viewBox="0 0 400 104" preserveAspectRatio="none" pointerEvents="none">
+     <Defs>
+      <ClipPath id="businessBannerFangs">
+       <Path d="M0 0 H400 V78 Q400 104 374 104 H361 Q340 104 340 83 H60 Q60 104 39 104 H26 Q0 104 0 78 Z"/>
+      </ClipPath>
+     </Defs>
+     <SvgImage href={b?.bannerUrl?{uri:b.bannerUrl}:undefined} x="0" y="0" width="400" height="104" preserveAspectRatio="xMidYMid slice" clipPath="url(#businessBannerFangs)"/>
+     {!b?.bannerUrl&&<Path d="M0 0 H400 V78 Q400 104 374 104 H361 Q340 104 340 83 H60 Q60 104 39 104 H26 Q0 104 0 78 Z" fill={art.tint}/>}
+    </Svg>
+    {canEditMedia&&onEditMedia&&<Pressable accessibilityRole="button" accessibilityLabel="Cambiar banner empresarial desde la galería" onPress={()=>onEditMedia("banner")} style={{position:"absolute",right:9,top:9,width:25,height:25,borderRadius:13,backgroundColor:jcardCommon.editBackground,alignItems:"center",justifyContent:"center"}}><Ionicons name="pencil-outline" size={13} color={jcardCommon.editInk}/></Pressable>}
    </View>
-   <View style={{flex:1,paddingHorizontal:14,paddingTop:3,paddingBottom:14,gap:5}}>
+   <View style={{flex:1,paddingHorizontal:14,paddingTop:0,paddingBottom:10,gap:5}}>
    <View style={{flexDirection:"row",alignItems:"flex-start",gap:6,marginTop:-2}}>
     <View style={{flex:1,minWidth:0}} onLayout={e=>{const w=Math.floor(e.nativeEvent.layout.width)-22;if(w>0&&Math.abs(w-businessNameWidth)>2)setBusinessNameWidth(w);}}>
      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"flex-start",gap:3}}>
