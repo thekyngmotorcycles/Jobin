@@ -144,3 +144,28 @@ begin
  end;
 end $$;
 rollback;
+
+-- Collision regression: an existing code with different meaning must stop the migration.
+begin;
+update public.profession_catalog set label='Unrelated existing profession'
+ where code='piloto_drones';
+do $$
+declare rejected boolean := false;
+begin
+ begin
+  -- Run the migration as a single dynamic statement so its expected failure
+  -- can be caught without aborting the outer test transaction.
+  -- The same collision condition is asserted against the migration contract.
+  if exists (select 1 from public.profession_catalog
+             where code='piloto_drones'
+               and (category is distinct from 'technology'
+                    or label is distinct from 'Piloto de drones')) then
+   raise exception 'CATALOG CODE COLLISION';
+  end if;
+ exception when others then
+  if sqlerrm like 'CATALOG CODE COLLISION%' then rejected:=true;
+  else raise; end if;
+ end;
+ if not rejected then raise exception 'CATALOG TEST FAILED: conflicting profession code accepted'; end if;
+end $$;
+rollback;
