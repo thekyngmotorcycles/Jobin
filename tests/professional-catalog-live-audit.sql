@@ -25,6 +25,17 @@ with issues as (
   group by 1,2 having count(*)>1
  ) d
  union all
+ select 'orphan_person_profession',count(*) from public.person_professions pp
+ left join public.profession_catalog p on p.code=pp.profession_code where p.code is null
+ union all
+ select 'orphan_profession_seal',count(*) from public.profession_seals ps
+ left join public.profession_catalog p on p.code=ps.profession_code where p.code is null
+ union all
+ select 'multiple_primary_professions',count(*) from (
+  select worker_id from public.person_professions where primary_profession
+  group by worker_id having count(*)>1
+ ) d
+ union all
  select 'active_profession_without_specialties',count(*) from public.profession_catalog p
  where p.active and not exists(select 1 from public.profession_specialty_options s where s.profession_code=p.code)
 )
