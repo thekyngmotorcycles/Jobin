@@ -58,3 +58,11 @@ Cada especialidad pertenece a un `profession_code` existente. No inferir especia
 - `joyero_relojero`, `tapicero` y `zapatero` están en `fashion`; mantener provisionalmente: la artesanía, el calzado y la tapicería pueden tener ámbitos de moda/interiorismo. La asignación no es inequívocamente errónea.
 - Se confirmó que Supabase activo aún mantiene `ebanista` en `fashion`; la migración de corrección aprobada por CI no se ha desplegado.
 - Pendiente: pruebas funcionales de reemplazo de profesión principal y lectura pública de JCard; la aprobación de CI actual no garantiza ese flujo.
+
+## Sexta pasada — sustitución de profesiones y orden de fases (2026-11-03)
+- **CI del commit `0087e58f`:** Universal app checks y Expo development preview **aprobados**. La falla anterior `5e209f7e` fue causada por un fixture que intentaba crear dos sellos sin verificar; se corrigió sin debilitar el límite vigente.
+- Sustitución de profesión principal y secundaria: pruebas de reversión ante errores, preservación del rol público y ausencia de profesiones secundarias accidentalmente principales. El reemplazo de una secundaria usa una función SQL transaccional.
+- Se detectó deuda funcional: la regla vigente de **un sello sin verificar** impide declarar varias profesiones sin documentos; resolver en fase 1, **después** de cerrar clasificación/integridad y reconciliar las diferencias entre base activa y migraciones.
+- **Puerta de auditoría previa a fase 1:** revisión semántica de profesiones y especialidades, duplicados, categorías y códigos estables; contrastar 196 profesiones / 1.040 especialidades activas de Supabase con el catálogo de migraciones; revisar referencias de perfiles antes de actualizar.
+- **Puerta de fase 1:** separar profesiones declaradas de sellos y credenciales; eliminar límites globales de sellos sin relajar verificaciones legales; probar 1 principal + 10 secundarias sin documentos, cambios, borrados, credenciales y JCard pública. No comenzar fase 2 hasta CI y pruebas de integración aprobadas.
+- **Seguridad:** no desplegar migraciones pendientes a Supabase activo hasta verificar reconciliación, dependencias y compatibilidad. No generar APK.
