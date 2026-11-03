@@ -169,3 +169,23 @@ begin
  if not rejected then raise exception 'CATALOG TEST FAILED: conflicting profession code accepted'; end if;
 end $$;
 rollback;
+
+-- Category identity must remain stable across future additions.
+begin;
+do $$
+declare rejected boolean := false;
+begin
+ update public.profession_categories set label='Unrelated category'
+ where code='automotive';
+ begin
+  if exists (select 1 from public.profession_categories
+             where code='automotive' and label is distinct from 'Automotriz') then
+   raise exception 'CATALOG CATEGORY COLLISION: automotive has a different label';
+  end if;
+ exception when others then
+  if sqlerrm like 'CATALOG CATEGORY COLLISION%' then rejected:=true;
+  else raise; end if;
+ end;
+ if not rejected then raise exception 'CATALOG TEST FAILED: category collision accepted'; end if;
+end $$;
+rollback;
