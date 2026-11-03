@@ -8,7 +8,7 @@ begin
   insert into public.profession_catalog(code,category,label,short_label,icon,sort_order,active) values
   ('detallador_vehiculos','automotive','Detallador de vehículos','Detail','car-sport-outline',200,true),
   ('piloto_drones','technology','Piloto de drones','Drones','airplane-outline',200,true)
-  on conflict(code) do update set category=excluded.category,label=excluded.label,short_label=excluded.short_label,icon=excluded.icon,active=true;
+  on conflict(code) do nothing; -- Never overwrite a pre-existing profession with the same permanent code.
  end if;
  if to_regclass('public.profession_specialty_options') is not null
     and to_regclass('public.profession_catalog') is not null then
@@ -29,7 +29,7 @@ begin
   ('piloto_drones','Monitoreo de cultivos y agricultura de precisión',10),
   ('piloto_drones','Inspección de obras de construcción',11),
   ('piloto_drones','Búsqueda y apoyo en emergencias',12)
-  on conflict(profession_code,label) do update set sort_order=excluded.sort_order;
+  on conflict(profession_code,label) do nothing; -- Preserve existing specialty ordering and selections.
  end if;
 end;
 $migration$;
