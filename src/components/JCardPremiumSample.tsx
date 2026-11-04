@@ -1,4 +1,5 @@
 import {View,Text} from "react-native";
+import QRCode from "react-native-qrcode-svg";
 import {JCardPremiumTexture} from "./JCardPremiumTexture";
 import {getPremiumBackground,type JCardPremiumBackgroundId} from "../theme/jcard-premium-backgrounds";
 /** Illustrative sample, never the user's actual JCard or a functional QR code. */
@@ -12,7 +13,7 @@ export function JCardPremiumSample({id,width=310}:{id:JCardPremiumBackgroundId;w
    <View style={{flexDirection:"row",alignItems:"flex-start",justifyContent:"space-between"}}>
     <View style={{width:58*scale,height:58*scale,borderRadius:30*scale,backgroundColor:t.ink,alignItems:"center",justifyContent:"center"}}><Text style={{fontSize:20*scale,color:t.base,fontWeight:"700"}}>JS</Text></View>
     <View style={{alignItems:"center"}}>{label("JCard",26,"700")}{label("Personal",13)}</View>
-    <View style={{width:58*scale,height:58*scale,borderWidth:1.5,borderColor:t.ink,alignItems:"center",justifyContent:"center"}}>{label("QR",19,"700")}{label("DEMO",8)}</View>
+    <View style={{padding:3*scale,backgroundColor:"#FFFFFF",borderRadius:5*scale}}><QRCode value="https://example.com/jcard-preview" size={52*scale} color="#111111" backgroundColor="#FFFFFF"/></View>
    </View>
    <View style={{gap:8*scale}}>
     <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>{label("Nombre de ejemplo",21,"700")}{label("8 años",12,"600")}</View>
@@ -22,7 +23,7 @@ export function JCardPremiumSample({id,width=310}:{id:JCardPremiumBackgroundId;w
     {label("contacto@ejemplo.com",12)}
    </View>
    <View style={{borderTopWidth:1,borderColor:t.line,paddingTop:12*scale,flexDirection:"row",justifyContent:"space-around"}}>
-    <View style={{alignItems:"center",gap:5}}>{label("Idiomas",12,"600")}{label("◯ ES    ◯ EN",13)}</View>
+    <View style={{alignItems:"center",gap:5}}>{label("Idiomas",12,"600")}{label("◉ ES    ◉ EN",13)}</View>
     <View style={{width:1,backgroundColor:t.line}}/>
     <View style={{alignItems:"center",gap:5}}>{label("Otras profesiones",12,"600")}{label("◇    ◇",18)}</View>
    </View>
