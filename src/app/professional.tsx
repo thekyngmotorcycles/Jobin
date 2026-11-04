@@ -56,13 +56,15 @@ export default function Professional() {
   <Ionicons name={icon} size={25} color={colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>{title}</Text><Text style={s.muted}>{subtitle}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={colors.muted}/>
  </Pressable>;
  const save=()=>void action.run(async()=>{
+  const legalName=name.trim().replace(/\s+/g," ");
+  if(!/^[\p{L}\p{M}]+(?:[ \u0027\u2019-][\p{L}\p{M}]+)*$/u.test(legalName)||Array.from(legalName).length>30)throw new Error("El nombre debe tener entre 1 y 30 caracteres, solo letras y separadores de nombre; sin números, símbolos ni emojis.");
   if(languages.some(l=>!canonicalLanguage(l.name)||!Number.isInteger(Number(l.fluency))||Number(l.fluency)<0||Number(l.fluency)>100))throw new Error("Completa el idioma y selecciona un nivel válido.");
   if(new Set(languages.map(l=>canonicalLanguage(l.name))).size!==languages.length)throw new Error("No puedes agregar el mismo idioma dos veces.");
   for(const key of ["email_primary","email_secondary"] as const){const v=personalContacts[key].trim();if(v&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))throw new Error("Revisa el correo electrónico.");}
   await savePersonalContactDetails(personalContacts);
   await saveContactPreferences({show_email:showEmail,show_phone:showPhone});
-  await professionalMutation("jobin_save_jcard",{legal_name:name,handle,city,region,availability,languages:languages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))});
- },"JCard actualizada.").then(ok=>{if(ok)router.replace("/(tabs)/profile");});
+  await professionalMutation("jobin_save_jcard",{legal_name:legalName,handle,city,region,availability,languages:languages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))});
+ },"").then(ok=>{if(ok)router.replace("/(tabs)/profile");});
  return <Screen demo={false} hideHeader hideFooter scrollRef={scrollRef} title="Editar mi JCard" subtitle="">
   {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
    {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
@@ -71,7 +73,7 @@ export default function Professional() {
     <View onLayout={e=>{positions.current.identity=e.nativeEvent.layout.y;}} style={s.panel}>
      {sectionRow("identity","Datos principales","Nombre, usuario, ubicación y disponibilidad","person-outline")}
      {section==="identity"&&<View style={{gap:12,paddingBottom:12}}>
-      <Text style={s.muted}>Nombre legal</Text><TextInput accessibilityLabel="Nombre legal" value={name} onChangeText={setName} style={input}/>
+      <Text style={s.muted}>Nombre legal</Text><TextInput accessibilityLabel="Nombre legal" value={name} maxLength={30} onChangeText={value=>setName(value.replace(/[^\p{L}\p{M} \u0027\u2019-]/gu,"").slice(0,30))} style={input}/>
       <Text style={s.muted}>Nombre de usuario</Text><TextInput accessibilityLabel="Nombre de usuario" value={handle} onChangeText={setHandle} autoCapitalize="none" style={input}/>
       <Text style={s.muted}>Ciudad</Text><TextInput accessibilityLabel="Ciudad" value={city} onChangeText={setCity} style={input}/>
       <Text style={s.muted}>Estado o región</Text><TextInput accessibilityLabel="Estado o región" value={region} onChangeText={setRegion} style={input}/>
