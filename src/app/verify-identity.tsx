@@ -12,7 +12,7 @@ const TYPES:{value:DocumentType;label:string;needsBack:boolean}[]=[
  {value:"passport",label:"Pasaporte",needsBack:false},
  {value:"residence_permit",label:"Permiso de residencia",needsBack:true}
 ];
-const COUNTRIES=[["US","Estados Unidos"],["AR","Argentina"],["PE","Perú"],["MX","México"],["CO","Colombia"],["CL","Chile"],["ES","España"],["BR","Brasil"],["OTHER","Otro país"]];
+const COUNTRIES=[["US","Estados Unidos"],["AR","Argentina"],["PE","Perú"],["MX","México"],["CO","Colombia"],["CL","Chile"],["ES","España"],["BR","Brasil"]];
 type Picked={uri:string;base64:string};
 function bytes(base64:string):Uint8Array{
  const binary=globalThis.atob(base64);const out=new Uint8Array(binary.length);
