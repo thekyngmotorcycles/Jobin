@@ -1,4 +1,4 @@
-import Svg,{Defs,LinearGradient,Stop,Rect,Path,Circle} from "react-native-svg";
+import Svg,{Defs,LinearGradient,Stop,Rect,Path} from "react-native-svg";
 import {getPremiumBackground,type JCardPremiumBackgroundId} from "../theme/jcard-premium-backgrounds";
 /** Visual preview only. Does not grant membership or change the saved JCard. */
 export function JCardPremiumTexture({id,width=160,height=210}:{id:JCardPremiumBackgroundId;width?:number;height?:number}){
