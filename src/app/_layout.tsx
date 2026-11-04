@@ -41,6 +41,7 @@ function Navigation() {
  <Stack.Screen name="change-password" options={{title:"Nueva contraseña"}}/>
  <Stack.Screen name="verify-phone" options={{title:"Verificar teléfono"}}/>
  <Stack.Screen name="verify-identity" options={{title:"Verificación de identidad"}}/>
+ <Stack.Screen name="identity-admin" options={{title:"Revisión administrativa"}}/>
  <Stack.Screen name="company" options={{title:"Empresa o institución"}}/>
  <Stack.Screen name="professional" options={{title:"Mi JCard"}}/>
  <Stack.Screen name="certificates" options={{title:"Certificados"}}/>
