@@ -4,6 +4,7 @@ import { useCallback,useEffect,useState } from "react";
 import { Pressable,Text,View } from "react-native";
 import { approvedCV,cvRequests,requestCV } from "../lib/cv-access";
 import { requireSupabase } from "../lib/supabase";
+import {identityVerified} from "../lib/identity-status";
 import { useLocalSearchParams } from "expo-router";
 
 import { JobinCard } from "../components/JobinCard";
@@ -15,6 +16,8 @@ export default function PublicJCard(){
  const {user,card}=useLocalSearchParams<{user?:string;card?:string}>();
  const {colors}=useUi();
  const [viewer,setViewer]=useState("");
+ const [verifiedIdentity,setVerifiedIdentity]=useState(false);
+ useEffect(()=>{if(!user)return;let live=true;void identityVerified(user).then(v=>{if(live)setVerifiedIdentity(v);}).catch(()=>{if(live)setVerifiedIdentity(false);});return()=>{live=false;};},[user]);
  const [followerCount,setFollowerCount]=useState<number|null>(null);
  useEffect(()=>{if(!user)return;let live=true;void requireSupabase().from("profile_follows" as never).select("*",{count:"exact",head:true}).eq("followed_id",user).then(({count})=>{if(live)setFollowerCount(count??0);});return()=>{live=false;};},[user]);
  const [cvStatus,setCvStatus]=useState("");
@@ -29,6 +32,6 @@ export default function PublicJCard(){
   return loadPublicCard(user);
  },[user]));
  return <Screen demo={false} title="JCard." subtitle="Identidad profesional pública.">
-  {resource.data?<View>{followerCount!==null&&<Text style={{marginBottom:10,fontSize:13,fontWeight:"600",color:colors.muted}}>{followerCount.toLocaleString("es")} seguidores</Text>}<JobinCard card={resource.data} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/><View style={{marginVertical:12,gap:10}}><Pressable accessibilityRole="button" onPress={()=>void openCV()} style={{padding:14,borderRadius:12,borderWidth:1,borderColor:colors.line}}><Text style={{fontWeight:"700"}}>🎓 Historial profesional {cvOpen?"▴":"▾"}</Text></Pressable>{cvOpen&&<View style={{gap:8,padding:12}}>{user!==viewer&&cvStatus!=="approved"?<><Text>El currículum es privado. El propietario debe autorizar tu solicitud.</Text><Pressable disabled={cvStatus==="pending"} onPress={()=>void requestCV(user!).then(()=>{setCvStatus("pending");setCvMessage("Solicitud enviada.");}).catch(e=>setCvMessage(String(e)))}><Text style={{fontWeight:"700"}}>{cvStatus==="pending"?"Solicitud pendiente":"Solicitar CV"}</Text></Pressable></>:<>{cvRows.length?cvRows.map((row,i)=><Text key={i}>{row.role} · {row.company} ({row.from_year}–{row.to_year??"Actualidad"})</Text>):<Text>No hay experiencias registradas o disponibles.</Text>}</>}{!!cvMessage&&<Text>{cvMessage}</Text>}</View>}</View><ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/><ProfessionalTrustMark worker={resource.data.id}/></View>:<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>}
+  {resource.data?<View>{followerCount!==null&&<Text style={{marginBottom:10,fontSize:13,fontWeight:"600",color:colors.muted}}>{followerCount.toLocaleString("es")} seguidores</Text>}<JobinCard card={{...resource.data,identityVerified:verifiedIdentity}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/><View style={{marginVertical:12,gap:10}}><Pressable accessibilityRole="button" onPress={()=>void openCV()} style={{padding:14,borderRadius:12,borderWidth:1,borderColor:colors.line}}><Text style={{fontWeight:"700"}}>🎓 Historial profesional {cvOpen?"▴":"▾"}</Text></Pressable>{cvOpen&&<View style={{gap:8,padding:12}}>{user!==viewer&&cvStatus!=="approved"?<><Text>El currículum es privado. El propietario debe autorizar tu solicitud.</Text><Pressable disabled={cvStatus==="pending"} onPress={()=>void requestCV(user!).then(()=>{setCvStatus("pending");setCvMessage("Solicitud enviada.");}).catch(e=>setCvMessage(String(e)))}><Text style={{fontWeight:"700"}}>{cvStatus==="pending"?"Solicitud pendiente":"Solicitar CV"}</Text></Pressable></>:<>{cvRows.length?cvRows.map((row,i)=><Text key={i}>{row.role} · {row.company} ({row.from_year}–{row.to_year??"Actualidad"})</Text>):<Text>No hay experiencias registradas o disponibles.</Text>}</>}{!!cvMessage&&<Text>{cvMessage}</Text>}</View>}</View><ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/><ProfessionalTrustMark worker={resource.data.id}/></View>:<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>}
  </Screen>;
 }
