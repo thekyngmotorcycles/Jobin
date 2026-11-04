@@ -24,12 +24,12 @@ export default function TabLayout(){
   headerShown:false,tabBarShowLabel:false,tabBarActiveTintColor:colors.navIcon,tabBarInactiveTintColor:colors.navIcon,
   tabBarHideOnKeyboard:true,tabBarItemStyle:{minHeight:44,justifyContent:"center",alignItems:"center"},tabBarBackground:()=> desktop?null:<NavigationFade/>,
   tabBarStyle:{display:desktop?"none":"flex",position:"absolute",backgroundColor:colors.transparent,borderTopWidth:0,elevation:0,shadowOpacity:0,overflow:"visible",height:NAVIGATION_ROW_HEIGHT+inset.bottom,paddingTop:5,paddingBottom:Math.max(5,inset.bottom)},
-  tabBarIconStyle:{height:28},
+  tabBarIconStyle:{height:44,width:44,alignItems:"center",justifyContent:"center"},
  }}>
   <Tabs.Screen name="create" options={{href:null}}/>
   {routes.map(route=><Tabs.Screen key={route.name} name={route.name} options={{
    title:route.title,tabBarAccessibilityLabel:route.title,tabBarButtonTestID:"tab-"+route.name,
-   tabBarIcon:({color,focused})=><View><Ionicons name={focused?route.icon:route.outline} size={25} color={color}/>{route.name==="inbox"&&unreadInbox>0&&<View style={{position:"absolute",top:-3,right:-5}}><Ionicons name="heart" size={12} color={colors.reaction}/></View>}</View>,
+   tabBarIcon:({color,focused})=><View style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}><Ionicons name={focused?route.icon:route.outline} size={width<375?23:25} color={color}/>{route.name==="inbox"&&unreadInbox>0&&<View style={{position:"absolute",top:-3,right:-5}}><Ionicons name="heart" size={12} color={colors.reaction}/></View>}</View>,
   }}/>)}
  </Tabs>;
  if(!desktop)return tabs;
