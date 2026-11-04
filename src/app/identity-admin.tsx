@@ -64,10 +64,11 @@ export default function IdentityAdmin(){
     <Text style={s.h3}>{row.legal_name}</Text>
     <Text style={s.muted}>{row.country_code} · {row.document_type} · {row.status} · {new Date(row.submitted_at).toLocaleDateString()}</Text>
     <Text style={s.muted}>Usuario: {row.user_id}</Text>
-    {([row.front_path,row.back_path].filter(Boolean) as string[]).map((path,i)=><View key={path} style={{gap:7}}>
+    {([row.front_path,row.back_path].filter(path=>Boolean(path)&&!String(path).includes("/deleted/")) as string[]).map((path,i)=><View key={path} style={{gap:7}}>
      <Pressable accessibilityRole="button" onPress={()=>void view(path)}><Text style={[s.text,{textDecorationLine:"underline"}]}>{i===0?"Ver frente":"Ver reverso"} (enlace temporal)</Text></Pressable>
      {images[path]&&<Image source={{uri:images[path]}} resizeMode="contain" style={{height:220,width:"100%",backgroundColor:colors.paper}}/>}
     </View>)}
+    {row.front_path.includes("/deleted/")&&<Text style={s.muted}>Fotografías eliminadas conforme al plazo de conservación. Se mantiene el historial de revisión.</Text>}
     {row.status==="pending"?<>
      <TextInput accessibilityLabel="Notas de revisión" placeholder="Motivo o notas (opcional)" placeholderTextColor={colors.muted} maxLength={2000} multiline value={notes[row.id]??""} onChangeText={v=>setNotes(n=>({...n,[row.id]:v}))} style={{borderWidth:1,borderColor:colors.line,borderRadius:9,padding:10,color:colors.ink,minHeight:55}}/>
      <View style={{flexDirection:"row",gap:12}}>
