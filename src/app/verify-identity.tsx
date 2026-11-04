@@ -25,6 +25,7 @@ export default function VerifyIdentity(){
  const [country,setCountry]=useState("US");
  const [docType,setDocType]=useState<DocumentType>("national_id");
  const [legalName,setLegalName]=useState("");
+ const [expiresOn,setExpiresOn]=useState("");
  const [front,setFront]=useState<Picked|null>(null);
  const [back,setBack]=useState<Picked|null>(null);
  const [busy,setBusy]=useState(false);
@@ -52,6 +53,7 @@ export default function VerifyIdentity(){
  async function submit(){
   if(busy)return;
   if(!consent){Alert.alert("Consentimiento requerido","Confirmá que el documento es tuyo y que autorizás su almacenamiento privado y revisión manual.");return;}
+  if(expiresOn.trim()&&!/^\\d{4}-\\d{2}-\\d{2}$/.test(expiresOn.trim())){Alert.alert("Fecha incorrecta","Usá el formato AAAA-MM-DD.");return;}
   if(legalName.trim().length<3||!front||(needsBack&&!back)){Alert.alert("Datos incompletos","Ingresá el nombre legal y fotografiá las caras requeridas del documento.");return;}
   setBusy(true);const uploaded:string[]=[];
   try{
@@ -68,7 +70,7 @@ export default function VerifyIdentity(){
    }
    const frontPath=await upload(front,"front");
    const backPath=needsBack&&back?await upload(back,"back"):null;
-   const {error}=await (db as any).from("identity_verification_requests").insert({user_id:user.id,country_code:country,document_type:docType,legal_name:legalName.trim(),front_path:frontPath,back_path:backPath});
+   const {error}=await (db as any).from("identity_verification_requests").insert({user_id:user.id,country_code:country,document_type:docType,legal_name:legalName.trim(),document_expires_on:expiresOn.trim()||null,front_path:frontPath,back_path:backPath});
    if(error)throw error;
    setFront(null);setBack(null);setStatus("pending");setReviewReason(null);setConsent(false);Alert.alert("Solicitud enviada","Tu documento se almacenó de forma privada. La insignia J no se activará hasta que se complete la revisión.");
   }catch(e){if(uploaded.length)await requireSupabase().storage.from("identity-documents").remove(uploaded).catch(()=>{});Alert.alert("No se pudo enviar",e instanceof Error?e.message:"Intentá nuevamente.");}
@@ -88,6 +90,8 @@ export default function VerifyIdentity(){
    {TYPES.map(t=><Pressable key={t.value} onPress={()=>{setDocType(t.value);setBack(null);}} style={{borderWidth:1,borderColor:colors.line,padding:12,borderRadius:10,backgroundColor:docType===t.value?colors.accent:colors.paper}}><Text style={s.text}>{t.label}</Text></Pressable>)}
    <Text style={s.h3}>Nombre legal completo</Text>
    <TextInput accessibilityLabel="Nombre legal" value={legalName} onChangeText={setLegalName} autoCapitalize="words" maxLength={160} placeholder="Como figura en el documento" placeholderTextColor={colors.muted} style={{borderWidth:1,borderColor:colors.line,borderRadius:10,color:colors.ink,padding:14}}/>
+   <Text style={s.h3}>Vencimiento del documento (si corresponde)</Text>
+   <TextInput accessibilityLabel="Vencimiento del documento" value={expiresOn} onChangeText={setExpiresOn} keyboardType="numbers-and-punctuation" maxLength={10} placeholder="AAAA-MM-DD" placeholderTextColor={colors.muted} style={{borderWidth:1,borderColor:colors.line,borderRadius:10,color:colors.ink,padding:14}}/>
    <Text style={s.h3}>Fotografías del documento</Text>
    {(["front",...(needsBack?["back"]:[])] as ("front"|"back")[]).map(side=><Pressable key={side} onPress={()=>void pick(side)} style={{borderWidth:1,borderColor:colors.line,borderRadius:12,padding:15,alignItems:"center",gap:10}}>
     <Text style={s.text}>{side==="front"?"Fotografiar frente":"Fotografiar reverso"}</Text>
