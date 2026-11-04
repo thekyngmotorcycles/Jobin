@@ -86,9 +86,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contac
         </View>
         <View style={{ width:jcardLayout.avatar + 8, height:jcardLayout.qr + 8 }}>
           <Avatar uri={card.avatar} name={card.name} size={jcardLayout.avatar}/>
-          <Pressable accessibilityRole="button" accessibilityLabel={card.identityVerified?"Persona verificada":"Persona sin verificar"} onPress={()=>setInfo(card.identityVerified?"Identidad verificada por Jobin. Esta insignia no certifica licencias ni competencias profesionales.":"Identidad sin verificar. Para obtener la insignia se requerirá nombre legal, correo y teléfono confirmados, documento de identidad y validación de identidad.")} style={{position:"absolute",right:0,top:jcardLayout.avatar-17,width:25,height:25,alignItems:"center",justifyContent:"center"}}>
-           <IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/>
-          </Pressable>
+
         </View>
         <View style={{alignItems:"center",gap:7,position:"relative"}}>
           {onShare&&<Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard personal" onPress={event=>{event.stopPropagation();onShare();}} style={{position:"absolute",right:0,top:-30,width:28,height:28,alignItems:"center",justifyContent:"center",zIndex:2}}><Ionicons name="share-social-outline" size={18} color={finish.text}/></Pressable>}
@@ -100,7 +98,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contac
 
       <View style={{ gap:5 }}>
         <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
-          <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[s.h3,{color:finish.text,fontSize:Math.max(18,fs(expanded?20:19)),lineHeight:Math.max(25,fs(expanded?28:27)),flex:1,flexShrink:1}]}>{card.name}</Text>
+          <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:4}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={[s.h3,{color:finish.text,fontSize:Math.max(18,fs(expanded?20:19)),lineHeight:Math.max(25,fs(expanded?28:27)),flexShrink:1}]}>{card.name}</Text><Pressable accessibilityRole="button" accessibilityLabel={card.identityVerified?"Persona verificada":"Persona sin verificar"} onPress={()=>setInfo(card.identityVerified?"Identidad verificada por Jobin. Esta insignia no certifica licencias ni competencias profesionales.":"Identidad sin verificar. Para obtener la insignia se requerirá nombre legal, correo y teléfono confirmados, documento de identidad y validación de identidad.")} style={{width:19,height:19,alignItems:"center",justifyContent:"center",flexShrink:0}}><View style={{transform:[{scale:0.72}]}}><IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/></View></Pressable></View>
           {!!card.years&&<Pressable accessibilityRole="button" accessibilityLabel="Información sobre experiencia general" onPress={()=>setInfo("Experiencia general\nEs el tiempo total trabajado en todas las profesiones y sectores registrados. Los períodos que coinciden se cuentan una sola vez.")} style={{alignItems:"flex-end",maxWidth:"38%"}}>
             <Text style={{fontSize:11,fontWeight:"600",color:finish.secondary,textAlign:"right"}}>{card.years} {card.years===1?"año":"años"}</Text>
             <Text style={{fontSize:9,color:finish.secondary,textAlign:"right"}}>Experiencia general</Text>
