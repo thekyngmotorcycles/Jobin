@@ -67,8 +67,8 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contac
     <View style={{ padding:jcardLayout.padding, gap:10, flex:1, justifyContent:"space-between" }}>
       <View style={{ paddingTop:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
         <View accessible accessibilityRole="header" accessibilityLabel="JCard Personal" style={{position:"absolute",top:0,left:0,right:0,alignItems:"center",justifyContent:"center"}}>
-          <SvgXml xml={JCARD_WORDMARK_XML.replace("currentColor",finish.text)} width={112} height={43} accessible={false}/>
-          <Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:15,lineHeight:18,color:finish.text,textAlign:"center",marginTop:-3}}>Personal</Text>
+          <SvgXml xml={JCARD_WORDMARK_XML.replace("currentColor",finish.text)} width={91} height={31} accessible={false}/>
+          <Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:13,lineHeight:17,color:finish.text,textAlign:"center",marginTop:-1}}>Personal</Text>
         </View>
         <View style={{ width:jcardLayout.avatar + 8, height:jcardLayout.qr + 8 }}>
           <Avatar uri={card.avatar} name={card.name} size={jcardLayout.avatar}/>
