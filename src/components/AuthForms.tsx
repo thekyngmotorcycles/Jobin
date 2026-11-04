@@ -4,7 +4,6 @@ import { JobinWordmark } from "./JobinWordmark";
 import { useState, type ReactNode } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useUi } from "./ui";
 
 export function AuthShell({ title, children, footer }: { title: string; children: ReactNode; footer: ReactNode }) {
  const { width } = useWindowDimensions();
@@ -33,12 +32,12 @@ export function AuthField({label,value,onChangeText,placeholder,secure=false,key
   <Text style={{fontSize:12,fontWeight:"700",color:authSilver.tone14}}>{label}</Text>
   <View style={{flexDirection:"row",alignItems:"center",borderRadius:12,borderColor:authSilver.tone15,borderWidth:1,backgroundColor:authSilver.tone16,minHeight:44,paddingHorizontal:12}}>
    <TextInput accessibilityLabel={label} style={{flex:1,color:authSilver.tone17,fontSize:14,paddingVertical:10}} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={authSilver.tone18} secureTextEntry={secure&&!visible} keyboardType={keyboardType} autoCapitalize={autoCapitalize} autoCorrect={false}/>
-   {secure&&<Pressable accessibilityRole="button" accessibilityLabel={visible?"Ocultar contraseña":"Mostrar contraseña"} onPress={()=>setVisible(v=>!v)} style={{padding:7}}><Ionicons name={visible?"eye-off-outline":"eye-outline"} color={authSilver.tone14} size={22}/></Pressable>}
+   {secure&&<Pressable accessibilityRole="button" accessibilityLabel={visible?"Ocultar contraseña":"Mostrar contraseña"} onPress={()=>setVisible(v=>!v)} style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}><Ionicons name={visible?"eye-off-outline":"eye-outline"} color={authSilver.tone14} size={22}/></Pressable>}
   </View>
  </View>;
 }
 export function AuthAction({label,onPress,secondary=false,disabled=false}:{label:string;onPress:()=>void;secondary?:boolean;disabled?:boolean}) {
- return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress} style={{borderRadius:28,minHeight:44,justifyContent:"center",alignItems:"center",backgroundColor:secondary?authSilver.tone19:authSilver.tone20,borderWidth:1,borderColor:authSilver.tone11,opacity:disabled?0.6:1}}>
-  <Text style={{color:authSilver.tone2,fontSize:13,fontWeight:"700",letterSpacing:0.4}}>{label}</Text>
+ return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress} style={{borderRadius:28,minHeight:46,paddingHorizontal:16,paddingVertical:9,justifyContent:"center",alignItems:"center",backgroundColor:secondary?authSilver.tone19:authSilver.tone20,borderWidth:1,borderColor:authSilver.tone11,opacity:disabled?0.6:1}}>
+  <Text numberOfLines={2} style={{color:authSilver.tone2,fontSize:14,fontWeight:"700",letterSpacing:0.2,textAlign:"center",flexShrink:1}}>{label}</Text>
  </Pressable>;
 }
