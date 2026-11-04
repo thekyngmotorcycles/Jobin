@@ -1,4 +1,5 @@
 import {useEffect,useState} from "react";
+import {router} from "expo-router";
 import {ActivityIndicator,Alert,Image,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -28,11 +29,14 @@ export default function VerifyIdentity(){
  const [back,setBack]=useState<Picked|null>(null);
  const [busy,setBusy]=useState(false);
  const [status,setStatus]=useState<string|null>(null);
+ const [isReviewer,setIsReviewer]=useState(false);
  const needsBack=TYPES.find(x=>x.value===docType)?.needsBack??true;
  useEffect(()=>{let live=true;(async()=>{
   const {data:{user}}=await requireSupabase().auth.getUser();if(!user)return;
   const {data}=await (requireSupabase() as any).from("identity_verification_requests").select("status").eq("user_id",user.id).order("submitted_at",{ascending:false}).limit(1);
   if(live&&data?.[0])setStatus(data[0].status);
+  const {data:canReview}=await (requireSupabase() as any).rpc("is_identity_reviewer");
+  if(live)setIsReviewer(canReview===true);
  })().catch(()=>{});return()=>{live=false;};},[]);
  async function pick(side:"front"|"back"){
   const permission=await ImagePicker.requestCameraPermissionsAsync();
@@ -69,6 +73,7 @@ export default function VerifyIdentity(){
  }
  return <SafeAreaView edges={["bottom"]} style={s.screen}><ScrollView contentContainerStyle={{padding:20,gap:16,paddingBottom:60}}>
   <Text style={s.h2}>Verificar identidad</Text>
+  {isReviewer&&<Pressable accessibilityRole="button" onPress={()=>router.push("/identity-admin")} style={{borderWidth:1,borderColor:colors.line,padding:13,borderRadius:12}}><Text style={s.text}>Panel administrativo de verificación →</Text></Pressable>}
   <Text style={s.muted}>La insignia J representa identidad verificada, no licencias ni experiencia profesional. Los documentos son privados y no aparecen en tu JCard.</Text>
   {status==="pending"&&<View style={s.panel}><Text style={s.h3}>Solicitud en revisión</Text><Text style={s.muted}>Ya recibimos tus documentos. No es necesario enviarlos nuevamente.</Text></View>}
   {status==="approved"&&<View style={s.panel}><Text style={s.h3}>Solicitud aprobada</Text><Text style={s.muted}>La aprobación documental se registró. La activación de la insignia requiere una comprobación adicional del servidor.</Text></View>}
