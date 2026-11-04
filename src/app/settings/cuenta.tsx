@@ -16,6 +16,7 @@ export default function AccountSecurity(){
   {title:"Acceso y protección",description:"Opciones para mantener tu cuenta segura.",items:[
    {label:"Cambiar contraseña",detail:"Actualiza tu contraseña de acceso.",icon:"key-outline",route:"/change-password"},
    {label:"Verificación de cuenta",detail:"Consulta la verificación de correo y teléfono.",icon:"shield-checkmark-outline",route:"/settings/verificacion"},
+   {label:"Verificar identidad",detail:"Envía tu documento de identidad para revisión privada.",icon:"id-card-outline",route:"/verify-identity"},
    {label:"Dispositivos y sesiones",detail:"Consulta los accesos y dispositivos.",icon:"phone-portrait-outline",route:"/settings/sesiones"},
    {label:"Recuperar acceso",detail:"Opciones de recuperación de tu cuenta.",icon:"refresh-outline",route:"/recover-account"}]},
   {title:"Administrar cuenta",description:"Acciones importantes sobre tu cuenta.",items:[
