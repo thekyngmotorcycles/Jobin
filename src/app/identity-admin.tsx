@@ -4,7 +4,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {useUi} from "../components/ui";
 import {requireSupabase} from "../lib/supabase";
 
-type Request={id:string;user_id:string;country_code:string;document_type:string;legal_name:string;front_path:string;back_path:string|null;status:string;submitted_at:string;reviewed_at:string|null;reviewer_notes:string|null};
+type Request={id:string;user_id:string;country_code:string;document_type:string;legal_name:string;front_path:string;back_path:string|null;status:string;submitted_at:string;reviewed_at:string|null;reviewer_notes:string|null;document_expires_on:string|null;validation_flags:Record<string,boolean>|null};
 export default function IdentityAdmin(){
  const {s,colors}=useUi();
  const [allowed,setAllowed]=useState<boolean|null>(null),[loading,setLoading]=useState(true);
@@ -64,6 +64,8 @@ export default function IdentityAdmin(){
     <Text style={s.h3}>{row.legal_name}</Text>
     <Text style={s.muted}>{row.country_code} · {row.document_type} · {row.status} · {new Date(row.submitted_at).toLocaleDateString()}</Text>
     <Text style={s.muted}>Usuario: {row.user_id}</Text>
+    <Text style={s.muted}>Vencimiento declarado: {row.document_expires_on??"No indicado"}</Text>
+    {!!row.validation_flags&&Object.keys(row.validation_flags).length>0&&<Text style={s.muted}>Alertas automáticas: {Object.keys(row.validation_flags).join(", ")}</Text>}
     {([row.front_path,row.back_path].filter(path=>Boolean(path)&&!String(path).includes("/deleted/")) as string[]).map((path,i)=><View key={path} style={{gap:7}}>
      <Pressable accessibilityRole="button" onPress={()=>void view(path)}><Text style={[s.text,{textDecorationLine:"underline"}]}>{i===0?"Ver frente":"Ver reverso"} (enlace temporal)</Text></Pressable>
      {images[path]&&<Image source={{uri:images[path]}} resizeMode="contain" style={{height:220,width:"100%",backgroundColor:colors.paper}}/>}
