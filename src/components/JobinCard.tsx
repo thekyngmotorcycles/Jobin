@@ -18,6 +18,7 @@ import {ProfessionGlyph} from "./ProfessionGlyph";
 import { LanguageRing, languageLabel, LANGUAGE_LEVELS } from "./LanguageRing";
 import { businessCardAccents, businessCardPaper, jcardCommon, jcardLayout, jcardTokens } from "../theme/jcard";
 import {businessCategoryArt} from "../lib/business-category-art";
+import {categoryGlyph} from "../lib/category-icons";
 
 export type { CardData } from "../lib/jcard";
 const wordmarkJ=WORDMARK_XML.replace('viewBox="0 0 1175 540"','viewBox="0 0 530 540"').replace(/<path d="M1166[\s\S]*?(?=<path d="M517)/, "").replace(/<path d="M517/, '<path d="M517');
@@ -160,7 +161,7 @@ function BusinessFace({card,theme,contact,onQr,onShare,canEditMedia=false,onEdit
  const art=businessCategoryArt(category);
  const hvacCategory=/hvac|climatiz|aire acondicionado/i.test(category)&&!/refrigeraci/i.test(category);
  const refrigerationCategory=/refrigeraci/i.test(category)&&!/climatiz/i.test(category);
- const categoryIcon=hvacCategory?"aperture-outline":refrigerationCategory?"snow-outline":art.icon;
+ const categoryIcon=hvacCategory?categoryGlyph("climate"):refrigerationCategory?categoryGlyph("refrigeration"):art.icon;
  const businessContactInk=businessCardAccents.contact;
  const businessIconInk=businessCardAccents.icon;
  const voteLevel=(key:"service"|"prices"|"punctuality"|"professionalism"|"tenure")=>{const total=b?.excellenceReviewCount??0;const percent=total>0?100*(b?.excellenceVotes?.[key]??0)/total:0;return (b?.reviewCount??0)<20||!(b?.excellenceVotes?.[key]??0)?0:percent>63?3:percent>33?2:1;};
