@@ -1,6 +1,6 @@
 import Svg,{Path,Circle,Rect} from "react-native-svg";
 export type JobinTabName="index"|"streams"|"videos"|"shop"|"inbox"|"profile";
-export function JobinTabIcon({name,color,size=25}:{name:JobinTabName;color:string;focused?:boolean;size?:number}){
+export function JobinTabIcon({name,color,focused=false,size=25}:{name:JobinTabName;color:string;focused?:boolean;size?:number}){
  const stroke={stroke:color,strokeWidth:2.15,strokeLinecap:"round" as const,strokeLinejoin:"round" as const};
  return <Svg width={size} height={size} viewBox="0 0 28 28" fill="none" accessibilityLabel={name}>
  {name==="index"&&<Path d="M3.5 12.3 14 3.8l10.5 8.5V24h-7.1v-8h-6.8v8H3.5V12.3Z" {...stroke} fill="none"/>}
