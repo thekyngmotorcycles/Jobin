@@ -40,13 +40,18 @@ const SPECIAL_ICONS:Record<string,MIcon>={
 };
 /** Original HVAC glyph: thermometer plus two snowflakes, not sourced from the watermarked reference. */
 function HvacThermometerGlyph({size,color}:{size:number;color:string}){
- const stroke=Math.max(1.3,1.65);
+ // Readable at 19px: a large thermometer, one prominent snowflake and a smaller one.
+ const snow=(cx:number,cy:number,r:number)=>Array.from({length:3},(_,i)=>{
+  const a=i*Math.PI/3,dx=Math.cos(a)*r,dy=Math.sin(a)*r;
+  return <Line key={i} x1={cx-dx} y1={cy-dy} x2={cx+dx} y2={cy+dy} stroke={color} strokeWidth="2.3" strokeLinecap="round"/>;
+ });
  return <Svg width={size} height={size} viewBox="0 0 32 32" fill="none" accessibilityLabel="Termómetro con copos de nieve">
-  <Path d="M23 6a3 3 0 0 1 6 0v16.4a5 5 0 1 1-6 0V6Z" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round"/>
-  <Line x1="26" y1="11" x2="26" y2="23" stroke={color} strokeWidth={stroke} strokeLinecap="round"/>
-  <Circle cx="26" cy="26" r="2.2" fill={color}/>
-  <Path d="M7.5 4v11M2 9.5h11M3.6 5.6l7.8 7.8M11.4 5.6l-7.8 7.8M7.5 4l-2-1.5M7.5 4l2-1.5M7.5 15l-2 1.5M7.5 15l2 1.5" stroke={color} strokeWidth="1.35" strokeLinecap="round"/>
-  <Path d="M11 17v11M5.5 22.5h11M7.1 18.6l7.8 7.8M14.9 18.6l-7.8 7.8M11 17l-2-1.5M11 17l2-1.5M11 28l-2 1.5M11 28l2 1.5" stroke={color} strokeWidth="1.35" strokeLinecap="round"/>
+  <Path d="M22 7a3.5 3.5 0 0 1 7 0v14.4a5.6 5.6 0 1 1-7 0V7Z" stroke={color} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"/>
+  <Line x1="25.5" y1="11" x2="25.5" y2="23" stroke={color} strokeWidth="2.6" strokeLinecap="round"/>
+  <Circle cx="25.5" cy="26" r="2.6" fill={color}/>
+  {snow(9,20,7)}
+  {snow(11,7,4.5)}
+  <Path d="M17.5 14l-2 2" stroke={color} strokeWidth="2.1" strokeLinecap="round"/>
  </Svg>;
 }
 export function ProfessionGlyph({profession,fallback,size=22,color}:{profession:string;fallback?:IIcon;size?:number;color:string}){
