@@ -1,7 +1,9 @@
-import {JobinMenuIcon} from "./JobinMenuIcon";
+import {JobinSettingsIcon} from "./JobinSettingsIcon";
+import {JOBIN_SETTINGS_GROUPS} from "../lib/jobin-settings-catalog";
+import {Ionicons} from "@expo/vector-icons";
 import {router} from "expo-router";
-import {useEffect,useRef,useState} from "react";
-import {Animated,Modal,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
+import {useEffect,useMemo,useRef,useState} from "react";
+import {Animated,Modal,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useUi} from "./ui";
 import {opacity} from "../theme/color";
@@ -23,6 +25,8 @@ export function HomeSideMenu({visible,onClose,onNavigate}:{visible:boolean;onClo
  const touchStart=useRef<{x:number;y:number}|null>(null);
  const [mounted,setMounted]=useState(visible);
  const [atBottom,setAtBottom]=useState(false);
+ const [query,setQuery]=useState("");
+ const filtered=useMemo(()=>JOBIN_SETTINGS_GROUPS.map(group=>({...group,items:group.items.filter(entry=>(entry.title+" "+entry.description).toLowerCase().includes(query.trim().toLowerCase()))})).filter(group=>group.items.length>0),[query]);
  const slide=useRef(new Animated.Value(visible?1:0)).current;
  const backdrop=useRef(new Animated.Value(visible?1:0)).current;
  useEffect(()=>{
@@ -42,15 +46,25 @@ export function HomeSideMenu({visible,onClose,onNavigate}:{visible:boolean;onClo
     <SafeAreaView edges={["top","bottom"]} onTouchStart={event=>{touchStart.current={x:event.nativeEvent.pageX,y:event.nativeEvent.pageY};}} onTouchEnd={event=>{const start=touchStart.current;if(start&&start.x-event.nativeEvent.pageX>70&&Math.abs(start.y-event.nativeEvent.pageY)<70)onClose();touchStart.current=null;}} style={{flex:1,backgroundColor:opacity(colors.paper,0.69),borderTopRightRadius:18,borderBottomRightRadius:atBottom?18:0,overflow:"hidden"}}>
      <ScrollView onScroll={event=>{const {layoutMeasurement,contentOffset,contentSize}=event.nativeEvent;setAtBottom(contentOffset.y+layoutMeasurement.height>=contentSize.height-12);}} scrollEventThrottle={100} contentContainerStyle={{paddingHorizontal:18,paddingTop:22,paddingBottom:32,gap:10,alignItems:"stretch"}}>
       <View style={{flexDirection:"row",alignItems:"flex-start",justifyContent:"space-between",paddingBottom:16,gap:8}}>
-       <Text accessibilityRole="header" style={{color:colors.ink,fontWeight:"700",fontSize:22,lineHeight:30,flex:1}}>Configuración y privacidad</Text>
+       <Text accessibilityRole="header" style={{color:colors.ink,fontWeight:"700",fontSize:22,lineHeight:30,flex:1}}>Configuración</Text>
        <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={onClose} style={{padding:8}}><Text style={{color:colors.ink,fontSize:24}}>×</Text></Pressable>
       </View>
-      {HOME_MENU_ITEMS.map(item=><Pressable key={item.slug} accessibilityRole="button" accessibilityLabel={item.label}
-       onPress={()=>{onNavigate?.();onClose();router.push({pathname:"/menu/[section]",params:{section:item.slug}});}}
-       style={({pressed})=>({flexDirection:"row",alignItems:"center",paddingHorizontal:14,paddingVertical:16,minHeight:60,gap:14,borderRadius:12,backgroundColor:opacity(colors.paper,0.85),width:"100%",alignSelf:"center",opacity:pressed?0.65:1})}>
-       <View style={{width:32,alignItems:"center",flexShrink:0}}><JobinMenuIcon name={item.slug} size={25} color={colors.ink}/></View>
-       <Text style={{color:colors.ink,fontSize:16,flex:1,fontWeight:"600"}}>{item.label}</Text>
-      </Pressable>)}
+      <View style={{flexDirection:"row",alignItems:"center",borderWidth:1,borderColor:colors.line,borderRadius:14,paddingHorizontal:12,gap:10,marginBottom:14}}>
+       <Ionicons name="search-outline" size={21} color={colors.muted}/>
+       <TextInput accessibilityLabel="Buscar configuración" value={query} onChangeText={setQuery} placeholder="Buscar configuración" placeholderTextColor={colors.muted} style={{flex:1,minHeight:50,color:colors.ink,fontSize:15}}/>
+      </View>
+      {filtered.map(group=><View key={group.title} style={{gap:9,marginBottom:15}}>
+       <Text accessibilityRole="header" style={{color:colors.ink,fontWeight:"700",fontSize:20}}>{group.title}</Text>
+       <Text style={{color:colors.muted,fontSize:13,marginBottom:4}}>{group.description}</Text>
+       {group.items.map(entry=><Pressable key={entry.id} accessibilityRole="button" accessibilityLabel={entry.title}
+        onPress={()=>{onNavigate?.();onClose();if(entry.route){router.push(entry.route as any);}else{router.push({pathname:"/settings/[item]",params:{item:entry.id}});}}}
+        style={({pressed})=>({flexDirection:"row",alignItems:"center",gap:13,paddingVertical:13,paddingHorizontal:6,opacity:pressed?.55:1})}>
+        <JobinSettingsIcon id={entry.id} size={25} color={colors.ink}/>
+        <View style={{flex:1,gap:3}}><Text style={{color:colors.ink,fontSize:15,fontWeight:"600"}}>{entry.title}</Text><Text style={{color:colors.muted,fontSize:12}}>{entry.description}</Text></View>
+        <Ionicons name="chevron-forward" size={17} color={colors.muted}/>
+       </Pressable>)}
+      </View>)}
+      {filtered.length===0&&<Text style={{color:colors.muted}}>No encontramos opciones con ese nombre.</Text>}
      </ScrollView>
     </SafeAreaView>
    </Animated.View>
