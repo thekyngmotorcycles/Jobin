@@ -154,8 +154,10 @@ export default function Profile() {
     <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8 }}>
         <JobinWordmark width={92} style={{ alignSelf: "flex-start" }} />
-        <Pressable accessibilityRole="button" accessibilityLabel="Mi red" onPress={()=>router.push("/my-network")} style={{padding:10}}><Ionicons name="people-outline" size={24} color={colors.ink}/></Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>profileToolsOpen?closeProfileMenu():openProfileMenu()} style={{padding:10}}><Ionicons name="ellipsis-horizontal" size={24} color={colors.ink}/></Pressable>
+        <View style={{flexDirection:"row",alignItems:"center",gap:4}}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Mi red" onPress={()=>router.push("/my-network")} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="people-outline" size={23} color={colors.ink}/></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>profileToolsOpen?closeProfileMenu():openProfileMenu()} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="ellipsis-horizontal" size={23} color={colors.ink}/></Pressable>
+        </View>
       </View>
       <Modal visible={menuMounted} transparent animationType="none" onRequestClose={closeProfileMenu} statusBarTranslucent={false}>
         <View style={{flex:1,flexDirection:"row"}}>
