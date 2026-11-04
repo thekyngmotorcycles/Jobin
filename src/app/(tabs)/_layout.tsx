@@ -22,7 +22,7 @@ export default function TabLayout(){
  const nav=(name:string,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=> <Pressable key={name} accessibilityRole="link" onPress={()=>router.push(name as never)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:14,paddingHorizontal:16,borderRadius:12,backgroundColor:pathname===name?colors.line:colors.transparent}}><Ionicons name={icon} size={22} color={colors.ink}/><Text style={{fontSize:15,color:colors.ink,fontWeight:pathname===name?"700":"500"}}>{title}</Text></Pressable>;
  const tabs=<Tabs initialRouteName="videos" screenOptions={{
   headerShown:false,tabBarShowLabel:false,tabBarActiveTintColor:colors.navIcon,tabBarInactiveTintColor:colors.navIcon,
-  tabBarHideOnKeyboard:true,tabBarBackground:()=> desktop?null:<NavigationFade/>,
+  tabBarHideOnKeyboard:true,tabBarItemStyle:{minHeight:44,justifyContent:"center",alignItems:"center"},tabBarBackground:()=> desktop?null:<NavigationFade/>,
   tabBarStyle:{display:desktop?"none":"flex",position:"absolute",backgroundColor:colors.transparent,borderTopWidth:0,elevation:0,shadowOpacity:0,overflow:"visible",height:NAVIGATION_ROW_HEIGHT+inset.bottom,paddingTop:5,paddingBottom:Math.max(5,inset.bottom)},
   tabBarIconStyle:{height:28},
  }}>
