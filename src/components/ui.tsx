@@ -8,10 +8,11 @@ import { useApp } from "../state/AppProvider";
 // Type and icons scale with the window width, relative to a 390 dp phone.
 // The clamp keeps tiny screens readable and stops large tablets from blowing up.
 const BASE_WIDTH = 390;
-const MIN_SCALE = 0.8;
-const MAX_SCALE = 1.2;
+const MIN_SCALE = 0.95;
+const MAX_SCALE = 1.1;
 export function useUi() { const { colors } = useTheme(); const { width } = useWindowDimensions();
- const k = Math.round(Math.min(MAX_SCALE, Math.max(MIN_SCALE, width / BASE_WIDTH)) * 20) / 20;
+ const effectiveWidth = Math.min(width, BASE_WIDTH * MAX_SCALE);
+ const k = Math.round(Math.min(MAX_SCALE, Math.max(MIN_SCALE, effectiveWidth / BASE_WIDTH)) * 20) / 20;
  const fs = useCallback((size: number) => Math.round(size * k), [k]);
  const s = useMemo(() => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
@@ -27,8 +28,8 @@ export function useUi() { const { colors } = useTheme(); const { width } = useWi
   muted: { fontSize: fs(12), lineHeight: fs(20), color: colors.muted },
   row: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" },
   panel: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: 18, padding: 22, gap: 16 },
-  button: { minHeight: 44, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 12, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center" },
-  buttonText: { color: colors.inverse, fontWeight: "600", fontSize: fs(13) },
+  button: { minHeight: 46, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center", maxWidth: "100%" },
+  buttonText: { color: colors.inverse, fontWeight: "600", fontSize: fs(14), textAlign: "center", flexShrink: 1 },
   secondary: { backgroundColor: colors.accent },
   secondaryText: { color: colors.ink },
   chip: { borderRadius: 24, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 14, minHeight: 44, justifyContent: "center", backgroundColor: colors.card },
@@ -47,7 +48,7 @@ export function Button({ title, onPress, secondary = false, selected, label }: {
   return <Pressable accessibilityRole="button" accessibilityLabel={label ?? title}
     accessibilityState={selected === undefined ? undefined : { selected }}
     onPress={onPress} style={({ pressed }) => [s.button, secondary && s.secondary, pressed && s.pressed]}>
-    <Text style={[s.buttonText, secondary && s.secondaryText]}>{title}</Text>
+    <Text numberOfLines={2} style={[s.buttonText, secondary && s.secondaryText]}>{title}</Text>
   </Pressable>;
 }
 export function Chips<T extends string>({ values, value, onChange, label, getLabel = (item:T) => String(item) }: {
