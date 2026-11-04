@@ -4,6 +4,7 @@ import { useUi } from "./ui";
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import { ProfessionGlyph } from "./ProfessionGlyph";
+import {categoryGlyph} from "../lib/category-icons";
 import type { ProfessionalCatalog } from "../lib/professional-types";
 
 const normalize=(text:string)=>text.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("es").replace(/[^a-z0-9]+/g," ").trim();
@@ -52,14 +53,14 @@ export function ProfessionPicker({catalog,value,onChange}:{catalog:ProfessionalC
  return <View style={{gap:10}}>
   <Text style={[s.eyebrow,{fontSize:12}]}>1. Elegí una categoría</Text>
   <Pressable accessibilityRole="button" accessibilityState={{expanded:categoriesOpen}} onPress={()=>setCategoriesOpen(open=>!open)} style={{minHeight:48,paddingHorizontal:12,borderWidth:1,borderColor:colors.line,borderRadius:10,flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
-   <Text style={{color:colors.ink,flex:1}}>{category?categories.find(c=>c.code===category)?.label??"Categoría":"Todas las categorías"}</Text>
+   <Ionicons name={category?categoryGlyph(category):"grid-outline"} size={20} color={colors.ink}/><Text style={{color:colors.ink,flex:1,marginLeft:8}}>{category?categories.find(c=>c.code===category)?.label??"Categoría":"Todas las categorías"}</Text>
    <Ionicons name={categoriesOpen?"chevron-up":"chevron-down"} size={20} color={colors.ink}/>
   </Pressable>
   {categoriesOpen&&<View style={{gap:8,borderWidth:1,borderColor:colors.line,borderRadius:10,padding:10}}>
    <TextInput accessibilityLabel="Buscar categoría" placeholder="Filtrar categorías…" placeholderTextColor={colors.muted} value={categoryQuery} onChangeText={setCategoryQuery} style={{color:colors.ink,borderWidth:1,borderColor:colors.line,borderRadius:8,padding:10}}/>
    <ScrollView style={{maxHeight:220}} nestedScrollEnabled keyboardShouldPersistTaps="handled">
     {[{code:"",label:"Todas las categorías"},...categories].filter(item=>normalize(item.label).includes(normalize(categoryQuery))).map(item=><Pressable key={item.code||"all"} accessibilityRole="button" accessibilityState={{selected:(category??"")===item.code}} onPress={()=>{setCategory(item.code||null);setCategoriesOpen(false);setCategoryQuery("");}} style={{padding:12,minHeight:44,borderRadius:8,backgroundColor:(category??"")===item.code?colors.ink:colors.paper}}>
-     <Text style={{color:(category??"")===item.code?colors.inverse:colors.ink}}>{item.label}</Text>
+     <View style={{flexDirection:"row",alignItems:"center",gap:10}}><Ionicons name={item.code?categoryGlyph(item.code):"grid-outline"} size={20} color:(category??"")===item.code?colors.inverse:colors.ink}/><Text style={{color:(category??"")===item.code?colors.inverse:colors.ink}}>{item.label}</Text></View>
     </Pressable>)}
    </ScrollView>
   </View>}
