@@ -48,7 +48,6 @@ export default function Profile() {
   const menuBackdrop=useRef(new Animated.Value(0)).current;
   useEffect(()=>{menuBackdrop.stopAnimation();menuBackdrop.setValue(profileToolsOpen?1:0);menuSlide.stopAnimation();Animated.timing(menuSlide,{toValue:profileToolsOpen?1:0,duration:profileToolsOpen?290:240,useNativeDriver:true}).start(({finished})=>{if(finished&&!profileToolsOpen)setMenuMounted(false);});return()=>menuSlide.stopAnimation();},[profileToolsOpen,menuSlide,menuBackdrop]);
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
-  useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void identityVerified(id).then(v=>{if(live)setVerifiedIdentity(v);}).catch(()=>{if(live)setVerifiedIdentity(false);});return()=>{live=false;};},[workspace.data?.card.id]);
   const [history, setHistory] = useState<EmploymentEntry[]>([]);
   const [incomingCV,setIncomingCV]=useState<CVRequest[]>([]);
   async function refreshCV(){try{const id=await cloudOwner();setIncomingCV((await cvRequests()).filter(r=>r.owner_id===id));}catch(e){setNotice(e instanceof Error?e.message:"No se pudieron cargar solicitudes.");}}
@@ -84,6 +83,7 @@ export default function Profile() {
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address:"", contact:"" });
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace);
+  useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void identityVerified(id).then(v=>{if(live)setVerifiedIdentity(v);}).catch(()=>{if(live)setVerifiedIdentity(false);});return()=>{live=false;};},[workspace.data?.card.id]);
   const professionCatalog=useProfessionalData(loadCatalog);
   const [showEmploymentProfessionPicker,setShowEmploymentProfessionPicker]=useState(false);
   const catalogProfessions=professionCatalog.data?.professions??[];
