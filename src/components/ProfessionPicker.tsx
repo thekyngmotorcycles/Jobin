@@ -60,7 +60,7 @@ export function ProfessionPicker({catalog,value,onChange}:{catalog:ProfessionalC
    <TextInput accessibilityLabel="Buscar categoría" placeholder="Filtrar categorías…" placeholderTextColor={colors.muted} value={categoryQuery} onChangeText={setCategoryQuery} style={{color:colors.ink,borderWidth:1,borderColor:colors.line,borderRadius:8,padding:10}}/>
    <ScrollView style={{maxHeight:220}} nestedScrollEnabled keyboardShouldPersistTaps="handled">
     {[{code:"",label:"Todas las categorías"},...categories].filter(item=>normalize(item.label).includes(normalize(categoryQuery))).map(item=><Pressable key={item.code||"all"} accessibilityRole="button" accessibilityState={{selected:(category??"")===item.code}} onPress={()=>{setCategory(item.code||null);setCategoriesOpen(false);setCategoryQuery("");}} style={{padding:12,minHeight:44,borderRadius:8,backgroundColor:(category??"")===item.code?colors.ink:colors.paper}}>
-     <View style={{flexDirection:"row",alignItems:"center",gap:10}}><Ionicons name={item.code?categoryGlyph(item.code):"grid-outline"} size={20} color:(category??"")===item.code?colors.inverse:colors.ink}/><Text style={{color:(category??"")===item.code?colors.inverse:colors.ink}}>{item.label}</Text></View>
+     <View style={{flexDirection:"row",alignItems:"center",gap:10}}><Ionicons name={item.code?categoryGlyph(item.code):"grid-outline"} size={20} color={(category??"")===item.code?colors.inverse:colors.ink}/><Text style={{color:(category??"")===item.code?colors.inverse:colors.ink}}>{item.label}</Text></View>
     </Pressable>)}
    </ScrollView>
   </View>}
