@@ -140,6 +140,7 @@ export default function Professional() {
       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showPhone}} onPress={()=>setShowPhone(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={showPhone?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar teléfono en mi JCard</Text></Pressable>
      </View>}
     </View>
+    <Button secondary title="Fondos JCard Premium · Vista previa" onPress={()=>router.push("/jcard-backgrounds")}/>
     <Button title={action.busy?"Guardando…":"Guardar cambios de JCard"} onPress={save}/>
    </View>
   </>}
