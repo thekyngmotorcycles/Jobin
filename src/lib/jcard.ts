@@ -11,6 +11,8 @@ export interface JCardSeal {
   months?: number;
 }
 export interface CardData {
+  /** Server-approved identity verification only; defaults to false when absent. */
+  identityVerified?: boolean;
   name: string;
   handle: string;
   role: string;
