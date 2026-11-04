@@ -20,7 +20,7 @@ import { businessCardAccents, businessCardPaper, jcardCommon, jcardLayout, jcard
 import {businessCategoryArt} from "../lib/business-category-art";
 
 export type { CardData } from "../lib/jcard";
-const wordmarkJ=WORDMARK_XML.replace('viewBox="300 76 616 275"','viewBox="300 76 160 275"').replace(/(<path[^>]*\/>)[\s\S]*?(<\/g>)/,"$1$2");
+const wordmarkJ=WORDMARK_XML.replace('viewBox="0 0 1175 540"','viewBox="0 0 530 540"').replace(/<path d="M1166[\s\S]*?(?=<path d="M517)/, "").replace(/<path d="M517/, '<path d="M517');
 function jobinGlyph(color:string){return wordmarkJ.replace('currentColor',color);}
 
 function professionalIcon(profession:string, fallback:React.ComponentProps<typeof Ionicons>["name"]):React.ComponentProps<typeof Ionicons>["name"] {
