@@ -82,7 +82,7 @@ export default function VerifyIdentity(){
   <Text style={s.muted}>La insignia J representa identidad verificada, no licencias ni experiencia profesional. Los documentos son privados y no aparecen en tu JCard.</Text>
   {status==="pending"&&<View style={s.panel}><Text style={s.h3}>Solicitud en revisión</Text><Text style={s.muted}>Ya recibimos tus documentos. No es necesario enviarlos nuevamente.</Text></View>}
   {status==="rejected"&&<View style={s.panel}><Text style={s.h3}>Solicitud rechazada</Text><Text style={s.muted}>{reviewReason??"Revisá tus datos y enviá una nueva solicitud."}</Text><Text style={s.muted}>Podés presentar un nuevo documento. Las solicitudes anteriores permanecen registradas para auditoría.</Text></View>}
-  {status==="approved"&&<View style={s.panel}><Text style={s.h3}>Solicitud aprobada</Text><Text style={s.muted}>La aprobación documental se registró. La activación de la insignia requiere una comprobación adicional del servidor.</Text></View>}
+  {status==="approved"&&<View style={s.panel}><Text style={s.h3}>Solicitud aprobada</Text><Text style={s.muted}>La aprobación documental se registró. La insignia J se activa cuando el correo está confirmado y el servidor valida la aprobación documental. No requiere SMS.</Text></View>}
   {status!=="pending"&&status!=="approved"&&<>
    <Text style={s.h3}>País emisor</Text>
    <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{COUNTRIES.map(([code,label])=><Pressable key={code} onPress={()=>setCountry(code)} style={{borderWidth:1,borderColor:colors.line,backgroundColor:country===code?colors.accent:colors.paper,padding:10,borderRadius:10}}><Text style={{color:colors.ink}}>{label}</Text></Pressable>)}</View>
