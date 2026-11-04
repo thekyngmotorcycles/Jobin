@@ -7,7 +7,7 @@ export const THEMES=[
 export type ThemeName=typeof THEMES[number]["id"];
 export function isThemeName(value:unknown):value is ThemeName{return THEMES.some(t=>t.id===value);}
 const bases={
- light:{paper:"#ffffff",ink:"#000000"},
+ light:{paper:"#F5F4F0",ink:"#171717"},
  dark:{paper:"#000000",ink:"#ffffff"},
  pink:{paper:"#fce5ef",ink:"#54243a"},
  "navy-green":{paper:"#E2ECD4",ink:"#35530A"},
