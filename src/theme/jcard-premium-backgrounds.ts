@@ -17,3 +17,6 @@ export const JCARD_PREMIUM_BACKGROUNDS=[
 export type JCardPremiumBackgroundId=typeof JCARD_PREMIUM_BACKGROUNDS[number]["id"];
 export const JCARD_DEFAULT_BACKGROUND_ID="original" as const;
 export function getPremiumBackground(id:string){return JCARD_PREMIUM_BACKGROUNDS.find(item=>item.id===id)??null;}
+
+/** Neutral QR swatches shared by premium JCard previews. */
+export const JCARD_PREMIUM_QR_COLORS = {paper:"#FFFFFF",ink:"#111111"} as const;
