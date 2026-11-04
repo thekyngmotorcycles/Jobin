@@ -1,0 +1,31 @@
+import {View,Text} from "react-native";
+import {JCardPremiumTexture} from "./JCardPremiumTexture";
+import {getPremiumBackground,type JCardPremiumBackgroundId} from "../theme/jcard-premium-backgrounds";
+/** Illustrative sample, never the user's actual JCard or a functional QR code. */
+export function JCardPremiumSample({id,width=310}:{id:JCardPremiumBackgroundId;width?:number}){
+ const t=getPremiumBackground(id);if(!t)return null;
+ const height=width*1.22;const scale=width/310;
+ const label=(text:string,size:number,weight:"400"|"600"|"700"="400")=><Text style={{color:t.ink,fontSize:size*scale,fontWeight:weight}}>{text}</Text>;
+ return <View accessibilityLabel={"Ejemplo de JCard con fondo "+t.name} style={{width,height,borderRadius:18,overflow:"hidden",alignSelf:"center"}}>
+  <View style={{position:"absolute",top:0,left:0}} pointerEvents="none"><JCardPremiumTexture id={id} width={width} height={height}/></View>
+  <View style={{flex:1,padding:18*scale,justifyContent:"space-between"}}>
+   <View style={{flexDirection:"row",alignItems:"flex-start",justifyContent:"space-between"}}>
+    <View style={{width:58*scale,height:58*scale,borderRadius:30*scale,backgroundColor:t.ink,alignItems:"center",justifyContent:"center"}}><Text style={{fontSize:20*scale,color:t.base,fontWeight:"700"}}>JS</Text></View>
+    <View style={{alignItems:"center"}}>{label("JCard",26,"700")}{label("Personal",13)}</View>
+    <View style={{width:58*scale,height:58*scale,borderWidth:1.5,borderColor:t.ink,alignItems:"center",justifyContent:"center"}}>{label("QR",19,"700")}{label("DEMO",8)}</View>
+   </View>
+   <View style={{gap:8*scale}}>
+    <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>{label("Nombre de ejemplo",21,"700")}{label("8 años",12,"600")}</View>
+    {label("@usuario_ejemplo",13)}
+    {label("Profesión principal",15,"600")}
+    {label("DISPONIBLE",12,"700")}
+    {label("contacto@ejemplo.com",12)}
+   </View>
+   <View style={{borderTopWidth:1,borderColor:t.line,paddingTop:12*scale,flexDirection:"row",justifyContent:"space-around"}}>
+    <View style={{alignItems:"center",gap:5}}>{label("Idiomas",12,"600")}{label("◯ ES    ◯ EN",13)}</View>
+    <View style={{width:1,backgroundColor:t.line}}/>
+    <View style={{alignItems:"center",gap:5}}>{label("Otras profesiones",12,"600")}{label("◇    ◇",18)}</View>
+   </View>
+  </View>
+ </View>;
+}
