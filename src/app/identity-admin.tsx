@@ -9,6 +9,8 @@ export default function IdentityAdmin(){
  const {s,colors}=useUi();
  const [allowed,setAllowed]=useState<boolean|null>(null),[loading,setLoading]=useState(true);
  const [rows,setRows]=useState<Request[]>([]),[notes,setNotes]=useState<Record<string,string>>({});
+ const [filter,setFilter]=useState<"pending"|"approved"|"rejected"|"all">("pending");
+ const [history,setHistory]=useState<{request_id:string;reviewer_id:string;decision:string;notes:string|null;decided_at:string}[]>([]);
  const [busy,setBusy]=useState<string|null>(null),[images,setImages]=useState<Record<string,string>>({});
  const load=useCallback(async()=>{
   setLoading(true);
@@ -20,6 +22,8 @@ export default function IdentityAdmin(){
    if(!can){setRows([]);return;}
    const {data,error}=await (db as any).rpc("identity_review_queue");
    if(error)throw error;setRows(data??[]);
+   const {data:audit,error:auditError}=await (db as any).rpc("identity_review_history");
+   if(auditError)throw auditError;setHistory(audit??[]);
   }catch(e){Alert.alert("Error",e instanceof Error?e.message:"No se pudo cargar el panel.");}
   finally{setLoading(false);}
  },[]);
@@ -33,6 +37,7 @@ export default function IdentityAdmin(){
  }
  async function decide(row:Request,approve:boolean){
   if(busy)return;
+  if(!approve&&(notes[row.id]?.trim().length??0)<8){Alert.alert("Motivo obligatorio","Para rechazar una solicitud, escribí un motivo de al menos 8 caracteres.");return;}
   Alert.alert(approve?"Aprobar identidad":"Rechazar solicitud",approve?"¿Confirmás que revisaste el documento y corresponde a esta persona?":"¿Confirmás el rechazo de esta solicitud?",[
    {text:"Cancelar",style:"cancel"},
    {text:"Confirmar",style:approve?"default":"destructive",onPress:async()=>{
@@ -53,8 +58,9 @@ export default function IdentityAdmin(){
   {allowed===true&&<>
    <Text style={s.muted}>Revisá la legibilidad, vigencia y correspondencia del nombre. La aprobación confirma una revisión manual, no una validación gubernamental.</Text>
    <Pressable onPress={()=>void load()} style={{padding:10}}><Text style={s.text}>Actualizar solicitudes</Text></Pressable>
-   {rows.length===0&&<Text style={s.muted}>No hay solicitudes.</Text>}
-   {rows.map(row=><View key={row.id} style={[s.panel,{gap:10}]}>
+   <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{(["pending","approved","rejected","all"] as const).map(value=><Pressable key={value} onPress={()=>setFilter(value)} style={{padding:10,borderRadius:10,borderWidth:1,borderColor:colors.line,backgroundColor:filter===value?colors.line:colors.paper}}><Text style={s.text}>{value==="pending"?"Pendientes":value==="approved"?"Aprobadas":value==="rejected"?"Rechazadas":"Todas"} ({value==="all"?rows.length:rows.filter(r=>r.status===value).length})</Text></Pressable>)}</View>
+   {rows.filter(row=>filter==="all"||row.status===filter).length===0&&<Text style={s.muted}>No hay solicitudes en esta categoría.</Text>}
+   {rows.filter(row=>filter==="all"||row.status===filter).map(row=><View key={row.id} style={[s.panel,{gap:10}]}>
     <Text style={s.h3}>{row.legal_name}</Text>
     <Text style={s.muted}>{row.country_code} · {row.document_type} · {row.status} · {new Date(row.submitted_at).toLocaleDateString()}</Text>
     <Text style={s.muted}>Usuario: {row.user_id}</Text>
@@ -70,6 +76,9 @@ export default function IdentityAdmin(){
      </View>
     </>:<Text style={s.muted}>Revisado: {row.reviewed_at?new Date(row.reviewed_at).toLocaleDateString():"—"} · {row.reviewer_notes??"Sin notas"}</Text>}
    </View>)}
+   <Text style={s.h3}>Historial de decisiones</Text>
+   {history.length===0&&<Text style={s.muted}>Todavía no hay decisiones registradas.</Text>}
+   {history.map(item=><View key={item.request_id} style={[s.panel,{gap:5}]}><Text style={s.text}>{item.decision==="approved"?"Aprobada":"Rechazada"} · {new Date(item.decided_at).toLocaleString()}</Text><Text style={s.muted}>Solicitud: {item.request_id}</Text><Text style={s.muted}>Revisor: {item.reviewer_id}</Text>{!!item.notes&&<Text style={s.muted}>Notas: {item.notes}</Text>}</View>)}
   </>}
  </ScrollView></SafeAreaView>;
 }
