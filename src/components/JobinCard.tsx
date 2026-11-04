@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Rect, Stop, Path, Circle, SvgXml, ClipPath, Image as SvgImage } from "react-native-svg";
 import {WORDMARK_XML} from "../theme/wordmark";
+import {JCARD_WORDMARK_XML} from "../theme/jcard-wordmark";
 import QRCode from "react-native-qrcode-svg";
 import { Avatar } from "./social-ui";
 import { Button, useUi } from "./ui";
@@ -66,8 +67,8 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contac
     <View style={{ padding:jcardLayout.padding, gap:10, flex:1, justifyContent:"space-between" }}>
       <View style={{ paddingTop:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
         <View accessible accessibilityRole="header" accessibilityLabel="JCard Personal" style={{position:"absolute",top:0,left:0,right:0,alignItems:"center",justifyContent:"center"}}>
-          <Text style={{fontFamily:"cursive",fontWeight:"700",fontSize:24,lineHeight:29,color:finish.text}}>JCard</Text>
-          <Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:15,lineHeight:21,color:finish.text}}>Personal</Text>
+          <SvgXml xml={JCARD_WORDMARK_XML.replace("currentColor",finish.text)} width={112} height={43} accessible={false}/>
+          <Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:15,lineHeight:18,color:finish.text,textAlign:"center",marginTop:-3}}>Personal</Text>
         </View>
         <View style={{ width:jcardLayout.avatar + 8, height:jcardLayout.qr + 8 }}>
           <Avatar uri={card.avatar} name={card.name} size={jcardLayout.avatar}/>
