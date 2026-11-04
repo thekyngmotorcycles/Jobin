@@ -24,6 +24,19 @@ export type { CardData } from "../lib/jcard";
 const wordmarkJ=WORDMARK_XML.replace('viewBox="0 0 1175 540"','viewBox="0 0 530 540"').replace(/<path d="M1166[\s\S]*?(?=<path d="M517)/, "").replace(/<path d="M517/, '<path d="M517');
 function jobinGlyph(color:string){return wordmarkJ.replace('currentColor',color);}
 
+/** Identity seal: subtle scalloped edge. Never show the J for an unverified account. */
+function IdentityBadge({verified,ink}:{verified:boolean;ink:string}){
+ const waves=12,points=120;
+ const contour=Array.from({length:points+1},(_,i)=>{
+  const angle=i*2*Math.PI/points-Math.PI/2;
+  const radius=11.1+0.65*Math.cos(waves*angle);
+  return (i?"L":"M")+(13+radius*Math.cos(angle)).toFixed(2)+" "+(13+radius*Math.sin(angle)).toFixed(2);
+ }).join(" ")+" Z";
+ return <Svg width={25} height={25} viewBox="0 0 26 26" accessible={false}>
+  <Path d={contour} fill={verified?ink:"none"} stroke={ink} strokeWidth={verified?0.8:1.15} strokeDasharray={verified?undefined:"1.2 2.3"} strokeLinecap="round"/>
+  {verified&&<Path d="M16.4 6.8C13.8 6.7 12.4 8.2 11.6 11.5L10.1 17.2C9.7 18.9 8.8 19.5 7.8 19.5C7 19.5 6.7 19 6.9 18.3C7.1 17.7 7.7 17.4 8.3 17.5" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>}
+ </Svg>;
+}
 function professionalIcon(profession:string, fallback:React.ComponentProps<typeof Ionicons>["name"]):React.ComponentProps<typeof Ionicons>["name"] {
   return /handyman|manitas|mantenimiento general|todero|multioficio/i.test(profession)?"construct-outline":fallback;
 }
@@ -73,8 +86,8 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contac
         </View>
         <View style={{ width:jcardLayout.avatar + 8, height:jcardLayout.qr + 8 }}>
           <Avatar uri={card.avatar} name={card.name} size={jcardLayout.avatar}/>
-          <Pressable accessibilityRole="button" accessibilityLabel="Información sobre verificación de identidad" onPress={()=>setInfo("La identidad todavía no está verificada. La insignia de verificación se otorgará tras revisar documentación válida según el país y la región.")} style={{position:"absolute",right:0,top:jcardLayout.avatar-17,width:25,height:25,borderRadius:13,backgroundColor:finish.sealFill,borderWidth:2,borderColor:finish.start,alignItems:"center",justifyContent:"center"}}>
-           <SvgXml xml={jobinGlyph(finish.sealText)} width={22} height={22}/>
+          <Pressable accessibilityRole="button" accessibilityLabel={card.identityVerified?"Persona verificada":"Persona sin verificar"} onPress={()=>setInfo(card.identityVerified?"Identidad verificada por Jobin. Esta insignia no certifica licencias ni competencias profesionales.":"Identidad sin verificar. Para obtener la insignia se requerirá nombre legal, correo y teléfono confirmados, documento de identidad y validación de identidad.")} style={{position:"absolute",right:0,top:jcardLayout.avatar-17,width:25,height:25,alignItems:"center",justifyContent:"center"}}>
+           <IdentityBadge verified={card.identityVerified===true} ink={finish.text}/>
           </Pressable>
         </View>
         <View style={{alignItems:"center",gap:7,position:"relative"}}>
