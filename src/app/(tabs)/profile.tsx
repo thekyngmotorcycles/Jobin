@@ -182,6 +182,7 @@ export default function Profile() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Explorar fondos JCard Premium" onPress={()=>router.push("/jcard-backgrounds")} style={{minHeight:44,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8,borderWidth:1,borderColor:colors.line,borderRadius:12,paddingHorizontal:12}}><Ionicons name="color-palette-outline" size={19} color={colors.ink}/><Text style={{fontSize:14,fontWeight:"600",color:colors.ink}}>Explorar fondos JCard Premium</Text></Pressable>
           <JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
 
