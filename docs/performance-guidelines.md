@@ -23,5 +23,5 @@ Estas reglas se aplican a todo fondo, banner, foto, miniatura, sello o textura n
 ## Estado
 - Skeleton inmediato y caché del workspace por usuario: implementados.
 - Texturas premium y miniaturas: memoización/caché implementadas.
-- Miniaturas: se solicita una variante Supabase Storage de 320 px para URLs públicas compatibles; si la transformación no está disponible se recupera la imagen original. Validar en dispositivo y plan Supabase.\n- Compresión y redimensionado antes de subir: pendiente; requiere comprobar dependencias y políticas de almacenamiento antes de activar.
+- Miniaturas: se solicita una variante Supabase Storage de 320 px para URLs públicas compatibles; si la transformación no está disponible se recupera la imagen original. Validar en dispositivo y plan Supabase.\n- Compresión de selección de imágenes empresariales: aplicada mediante Expo Image Picker, calidad 0.75 para banner y 0.65 para avatar (no garantiza reducción de dimensiones ni del peso final para todos los formatos).\n- Redimensionado real antes de subir: pendiente. Requiere integrar y probar un manipulador nativo de imágenes y una nueva compilación de APK; no introducirlo en la APK actual sin autorización.
 - Instrumentación de tiempos de render y red: pendiente.
