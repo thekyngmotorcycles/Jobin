@@ -50,6 +50,7 @@ function Navigation() {
  <Stack.Screen name="jcard" options={{title:"JCard"}}/>
  <Stack.Screen name="jcard-backgrounds" options={{title:"Apariencia"}}/>
  <Stack.Screen name="jcard-business-backgrounds" options={{title:"Apariencia de negocio"}}/>
+ <Stack.Screen name="jcard-business-edit" options={{title:"JCard de negocio"}}/>
  <Stack.Screen name="safety" options={{title:"Seguridad y apelaciones"}}/>
  <Stack.Screen name="safety-review" options={{title:"Revisión de seguridad"}}/>
  <Stack.Screen name="terms" options={{title:"Términos · Borrador"}}/>
