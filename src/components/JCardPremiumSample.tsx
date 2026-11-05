@@ -1,17 +1,24 @@
 import {View,Text} from "react-native";
+import {useTheme} from "../state/ThemeProvider";
+import {jcardTokens} from "../theme/jcard";
 import QRCode from "react-native-qrcode-svg";
 import {JCardPremiumTexture} from "./JCardPremiumTexture";
 import {getPremiumBackground,JCARD_PREMIUM_QR_COLORS,type JCardPremiumBackgroundId} from "../theme/jcard-premium-backgrounds";
 /** Illustrative sample, never the user's actual JCard or a functional QR code. */
 export function JCardPremiumSample({id,width=310}:{id:JCardPremiumBackgroundId;width?:number}){
+ const {theme}=useTheme();
  const t=getPremiumBackground(id);if(!t)return null;
+ const original=jcardTokens(theme,"base");
+ const ink=id==="original"?original.text:t.ink;
+ const base=id==="original"?original.start:t.base;
+ const line=id==="original"?original.line:t.line;
  const height=width*1.22;const scale=width/310;
- const label=(text:string,size:number,weight:"400"|"600"|"700"="400")=><Text style={{color:t.ink,fontSize:size*scale,fontWeight:weight}}>{text}</Text>;
+ const label=(text:string,size:number,weight:"400"|"600"|"700"="400")=><Text style={{color:ink,fontSize:size*scale,fontWeight:weight}}>{text}</Text>;
  return <View accessibilityLabel={"Ejemplo de JCard con fondo "+t.name} style={{width,height,borderRadius:18,overflow:"hidden",alignSelf:"center"}}>
   <View style={{position:"absolute",top:0,left:0}} pointerEvents="none"><JCardPremiumTexture id={id} width={width} height={height}/></View>
   <View style={{flex:1,padding:18*scale,justifyContent:"space-between"}}>
    <View style={{flexDirection:"row",alignItems:"flex-start",justifyContent:"space-between"}}>
-    <View style={{width:58*scale,height:58*scale,borderRadius:30*scale,backgroundColor:t.ink,alignItems:"center",justifyContent:"center"}}><Text style={{fontSize:20*scale,color:t.base,fontWeight:"700"}}>JS</Text></View>
+    <View style={{width:58*scale,height:58*scale,borderRadius:30*scale,backgroundColor:ink,alignItems:"center",justifyContent:"center"}}><Text style={{fontSize:20*scale,color:base,fontWeight:"700"}}>JS</Text></View>
     <View style={{alignItems:"center"}}>{label("JCard",26,"700")}{label("Personal",13)}</View>
     <View style={{padding:3*scale,backgroundColor:JCARD_PREMIUM_QR_COLORS.paper,borderRadius:5*scale}}><QRCode value="https://example.com/jcard-preview" size={52*scale} color={JCARD_PREMIUM_QR_COLORS.ink} backgroundColor={JCARD_PREMIUM_QR_COLORS.paper}/></View>
    </View>
@@ -22,9 +29,9 @@ export function JCardPremiumSample({id,width=310}:{id:JCardPremiumBackgroundId;w
     {label("DISPONIBLE",12,"700")}
     {label("contacto@ejemplo.com",12)}
    </View>
-   <View style={{borderTopWidth:1,borderColor:t.line,paddingTop:12*scale,flexDirection:"row",justifyContent:"space-around"}}>
+   <View style={{borderTopWidth:1,borderColor:line,paddingTop:12*scale,flexDirection:"row",justifyContent:"space-around"}}>
     <View style={{alignItems:"center",gap:5}}>{label("Idiomas",12,"600")}{label("◉ ES    ◉ EN",13)}</View>
-    <View style={{width:1,backgroundColor:t.line}}/>
+    <View style={{width:1,backgroundColor:line}}/>
     <View style={{alignItems:"center",gap:5}}>{label("Otras profesiones",12,"600")}{label("◇    ◇",18)}</View>
    </View>
   </View>
