@@ -8,12 +8,13 @@ export async function pickBusinessPhotos(max:number):Promise<PickedPhoto[]>{
  if(photos.length>max||photos.some(p=>p.size>10485760||p.size===0||!["image/jpeg","image/png","image/webp"].includes(p.mimeType)))throw Error("Selecciona hasta "+max+" fotos JPG, PNG o WEBP, máximo 10 MB por foto.");
  return photos;
 }
-export async function pickBusinessGalleryPhoto():Promise<PickedPhoto|null>{
+/** Use the existing native picker encoder; avoids adding a native dependency to the current APK. */
+export async function pickBusinessGalleryPhoto(slot:"banner"|"avatar"="banner"):Promise<PickedPhoto|null>{
  const picker=await import("expo-image-picker");
- const result=await picker.launchImageLibraryAsync({mediaTypes:["images"],allowsMultipleSelection:false,quality:0.7});
+ const result=await picker.launchImageLibraryAsync({mediaTypes:["images"],allowsMultipleSelection:false,quality:slot==="avatar"?0.65:0.75});
  if(result.canceled||!result.assets.length)return null;
  const photo=result.assets[0];
- const mimeType=photo.mimeType??(photo.uri.toLowerCase().endsWith(".png")?"image/png":"image/jpeg");
+ const mimeType=photo.mimeType??(photo.uri.toLowerCase().endsWith(".png")?"image/png":photo.uri.toLowerCase().endsWith(".webp")?"image/webp":"image/jpeg");
  const response=await fetch(photo.uri);
  if(!response.ok)throw Error("No se pudo leer la imagen seleccionada.");
  const bytes=await response.arrayBuffer();
