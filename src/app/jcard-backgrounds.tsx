@@ -1,7 +1,7 @@
 import {JCARD_FINISH_BACKGROUNDS} from "../theme/jcard-finish-backgrounds";
 import {JCARD_CLASSIC_BACKGROUNDS,JCARD_NO_BACKGROUND} from "../theme/jcard-classic-backgrounds";
 import {useEffect,useRef,useState} from "react";
-import {Button,Alert} from "react-native";
+import {Alert} from "react-native";
 import {appearanceOwner,readJCardAppearance,saveJCardAppearance} from "../lib/jcard-appearance";
 import {ScrollView,Pressable,Text,View,useWindowDimensions} from "react-native";
 import {Ionicons} from "@expo/vector-icons";
@@ -35,7 +35,7 @@ export default function JCardBackgroundGallery({side="personal"}:{side?:"persona
    <View onLayout={event=>{previewTop.current=event.nativeEvent.layout.y;}} style={{alignItems:"center",paddingVertical:12,borderRadius:18,backgroundColor:colors.card}}>
     <JCardPremiumSample id={selected} width={Math.min(width-64,340)} side={side}/>
    </View>
-   <Button title={saving?"Guardando...":"Aplicar a mi JCard"} disabled={saving} onPress={()=>void apply()}/>
+   <Pressable accessibilityRole="button" accessibilityLabel="Aplicar fondo a mi JCard" accessibilityState={{disabled:saving}} disabled={saving} onPress={()=>void apply()} style={{alignSelf:"center",minWidth:136,minHeight:44,paddingHorizontal:28,justifyContent:"center",alignItems:"center",borderRadius:12,borderWidth:1,borderColor:colors.line,backgroundColor:colors.card,marginVertical:10}}><Text style={{fontSize:15,fontWeight:"600",color:colors.ink}}>{saving?"Guardando…":"Aplicar"}</Text></Pressable>
    <View accessibilityRole="tablist" style={{flexDirection:"row",gap:8}}>
     {GROUPS.map((item,index)=><Pressable key={item.label} accessibilityRole="tab" accessibilityState={{selected:group===index}} accessibilityLabel={item.label} onPress={()=>{setGroup(index);if(item.items.length)setSelected(item.items[0].id);}} style={{flex:1,minHeight:54,alignItems:"center",justifyContent:"center",gap:3,borderWidth:1,borderRadius:12,borderColor:group===index?colors.ink:colors.line,backgroundColor:group===index?colors.card:colors.paper}}>
      <Ionicons name={item.icon} size={22} color={group===index?colors.ink:colors.muted}/>
