@@ -3,7 +3,7 @@ import {readJCardAppearance} from "../lib/jcard-appearance";
 import {getPremiumBackground,type JCardPremiumBackgroundId} from "../theme/jcard-premium-backgrounds";
 import {JCardPremiumTexture} from "./JCardPremiumTexture";
 import {BUSINESS_MEDAL_COLORS} from "../theme/business-medals";
-import { memo, useEffect, useId, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useId, useRef, useState } from "react";
 import { router } from "expo-router";
 import { Animated, Image, Linking, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -261,7 +261,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const [contact,setContact]=useState<{email:string|null;phone:string|null;details?:PersonalContactDetails}>({email:null,phone:null});
  useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void Promise.all([loadPublicContact(ownerId),loadVisiblePersonalContactDetails(ownerId)]).then(([value,details])=>{if(live)setContact({...value,details});}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
  const [appearance,setAppearance]=useState<JCardPremiumBackgroundId>("original");
- useFocusEffect(memoAppearanceFocus(ownerId,setAppearance));
+ useFocusEffect(useCallback(()=>{let live=true;if(ownerId)void readJCardAppearance(ownerId).then(id=>{if(live)setAppearance(id);}).catch(()=>{});return()=>{live=false;};},[ownerId]));
  const [back,setBack]=useState(initialSide==="business"),[qrOpen,setQrOpen]=useState(false);
  const cardHeight = 450;
  const rotation=useRef(new Animated.Value(initialSide==="business"?180:0)).current;
@@ -315,4 +315,3 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  </>;
 }
 
-function memoAppearanceFocus(owner:string|undefined,update:(id:JCardPremiumBackgroundId)=>void){return ()=>{let live=true;if(owner)void readJCardAppearance(owner).then(id=>{if(live)update(id);}).catch(()=>{});return()=>{live=false;};};}
