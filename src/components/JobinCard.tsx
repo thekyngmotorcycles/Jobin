@@ -1,3 +1,4 @@
+import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import {useFocusEffect} from "expo-router";
 import {readJCardAppearance} from "../lib/jcard-appearance";
 import {getPremiumBackground,JCARD_PREMIUM_TRANSPARENT,type JCardPremiumBackgroundId} from "../theme/jcard-premium-backgrounds";
@@ -184,7 +185,7 @@ function BusinessAward({label,icon,level,finish,surface}:{label:string;icon:Reac
   <Text numberOfLines={1} style={{fontSize:10,color:level===0?surface.pending:tone,letterSpacing:-1}}>{level===0?"☆☆☆":"★".repeat(level)+"☆".repeat(3-level)}</Text>
  </View>;
 }
-export function BusinessFace({card,theme,appearance="original",contact,onQr,onShare,canEditMedia=false,onEditMedia}:{card:CardData;theme:ThemeName;appearance?:JCardPremiumBackgroundId;contact?:{email:string|null;phone:string|null};onQr?:()=>void;onShare?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void}){
+export function BusinessFace({card,theme,appearance="original",contact,onQr,onShare,canEditMedia=false,onEditMedia,visibility=DEFAULT_JCARD_VISIBILITY}:{card:CardData;theme:ThemeName;appearance?:JCardPremiumBackgroundId;contact?:{email:string|null;phone:string|null};onQr?:()=>void;onShare?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void;visibility?:typeof DEFAULT_JCARD_VISIBILITY}){
  const b=card.business;const premium=appearance==="original"?null:getPremiumBackground(appearance);const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:premium?.base??businessCardPaper.background,end:premium?.base??businessCardPaper.background,text:premium?.ink??businessCardPaper.ink,secondary:premium?.ink??businessCardPaper.secondary,line:premium?.line??businessCardPaper.border,sealFill:businessCardPaper.muted};
  const [artSize,setArtSize]=useState({width:0,height:0});
  const surface=businessInformationSurface(finish.start);
@@ -237,8 +238,8 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
     </View>
    </View>
    <View style={{flex:1,justifyContent:"space-evenly",paddingVertical:7,minHeight:0,alignSelf:"stretch"}}>\n    <View style={{gap:5,alignSelf:"stretch"}}>
-     {[b?.email,b?.emailSecondary].filter(Boolean).map((email,i)=><Pressable key={"business-email"+i} accessibilityRole="link" accessibilityLabel={"Enviar correo a "+email} onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>{})} style={{flexDirection:"row",alignItems:"center",gap:6,alignSelf:"stretch"}}><Ionicons name="mail-outline" size={14} color={businessIconInk}/><Text numberOfLines={1} ellipsizeMode="tail" style={{flex:1,fontSize:11,color:businessContactInk}}>{email}</Text></Pressable>)}
-     {!!(b?.phone||b?.phoneSecondary)&&<View style={{flexDirection:"row",alignItems:"center",gap:4,alignSelf:"stretch"}}><Ionicons name="call-outline" size={14} color={businessIconInk}/>{[{number:b?.phone,label:b?.phoneLabel},{number:b?.phoneSecondary,label:b?.phoneSecondaryLabel}].filter(x=>!!x.number).map((item,i)=><View key={"business-phone"+i} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:3}}>{i>0&&<View style={{height:16,width:1,backgroundColor:finish.line,marginHorizontal:2}}/>}<Pressable accessibilityRole="link" style={{flex:1}} onPress={()=>void Linking.openURL("tel:"+item.number!.replace(/[^+\d]/g,"")).catch(()=>{})}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontSize:11,color:businessContactInk}}>{item.label?item.label+" ":""}{item.number}</Text></Pressable></View>)}</View>}
+     {(visibility.business_show_email?[b?.email,b?.emailSecondary]:[]).filter(Boolean).map((email,i)=><Pressable key={"business-email"+i} accessibilityRole="link" accessibilityLabel={"Enviar correo a "+email} onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>{})} style={{flexDirection:"row",alignItems:"center",gap:6,alignSelf:"stretch"}}><Ionicons name="mail-outline" size={14} color={businessIconInk}/><Text numberOfLines={1} ellipsizeMode="tail" style={{flex:1,fontSize:11,color:businessContactInk}}>{email}</Text></Pressable>)}
+     {visibility.business_show_phone&&!!(b?.phone||b?.phoneSecondary)&&<View style={{flexDirection:"row",alignItems:"center",gap:4,alignSelf:"stretch"}}><Ionicons name="call-outline" size={14} color={businessIconInk}/>{[{number:b?.phone,label:b?.phoneLabel},{number:b?.phoneSecondary,label:b?.phoneSecondaryLabel}].filter(x=>!!x.number).map((item,i)=><View key={"business-phone"+i} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:3}}>{i>0&&<View style={{height:16,width:1,backgroundColor:finish.line,marginHorizontal:2}}/>}<Pressable accessibilityRole="link" style={{flex:1}} onPress={()=>void Linking.openURL("tel:"+item.number!.replace(/[^+\d]/g,"")).catch(()=>{})}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontSize:11,color:businessContactInk}}>{item.label?item.label+" ":""}{item.number}</Text></Pressable></View>)}</View>}
      {!!b?.location&&<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="location-outline" size={15} color={businessIconInk}/><Text numberOfLines={2} style={{flex:1,fontSize:11,color:businessContactInk}}>{b.location}</Text></View>}
    </View>
     {!!b?.services?.length&&<View style={{alignSelf:"stretch",alignItems:"center",justifyContent:"center",paddingHorizontal:8,marginTop:4}}><Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:10,lineHeight:14,textAlign:"center",color:businessContactInk}}>{b.services.join(" · ")}</Text></View>}
@@ -267,11 +268,16 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const [appearance,setAppearance]=useState<JCardPremiumBackgroundId>("original");
  const [businessAppearance,setBusinessAppearance]=useState<JCardPremiumBackgroundId>("original");
  useFocusEffect(useCallback(()=>{let live=true;if(ownerId)void Promise.all([readJCardAppearance(ownerId),readJCardAppearance(ownerId,"business")]).then(([personal,business])=>{if(live){setAppearance(personal);setBusinessAppearance(business);}}).catch(()=>{});return()=>{live=false;};},[ownerId]));
+ const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
+ useFocusEffect(useCallback(()=>{let live=true;if(ownerId)void readJCardVisibility(ownerId).then(v=>{if(live)setVisibility(v);}).catch(()=>{});return()=>{live=false;};},[ownerId]));
  const [back,setBack]=useState(initialSide==="business"),[qrOpen,setQrOpen]=useState(false);
+ const canFlip=visibility.personal_enabled&&visibility.business_enabled;
+ const activeBusiness=!visibility.personal_enabled&&visibility.business_enabled;
+ useEffect(()=>{if(!canFlip){setBack(activeBusiness);angle.current=activeBusiness?180:0;rotation.stopAnimation();rotation.setValue(angle.current);}},[canFlip,activeBusiness,rotation]);
  const cardHeight = 450;
  const rotation=useRef(new Animated.Value(initialSide==="business"?180:0)).current;
  const angle=useRef(initialSide==="business"?180:0);
- const rotate=(direction:number)=>{const next=angle.current+direction*180;angle.current=next;setBack(v=>!v);rotation.stopAnimation();Animated.timing(rotation,{toValue:next,useNativeDriver:true,duration:420}).start(({finished})=>{if(finished&&Math.abs(angle.current)>=1800){angle.current=angle.current%360;rotation.setValue(angle.current);}});};
+ const rotate=(direction:number)=>{if(!canFlip)return;const next=angle.current+direction*180;angle.current=next;setBack(v=>!v);rotation.stopAnimation();Animated.timing(rotation,{toValue:next,useNativeDriver:true,duration:420}).start(({finished})=>{if(finished&&Math.abs(angle.current)>=1800){angle.current=angle.current%360;rotation.setValue(angle.current);}});};
  const toggle=()=>rotate(1);
  const responder=useRef(PanResponder.create({onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>28&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,onPanResponderRelease:(_,g)=>{if(Math.abs(g.dx)>65)toggleRef.current(g.dx<0?1:-1);}})).current;
  const toggleRef=useRef(rotate);toggleRef.current=rotate;
@@ -286,21 +292,21 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  };
  return <>
   <View style={{width:"100%",maxWidth:520,alignSelf:"center"}}>
-   <View {...responder.panHandlers}>
+   <View {...(canFlip?responder.panHandlers:{})}>
    <Animated.View pointerEvents={back?"none":"auto"} style={{height:cardHeight,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:frontRotate}]}}>
-    <CardFace card={card} theme={cardTheme} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>
+    {visibility.personal_enabled&&<CardFace card={card} theme={cardTheme} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>}
    </Animated.View>
    <Animated.View pointerEvents={back?"auto":"none"} style={{position:"absolute",top:0,left:0,right:0,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:backRotate}]}}>
-    <View style={{height:cardHeight}}><BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia}/></View>
+    <View style={{height:cardHeight}}>{visibility.business_enabled&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} visibility={visibility}/>}</View>
    </Animated.View>
 
    </View>
-   <Pressable accessibilityRole="button" accessibilityLabel={back?"Girar JCard a cara personal":"Girar JCard para ver el reverso"} accessibilityHint="Toca o desliza horizontalmente la tarjeta para girarla" onPress={toggle} style={{alignSelf:"center",width:"68%",height:31,justifyContent:"center",alignItems:"center",marginTop:1}}>
+   {canFlip&&<Pressable accessibilityRole="button" accessibilityLabel={back?"Girar JCard a cara personal":"Girar JCard para ver el reverso"} accessibilityHint="Toca o desliza horizontalmente la tarjeta para girarla" onPress={toggle} style={{alignSelf:"center",width:"68%",height:31,justifyContent:"center",alignItems:"center",marginTop:1}}>
     <View pointerEvents="none" style={{position:"absolute",top:0,width:"90%",height:12,borderRadius:100,backgroundColor:theme==="dark"?jcardCommon.flipShadowDark:jcardCommon.flipShadow,transform:[{scaleX:0.92}]}}/>
     <View pointerEvents="none" style={{width:86,height:21,borderRadius:30,alignItems:"center",justifyContent:"center",backgroundColor:theme==="dark"?jcardCommon.flipSurfaceDark:jcardCommon.flipSurface,borderWidth:1,borderColor:theme==="dark"?jcardCommon.flipOutlineDark:jcardCommon.flipOutline}}>
       <Ionicons name="sync-outline" size={16} color={theme==="dark"?jcardCommon.flipInkDark:jcardCommon.editInk}/>
     </View>
-   </Pressable>
+   </Pressable>}
    {showOwnerActions&&<View style={{flexDirection:"row",gap:10,paddingTop:10}}>
     <Pressable accessibilityRole="button" accessibilityLabel={back?"Compartir JCard de negocio":"Compartir JCard personal"} onPress={()=>void share(back?"business":"personal")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,backgroundColor:colors.ink}}>
       <Ionicons name="share-social-outline" size={20} color={colors.paper}/><Text style={{color:colors.paper,fontWeight:"700"}}>Compartir</Text>
