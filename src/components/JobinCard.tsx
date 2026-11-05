@@ -184,7 +184,7 @@ function BusinessAward({label,icon,level,finish}:{label:string;icon:React.Compon
   <Text numberOfLines={1} style={{fontSize:10,color:tone,letterSpacing:-1}}>{level===0?"☆☆☆":"★".repeat(level)+"☆".repeat(3-level)}</Text>
  </View>;
 }
-function BusinessFace({card,theme,appearance="original",contact,onQr,onShare,canEditMedia=false,onEditMedia}:{card:CardData;theme:ThemeName;appearance?:JCardPremiumBackgroundId;contact?:{email:string|null;phone:string|null};onQr?:()=>void;onShare?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void}){
+export function BusinessFace({card,theme,appearance="original",contact,onQr,onShare,canEditMedia=false,onEditMedia}:{card:CardData;theme:ThemeName;appearance?:JCardPremiumBackgroundId;contact?:{email:string|null;phone:string|null};onQr?:()=>void;onShare?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void}){
  const b=card.business;const premium=appearance==="original"?null:getPremiumBackground(appearance);const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:premium?.base??businessCardPaper.background,end:premium?.base??businessCardPaper.background,text:premium?.ink??businessCardPaper.ink,secondary:premium?.ink??businessCardPaper.secondary,line:premium?.line??businessCardPaper.border,sealFill:businessCardPaper.muted};
  const [artSize,setArtSize]=useState({width:0,height:0});
  const company=!!b?.name.trim();const businessName=(company?b!.name:card.name).trim().slice(0,30);const [businessNameWidth,setBusinessNameWidth]=useState(180);const nameFontSize=Math.max(14,Math.min(21,Math.floor(businessNameWidth/Math.max(8,businessName.length)*1.65)));const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
