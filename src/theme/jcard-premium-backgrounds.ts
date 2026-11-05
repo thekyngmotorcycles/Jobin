@@ -9,7 +9,6 @@ export const JCARD_PREMIUM_BACKGROUNDS=[
  {id:"champagne-arc",name:"Champagne Arc",base:"#E9DFCB",ink:"#342D26",line:"#B39C73",pattern:"arc",shadow:.15},
  {id:"graphite-wave",name:"Graphite Wave",base:"#292B30",ink:"#F4F3EF",line:"#83878D",pattern:"wave",shadow:.27},
  {id:"ivory-contour",name:"Ivory Contour",base:"#F4EFE4",ink:"#34322D",line:"#A9A49A",pattern:"contour",shadow:.12},
- {id:"midnight-grid",name:"Midnight Grid",base:"#111C2A",ink:"#F4F4F1",line:"#70879B",pattern:"grid",shadow:.26},
  {id:"rose-quartz",name:"Rose Quartz",base:"#EEDFE1",ink:"#392E33",line:"#B99BA4",pattern:"fan",shadow:.13},
  {id:"emerald-satin",name:"Emerald Satin",base:"#143A32",ink:"#F5F3EB",line:"#71998C",pattern:"satin",shadow:.27},
  {id:"silver-fog",name:"Silver Fog",base:"#DEE1E2",ink:"#282D32",line:"#9AA4AA",pattern:"mist",shadow:.16},
