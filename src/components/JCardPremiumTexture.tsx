@@ -12,7 +12,6 @@ function PremiumTexture({id,width=160,height=210}:{id:JCardPremiumBackgroundId;w
    case "arc":return `M ${-90+n} 200 A ${130+n} ${130+n} 0 0 1 180 -25`;
    case "wave":return `M -20 ${n*1.8} Q 65 ${n*1.8-65} 180 ${n*1.8}`;
    case "contour":return `M ${-35+n} 230 C ${190+n} 125 ${-110+n} 80 ${140+n} -20`;
-   case "grid":return `M ${n} 0 V 230 M 0 ${n*1.5} H 180`;
    case "fan":return `M 15 220 Q ${-65+n*2} 75 ${n*2} -20`;
    case "satin":return `M ${-80+n} 230 C ${100+n} 155 ${-10+n} 70 ${160+n} -20`;
    case "mist":return `M -30 ${n*1.7} C 40 ${n*1.7-20} 110 ${n*1.7+20} 190 ${n*1.7-15}`;
