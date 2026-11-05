@@ -52,8 +52,8 @@ export default function Professional() {
  useEffect(()=>{if(!w)return;setName(w.card.name);setHandle(w.card.handle);setCity(w.profile.city||"");setRegion(w.profile.region||"");setAvailability(w.card.status);setLanguages(w.card.languages.map(l=>({name:l.name,fluency:String(l.fluency)})));},[w]);
  const input={color:colors.ink,borderColor:colors.line,borderWidth:1,borderRadius:10,padding:12,minHeight:44};
  function choose(code:string){setProfession(code);setSpecialties(w?.professions.find(p=>p.profession_code===code)?.specialties??[]);const pp=w?.professions.find(p=>p.profession_code===code);setTraining(pp?.training_status??"graduado");setInstitution(pp?.institution_id??null);}
- const sectionRow=(id:Section,title:string,subtitle:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}>
-  <Ionicons name={icon} size={25} color={colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>{title}</Text><Text style={s.muted}>{subtitle}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={colors.muted}/>
+ const sectionRow=(id:Section,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}>
+  <Ionicons name={icon} size={25} color={colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>{title}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={colors.muted}/>
  </Pressable>;
  const save=()=>void action.run(async()=>{
   const legalName=name.trim().replace(/\s+/g," ");
@@ -70,7 +70,7 @@ export default function Professional() {
    {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
    <View style={{gap:6}}>
     <View onLayout={e=>{positions.current.identity=e.nativeEvent.layout.y;}} style={s.panel}>
-     {sectionRow("identity","Datos principales","Nombre, usuario, ubicación y disponibilidad","person-outline")}
+     {sectionRow("identity","Datos principales","person-outline")}
      {section==="identity"&&<View style={{gap:12,paddingBottom:12}}>
       <Text style={s.muted}>Nombre legal</Text><TextInput accessibilityLabel="Nombre legal" value={name} maxLength={30} onChangeText={value=>setName(value.replace(/[^\p{L}\p{M} \u0027\u2019-]/gu,"").slice(0,30))} style={input}/>
       <Text style={s.muted}>Nombre de usuario</Text><TextInput accessibilityLabel="Nombre de usuario" value={handle} onChangeText={setHandle} autoCapitalize="none" style={input}/>
@@ -82,7 +82,7 @@ export default function Professional() {
      </View>}
     </View>
     <View onLayout={e=>{positions.current.languages=e.nativeEvent.layout.y;}} style={s.panel}>
-     {sectionRow("languages","Idiomas","Añade idiomas y selecciona tu nivel","globe-outline")}
+     {sectionRow("languages","Idiomas","globe-outline")}
      {section==="languages"&&<View style={{gap:16,paddingBottom:12}}>
       <Text style={s.muted}>El aro indica visualmente tu nivel. Se guarda como una puntuación compatible con tu JCard actual.</Text>
       {languages.map((l,index)=><View key={index} style={{gap:12,padding:14,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
@@ -100,7 +100,7 @@ export default function Professional() {
      </View>}
     </View>
     {w.card.accountType==="personal"&&<View onLayout={e=>{positions.current.professions=e.nativeEvent.layout.y;}} style={s.panel}>
-     {sectionRow("professions","Profesiones y formación","Oficios, estudios y verificación","school-outline")}
+     {sectionRow("professions","Profesiones y formación","school-outline")}
      {section==="professions"&&<View style={{gap:14,paddingBottom:12}}>
       <Text style={s.muted}>Puedes declarar tus profesiones sin un límite global. Una es principal y las demás secundarias. Declarar una profesión no verifica tus credenciales: los certificados se revisan por separado.</Text>
       {w.professions.map(p=><View key={p.id} style={{gap:10,borderWidth:1,borderColor:colors.line,borderRadius:12,padding:12}}>
@@ -132,7 +132,7 @@ export default function Professional() {
      </View>}
     </View>}
     <View onLayout={e=>{positions.current.privacy=e.nativeEvent.layout.y;}} style={s.panel}>
-     {sectionRow("privacy","Privacidad de contacto","Decide si muestras correo y teléfono","lock-closed-outline")}
+     {sectionRow("privacy","Privacidad de contacto","lock-closed-outline")}
      {section==="privacy"&&<View style={{gap:18,paddingBottom:12}}>
       <Text style={s.muted}>Ambos datos permanecen ocultos por defecto.</Text>
       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showEmail}} onPress={()=>setShowEmail(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={showEmail?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar correo en mi JCard</Text></Pressable>
