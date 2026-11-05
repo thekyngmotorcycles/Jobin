@@ -85,7 +85,7 @@ export default function Profile() {
   }
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address:"", contact:"" });
   const [notice, setNotice] = useState("");
-  const workspace = useProfessionalData(loadWorkspace);
+  const workspace = useProfessionalData(loadWorkspace,true);
   useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void identityVerified(id).then(v=>{if(live)setVerifiedIdentity(v);}).catch(()=>{if(live)setVerifiedIdentity(false);});return()=>{live=false;};},[workspace.data?.card.id]);
   const professionCatalog=useProfessionalData(loadCatalog);
   const [showEmploymentProfessionPicker,setShowEmploymentProfessionPicker]=useState(false);
