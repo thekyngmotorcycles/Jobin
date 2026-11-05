@@ -12,4 +12,5 @@ function Thumbnail({uri,label,style}:{uri?:string;label:string;style?:StyleProp<
   {!!uri&&!failed&&<Image source={{uri,cache:"force-cache"}} resizeMode="cover" accessibilityLabel={label} onLoad={()=>setLoaded(true)} onError={()=>setFailed(true)} style={[StyleSheet.absoluteFill,{opacity:loaded?1:0}]}/>}
  </View>;
 }
-\nexport const MediaThumbnail=memo(Thumbnail);\n
+
+export const MediaThumbnail=memo(Thumbnail);
