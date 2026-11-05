@@ -51,3 +51,11 @@ export function jcardTokens(theme: ThemeName, tier: JCardTier) {
   // Only the unrated/base card switches between black and white.
   return theme === "dark" ? finishes.dark.base : finishes.light.base;
 }
+
+/** Opaque surfaces with guaranteed readable foreground for business ratings and badges. */
+export const BUSINESS_INFORMATION_SURFACES={light:"#FFFFFF",dark:"#202124",lightInk:"#202124",darkInk:"#FFFFFF",lightBorder:"#74777D",darkBorder:"#9EA2A8",pendingLight:"#43464C",pendingDark:"#DADDE1"} as const;
+export function businessInformationSurface(background:string){
+ const t=BUSINESS_INFORMATION_SURFACES;
+ const dark=contrastRatio(t.darkInk,background)>=4.5;
+ return {fill:dark?t.dark:t.light,ink:dark?t.darkInk:t.lightInk,border:dark?t.darkBorder:t.lightBorder,pending:dark?t.pendingDark:t.pendingLight};
+}
