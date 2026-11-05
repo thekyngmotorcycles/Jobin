@@ -22,7 +22,7 @@ export default function TabLayout(){
  const {width}=useWindowDimensions();const desktop=Platform.OS==="web"&&width>=1100;const pathname=usePathname();
  const nav=(name:string,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=> <Pressable key={name} accessibilityRole="link" onPress={()=>router.push(name as never)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:14,paddingHorizontal:16,borderRadius:12,backgroundColor:pathname===name?colors.line:colors.transparent}}><Ionicons name={icon} size={22} color={colors.ink}/><Text style={{fontSize:15,color:colors.ink,fontWeight:pathname===name?"700":"500"}}>{title}</Text></Pressable>;
  const tabs=<Tabs initialRouteName="videos" screenOptions={{
-  headerShown:false,tabBarShowLabel:false,tabBarActiveTintColor:colors.navIcon,tabBarInactiveTintColor:colors.navIcon,
+  headerShown:false,tabBarShowLabel:false,tabBarActiveTintColor:colors.ink,tabBarInactiveTintColor:colors.muted,
   tabBarHideOnKeyboard:true,tabBarItemStyle:{minHeight:44,justifyContent:"center",alignItems:"center"},tabBarBackground:()=> desktop?null:<NavigationFade/>,
   tabBarStyle:{display:desktop?"none":"flex",position:"absolute",backgroundColor:colors.transparent,borderTopWidth:0,elevation:0,shadowOpacity:0,overflow:"visible",height:NAVIGATION_ROW_HEIGHT+inset.bottom,paddingTop:5,paddingBottom:Math.max(5,inset.bottom)},
   tabBarIconStyle:{height:44,width:44,alignItems:"center",justifyContent:"center"},
@@ -30,7 +30,7 @@ export default function TabLayout(){
   <Tabs.Screen name="create" options={{href:null}}/>
   {routes.map(route=><Tabs.Screen key={route.name} name={route.name} options={{
    title:route.title,tabBarAccessibilityLabel:route.title,tabBarButtonTestID:"tab-"+route.name,
-   tabBarIcon:({color,focused})=><View style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}><JobinTabIcon name={route.name} focused={focused} size={width<375?23:25} color={color}/>{route.name==="inbox"&&unreadInbox>0&&<View style={{position:"absolute",top:-3,right:-5}}><Ionicons name="heart" size={12} color={colors.reaction}/></View>}</View>,
+   tabBarIcon:({color,focused})=><View style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22,backgroundColor:focused?colors.line:colors.transparent}}><JobinTabIcon name={route.name} focused={focused} size={width<375?23:25} color={color}/>{route.name==="inbox"&&unreadInbox>0&&<View style={{position:"absolute",top:-3,right:-5}}><Ionicons name="heart" size={12} color={colors.reaction}/></View>}</View>,
   }}/>)}
  </Tabs>;
  if(!desktop)return tabs;
