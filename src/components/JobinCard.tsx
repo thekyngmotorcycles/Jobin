@@ -1,3 +1,7 @@
+import {useFocusEffect} from "expo-router";
+import {readJCardAppearance} from "../lib/jcard-appearance";
+import {getPremiumBackground,type JCardPremiumBackgroundId} from "../theme/jcard-premium-backgrounds";
+import {JCardPremiumTexture} from "./JCardPremiumTexture";
 import {BUSINESS_MEDAL_COLORS} from "../theme/business-medals";
 import { memo, useEffect, useId, useRef, useState } from "react";
 import { router } from "expo-router";
@@ -53,12 +57,14 @@ function languageDetails(name:string,fluency:number){
  const international=level?.code??(fluency<35?"A1–A2":fluency<55?"B1":fluency<75?"B2":fluency<95?"C1":"C2");
  return "Idioma: "+name+"\nNivel: "+languageLabel(fluency)+"\nReferencia internacional (MCER): "+international+".\nEl nivel es declarado por el usuario y no está verificado mediante examen.";
 }
-function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contact, employerLink }: { card: CardData; theme: ThemeName; expanded?: boolean; onEdit?: () => void; onQr?: () => void; onShare?: () => void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null }) {
+function CardFace({ card, theme, appearance="original", expanded = false, onEdit, onQr, onShare, contact, employerLink }: { card: CardData; theme: ThemeName; appearance?:JCardPremiumBackgroundId; expanded?: boolean; onEdit?: () => void; onQr?: () => void; onShare?: () => void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null }) {
   const { s, fs } = useUi();
   const { fontScale } = useWindowDimensions();
   const gradientId = "jcard" + useId().replace(/[^a-zA-Z0-9]/g, "");
   const shineId=gradientId+"shine";
-  const finish = {...jcardTokens(theme, jcardTier(card.rating, card.reviewCount)),start:businessCardPaper.background,end:businessCardPaper.background,text:businessCardPaper.ink,secondary:businessCardPaper.secondary,line:businessCardPaper.border,sealFill:businessCardPaper.muted,pendingFill:businessCardPaper.muted};
+  const premium=appearance==="original"?null:getPremiumBackground(appearance);
+  const finish = {...jcardTokens(theme, jcardTier(card.rating, card.reviewCount)),start:premium?.base??businessCardPaper.background,end:premium?.base??businessCardPaper.background,text:premium?.ink??businessCardPaper.ink,secondary:premium?.ink??businessCardPaper.secondary,line:premium?.line??businessCardPaper.border,sealFill:businessCardPaper.muted,pendingFill:businessCardPaper.muted};
+  const [artSize,setArtSize]=useState({width:0,height:0});
   const rating = displayedRating(card.rating, card.reviewCount);
   const embossInk=finish.text;
   const embossStrength=finish.start===finish.end?0.20:0.12;
@@ -72,7 +78,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contac
   const sealGap = sealCount > 8 ? 2 : 4;
   const bodySize = Math.max(12, fs(expanded ? 14 : 13));
   const lineStyle = { color:finish.text, fontSize:bodySize, lineHeight:bodySize * 1.5 };
-  return <View style={[s.panel, { flex:1, padding:0, gap:0, borderRadius:jcardLayout.radius, borderColor:finish.line, backgroundColor:finish.start, overflow:"hidden" }]}>
+  return <View onLayout={e=>{const {width,height}=e.nativeEvent.layout;setArtSize(prev=>prev.width===width&&prev.height===height?prev:{width,height});}} style={[s.panel, { flex:1, padding:0, gap:0, borderRadius:jcardLayout.radius, borderColor:finish.line, backgroundColor:finish.start, overflow:"hidden" }]}>
     <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" viewBox="0 0 400 650" preserveAspectRatio="none" accessible={false} pointerEvents="none">
       <Defs><LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
         <Stop offset="0%" stopColor={finish.start}/><Stop offset="100%" stopColor={finish.end}/>
@@ -85,6 +91,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contac
       {JCARD_BOTTOM_CURVES.map(({d,index:i})=><Path key={"bottom"+i} d={d} stroke={embossInk} strokeOpacity={embossStrength+(i%4)*0.018} strokeWidth={i%5===0?1.45:0.75} fill="none"/>)}
       <Path d="M-20 420 C105 250 225 300 420 95" stroke={embossInk} strokeOpacity={embossStrength*0.7} strokeWidth="2" fill="none"/>
     </Svg>
+    {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
     <View style={{ padding:jcardLayout.padding, gap:8, flex:1, justifyContent:"space-between" }}>
       <View style={{ paddingTop:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
@@ -253,6 +260,8 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const {theme}=useTheme();const {colors}=useUi();const {width}=useWindowDimensions();
  const [contact,setContact]=useState<{email:string|null;phone:string|null;details?:PersonalContactDetails}>({email:null,phone:null});
  useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void Promise.all([loadPublicContact(ownerId),loadVisiblePersonalContactDetails(ownerId)]).then(([value,details])=>{if(live)setContact({...value,details});}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
+ const [appearance,setAppearance]=useState<JCardPremiumBackgroundId>("original");
+ useFocusEffect(memoAppearanceFocus(ownerId,setAppearance));
  const [back,setBack]=useState(initialSide==="business"),[qrOpen,setQrOpen]=useState(false);
  const cardHeight = 450;
  const rotation=useRef(new Animated.Value(initialSide==="business"?180:0)).current;
@@ -274,7 +283,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
   <View style={{width:"100%",maxWidth:520,alignSelf:"center"}}>
    <View {...responder.panHandlers}>
    <Animated.View pointerEvents={back?"none":"auto"} style={{height:cardHeight,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:frontRotate}]}}>
-    <CardFace card={card} theme={cardTheme} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>
+    <CardFace card={card} theme={cardTheme} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>
    </Animated.View>
    <Animated.View pointerEvents={back?"auto":"none"} style={{position:"absolute",top:0,left:0,right:0,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:backRotate}]}}>
     <View style={{height:cardHeight}}><BusinessFace card={card} theme={cardTheme} contact={contact} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia}/></View>
@@ -305,3 +314,5 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
   </Modal>
  </>;
 }
+
+function memoAppearanceFocus(owner:string|undefined,update:(id:JCardPremiumBackgroundId)=>void){return ()=>{let live=true;if(owner)void readJCardAppearance(owner).then(id=>{if(live)update(id);}).catch(()=>{});return()=>{live=false;};};}
