@@ -1,10 +1,10 @@
-import { useId } from "react";
+import { memo, useId } from "react";
 import { StyleSheet,View } from "react-native";
 import Svg,{Defs,LinearGradient,Rect,Stop} from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../state/ThemeProvider";
 import { NAVIGATION_ROW_HEIGHT } from "../theme/navigation";
-export function NavigationFade(){
+function Fade(){
  const {colors}=useTheme();const inset=useSafeAreaInsets();const height=NAVIGATION_ROW_HEIGHT+inset.bottom+100;
  const center=(height-inset.bottom-NAVIGATION_ROW_HEIGHT/2)/height;
  const id="navigation"+useId().replace(/[^a-z0-9]/gi,"");
@@ -18,3 +18,5 @@ export function NavigationFade(){
   </LinearGradient></Defs><Rect width="100%" height="100%" fill={"url(#"+id+")"}/>
  </Svg></View>;
 }
+
+export const NavigationFade=memo(Fade);
