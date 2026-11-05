@@ -29,4 +29,5 @@ function PremiumTexture({id,width=160,height=210}:{id:JCardPremiumBackgroundId;w
   <Rect x="9" y="9" width="142" height="192" rx="7" stroke={t.line} strokeOpacity=".5" strokeWidth=".65" fill="none"/>
  </Svg>;
 }
-\nexport const JCardPremiumTexture=memo(PremiumTexture);\n
+
+export const JCardPremiumTexture=memo(PremiumTexture);
