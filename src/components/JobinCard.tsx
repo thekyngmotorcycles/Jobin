@@ -25,15 +25,17 @@ const wordmarkJ=WORDMARK_XML.replace('viewBox="0 0 1175 540"','viewBox="0 0 530 
 function jobinGlyph(color:string){return wordmarkJ.replace('currentColor',color);}
 
 /** Identity seal: subtle scalloped edge. Never show the J for an unverified account. */
-function IdentityBadge({verified,ink,contrast}:{verified:boolean;ink:string;contrast:string}){
+const IDENTITY_BADGE_CONTOUR=(()=>{
  const waves=12,points=120;
- const contour=Array.from({length:points+1},(_,i)=>{
+ return Array.from({length:points+1},(_,i)=>{
   const angle=i*2*Math.PI/points-Math.PI/2;
   const radius=11.1+0.65*Math.cos(waves*angle);
   return (i?"L":"M")+(13+radius*Math.cos(angle)).toFixed(2)+" "+(13+radius*Math.sin(angle)).toFixed(2);
  }).join(" ")+" Z";
+})();
+function IdentityBadge({verified,ink,contrast}:{verified:boolean;ink:string;contrast:string}){
  return <Svg width={25} height={25} viewBox="0 0 26 26" accessible={false}>
-  <Path d={contour} fill={verified?ink:"none"} stroke={ink} strokeWidth={verified?0.8:1.15} strokeDasharray={verified?undefined:"1.2 2.3"} strokeLinecap="round"/>
+  <Path d={IDENTITY_BADGE_CONTOUR} fill={verified?ink:"none"} stroke={ink} strokeWidth={verified?0.8:1.15} strokeDasharray={verified?undefined:"1.2 2.3"} strokeLinecap="round"/>
   {verified&&<Path d="M16.4 6.8C13.8 6.7 12.4 8.2 11.6 11.5L10.1 17.2C9.7 18.9 8.8 19.5 7.8 19.5C7 19.5 6.7 19 6.9 18.3C7.1 17.7 7.7 17.4 8.3 17.5" stroke={contrast} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>}
  </Svg>;
 }
