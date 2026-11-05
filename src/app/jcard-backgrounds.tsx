@@ -1,6 +1,8 @@
 import {JCARD_FINISH_BACKGROUNDS} from "../theme/jcard-finish-backgrounds";
 import {JCARD_CLASSIC_BACKGROUNDS,JCARD_NO_BACKGROUND} from "../theme/jcard-classic-backgrounds";
-import {useRef,useState} from "react";
+import {useEffect,useRef,useState} from "react";
+import {Button,Alert} from "react-native";
+import {appearanceOwner,readJCardAppearance,saveJCardAppearance} from "../lib/jcard-appearance";
 import {ScrollView,Pressable,Text,View,useWindowDimensions} from "react-native";
 import {Ionicons} from "@expo/vector-icons";
 import {useTheme} from "../state/ThemeProvider";
@@ -22,6 +24,10 @@ export default function JCardBackgroundGallery(){
  const previewTop=useRef(0);
  const showPreview=(id:JCardPremiumBackgroundId)=>{setSelected(id);requestAnimationFrame(()=>scrollRef.current?.scrollTo({y:previewTop.current,animated:true}));};
  const [selected,setSelected]=useState<JCardPremiumBackgroundId>("original");
+ const [owner,setOwner]=useState<string|null>(null);
+ const [saving,setSaving]=useState(false);
+ useEffect(()=>{let live=true;appearanceOwner().then(async id=>{const saved=await readJCardAppearance(id);if(live){setOwner(id);setSelected(saved);}}).catch(()=>{});return()=>{live=false;};},[]);
+ const apply=async()=>{if(!owner){Alert.alert("Inicia sesión","Debes iniciar sesión para guardar tu fondo.");return;}setSaving(true);try{await saveJCardAppearance(owner,selected);Alert.alert("JCard actualizada","El fondo se guardó en este dispositivo para tu cuenta.");}catch(e){Alert.alert("No se pudo guardar",e instanceof Error?e.message:"Inténtalo de nuevo.");}finally{setSaving(false);}};
  const columns=width>=700?4:2;
  const cell=Math.min(180,(width-48-(columns-1)*12)/columns);
  return <View style={{flex:1,backgroundColor:colors.paper}}>
@@ -29,6 +35,7 @@ export default function JCardBackgroundGallery(){
    <View onLayout={event=>{previewTop.current=event.nativeEvent.layout.y;}} style={{alignItems:"center",paddingVertical:12,borderRadius:18,backgroundColor:colors.card}}>
     <JCardPremiumSample id={selected} width={Math.min(width-64,340)}/>
    </View>
+   <Button title={saving?"Guardando...":"Aplicar a mi JCard"} disabled={saving} onPress={()=>void apply()}/>
    <View accessibilityRole="tablist" style={{flexDirection:"row",gap:8}}>
     {GROUPS.map((item,index)=><Pressable key={item.label} accessibilityRole="tab" accessibilityState={{selected:group===index}} accessibilityLabel={item.label} onPress={()=>{setGroup(index);if(item.items.length)setSelected(item.items[0].id);}} style={{flex:1,minHeight:54,alignItems:"center",justifyContent:"center",gap:3,borderWidth:1,borderRadius:12,borderColor:group===index?colors.ink:colors.line,backgroundColor:group===index?colors.card:colors.paper}}>
      <Ionicons name={item.icon} size={22} color={group===index?colors.ink:colors.muted}/>
