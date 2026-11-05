@@ -10,11 +10,12 @@ export async function pickBusinessPhotos(max:number):Promise<PickedPhoto[]>{
 }
 export async function pickBusinessGalleryPhoto():Promise<PickedPhoto|null>{
  const picker=await import("expo-image-picker");
- const result=await picker.launchImageLibraryAsync({mediaTypes:["images"],allowsMultipleSelection:false,quality:0.9});
+ const result=await picker.launchImageLibraryAsync({mediaTypes:["images"],allowsMultipleSelection:false,quality:0.7});
  if(result.canceled||!result.assets.length)return null;
  const photo=result.assets[0];
  const mimeType=photo.mimeType??(photo.uri.toLowerCase().endsWith(".png")?"image/png":"image/jpeg");
  const response=await fetch(photo.uri);
+ if(!response.ok)throw Error("No se pudo leer la imagen seleccionada.");
  const bytes=await response.arrayBuffer();
  if(bytes.byteLength>10485760||bytes.byteLength===0)throw Error("La imagen debe tener un tamaño máximo de 10 MB.");
  if(!["image/jpeg","image/png","image/webp"].includes(mimeType))throw Error("Selecciona una imagen JPG, PNG o WEBP.");
@@ -25,6 +26,7 @@ export async function uploadBusinessPhoto(bucket:"business-profile-media"|"busin
  const path=owner+"/"+slot+"-"+Date.now()+"-"+Math.random().toString(36).slice(2)+"."+extension;
  const response=await fetch(photo.uri);if(!response.ok)throw Error("No se pudo leer la foto.");
  const bytes=await response.arrayBuffer();
+ if(bytes.byteLength===0||bytes.byteLength>10485760)throw Error("La imagen debe tener un tamaño máximo de 10 MB.");
  const db=requireSupabase(),result=await db.storage.from(bucket).upload(path,bytes,{contentType:photo.mimeType,upsert:false});
  if(result.error)throw result.error;
  return {path,url:db.storage.from(bucket).getPublicUrl(path).data.publicUrl};
