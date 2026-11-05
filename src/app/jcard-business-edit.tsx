@@ -1,3 +1,6 @@
+import {Alert} from "react-native";
+import {appearanceOwner} from "../lib/jcard-appearance";
+import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import {useEffect,useState} from "react";
 import {router} from "expo-router";
 import {Pressable,Text,TextInput,View} from "react-native";
@@ -8,7 +11,7 @@ import {readCloudBusiness,writeCloudBusiness} from "../lib/jcard-cloud";
 import type {BusinessCardData} from "../lib/jcard";
 
 type Field="name"|"category"|"opened"|"closed"|"email"|"emailSecondary"|"phone"|"phoneLabel"|"phoneSecondary"|"phoneSecondaryLabel"|"location"|"services";
-type Section="main"|"contact"|"services";
+type Section="main"|"contact"|"services"|"privacy";
 const empty:BusinessCardData={name:"",category:"",opened:"",closed:"",email:"",emailSecondary:"",phone:"",phoneSecondary:"",phoneLabel:"",phoneSecondaryLabel:"",location:"",services:[],licenseVerified:false,rating:null,reviewCount:0};
 const fields:Record<Field,string>={name:"Nombre de empresa",category:"Categoría profesional",opened:"Año de apertura",closed:"Año de cierre",email:"Correo empresarial",emailSecondary:"Correo secundario",phone:"Teléfono empresarial",phoneLabel:"Identificador de teléfono 1",phoneSecondary:"Teléfono secundario",phoneSecondaryLabel:"Identificador de teléfono 2",location:"Ubicación",services:"Servicios (máximo 3, separados por comas)"};
 const sections:{id:Section;title:string;icon:React.ComponentProps<typeof Ionicons>["name"];keys:Field[]}[]=[
@@ -20,6 +23,8 @@ export default function BusinessEditor(){
  const {s,colors}=useUi();
  const [data,setData]=useState<BusinessCardData>(empty);
  const [open,setOpen]=useState<Section|null>(null);
+ const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
+ useEffect(()=>{let live=true;void appearanceOwner().then(readJCardVisibility).then(v=>{if(live)setVisibility(v);}).catch(()=>{});return()=>{live=false;};},[]);
  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
  useEffect(()=>{let live=true;void (async()=>{try{const local=await AsyncStorage.getItem("jobin.business.card.v1");const cached=local?JSON.parse(local) as BusinessCardData:empty;if(live)setData({...empty,...cached});const cloud=await readCloudBusiness();if(live&&cloud)setData(current=>({...current,...cloud}));}catch{if(live)setNotice("No se pudo sincronizar; revisa los datos antes de guardar.");}finally{if(live)setLoading(false);}})();return()=>{live=false;};},[]);
  const update=(key:Field,value:string)=>setData(d=>({...d,[key]:key==="services"?value.split(",").map(v=>v.trim()):value}));
@@ -33,7 +38,7 @@ export default function BusinessEditor(){
   if(data.services.filter(Boolean).length>3||data.services.join(", ").length>100){setNotice("Máximo 3 servicios y 100 caracteres.");return;}
   if([data.phoneLabel,data.phoneSecondaryLabel].some(v=>v&&Array.from(v).length>4)){setNotice("Identificadores: máximo 4 caracteres.");return;}
   setSaving(true);setNotice("");
-  try{const clean={...data,name:data.name.trim(),services:data.services.filter(Boolean)};await writeCloudBusiness(clean);await AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(clean));router.back();}
+  try{const clean={...data,name:data.name.trim(),services:data.services.filter(Boolean)};await writeCloudBusiness(clean);await saveJCardVisibility(visibility);await AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(clean));router.back();}
   catch(e){setNotice(e instanceof Error?e.message:"No se pudieron guardar los cambios.");}finally{setSaving(false);}
  }
  return <Screen demo={false} hideHeader hideFooter title="JCard de negocio" subtitle="">
@@ -44,6 +49,7 @@ export default function BusinessEditor(){
     </Pressable>
     {open===section.id&&<View style={{gap:12,paddingBottom:12}}>{section.keys.map(key=><View key={key} style={{gap:5}}><Text style={s.muted}>{fields[key]}</Text><TextInput accessibilityLabel={fields[key]} value={value(key)} onChangeText={v=>update(key,v)} maxLength={key==="name"?30:key==="services"?100:undefined} keyboardType={key==="opened"||key==="closed"?"number-pad":key.startsWith("email")?"email-address":key.startsWith("phone")&&!key.includes("Label")?"phone-pad":"default"} autoCapitalize={key.startsWith("email")?"none":"sentences"} style={{borderWidth:1,borderColor:colors.line,borderRadius:10,padding:12,minHeight:44,color:colors.ink}}/></View>)}</View>}
    </View>)}
+   <View style={s.panel}><Pressable accessibilityRole="button" accessibilityState={{expanded:open==="privacy"}} onPress={()=>setOpen(v=>v==="privacy"?null:"privacy")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="lock-closed-outline" size={25} color={colors.ink}/><Text style={[s.h3,{flex:1,fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>Privacidad</Text><Ionicons name={open==="privacy"?"chevron-up":"chevron-down"} size={20} color={colors.muted}/></Pressable>{open==="privacy"&&<View style={{gap:12,paddingBottom:12}}>{([{key:"business_show_email",label:"Mostrar correo empresarial"},{key:"business_show_phone",label:"Mostrar teléfono empresarial"},{key:"business_enabled",label:"Mostrar mi JCard de negocio en el perfil"}] as const).map(item=><Pressable key={item.key} accessibilityRole="checkbox" accessibilityState={{checked:visibility[item.key]}} onPress={()=>{if(item.key==="business_enabled"&&visibility.business_enabled&&!visibility.personal_enabled){Alert.alert("Al menos una JCard activa","Debes conservar activa la JCard personal o la de negocio.");return;}setVisibility(v=>({...v,[item.key]:!v[item.key]}));}} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={visibility[item.key]?"checkbox":"square-outline"} size={25} color={colors.ink}/><Text style={{color:colors.ink,flex:1}}>{item.label}</Text></Pressable>)}</View>}</View>
    <View style={s.panel}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-business-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="color-palette-outline" size={25} color={colors.ink}/><Text style={[s.h3,{flex:1,fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>Apariencia</Text><Ionicons name="chevron-forward" size={20} color={colors.muted}/></Pressable></View>
    {!!notice&&<Text style={{color:colors.ink}}>{notice}</Text>}
    <Button title={saving?"Guardando…":"Guardar cambios de JCard"} onPress={()=>void save()}/>
