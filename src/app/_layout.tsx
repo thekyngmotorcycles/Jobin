@@ -43,7 +43,7 @@ function Navigation() {
  <Stack.Screen name="verify-identity" options={{title:"Verificación de identidad"}}/>
  <Stack.Screen name="identity-admin" options={{title:"Revisión administrativa"}}/>
  <Stack.Screen name="company" options={{title:"Empresa o institución"}}/>
- <Stack.Screen name="professional" options={{title:"Mi JCard"}}/>
+ <Stack.Screen name="professional" options={{title:"JCard personal"}}/>
  <Stack.Screen name="certificates" options={{title:"Certificados"}}/>
  <Stack.Screen name="credential-review" options={{title:"Revisión de acreditaciones"}}/>
  <Stack.Screen name="opportunities" options={{title:"Oportunidades profesionales"}}/>
