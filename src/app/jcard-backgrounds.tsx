@@ -1,3 +1,4 @@
+import {JCARD_FINISH_BACKGROUNDS} from "../theme/jcard-finish-backgrounds";
 import {JCARD_CLASSIC_BACKGROUNDS,JCARD_NO_BACKGROUND} from "../theme/jcard-classic-backgrounds";
 import {useRef,useState} from "react";
 import {ScrollView,Pressable,Text,View,useWindowDimensions} from "react-native";
@@ -11,7 +12,7 @@ import {JCARD_PREMIUM_BACKGROUNDS,type JCardPremiumBackgroundId} from "../theme/
 const GROUPS=[
  {label:"Clásicos",icon:"albums-outline" as const,items:[JCARD_NO_BACKGROUND,...JCARD_CLASSIC_BACKGROUNDS]},
  {label:"Trazos",icon:"brush-outline" as const,items:[JCARD_NO_BACKGROUND,...JCARD_PREMIUM_BACKGROUNDS]},
- {label:"Acabados",icon:"diamond-outline" as const,items:[JCARD_NO_BACKGROUND]},
+ {label:"Acabados",icon:"diamond-outline" as const,items:[JCARD_NO_BACKGROUND,...JCARD_FINISH_BACKGROUNDS]},
 ];
 export default function JCardBackgroundGallery(){
  const {colors}=useTheme();
@@ -35,7 +36,6 @@ export default function JCardBackgroundGallery(){
     </Pressable>)}
    </View>
    <View style={{flexDirection:"row",flexWrap:"wrap",gap:12,justifyContent:"center"}}>
-    {group===2&&<Text style={{color:colors.muted,textAlign:"center",padding:20,width:"100%"}}>Próximamente</Text>}
     {GROUPS[group].items.map(item=><Pressable key={item.id} accessibilityRole="button" accessibilityState={{selected:selected===item.id}} accessibilityLabel={"Vista previa "+item.name} onPress={()=>showPreview(item.id)} style={{width:cell,alignItems:"center",padding:6,borderRadius:14,borderWidth:selected===item.id?2:1,borderColor:selected===item.id?colors.ink:colors.line,gap:7}}>
      <JCardPremiumTexture id={item.id} width={cell-14} height={(cell-14)*1.25}/>
      <Text style={{fontSize:12,fontWeight:"600",color:colors.ink,textAlign:"center"}}>{item.name}</Text>
