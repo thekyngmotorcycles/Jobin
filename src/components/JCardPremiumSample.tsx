@@ -26,7 +26,7 @@ export function JCardPremiumSample({id,width=310,side="personal"}:{id:JCardPremi
   <View style={{flex:1,padding:18*scale,justifyContent:"space-between"}}>
    <View style={{flexDirection:"row",alignItems:"flex-start",justifyContent:"space-between"}}>
     <View style={{width:58*scale,height:58*scale,borderRadius:30*scale,backgroundColor:ink,alignItems:"center",justifyContent:"center"}}><Text style={{fontSize:20*scale,color:base,fontWeight:"700"}}>JS</Text></View>
-    <View style={{alignItems:"center"}}>{label("JCard",26,"700")}{label(side==="business"?"Negocio":"Personal",13)}</View>
+    <View style={{alignItems:"center"}}>{label("JCard",26,"700")}{label("Personal",13)}</View>
     <View style={{padding:3*scale,backgroundColor:JCARD_PREMIUM_QR_COLORS.paper,borderRadius:5*scale}}><QRCode value="https://example.com/jcard-preview" size={52*scale} color={JCARD_PREMIUM_QR_COLORS.ink} backgroundColor={JCARD_PREMIUM_QR_COLORS.paper}/></View>
    </View>
    <View style={{gap:8*scale}}>
