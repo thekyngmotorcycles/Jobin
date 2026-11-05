@@ -21,3 +21,5 @@ export function getPremiumBackground(id:string){return [...JCARD_CLASSIC_BACKGRO
 
 /** Neutral QR swatches shared by premium JCard previews. */
 export const JCARD_PREMIUM_QR_COLORS = {paper:"#FFFFFF",ink:"#111111"} as const;
+
+export const JCARD_PREMIUM_TRANSPARENT="transparent" as const;
