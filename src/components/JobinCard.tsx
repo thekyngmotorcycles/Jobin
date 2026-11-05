@@ -2,7 +2,7 @@ import {useFocusEffect} from "expo-router";
 import {readJCardAppearance} from "../lib/jcard-appearance";
 import {getPremiumBackground,JCARD_PREMIUM_TRANSPARENT,type JCardPremiumBackgroundId} from "../theme/jcard-premium-backgrounds";
 import {JCardPremiumTexture} from "./JCardPremiumTexture";
-import {BUSINESS_MEDAL_COLORS} from "../theme/business-medals";
+import {BUSINESS_BADGE_NEUTRAL,BUSINESS_MEDAL_COLORS} from "../theme/business-medals";
 import { memo, useCallback, useEffect, useId, useRef, useState } from "react";
 import { router } from "expo-router";
 import { Animated, Image, Linking, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
@@ -170,16 +170,16 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
 }
 
 function BusinessAward({label,icon,level,finish,surface}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"];level:number;finish:ReturnType<typeof jcardTokens>;surface:ReturnType<typeof businessInformationSurface>}){
- const tone=level===3?jcardCommon.businessGold:level===2?jcardCommon.businessSilver:level===1?jcardCommon.businessBronze:finish.secondary;
+ const tone=level===3?jcardCommon.businessGold:level===2?jcardCommon.businessSilver:level===1?jcardCommon.businessBronze:BUSINESS_BADGE_NEUTRAL.border;
  const points=AWARD_POINTS;
  const path="M"+points.replaceAll(" "," L")+" Z";
  return <View accessibilityLabel={label+": "+(level===0?"Sin acreditar":level===1?"Bronce":level===2?"Plata":"Oro")} style={{flex:1,minWidth:0,alignItems:"center",minHeight:83,marginHorizontal:1}}>
   <View style={{width:"100%",minHeight:45,aspectRatio:1,alignItems:"center",justifyContent:"center"}}>
-   <Svg width="100%" height="100%" viewBox="0 0 54 54" style={{position:"absolute"}}><Defs><LinearGradient id={"metal-"+label.replace(/[^a-zA-Z0-9]/g,"")} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={level===3?BUSINESS_MEDAL_COLORS[0]:level===2?BUSINESS_MEDAL_COLORS[1]:level===1?BUSINESS_MEDAL_COLORS[2]:BUSINESS_MEDAL_COLORS[3]}/><Stop offset="24%" stopColor={level===3?BUSINESS_MEDAL_COLORS[4]:level===2?BUSINESS_MEDAL_COLORS[5]:level===1?BUSINESS_MEDAL_COLORS[6]:BUSINESS_MEDAL_COLORS[7]}/><Stop offset="53%" stopColor={level===3?BUSINESS_MEDAL_COLORS[8]:level===2?BUSINESS_MEDAL_COLORS[9]:level===1?BUSINESS_MEDAL_COLORS[10]:BUSINESS_MEDAL_COLORS[11]}/><Stop offset="77%" stopColor={level===3?BUSINESS_MEDAL_COLORS[12]:level===2?BUSINESS_MEDAL_COLORS[13]:level===1?BUSINESS_MEDAL_COLORS[14]:BUSINESS_MEDAL_COLORS[15]}/><Stop offset="100%" stopColor={level===3?BUSINESS_MEDAL_COLORS[16]:level===2?BUSINESS_MEDAL_COLORS[17]:level===1?BUSINESS_MEDAL_COLORS[18]:BUSINESS_MEDAL_COLORS[19]}/></LinearGradient></Defs><Path d={path} fill={"url(#metal-"+label.replace(/[^a-zA-Z0-9]/g,"")+")"} stroke={tone} strokeWidth="1.4"/><Circle cx="27" cy="27" r="21" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.65" strokeWidth="1.3"/><Circle cx="27" cy="27" r="19.2" fill={finish.start} stroke={tone} strokeWidth="1.4"/><Path d="M 12 26 A 15 15 0 0 1 41 23" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.45" strokeWidth="2"/></Svg>
-   <Ionicons name={icon} size={21} color={finish.text}/>
+   <Svg width="100%" height="100%" viewBox="0 0 54 54" style={{position:"absolute"}}><Defs><LinearGradient id={"metal-"+label.replace(/[^a-zA-Z0-9]/g,"")} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={level===3?BUSINESS_MEDAL_COLORS[0]:level===2?BUSINESS_MEDAL_COLORS[1]:level===1?BUSINESS_MEDAL_COLORS[2]:BUSINESS_MEDAL_COLORS[3]}/><Stop offset="24%" stopColor={level===3?BUSINESS_MEDAL_COLORS[4]:level===2?BUSINESS_MEDAL_COLORS[5]:level===1?BUSINESS_MEDAL_COLORS[6]:BUSINESS_MEDAL_COLORS[7]}/><Stop offset="53%" stopColor={level===3?BUSINESS_MEDAL_COLORS[8]:level===2?BUSINESS_MEDAL_COLORS[9]:level===1?BUSINESS_MEDAL_COLORS[10]:BUSINESS_MEDAL_COLORS[11]}/><Stop offset="77%" stopColor={level===3?BUSINESS_MEDAL_COLORS[12]:level===2?BUSINESS_MEDAL_COLORS[13]:level===1?BUSINESS_MEDAL_COLORS[14]:BUSINESS_MEDAL_COLORS[15]}/><Stop offset="100%" stopColor={level===3?BUSINESS_MEDAL_COLORS[16]:level===2?BUSINESS_MEDAL_COLORS[17]:level===1?BUSINESS_MEDAL_COLORS[18]:BUSINESS_MEDAL_COLORS[19]}/></LinearGradient></Defs><Path d={path} fill={"url(#metal-"+label.replace(/[^a-zA-Z0-9]/g,"")+")"} stroke={tone} strokeWidth="1.4"/><Circle cx="27" cy="27" r="21" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.65" strokeWidth="1.3"/><Circle cx="27" cy="27" r="19.2" fill={BUSINESS_BADGE_NEUTRAL.face} stroke={tone} strokeWidth="1.4"/><Path d="M 12 26 A 15 15 0 0 1 41 23" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.45" strokeWidth="2"/></Svg>
+   <Ionicons name={icon} size={21} color={BUSINESS_BADGE_NEUTRAL.ink}/>
   </View>
-  <View style={{marginTop:-3,width:"108%",minHeight:20,borderRadius:7,borderWidth:0.6,borderColor:finish.line,backgroundColor:surface.fill,justifyContent:"center",paddingHorizontal:1,elevation:1}}>
-   <Text adjustsFontSizeToFit minimumFontScale={0.65} numberOfLines={2} style={{fontSize:6.3,fontWeight:"800",lineHeight:7.3,textAlign:"center",color:surface.ink}}>{label.toUpperCase()}</Text>
+  <View style={{marginTop:-3,width:"122%",height:20,borderRadius:30,borderWidth:0.8,borderColor:BUSINESS_BADGE_NEUTRAL.border,backgroundColor:BUSINESS_BADGE_NEUTRAL.ribbon,justifyContent:"center",alignItems:"center",paddingHorizontal:1,elevation:1,zIndex:2}}>
+   <Text adjustsFontSizeToFit minimumFontScale={0.5} numberOfLines={1} style={{fontSize:6.8,fontWeight:"800",textAlign:"center",color:BUSINESS_BADGE_NEUTRAL.ink,includeFontPadding:false,width:"100%"}}>{label.toUpperCase()}</Text>
   </View>
   <Text numberOfLines={1} style={{fontSize:10,color:level===0?surface.pending:tone,letterSpacing:-1}}>{level===0?"☆☆☆":"★".repeat(level)+"☆".repeat(3-level)}</Text>
  </View>;
