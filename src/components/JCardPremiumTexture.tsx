@@ -1,3 +1,4 @@
+import {JCardFinishArtwork} from "./JCardFinishArtwork";
 import {memo,useMemo} from "react";
 import {useTheme} from "../state/ThemeProvider";
 import {jcardTokens} from "../theme/jcard";
@@ -24,6 +25,7 @@ function PremiumTexture({id,width=160,height=210}:{id:JCardPremiumBackgroundId;w
  }),[t?.pattern]);
  if(!t)return null;
  if(id==="original")return <Svg width={width} height={height} viewBox="0 0 160 210" accessible={false}><Rect width="160" height="210" rx="12" fill={original.start}/>{Array.from({length:15},(_,i)=><Path key={"l"+i} d={`M ${-25+i*5} 175 C ${20+i*3} 120, ${-10+i*4} 55, ${38+i*4} -15`} stroke={original.line} strokeOpacity={0.22+(i%3)*0.035} strokeWidth=".55" fill="none"/>)}{Array.from({length:16},(_,i)=><Path key={"b"+i} d={`M ${-20+i*7} 225 C ${35+i*4} 180, ${95+i*3} 180, ${165+i} 125`} stroke={original.line} strokeOpacity={0.20+(i%4)*0.025} strokeWidth=".55" fill="none"/>)}<Rect x="4" y="4" width="152" height="202" rx="10" stroke={original.line} strokeOpacity=".65" strokeWidth=".8" fill="none"/></Svg>;
+ if(t.pattern.startsWith("finish-"))return <JCardFinishArtwork id={id} width={width} height={height}/>;
  if(t.pattern==="solid")return <Svg width={width} height={height} viewBox="0 0 160 210" accessible={false}><Rect width="160" height="210" rx="12" fill={t.base}/></Svg>;
  const grad="premium-"+id;
  return <Svg width={width} height={height} viewBox="0 0 160 210" accessible={false}>
