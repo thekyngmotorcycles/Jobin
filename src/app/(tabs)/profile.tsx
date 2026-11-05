@@ -41,8 +41,10 @@ export default function Profile() {
   const [verifiedIdentity,setVerifiedIdentity]=useState(false);
   const [profileToolsOpen,setProfileToolsOpen]=useState(false);
   const [menuMounted,setMenuMounted]=useState(false);
-  const openProfileMenu=()=>{setMenuMounted(true);setProfileToolsOpen(true);};
+  const menuOpenedAt=useRef(0);
+  const openProfileMenu=()=>{menuOpenedAt.current=Date.now();setMenuMounted(true);setProfileToolsOpen(true);};
   const closeProfileMenu=()=>{setProfileToolsOpen(false);};
+  const dismissFromBackdrop=()=>{if(Date.now()-menuOpenedAt.current>450)closeProfileMenu();};
   const {width:screenWidth}=useWindowDimensions();
   const menuSlide=useRef(new Animated.Value(0)).current;
   const menuBackdrop=useRef(new Animated.Value(0)).current;
@@ -162,12 +164,12 @@ export default function Profile() {
       <Modal visible={menuMounted} transparent animationType="none" onRequestClose={closeProfileMenu} statusBarTranslucent={false}>
         <View style={{flex:1,flexDirection:"row"}}>
           <Animated.View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:colors.scrim,opacity:menuBackdrop}}/>
-          <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú de perfil" onPress={closeProfileMenu} style={{flex:1}}/>
+          <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú de perfil" onPress={dismissFromBackdrop} style={{flex:1}}/>
           <Animated.View style={{width:Math.min(screenWidth*0.88,410),transform:[{translateX:menuSlide.interpolate({inputRange:[0,1],outputRange:[Math.min(screenWidth*0.88,410),0]})}]}}><SafeAreaView edges={["top","bottom"]} style={{flex:1,backgroundColor:opacity(colors.paper,0.69),borderTopLeftRadius:18,borderBottomLeftRadius:18,overflow:"hidden"}}>
             <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:22,paddingBottom:32,gap:10}}>
               <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingBottom:16}}>
                 <Text accessibilityRole="header" style={{color:colors.ink,fontWeight:"700",fontSize:22}}>Opciones del perfil</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={()=>setProfileToolsOpen(false)} style={{padding:8}}><Ionicons name="close" size={25} color={colors.ink}/></Pressable>
+                <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={closeProfileMenu} style={{padding:8}}><Ionicons name="close" size={25} color={colors.ink}/></Pressable>
               </View>
               <Button secondary title="Ver perfil ficticio (demo)" onPress={()=>{closeProfileMenu();router.push("/demo-profile");}}/>
               <Button secondary title="Reseñas de empresas" onPress={()=>{closeProfileMenu();router.push("/reviews");}}/>
