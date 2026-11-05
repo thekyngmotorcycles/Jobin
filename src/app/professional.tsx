@@ -17,7 +17,7 @@ import type { JCardStatus } from "../lib/jcard";
 
 export default function Professional() {
  const {s,colors}=useUi();
- const workspace=useProfessionalData(loadWorkspace);const catalog=useProfessionalData(loadCatalog);
+ const workspace=useProfessionalData(loadWorkspace,true);const catalog=useProfessionalData(loadCatalog);
  const action=useProfessionalAction(workspace.reload);
  const specialtyCatalog=useProfessionalData(loadSpecialtyCatalog);
  const [specialties,setSpecialties]=useState<string[]>([]);
@@ -140,7 +140,7 @@ export default function Professional() {
       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showPhone}} onPress={()=>setShowPhone(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={showPhone?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar teléfono en mi JCard</Text></Pressable>
      </View>}
     </View>
-    <Button secondary title="Fondos JCard Premium · Vista previa" onPress={()=>router.push("/jcard-backgrounds")}/>
+    <View style={s.panel}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="color-palette-outline" size={25} color={colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>Apariencia</Text></View><Ionicons name="chevron-forward" size={20} color={colors.muted}/></Pressable></View>
     <Button title={action.busy?"Guardando…":"Guardar cambios de JCard"} onPress={save}/>
    </View>
   </>}
