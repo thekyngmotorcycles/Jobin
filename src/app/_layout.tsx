@@ -48,6 +48,7 @@ function Navigation() {
  <Stack.Screen name="credential-review" options={{title:"Revisión de acreditaciones"}}/>
  <Stack.Screen name="opportunities" options={{title:"Oportunidades profesionales"}}/>
  <Stack.Screen name="jcard" options={{title:"JCard"}}/>
+ <Stack.Screen name="jcard-backgrounds" options={{title:"Apariencia"}}/>
  <Stack.Screen name="safety" options={{title:"Seguridad y apelaciones"}}/>
  <Stack.Screen name="safety-review" options={{title:"Revisión de seguridad"}}/>
  <Stack.Screen name="terms" options={{title:"Términos · Borrador"}}/>
