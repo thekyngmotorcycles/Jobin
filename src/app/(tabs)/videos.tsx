@@ -37,7 +37,7 @@ export default function Videos() {
   const clips = useMemo<FeedClip[]>(() => filtered.length ? Array.from({ length: count }, (_, index) => ({ ...filtered[index % filtered.length], id: tab + "-" + category + "-" + index })) : [], [filtered, count, tab,category]);
   const target = post ? Math.max(0, FEED_POSTS.findIndex(p => p.postId === post)) : 0;
   const visible = useRef(({ viewableItems }: { viewableItems: ViewToken<FeedClip>[] }) => {
-    if (viewableItems[0]) setActive(viewableItems[0].index ?? 0);
+    if (viewableItems[0]) { const next=viewableItems[0].index ?? 0; setActive(previous=>previous===next?previous:next); }
   }).current;
   const viewability = useRef({ itemVisiblePercentThreshold: 65 }).current;
   function changeTab(next: FeedTab) { setTab(next); setActive(0); setCount(PAGE);scrollY.setValue(0); }
@@ -50,7 +50,7 @@ export default function Videos() {
         <FeedTopBar overlay videoMode tab={tab} onTab={changeTab} plusLabel="Subir video" onPlus={() => router.navigate("/create")} onSearch={() => router.push("/search")} />
       </View>
       <View style={{position:"absolute",top:inset.top+70,left:0,right:0,zIndex:19}}><WorkCategoryFilters selected={category} onSelect={changeCategory} scrollY={scrollY}/></View>
-      <View style={{ flex: 1 }} onLayout={e => setHeight(Math.max(1, e.nativeEvent.layout.height))}>
+      <View style={{ flex: 1 }} onLayout={e => { const next=Math.max(1,Math.round(e.nativeEvent.layout.height)); setHeight(previous=>previous===next?previous:next); }}>
         <FlatList key={tab + category + Math.round(height) + (post || "")} data={clips} keyExtractor={clip => clip.id}
           pagingEnabled snapToInterval={height} decelerationRate="fast" disableIntervalMomentum showsVerticalScrollIndicator={false}
           initialScrollIndex={clips.length && tab === "Para ti" ? target : undefined} onViewableItemsChanged={visible} viewabilityConfig={viewability}
