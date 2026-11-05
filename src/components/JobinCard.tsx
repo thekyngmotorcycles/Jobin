@@ -104,7 +104,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contac
         </View>
       </View>
 
-      <View style={{flex:1,minHeight:0,justifyContent:"center",gap:5,paddingVertical:8}}>
+      <View style={{flex:1,minHeight:0,justifyContent:"flex-start",gap:8,paddingTop:12,paddingBottom:6}}>\n        <View style={{gap:4}}>
         <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
           <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:4}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={[s.h3,{color:finish.text,fontSize:Math.max(18,fs(expanded?20:19)),lineHeight:Math.max(25,fs(expanded?28:27)),flexShrink:1}]}>{card.name}</Text><Pressable accessibilityRole="button" accessibilityLabel={card.identityVerified?"Persona verificada":"Persona sin verificar"} onPress={()=>setInfo(card.identityVerified?"Identidad verificada por Jobin. Esta insignia no certifica licencias ni competencias profesionales.":"Identidad sin verificar. Para obtener la insignia se requerirá nombre legal, correo y teléfono confirmados, documento de identidad y validación de identidad.")} style={{width:19,height:19,alignItems:"center",justifyContent:"center",flexShrink:0}}><View style={{transform:[{scale:0.72}]}}><IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/></View></Pressable></View>
           {!!card.years&&<Pressable accessibilityRole="button" accessibilityLabel="Información sobre experiencia general" onPress={()=>setInfo("Experiencia general\nEs el tiempo total trabajado en todas las profesiones y sectores registrados. Los períodos que coinciden se cuentan una sola vez.")} style={{alignItems:"flex-end",maxWidth:"38%"}}>
@@ -112,7 +112,7 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contac
             <Text style={{fontSize:9,color:finish.secondary,textAlign:"right"}}>Experiencia general</Text>
           </Pressable>}
         </View>
-        <Text style={{color:finish.secondary,fontSize:11}}>@{card.handle}</Text>
+        <Text numberOfLines={1} style={{color:finish.secondary,fontSize:11}}>@{card.handle}</Text>\n        {typeof card.followers==="number"&&<Text style={{color:finish.secondary,fontSize:10}}>{card.followers.toLocaleString()} seguidores</Text>}\n        </View>\n        <View style={{flex:1,minHeight:0,justifyContent:"center",gap:5}}>
         <View style={{flexDirection:"row",alignItems:"center",gap:7,width:"100%"}}>
           <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[lineStyle,{fontWeight:"600",flexShrink:1,flexGrow:0}]}>{primaryProfession}{!!card.primarySpecialties?.length?" / Especializado":""}</Text>
           <Pressable accessibilityRole="button" accessibilityLabel="Detalles de la profesión principal" onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nEspecialidades: "+(card.primarySpecialties?.length?card.primarySpecialties.join(", "):"No declaradas")+"\nExperiencia en esta profesión: "+(primarySeal&&primarySeal.months?experienceLabel(primarySeal.months):"Sin experiencia registrada")+".\n"+(primarySeal?.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{padding:3,borderWidth:1,borderColor:finish.line,borderRadius:18,flexShrink:0}}>
