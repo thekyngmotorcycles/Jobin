@@ -16,7 +16,7 @@ const GROUPS=[
  {label:"Trazos",icon:"brush-outline" as const,items:[JCARD_NO_BACKGROUND,...JCARD_PREMIUM_BACKGROUNDS]},
  {label:"Acabados",icon:"diamond-outline" as const,items:[JCARD_NO_BACKGROUND,...JCARD_FINISH_BACKGROUNDS]},
 ];
-export default function JCardBackgroundGallery(){
+export default function JCardBackgroundGallery({side="personal"}:{side?:"personal"|"business"}){
  const {colors}=useTheme();
  const {width}=useWindowDimensions();
  const [group,setGroup]=useState(0);
@@ -26,14 +26,14 @@ export default function JCardBackgroundGallery(){
  const [selected,setSelected]=useState<JCardPremiumBackgroundId>("original");
  const [owner,setOwner]=useState<string|null>(null);
  const [saving,setSaving]=useState(false);
- useEffect(()=>{let live=true;appearanceOwner().then(async id=>{const saved=await readJCardAppearance(id);if(live){setOwner(id);setSelected(saved);}}).catch(()=>{});return()=>{live=false;};},[]);
- const apply=async()=>{if(!owner){Alert.alert("Inicia sesión","Debes iniciar sesión para guardar tu fondo.");return;}setSaving(true);try{await saveJCardAppearance(owner,selected);Alert.alert("JCard actualizada","El fondo se guardó en este dispositivo para tu cuenta.");}catch(e){Alert.alert("No se pudo guardar",e instanceof Error?e.message:"Inténtalo de nuevo.");}finally{setSaving(false);}};
+ useEffect(()=>{let live=true;appearanceOwner().then(async id=>{const saved=await readJCardAppearance(id,side);if(live){setOwner(id);setSelected(saved);}}).catch(()=>{});return()=>{live=false;};},[side]);
+ const apply=async()=>{if(!owner){Alert.alert("Inicia sesión","Debes iniciar sesión para guardar tu fondo.");return;}setSaving(true);try{await saveJCardAppearance(owner,selected,side);Alert.alert("JCard actualizada",`El fondo de tu JCard ${side==="business"?"de negocio":"personal"} se guardó en este dispositivo.`);}catch(e){Alert.alert("No se pudo guardar",e instanceof Error?e.message:"Inténtalo de nuevo.");}finally{setSaving(false);}};
  const columns=width>=700?4:2;
  const cell=Math.min(180,(width-48-(columns-1)*12)/columns);
  return <View style={{flex:1,backgroundColor:colors.paper}}>
   <ScrollView ref={scrollRef} contentContainerStyle={{padding:16,paddingBottom:60,gap:16}}>
    <View onLayout={event=>{previewTop.current=event.nativeEvent.layout.y;}} style={{alignItems:"center",paddingVertical:12,borderRadius:18,backgroundColor:colors.card}}>
-    <JCardPremiumSample id={selected} width={Math.min(width-64,340)}/>
+    <JCardPremiumSample id={selected} width={Math.min(width-64,340)} side={side}/>
    </View>
    <Button title={saving?"Guardando...":"Aplicar a mi JCard"} disabled={saving} onPress={()=>void apply()}/>
    <View accessibilityRole="tablist" style={{flexDirection:"row",gap:8}}>
