@@ -21,7 +21,7 @@ export default function Home() {
     ...FEED_POSTS.slice(2).map(p => ({ kind: "video" as const, key: p.postId, post: p })),
   ];
   return (
-    <SafeAreaView edges={["top", "left", "right"]} style={s.screen} onLayout={event=>setViewport(event.nativeEvent.layout)}>
+    <SafeAreaView edges={["top", "left", "right"]} style={s.screen} onLayout={event=>{const {width,height}=event.nativeEvent.layout;setViewport(previous=>previous.width===width&&previous.height===height?previous:{width,height});}}>
       <ScrollView contentContainerStyle={{ paddingBottom: contentBottom, gap: 24 }} showsVerticalScrollIndicator={false}>
         <SocialHeader />
         <PublishedWorkMedia kind="video"/>
