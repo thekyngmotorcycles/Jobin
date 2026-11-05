@@ -15,6 +15,8 @@ export interface CardData {
   identityVerified?: boolean;
   name: string;
   handle: string;
+  /** Real follower count when supplied by the social backend; never fabricate a value. */
+  followers?: number;
   role: string;
   primarySpecialties?: readonly string[];
   years: number;
