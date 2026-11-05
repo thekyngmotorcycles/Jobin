@@ -5,7 +5,7 @@ import QRCode from "react-native-qrcode-svg";
 import {JCardPremiumTexture} from "./JCardPremiumTexture";
 import {getPremiumBackground,JCARD_PREMIUM_QR_COLORS,type JCardPremiumBackgroundId} from "../theme/jcard-premium-backgrounds";
 /** Illustrative sample, never the user's actual JCard or a functional QR code. */
-export function JCardPremiumSample({id,width=310}:{id:JCardPremiumBackgroundId;width?:number}){
+export function JCardPremiumSample({id,width=310,side="personal"}:{id:JCardPremiumBackgroundId;width?:number;side?:"personal"|"business"}){
  const {theme}=useTheme();
  const t=getPremiumBackground(id);if(!t)return null;
  const original=jcardTokens(theme,"base");
@@ -19,7 +19,7 @@ export function JCardPremiumSample({id,width=310}:{id:JCardPremiumBackgroundId;w
   <View style={{flex:1,padding:18*scale,justifyContent:"space-between"}}>
    <View style={{flexDirection:"row",alignItems:"flex-start",justifyContent:"space-between"}}>
     <View style={{width:58*scale,height:58*scale,borderRadius:30*scale,backgroundColor:ink,alignItems:"center",justifyContent:"center"}}><Text style={{fontSize:20*scale,color:base,fontWeight:"700"}}>JS</Text></View>
-    <View style={{alignItems:"center"}}>{label("JCard",26,"700")}{label("Personal",13)}</View>
+    <View style={{alignItems:"center"}}>{label("JCard",26,"700")}{label(side==="business"?"Negocio":"Personal",13)}</View>
     <View style={{padding:3*scale,backgroundColor:JCARD_PREMIUM_QR_COLORS.paper,borderRadius:5*scale}}><QRCode value="https://example.com/jcard-preview" size={52*scale} color={JCARD_PREMIUM_QR_COLORS.ink} backgroundColor={JCARD_PREMIUM_QR_COLORS.paper}/></View>
    </View>
    <View style={{gap:8*scale}}>
