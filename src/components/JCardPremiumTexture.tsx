@@ -20,6 +20,7 @@ function PremiumTexture({id,width=160,height=210}:{id:JCardPremiumBackgroundId;w
   }
  }),[t?.pattern]);
  if(!t)return null;
+ if(t.pattern==="solid")return <Svg width={width} height={height} viewBox="0 0 160 210" accessible={false}><Rect width="160" height="210" rx="12" fill={t.base}/></Svg>;
  const grad="premium-"+id;
  return <Svg width={width} height={height} viewBox="0 0 160 210" accessible={false}>
   <Defs><LinearGradient id={grad} x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor={t.base}/><Stop offset=".58" stopColor={t.base}/><Stop offset="1" stopColor={t.line} stopOpacity={t.shadow}/></LinearGradient></Defs>
