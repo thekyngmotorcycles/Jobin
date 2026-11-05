@@ -10,7 +10,7 @@ import {JCARD_PREMIUM_BACKGROUNDS,type JCardPremiumBackgroundId} from "../theme/
 /** Preview-only gallery: styles are not applied without server-side entitlement. */
 const GROUPS=[
  {label:"Clásicos",icon:"albums-outline" as const,items:[JCARD_NO_BACKGROUND,...JCARD_CLASSIC_BACKGROUNDS]},
- {label:"Trazos",icon:"git-branch-outline" as const,items:[JCARD_NO_BACKGROUND,...JCARD_PREMIUM_BACKGROUNDS]},
+ {label:"Trazos",icon:"brush-outline" as const,items:[JCARD_NO_BACKGROUND,...JCARD_PREMIUM_BACKGROUNDS]},
  {label:"Acabados",icon:"diamond-outline" as const,items:[JCARD_NO_BACKGROUND]},
 ];
 export default function JCardBackgroundGallery(){
