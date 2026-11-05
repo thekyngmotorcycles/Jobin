@@ -23,5 +23,5 @@ Estas reglas se aplican a todo fondo, banner, foto, miniatura, sello o textura n
 ## Estado
 - Skeleton inmediato y caché del workspace por usuario: implementados.
 - Texturas premium y miniaturas: memoización/caché implementadas.
-- Pipeline automático de redimensionado/compresión y variantes de imagen: pendiente; requiere comprobar dependencias y políticas de almacenamiento antes de activar.
+- Miniaturas: se solicita una variante Supabase Storage de 320 px para URLs públicas compatibles; si la transformación no está disponible se recupera la imagen original. Validar en dispositivo y plan Supabase.\n- Compresión y redimensionado antes de subir: pendiente; requiere comprobar dependencias y políticas de almacenamiento antes de activar.
 - Instrumentación de tiempos de render y red: pendiente.
