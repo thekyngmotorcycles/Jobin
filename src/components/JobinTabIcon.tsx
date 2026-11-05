@@ -1,6 +1,7 @@
+import { memo } from "react";
 import Svg,{Path,Circle,Rect} from "react-native-svg";
 export type JobinTabName="index"|"streams"|"videos"|"shop"|"inbox"|"profile";
-export function JobinTabIcon({name,color,focused=false,size=25}:{name:JobinTabName;color:string;focused?:boolean;size?:number}){
+function TabIcon({name,color,focused=false,size=25}:{name:JobinTabName;color:string;focused?:boolean;size?:number}){
  const stroke={stroke:color,strokeWidth:2.15,strokeLinecap:"round" as const,strokeLinejoin:"round" as const};
  return <Svg width={size} height={size} viewBox="0 0 28 28" fill="none" accessibilityLabel={name}>
  {name==="index"&&<Path d="M3.5 12.3 14 3.8l10.5 8.5V24h-7.1v-8h-6.8v8H3.5V12.3Z" {...stroke} fill="none"/>}
@@ -11,3 +12,5 @@ export function JobinTabIcon({name,color,focused=false,size=25}:{name:JobinTabNa
  {name==="profile"&&<><Circle cx="14" cy="9" r="4.2" {...stroke}/><Path d="M4.2 24v-2.3c0-4.5 4.2-7.1 9.8-7.1s9.8 2.6 9.8 7.1V24H4.2Z" {...stroke} fill={focused?color:"none"}/></>}
  </Svg>;
 }
+
+export const JobinTabIcon=memo(TabIcon);
