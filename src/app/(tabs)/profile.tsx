@@ -23,6 +23,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomSheet } from "../../components/social-ui";
 import { JobinWordmark } from "../../components/JobinWordmark";
 import { JobinCard } from "../../components/JobinCard";
+import { JCardLoadingSkeleton } from "../../components/JCardLoadingSkeleton";
 import type { BusinessCardData, JCardSeal } from "../../lib/jcard";
 import { Button, Notice, useUi } from "../../components/ui";
 import { canSendHistory } from "../../lib/rules";
@@ -188,7 +189,7 @@ export default function Profile() {
           <JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
 
-        </View> : <ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>}
+        </View> : workspace.loading ? <JCardLoadingSkeleton/> : <ProfessionalStatus loading={false} error={workspace.error} retry={workspace.reload}/>}
 
 
         <View style={{flexDirection:"row",justifyContent:"space-around",alignItems:"center",borderBottomWidth:1,borderBottomColor:colors.line,paddingVertical:8}}>
