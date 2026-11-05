@@ -69,7 +69,6 @@ export default function Professional() {
   {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
    {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
    <View style={{gap:6}}>
-    <Text style={s.muted}>Selecciona una sección para editarla. Los cambios de tu JCard se guardan con el botón inferior.</Text>
     <View onLayout={e=>{positions.current.identity=e.nativeEvent.layout.y;}} style={s.panel}>
      {sectionRow("identity","Datos principales","Nombre, usuario, ubicación y disponibilidad","person-outline")}
      {section==="identity"&&<View style={{gap:12,paddingBottom:12}}>
