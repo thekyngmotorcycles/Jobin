@@ -1,3 +1,5 @@
+import {Alert} from "react-native";
+import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {router} from "expo-router";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
@@ -36,6 +38,8 @@ export default function Professional() {
  function openProfession(code:string,primary:boolean){choose(code);setSpecialties(w?.professions.find(p=>p.profession_code===code)?.specialties??[]);setFormMode("edit");setEditedPrimary(primary);setEditingProfession(code);setProfessionFormOpen(true);}
  function addProfession(){setSpecialties([]);setProfession("");setTraining("graduado");setInstitution(null);setFormMode("add");setEditingProfession(null);setEditedPrimary(false);setProfessionFormOpen(true);}
  useEffect(()=>{if(!section)return;const t=setTimeout(()=>scrollRef.current?.scrollTo({y:Math.max(0,(positions.current[section]??0)-18),animated:true}),160);return()=>clearTimeout(t);},[section]);
+ const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
+ useEffect(()=>{let live=true;void (async()=>{try{const {data:{user}}=await requireSupabase().auth.getUser();if(user){const v=await readJCardVisibility(user.id);if(live)setVisibility(v);}}catch{}})();return()=>{live=false;};},[]);
  const [showEmail,setShowEmail]=useState(false);const [showPhone,setShowPhone]=useState(false);
  useEffect(()=>{let live=true;void loadContactPreferences().then(p=>{if(live){setShowEmail(p.show_email);setShowPhone(p.show_phone);}}).catch(()=>{});return()=>{live=false;};},[]);
  const [personalContacts,setPersonalContacts]=useState({email_primary:"",email_secondary:"",phone_primary:"",phone_secondary:""});
@@ -63,6 +67,7 @@ export default function Professional() {
   for(const key of ["email_primary","email_secondary"] as const){const v=personalContacts[key].trim();if(v&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))throw new Error("Revisa el correo electrónico.");}
   await savePersonalContactDetails(personalContacts);
   await saveContactPreferences({show_email:showEmail,show_phone:showPhone});
+  await saveJCardVisibility(visibility);
   await professionalMutation("jobin_save_jcard",{legal_name:legalName,handle,city,region,availability,languages:languages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))});
  },"").then(ok=>{if(ok)router.replace("/(tabs)/profile");});
  return <Screen demo={false} hideHeader hideFooter scrollRef={scrollRef} title="Editar mi JCard" subtitle="">
@@ -137,6 +142,7 @@ export default function Professional() {
       <Text style={s.muted}>Ambos datos permanecen ocultos por defecto.</Text>
       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showEmail}} onPress={()=>setShowEmail(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={showEmail?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar correo en mi JCard</Text></Pressable>
       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showPhone}} onPress={()=>setShowPhone(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={showPhone?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar teléfono en mi JCard</Text></Pressable>
+       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:visibility.personal_enabled}} onPress={()=>{if(visibility.personal_enabled&&!visibility.business_enabled){Alert.alert("Al menos una JCard activa","Debes conservar activa la JCard personal o la de negocio.");return;}setVisibility(v=>({...v,personal_enabled:!v.personal_enabled}));}} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={visibility.personal_enabled?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar mi JCard personal en el perfil</Text></Pressable>
      </View>}
     </View>
     <View style={s.panel}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="color-palette-outline" size={25} color={colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>Apariencia</Text></View><Ionicons name="chevron-forward" size={20} color={colors.muted}/></Pressable></View>
