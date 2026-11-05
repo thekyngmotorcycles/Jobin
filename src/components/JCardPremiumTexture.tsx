@@ -1,9 +1,10 @@
+import {memo,useMemo} from "react";
 import Svg,{Defs,LinearGradient,Stop,Rect,Path} from "react-native-svg";
 import {getPremiumBackground,type JCardPremiumBackgroundId} from "../theme/jcard-premium-backgrounds";
 /** Visual preview only. Does not grant membership or change the saved JCard. */
-export function JCardPremiumTexture({id,width=160,height=210}:{id:JCardPremiumBackgroundId;width?:number;height?:number}){
+function PremiumTexture({id,width=160,height=210}:{id:JCardPremiumBackgroundId;width?:number;height?:number}){
  const t=getPremiumBackground(id);if(!t)return null;
- const paths=Array.from({length:13},(_,i)=>{
+ const paths=useMemo(()=>Array.from({length:13},(_,i)=>{
   const n=i*12;
   switch(t.pattern){
    case "ripple":return `M ${-60+n} 220 Q ${90+n} 115 ${-35+n} -20`;
@@ -17,7 +18,7 @@ export function JCardPremiumTexture({id,width=160,height=210}:{id:JCardPremiumBa
    case "mist":return `M -30 ${n*1.7} C 40 ${n*1.7-20} 110 ${n*1.7+20} 190 ${n*1.7-15}`;
    case "dune":return `M -30 ${n*1.8} Q 75 ${n*1.8-65} 190 ${n*1.8+10}`;
   }
- });
+ }),[t.pattern]);
  const grad="premium-"+id;
  return <Svg width={width} height={height} viewBox="0 0 160 210" accessible={false}>
   <Defs><LinearGradient id={grad} x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor={t.base}/><Stop offset=".58" stopColor={t.base}/><Stop offset="1" stopColor={t.line} stopOpacity={t.shadow}/></LinearGradient></Defs>
@@ -28,3 +29,4 @@ export function JCardPremiumTexture({id,width=160,height=210}:{id:JCardPremiumBa
   <Rect x="9" y="9" width="142" height="192" rx="7" stroke={t.line} strokeOpacity=".5" strokeWidth=".65" fill="none"/>
  </Svg>;
 }
+\nexport const JCardPremiumTexture=memo(PremiumTexture);\n
