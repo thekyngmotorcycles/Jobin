@@ -1,3 +1,4 @@
+import {JCARD_FINISH_BACKGROUNDS} from "./jcard-finish-backgrounds";
 import {JCARD_CLASSIC_BACKGROUNDS,JCARD_NO_BACKGROUND} from "./jcard-classic-backgrounds";
 /** Jobin Premium JCard background catalog.
  * The approved original JCard is the default and remains unchanged.
@@ -14,9 +15,9 @@ export const JCARD_PREMIUM_BACKGROUNDS=[
  {id:"silver-fog",name:"Silver Fog",base:"#DEE1E2",ink:"#282D32",line:"#9AA4AA",pattern:"mist",shadow:.16},
  {id:"bronze-dune",name:"Bronze Dune",base:"#66503E",ink:"#FAF2E7",line:"#B08D6B",pattern:"dune",shadow:.25},
 ] as const;
-export type JCardPremiumBackgroundId=typeof JCARD_PREMIUM_BACKGROUNDS[number]["id"]|typeof JCARD_CLASSIC_BACKGROUNDS[number]["id"]|typeof JCARD_NO_BACKGROUND["id"];
+export type JCardPremiumBackgroundId=typeof JCARD_PREMIUM_BACKGROUNDS[number]["id"]|typeof JCARD_CLASSIC_BACKGROUNDS[number]["id"]|typeof JCARD_NO_BACKGROUND["id"]|typeof JCARD_FINISH_BACKGROUNDS[number]["id"];
 export const JCARD_DEFAULT_BACKGROUND_ID="original" as const;
-export function getPremiumBackground(id:string){return [...JCARD_CLASSIC_BACKGROUNDS,...JCARD_PREMIUM_BACKGROUNDS,JCARD_NO_BACKGROUND].find(item=>item.id===id)??null;}
+export function getPremiumBackground(id:string){return [...JCARD_CLASSIC_BACKGROUNDS,...JCARD_PREMIUM_BACKGROUNDS,...JCARD_FINISH_BACKGROUNDS,JCARD_NO_BACKGROUND].find(item=>item.id===id)??null;}
 
 /** Neutral QR swatches shared by premium JCard previews. */
 export const JCARD_PREMIUM_QR_COLORS = {paper:"#FFFFFF",ink:"#111111"} as const;
