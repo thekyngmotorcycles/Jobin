@@ -1,3 +1,5 @@
+import {BusinessFace} from "./JobinCard";
+import type {CardData} from "../lib/jcard";
 import {View,Text} from "react-native";
 import {useTheme} from "../state/ThemeProvider";
 import {jcardTokens} from "../theme/jcard";
@@ -13,6 +15,11 @@ export function JCardPremiumSample({id,width=310,side="personal"}:{id:JCardPremi
  const base=id==="original"?original.start:t.base;
  const line=id==="original"?original.line:t.line;
  const height=width*1.22;const scale=width/310;
+ if(side==="business"){
+  const sample:CardData={name:"Nombre de ejemplo",handle:"ejemplo",role:"Servicios profesionales",years:0,status:"AVAILABLE",employer:null,rating:null,reviewCount:0,inAcademy:false,profileUrl:"https://jobin.example/preview",languages:[],seals:[],business:{name:"Nombre de negocio",opened:"2025",closed:"",services:["Servicio principal","Atención profesional"],location:"Ciudad, región",licenseVerified:false,rating:null,reviewCount:0,email:"contacto@ejemplo.com",phone:"(000) 000-0000",category:"Servicios profesionales"}};
+  const fullWidth=340,fullHeight=450,ratio=width/fullWidth;
+  return <View accessibilityLabel={"Vista previa real de JCard de negocio con fondo "+t.name} style={{width,height:fullHeight*ratio,alignSelf:"center",overflow:"hidden",borderRadius:30*ratio}}><View style={{width:fullWidth,height:fullHeight,transform:[{scale:ratio}],transformOrigin:"top left"}}><BusinessFace card={sample} theme={theme} appearance={id}/></View></View>;
+ }
  const label=(text:string,size:number,weight:"400"|"600"|"700"="400")=><Text style={{color:ink,fontSize:size*scale,fontWeight:weight}}>{text}</Text>;
  return <View accessibilityLabel={"Ejemplo de JCard con fondo "+t.name} style={{width,height,borderRadius:18,overflow:"hidden",alignSelf:"center"}}>
   <View style={{position:"absolute",top:0,left:0}} pointerEvents="none"><JCardPremiumTexture id={id} width={width} height={height}/></View>
