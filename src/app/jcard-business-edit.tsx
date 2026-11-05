@@ -46,7 +46,7 @@ export default function BusinessEditor(){
    </View>)}
    <View style={s.panel}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-business-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="color-palette-outline" size={25} color={colors.ink}/><Text style={[s.h3,{flex:1,fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>Apariencia</Text><Ionicons name="chevron-forward" size={20} color={colors.muted}/></Pressable></View>
    {!!notice&&<Text style={{color:colors.ink}}>{notice}</Text>}
-   <Button title={saving?"Guardando…":"Guardar cambios de JCard"} disabled={saving||loading} onPress={()=>void save()}/>
+   <Button title={saving?"Guardando…":"Guardar cambios de JCard"} onPress={()=>void save()}/>
   </View>
  </Screen>;
 }
