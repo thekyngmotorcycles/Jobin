@@ -1,4 +1,4 @@
-import {Alert} from "react-native";
+import {appearanceOwner} from "../lib/jcard-appearance";
 import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {router} from "expo-router";
@@ -39,7 +39,7 @@ export default function Professional() {
  function addProfession(){setSpecialties([]);setProfession("");setTraining("graduado");setInstitution(null);setFormMode("add");setEditingProfession(null);setEditedPrimary(false);setProfessionFormOpen(true);}
  useEffect(()=>{if(!section)return;const t=setTimeout(()=>scrollRef.current?.scrollTo({y:Math.max(0,(positions.current[section]??0)-18),animated:true}),160);return()=>clearTimeout(t);},[section]);
  const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
- useEffect(()=>{let live=true;void (async()=>{try{const {data:{user}}=await requireSupabase().auth.getUser();if(user){const v=await readJCardVisibility(user.id);if(live)setVisibility(v);}}catch{}})();return()=>{live=false;};},[]);
+ useEffect(()=>{let live=true;void (async()=>{try{const owner=await appearanceOwner();if(owner){const v=await readJCardVisibility(owner);if(live)setVisibility(v);}}catch{}})();return()=>{live=false;};},[]);
  const [showEmail,setShowEmail]=useState(false);const [showPhone,setShowPhone]=useState(false);
  useEffect(()=>{let live=true;void loadContactPreferences().then(p=>{if(live){setShowEmail(p.show_email);setShowPhone(p.show_phone);}}).catch(()=>{});return()=>{live=false;};},[]);
  const [personalContacts,setPersonalContacts]=useState({email_primary:"",email_secondary:"",phone_primary:"",phone_secondary:""});
