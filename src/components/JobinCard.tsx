@@ -33,6 +33,8 @@ const IDENTITY_BADGE_CONTOUR=(()=>{
   return (i?"L":"M")+(13+radius*Math.cos(angle)).toFixed(2)+" "+(13+radius*Math.sin(angle)).toFixed(2);
  }).join(" ")+" Z";
 })();
+const JCARD_LEFT_CURVES=Array.from({length:15},(_,i)=>({d:`M ${-45+i*10} 330 C ${42+i*4} 235, ${-20+i*8} 116, ${78+i*7} -25`,index:i}));
+const JCARD_BOTTOM_CURVES=Array.from({length:16},(_,i)=>({d:`M ${-45+i*13} 675 C ${60+i*8} 540, ${235+i*4} 555, ${440+i*2} 395`,index:i}));
 const AWARD_POINTS=Array.from({length:48},(_,i)=>{const t=i*Math.PI/24-Math.PI/2;const radius=i%2?23:25;return (27+radius*Math.cos(t)).toFixed(2)+","+(27+radius*Math.sin(t)).toFixed(2);}).join(" ");
 const JCardQr=memo(function JCardQr({value,size}:{value:string;size:number}){
  return <QRCode value={value} size={size} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>;
@@ -79,8 +81,8 @@ function CardFace({ card, theme, expanded = false, onEdit, onQr, onShare, contac
       <Rect width="100%" height="100%" fill={"url(#" + shineId + ")"}/>
 
       {/* Fine flowing emboss lines, like the supplied satin-paper reference. Keep the QR zone clean. */}
-      {Array.from({length:15},(_,i)=><Path key={"left"+i} d={`M ${-45+i*10} 330 C ${42+i*4} 235, ${-20+i*8} 116, ${78+i*7} -25`} stroke={embossInk} strokeOpacity={embossStrength+(i%3)*0.018} strokeWidth={i%4===0?1.35:0.75} fill="none"/>)}
-      {Array.from({length:16},(_,i)=><Path key={"bottom"+i} d={`M ${-45+i*13} 675 C ${60+i*8} 540, ${235+i*4} 555, ${440+i*2} 395`} stroke={embossInk} strokeOpacity={embossStrength+(i%4)*0.018} strokeWidth={i%5===0?1.45:0.75} fill="none"/>)}
+      {JCARD_LEFT_CURVES.map(({d,index:i})=><Path key={"left"+i} d={d} stroke={embossInk} strokeOpacity={embossStrength+(i%3)*0.018} strokeWidth={i%4===0?1.35:0.75} fill="none"/>)}
+      {JCARD_BOTTOM_CURVES.map(({d,index:i})=><Path key={"bottom"+i} d={d} stroke={embossInk} strokeOpacity={embossStrength+(i%4)*0.018} strokeWidth={i%5===0?1.45:0.75} fill="none"/>)}
       <Path d="M-20 420 C105 250 225 300 420 95" stroke={embossInk} strokeOpacity={embossStrength*0.7} strokeWidth="2" fill="none"/>
     </Svg>
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
@@ -191,8 +193,8 @@ function BusinessFace({card,theme,contact,onQr,onShare,canEditMedia=false,onEdit
  ];
  return <View style={{flex:1,borderRadius:30,backgroundColor:businessCardPaper.background,overflow:"hidden"}}>
   <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" viewBox="0 0 400 650" preserveAspectRatio="none" pointerEvents="none">
-   {Array.from({length:15},(_,i)=><Path key={"left"+i} d={`M ${-45+i*10} 330 C ${42+i*4} 235, ${-20+i*8} 116, ${78+i*7} -25`} stroke={finish.text} strokeOpacity={0.12+(i%3)*0.018} strokeWidth={0.8} fill="none"/>)}
-   {Array.from({length:16},(_,i)=><Path key={"bottom"+i} d={`M ${-45+i*13} 675 C ${60+i*8} 540, ${235+i*4} 555, ${440+i*2} 395`} stroke={finish.text} strokeOpacity={0.13+(i%4)*0.018} strokeWidth={0.8} fill="none"/>)}
+   {JCARD_LEFT_CURVES.map(({d,index:i})=><Path key={"left"+i} d={d} stroke={finish.text} strokeOpacity={0.12+(i%3)*0.018} strokeWidth={0.8} fill="none"/>)}
+   {JCARD_BOTTOM_CURVES.map(({d,index:i})=><Path key={"bottom"+i} d={d} stroke={finish.text} strokeOpacity={0.13+(i%4)*0.018} strokeWidth={0.8} fill="none"/>)}
    <Path d="M-20 420 C105 250 225 300 420 95" stroke={finish.text} strokeOpacity={0.12} strokeWidth="2" fill="none"/>
   </Svg>
 
