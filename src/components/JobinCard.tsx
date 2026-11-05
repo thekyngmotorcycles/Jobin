@@ -271,7 +271,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
  useFocusEffect(useCallback(()=>{let live=true;if(ownerId)void readJCardVisibility(ownerId).then(v=>{if(live)setVisibility(v);}).catch(()=>{});return()=>{live=false;};},[ownerId]));
  const [back,setBack]=useState(initialSide==="business"),[qrOpen,setQrOpen]=useState(false);
- const canFlip=visibility.personal_enabled&&visibility.business_enabled;
+ const canFlip=showOwnerActions||(visibility.personal_enabled&&visibility.business_enabled);
  const activeBusiness=!visibility.personal_enabled&&visibility.business_enabled;
  useEffect(()=>{if(!canFlip){setBack(activeBusiness);angle.current=activeBusiness?180:0;rotation.stopAnimation();rotation.setValue(angle.current);}},[canFlip,activeBusiness,rotation]);
  const cardHeight = 450;
@@ -294,10 +294,10 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
   <View style={{width:"100%",maxWidth:520,alignSelf:"center"}}>
    <View {...(canFlip?responder.panHandlers:{})}>
    <Animated.View pointerEvents={back?"none":"auto"} style={{height:cardHeight,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:frontRotate}]}}>
-    {visibility.personal_enabled&&<CardFace card={card} theme={cardTheme} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>}
+    {(showOwnerActions||visibility.personal_enabled)&&<CardFace card={card} theme={cardTheme} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>}
    </Animated.View>
    <Animated.View pointerEvents={back?"auto":"none"} style={{position:"absolute",top:0,left:0,right:0,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:backRotate}]}}>
-    <View style={{height:cardHeight}}>{visibility.business_enabled&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} visibility={visibility}/>}</View>
+    <View style={{height:cardHeight}}>{(showOwnerActions||visibility.business_enabled)&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} visibility={visibility}/>}</View>
    </Animated.View>
 
    </View>
