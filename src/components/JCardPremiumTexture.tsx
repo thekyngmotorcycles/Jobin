@@ -34,17 +34,17 @@ function PremiumTexture({id,width=160,height=210}:{id:JCardPremiumBackgroundId;w
   ];
   return <Svg width={width} height={height} viewBox="0 0 160 210" preserveAspectRatio="none" accessible={false}>
    <Defs>
-    <LinearGradient id={base} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor=JCARD_DEFAULT_RELIEF_COLORS.c0/><Stop offset="52%" stopColor=JCARD_DEFAULT_RELIEF_COLORS.c1/><Stop offset="100%" stopColor=JCARD_DEFAULT_RELIEF_COLORS.c2/></LinearGradient>
-    <LinearGradient id={glow} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor=JCARD_DEFAULT_RELIEF_COLORS.c3 stopOpacity="0.48"/><Stop offset="48%" stopColor=JCARD_DEFAULT_RELIEF_COLORS.c4 stopOpacity="0.16"/><Stop offset="100%" stopColor=JCARD_DEFAULT_RELIEF_COLORS.c5 stopOpacity="0.65"/></LinearGradient>
-    <LinearGradient id={shadow} x1="0%" y1="0%" x2="100%" y2="0%"><Stop offset="0%" stopColor=JCARD_DEFAULT_RELIEF_COLORS.c6 stopOpacity="0.9"/><Stop offset="48%" stopColor=JCARD_DEFAULT_RELIEF_COLORS.c7 stopOpacity="0.45"/><Stop offset="100%" stopColor=JCARD_DEFAULT_RELIEF_COLORS.c8 stopOpacity="0.65"/></LinearGradient>
-    <LinearGradient id={gold} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor=JCARD_DEFAULT_RELIEF_COLORS.c9/><Stop offset="32%" stopColor=JCARD_DEFAULT_RELIEF_COLORS.c10/><Stop offset="70%" stopColor=JCARD_DEFAULT_RELIEF_COLORS.c11/><Stop offset="100%" stopColor=JCARD_DEFAULT_RELIEF_COLORS.c12/></LinearGradient>
+    <LinearGradient id={base} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c0}/><Stop offset="52%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c1}/><Stop offset="100%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c2}/></LinearGradient>
+    <LinearGradient id={glow} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c3} stopOpacity="0.48"/><Stop offset="48%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c4} stopOpacity="0.16"/><Stop offset="100%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c5} stopOpacity="0.65"/></LinearGradient>
+    <LinearGradient id={shadow} x1="0%" y1="0%" x2="100%" y2="0%"><Stop offset="0%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c6} stopOpacity="0.9"/><Stop offset="48%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c7} stopOpacity="0.45"/><Stop offset="100%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c8} stopOpacity="0.65"/></LinearGradient>
+    <LinearGradient id={gold} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c9}/><Stop offset="32%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c10}/><Stop offset="70%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c11}/><Stop offset="100%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c12}/></LinearGradient>
    </Defs>
    <Rect width="160" height="210" fill={`url(#${base})`}/>
    <Path d="M -35 0 H 175 V 42 C 87 78 44 133 -25 158 Z" fill={`url(#${glow})`}/>
    <Path d="M -30 185 C 40 137 91 111 177 43 L 177 82 C 105 134 49 162 -30 211 Z" fill={`url(#${shadow})`} opacity="0.83"/>
    <Path d="M -30 226 C 44 183 92 143 177 92 L 177 132 C 103 164 53 198 -10 236 Z" fill={`url(#${glow})`} opacity="0.6"/>
-   {bands.map((d,i)=><Path key={"shade"+i} d={d} stroke=JCARD_DEFAULT_RELIEF_COLORS.c6 strokeWidth={i===0?4.8:3.5} strokeOpacity="0.7" fill="none" transform="translate(0 2)"/>)}
-   {bands.map((d,i)=><Path key={"highlight"+i} d={d} stroke=JCARD_DEFAULT_RELIEF_COLORS.c13 strokeWidth="2.8" strokeOpacity="0.35" fill="none" transform="translate(0 -1.5)"/>)}
+   {bands.map((d,i)=><Path key={"shade"+i} d={d} stroke={JCARD_DEFAULT_RELIEF_COLORS.c6} strokeWidth={i===0?4.8:3.5} strokeOpacity="0.7" fill="none" transform="translate(0 2)"/>)}
+   {bands.map((d,i)=><Path key={"highlight"+i} d={d} stroke={JCARD_DEFAULT_RELIEF_COLORS.c13} strokeWidth="2.8" strokeOpacity="0.35" fill="none" transform="translate(0 -1.5)"/>)}
    {bands.map((d,i)=><Path key={"metal"+i} d={d} stroke={`url(#${gold})`} strokeWidth={i===0?0.8:0.65} strokeOpacity="0.82" fill="none"/>)}
   </Svg>;
  }
