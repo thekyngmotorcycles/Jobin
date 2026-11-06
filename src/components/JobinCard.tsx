@@ -63,7 +63,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
   const { fontScale } = useWindowDimensions();
   const gradientId = "jcard" + useId().replace(/[^a-zA-Z0-9]/g, "");
   const shineId=gradientId+"shine";
-  const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=appearance==="original";
+  const premium=getPremiumBackground(appearance);const showDecorativeCurves=false;
   const finish = {...jcardTokens(theme, jcardTier(card.rating, card.reviewCount)),start:premium?.base??businessCardPaper.background,end:premium?.base??businessCardPaper.background,text:premium?.ink??businessCardPaper.ink,secondary:premium?.ink??businessCardPaper.secondary,line:premium?.line??businessCardPaper.border,sealFill:businessCardPaper.muted,pendingFill:businessCardPaper.muted};
   const [artSize,setArtSize]=useState({width:0,height:0});
   const rating = displayedRating(card.rating, card.reviewCount);
@@ -189,7 +189,7 @@ function BusinessAward({label,icon,level,finish,surface}:{label:string;icon:Reac
  </View>;
 }
 export function BusinessFace({card,theme,appearance="original",contact,onQr,onShare,canEditMedia=false,onEditMedia,visibility=DEFAULT_JCARD_VISIBILITY}:{card:CardData;theme:ThemeName;appearance?:JCardPremiumBackgroundId;contact?:{email:string|null;phone:string|null};onQr?:()=>void;onShare?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void;visibility?:typeof DEFAULT_JCARD_VISIBILITY}){
- const b=card.business;const premium=appearance==="original"?null:getPremiumBackground(appearance);const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:premium?.base??businessCardPaper.background,end:premium?.base??businessCardPaper.background,text:premium?.ink??businessCardPaper.ink,secondary:premium?.ink??businessCardPaper.secondary,line:premium?.line??businessCardPaper.border,sealFill:businessCardPaper.muted};
+ const b=card.business;const premium=getPremiumBackground(appearance);const showDecorativeCurves=false;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:premium?.base??businessCardPaper.background,end:premium?.base??businessCardPaper.background,text:premium?.ink??businessCardPaper.ink,secondary:premium?.ink??businessCardPaper.secondary,line:premium?.line??businessCardPaper.border,sealFill:businessCardPaper.muted};
  const [artSize,setArtSize]=useState({width:0,height:0});
  const surface=businessInformationSurface(finish.start);
  const company=!!b?.name.trim();const businessName=(company?b!.name:card.name).trim().slice(0,30);const [businessNameWidth,setBusinessNameWidth]=useState(180);const nameFontSize=Math.max(14,Math.min(21,Math.floor(businessNameWidth/Math.max(8,businessName.length)*1.65)));const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
