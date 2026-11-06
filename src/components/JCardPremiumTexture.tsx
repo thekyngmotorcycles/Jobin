@@ -1,12 +1,11 @@
 import {JCardAdditionalFinishes} from "./JCardAdditionalFinishes";
 import {JCardFinishArtwork} from "./JCardFinishArtwork";
-import {memo,useId,useMemo} from "react";
+import {memo,useMemo} from "react";
 import Svg,{Defs,LinearGradient,Stop,Rect,Path} from "react-native-svg";
-import {JCARD_DEFAULT_RELIEF_COLORS,getPremiumBackground,type JCardPremiumBackgroundId} from "../theme/jcard-premium-backgrounds";
+import {getPremiumBackground,type JCardPremiumBackgroundId} from "../theme/jcard-premium-backgrounds";
 /** Visual preview only. Does not grant membership or change the saved JCard. */
 function PremiumTexture({id,width=160,height=210}:{id:JCardPremiumBackgroundId;width?:number;height?:number}){
  const t=getPremiumBackground(id);
- const uid=useId().replace(/[^a-zA-Z0-9]/g,"");
  const paths=useMemo(()=>Array.from({length:13},(_,i)=>{
   const n=i*12;
   switch(t?.pattern){
@@ -24,40 +23,5 @@ function PremiumTexture({id,width=160,height=210}:{id:JCardPremiumBackgroundId;w
  if(!t)return null;
  if(t.pattern.startsWith("finish-")&&id!=="finish-nocturne"&&id!=="finish-neon-carbon"&&id!=="finish-pearl-paper")return <JCardAdditionalFinishes id={id} width={width} height={height}/>;
  if(t.pattern.startsWith("finish-"))return <JCardFinishArtwork id={id} width={width} height={height}/>;
- if(id==="original"){
-  const base="navy-"+uid,glow="glow-"+uid,shadow="shadow-"+uid,gold="gold-"+uid;
-  const bands=[
-   "M -55 185 C 35 148 79 106 179 48",
-   "M -45 205 C 35 174 81 137 191 93",
-   "M -20 235 C 48 200 94 171 186 147",
-   "M 10 252 C 65 221 116 199 197 184"
-  ];
-  return <Svg width={width} height={height} viewBox="0 0 160 210" preserveAspectRatio="none" accessible={false}>
-   <Defs>
-    <LinearGradient id={base} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c0}/><Stop offset="52%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c1}/><Stop offset="100%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c2}/></LinearGradient>
-    <LinearGradient id={glow} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c3} stopOpacity="0.48"/><Stop offset="48%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c4} stopOpacity="0.16"/><Stop offset="100%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c5} stopOpacity="0.65"/></LinearGradient>
-    <LinearGradient id={shadow} x1="0%" y1="0%" x2="100%" y2="0%"><Stop offset="0%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c6} stopOpacity="0.9"/><Stop offset="48%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c7} stopOpacity="0.45"/><Stop offset="100%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c8} stopOpacity="0.65"/></LinearGradient>
-    <LinearGradient id={gold} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c9}/><Stop offset="32%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c10}/><Stop offset="70%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c11}/><Stop offset="100%" stopColor={JCARD_DEFAULT_RELIEF_COLORS.c12}/></LinearGradient>
-   </Defs>
-   <Rect width="160" height="210" fill={`url(#${base})`}/>
-   <Path d="M -35 0 H 175 V 42 C 87 78 44 133 -25 158 Z" fill={`url(#${glow})`}/>
-   <Path d="M -30 185 C 40 137 91 111 177 43 L 177 82 C 105 134 49 162 -30 211 Z" fill={`url(#${shadow})`} opacity="0.83"/>
-   <Path d="M -30 226 C 44 183 92 143 177 92 L 177 132 C 103 164 53 198 -10 236 Z" fill={`url(#${glow})`} opacity="0.6"/>
-   {bands.map((d,i)=><Path key={"shade"+i} d={d} stroke={JCARD_DEFAULT_RELIEF_COLORS.c6} strokeWidth={i===0?4.8:3.5} strokeOpacity="0.7" fill="none" transform="translate(0 2)"/>)}
-   {bands.map((d,i)=><Path key={"highlight"+i} d={d} stroke={JCARD_DEFAULT_RELIEF_COLORS.c13} strokeWidth="2.8" strokeOpacity="0.35" fill="none" transform="translate(0 -1.5)"/>)}
-   {bands.map((d,i)=><Path key={"metal"+i} d={d} stroke={`url(#${gold})`} strokeWidth={i===0?0.8:0.65} strokeOpacity="0.82" fill="none"/>)}
-  </Svg>;
- }
- if(t.pattern==="solid")return <Svg width={width} height={height} viewBox="0 0 160 210" accessible={false}><Rect width="160" height="210" rx="12" fill={t.base}/></Svg>;
- const grad="premium-"+id;
- return <Svg width={width} height={height} viewBox="0 0 160 210" accessible={false}>
-  <Defs><LinearGradient id={grad} x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor={t.base}/><Stop offset=".58" stopColor={t.base}/><Stop offset="1" stopColor={t.line} stopOpacity={t.shadow}/></LinearGradient></Defs>
-  <Rect width="160" height="210" rx="12" fill={t.base}/>
-  <Rect width="160" height="210" rx="12" fill={`url(#${grad})`}/>
-  {paths.map((d,i)=><Path key={i} d={d} stroke={t.line} strokeOpacity={.16+(i%4)*.055} strokeWidth={i%4===0?1.5:.75} fill="none"/>)}
-  <Rect x="5" y="5" width="150" height="200" rx="9" stroke={t.line} strokeOpacity=".8" strokeWidth="1.2" fill="none"/>
-  <Rect x="9" y="9" width="142" height="192" rx="7" stroke={t.line} strokeOpacity=".5" strokeWidth=".65" fill="none"/>
- </Svg>;
-}
+ if(id==="original")return null;
 
-export const JCardPremiumTexture=memo(PremiumTexture);
