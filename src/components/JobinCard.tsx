@@ -166,7 +166,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         </View>}
       </View>
     </View>
-    <Modal visible={info!==null} transparent animationType="fade" onRequestClose={()=>setInfo(null)}><View style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}><View style={{backgroundColor:jcardCommon.qrPaper,borderRadius:20,padding:24,gap:16}}><Text style={{fontSize:18,fontWeight:"700",color:jcardCommon.qrInk}}>Información</Text><ScrollView style={{maxHeight:440}} nestedScrollEnabled contentContainerStyle={{paddingBottom:8}}><Text selectable style={{fontSize:15,lineHeight:23,color:jcardCommon.qrInk}}>{info}</Text></ScrollView><Button title="Entendido" onPress={()=>setInfo(null)}/></View></View></Modal>
+    <Modal visible={info!==null} transparent animationType="fade" onRequestClose={()=>setInfo(null)}><View style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}><View style={{backgroundColor:jcardCommon.qrPaper,borderRadius:20,padding:24,gap:16}}><Text style={{fontSize:18,fontWeight:"700",color:jcardCommon.qrInk}}>Información</Text><ScrollView style={{maxHeight:440}} nestedScrollEnabled contentContainerStyle={{paddingBottom:8}}><Text style={{fontSize:15,lineHeight:23,color:jcardCommon.qrInk}}>{info}</Text></ScrollView><Button title="Entendido" onPress={()=>setInfo(null)}/></View></View></Modal>
   </View>;
 }
 
