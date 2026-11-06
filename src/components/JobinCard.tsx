@@ -63,7 +63,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
   const { fontScale } = useWindowDimensions();
   const gradientId = "jcard" + useId().replace(/[^a-zA-Z0-9]/g, "");
   const shineId=gradientId+"shine";
-  const premium=appearance==="original"?null:getPremiumBackground(appearance);
+  const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=appearance==="original";
   const finish = {...jcardTokens(theme, jcardTier(card.rating, card.reviewCount)),start:premium?.base??businessCardPaper.background,end:premium?.base??businessCardPaper.background,text:premium?.ink??businessCardPaper.ink,secondary:premium?.ink??businessCardPaper.secondary,line:premium?.line??businessCardPaper.border,sealFill:businessCardPaper.muted,pendingFill:businessCardPaper.muted};
   const [artSize,setArtSize]=useState({width:0,height:0});
   const rating = displayedRating(card.rating, card.reviewCount);
@@ -88,9 +88,9 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
       <Rect width="100%" height="100%" fill={"url(#" + shineId + ")"}/>
 
       {/* Fine flowing emboss lines, like the supplied satin-paper reference. Keep the QR zone clean. */}
-      {JCARD_LEFT_CURVES.map(({d,index:i})=><Path key={"left"+i} d={d} stroke={embossInk} strokeOpacity={embossStrength+(i%3)*0.018} strokeWidth={i%4===0?1.35:0.75} fill="none"/>)}
-      {JCARD_BOTTOM_CURVES.map(({d,index:i})=><Path key={"bottom"+i} d={d} stroke={embossInk} strokeOpacity={embossStrength+(i%4)*0.018} strokeWidth={i%5===0?1.45:0.75} fill="none"/>)}
-      <Path d="M-20 420 C105 250 225 300 420 95" stroke={embossInk} strokeOpacity={embossStrength*0.7} strokeWidth="2" fill="none"/>
+      {showDecorativeCurves&&JCARD_LEFT_CURVES.map(({d,index:i})=><Path key={"left"+i} d={d} stroke={embossInk} strokeOpacity={embossStrength+(i%3)*0.018} strokeWidth={i%4===0?1.35:0.75} fill="none"/>)}
+      {showDecorativeCurves&&JCARD_BOTTOM_CURVES.map(({d,index:i})=><Path key={"bottom"+i} d={d} stroke={embossInk} strokeOpacity={embossStrength+(i%4)*0.018} strokeWidth={i%5===0?1.45:0.75} fill="none"/>)}
+      {showDecorativeCurves&&<Path d="M-20 420 C105 250 225 300 420 95" stroke={embossInk} strokeOpacity={embossStrength*0.7} strokeWidth="2" fill="none"/>}
     </Svg>
     {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
@@ -211,9 +211,9 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
  ];
  return <View onLayout={e=>{const {width,height}=e.nativeEvent.layout;setArtSize(prev=>prev.width===width&&prev.height===height?prev:{width,height});}} style={{flex:1,borderRadius:30,backgroundColor:finish.start,overflow:"hidden"}}>
   <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" viewBox="0 0 400 650" preserveAspectRatio="none" pointerEvents="none">
-   {JCARD_LEFT_CURVES.map(({d,index:i})=><Path key={"left"+i} d={d} stroke={finish.text} strokeOpacity={0.12+(i%3)*0.018} strokeWidth={0.8} fill="none"/>)}
-   {JCARD_BOTTOM_CURVES.map(({d,index:i})=><Path key={"bottom"+i} d={d} stroke={finish.text} strokeOpacity={0.13+(i%4)*0.018} strokeWidth={0.8} fill="none"/>)}
-   <Path d="M-20 420 C105 250 225 300 420 95" stroke={finish.text} strokeOpacity={0.12} strokeWidth="2" fill="none"/>
+   {showDecorativeCurves&&JCARD_LEFT_CURVES.map(({d,index:i})=><Path key={"left"+i} d={d} stroke={finish.text} strokeOpacity={0.12+(i%3)*0.018} strokeWidth={0.8} fill="none"/>)}
+   {showDecorativeCurves&&JCARD_BOTTOM_CURVES.map(({d,index:i})=><Path key={"bottom"+i} d={d} stroke={finish.text} strokeOpacity={0.13+(i%4)*0.018} strokeWidth={0.8} fill="none"/>)}
+   {showDecorativeCurves&&<Path d="M-20 420 C105 250 225 300 420 95" stroke={finish.text} strokeOpacity={0.12} strokeWidth="2" fill="none"/>}
   </Svg>
 
   {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
