@@ -23,3 +23,21 @@ export function getPremiumBackground(id:string){return [...JCARD_CLASSIC_BACKGRO
 export const JCARD_PREMIUM_QR_COLORS = {paper:"#FFFFFF",ink:"#111111"} as const;
 
 export const JCARD_PREMIUM_TRANSPARENT="transparent" as const;
+
+/** Sculpted default navy JCard texture, shared by personal and business faces. */
+export const JCARD_DEFAULT_RELIEF_COLORS = {
+ c0: "#00072E",
+ c1: "#020B36",
+ c2: "#00051D",
+ c3: "#23345D",
+ c4: "#14224D",
+ c5: "#000316",
+ c6: "#00020F",
+ c7: "#06123B",
+ c8: "#27375D",
+ c9: "#866C36",
+ c10: "#E5C67E",
+ c11: "#AD8649",
+ c12: "#F0D79B",
+ c13: "#34436B",
+} as const;
