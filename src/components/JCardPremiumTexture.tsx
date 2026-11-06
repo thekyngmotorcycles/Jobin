@@ -24,4 +24,17 @@ function PremiumTexture({id,width=160,height=210}:{id:JCardPremiumBackgroundId;w
  if(t.pattern.startsWith("finish-")&&id!=="finish-nocturne"&&id!=="finish-neon-carbon"&&id!=="finish-pearl-paper")return <JCardAdditionalFinishes id={id} width={width} height={height}/>;
  if(t.pattern.startsWith("finish-"))return <JCardFinishArtwork id={id} width={width} height={height}/>;
  if(id==="original")return null;
+ if(t.pattern==="solid")return <Svg width={width} height={height} viewBox="0 0 160 210" accessible={false}><Rect width="160" height="210" rx="12" fill={t.base}/></Svg>;
+ const grad="premium-"+id;
+ return <Svg width={width} height={height} viewBox="0 0 160 210" accessible={false}>
+  <Defs><LinearGradient id={grad} x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor={t.base}/><Stop offset=".58" stopColor={t.base}/><Stop offset="1" stopColor={t.line} stopOpacity={t.shadow}/></LinearGradient></Defs>
+  <Rect width="160" height="210" rx="12" fill={t.base}/>
+  <Rect width="160" height="210" rx="12" fill={`url(#${grad})`}/>
+  {paths.map((d,i)=><Path key={i} d={d} stroke={t.line} strokeOpacity={.16+(i%4)*.055} strokeWidth={i%4===0?1.5:.75} fill="none"/>)}
+  <Rect x="5" y="5" width="150" height="200" rx="9" stroke={t.line} strokeOpacity=".8" strokeWidth="1.2" fill="none"/>
+  <Rect x="9" y="9" width="142" height="192" rx="7" stroke={t.line} strokeOpacity=".5" strokeWidth=".65" fill="none"/>
+ </Svg>;
+}
+
+export const JCardPremiumTexture=memo(PremiumTexture);
 
