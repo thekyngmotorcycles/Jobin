@@ -36,6 +36,16 @@ export default function Professional() {
  const [editedPrimary,setEditedPrimary]=useState(false);
  function openSection(id:Section){setSection(current=>current===id?null:id);}
  function openProfession(code:string,primary:boolean){choose(code);setSpecialties(w?.professions.find(p=>p.profession_code===code)?.specialties??[]);setFormMode("edit");setEditedPrimary(primary);setEditingProfession(code);setProfessionFormOpen(true);}
+ async function persistProfession(asPrimary:boolean){
+  if(!profession)throw new Error("Selecciona una profesión.");
+  if(w?.professions.some(p=>p.profession_code===profession&&p.primary_profession&&!asPrimary))throw new Error("Esta profesión ya es tu profesión principal.");
+  await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:asPrimary});
+  await saveProfessionSpecialties(profession,specialties);
+  const fresh=await loadWorkspace();
+  const saved=fresh?.professions.find(p=>p.profession_code===profession);
+  if(!saved||saved.primary_profession!==asPrimary||specialties.some(item=>!saved.specialties?.includes(item)))throw new Error("No se pudo confirmar el guardado. Actualiza e inténtalo nuevamente.");
+  setProfessionFormOpen(false);setEditingProfession(null);setProfession("");setSpecialties([]);
+ }
  function addProfession(){setSpecialties([]);setProfession("");setTraining("graduado");setInstitution(null);setFormMode("add");setEditingProfession(null);setEditedPrimary(false);setProfessionFormOpen(true);}
  useEffect(()=>{if(!section)return;const t=setTimeout(()=>scrollRef.current?.scrollTo({y:Math.max(0,(positions.current[section]??0)-18),animated:true}),160);return()=>clearTimeout(t);},[section]);
  const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
@@ -150,4 +160,6 @@ export default function Professional() {
    </View>
   </>}
  </Screen>;
-}
+}         <Button secondary title={action.busy?"Guardando…":"Guardar como secundaria"} onPress={()=>void action.run(()=>persistProfession(false),"Profesión secundaria guardada.")}/>
+         <Button title={action.busy?"Guardando…":"Guardar como principal"} onPress={()=>void action.run(()=>persistProfession(true),"Profesión principal guardada.")}/>
+
