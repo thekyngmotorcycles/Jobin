@@ -9,3 +9,7 @@ test("caption or profession alone cannot approve a clip",()=>assert.equal(decide
 test("professional humor is allowed when actually connected to work",()=>assert.equal(decideProfessionalRelevance(evidence({category:"professional_entertainment"})),"approve"));
 test("ambiguous clips require review",()=>assert.equal(decideProfessionalRelevance(evidence({confidence:.66})),"review"));
 test("invalid or unsupported evidence fails closed",()=>{assert.throws(()=>decideProfessionalRelevance(evidence({confidence:1.4})));assert.throws(()=>decideProfessionalRelevance(evidence({category:"lifestyle"})));assert.equal(JOBIN_CONTENT_CATEGORIES.length,5);});
+
+test("general history education qualifies without a professional connection",()=>assert.equal(decideProfessionalRelevance(evidence({category:"education",meaningfulWorkConnection:false,explanation:"Explains an ancient war with historical context"})),"approve"));
+test("science what-if explanation qualifies without a work connection",()=>assert.equal(decideProfessionalRelevance(evidence({category:"education",meaningfulWorkConnection:false,onScreenTextEvidence:true,explanation:"Explains consequences of the Moon disappearing"})),"approve"));
+test("noneducational spectacle remains excluded",()=>assert.equal(decideProfessionalRelevance(evidence({category:null,meaningfulWorkConnection:false,confidence:.97,explanation:"Dramatic scenes without explanation"})),"reject"));
