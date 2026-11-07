@@ -23,3 +23,10 @@ Accept actual work demonstrations, professional education (including silent vide
 - Estimate per-minute video processing cost and set budgets/rate limits.
 
 **Do not turn on automatic relevance approvals until these gates and a real provider are connected and tested.**
+
+## Sustainable educational disclaimer (product decision)
+Jobin **does not verify, certify, or hire professionals to review the technical correctness of educational videos**. Never expose a `verified` professional-review status or badge. Creators may publish educational videos without credentials, subject to general content safety and relevance checks.
+
+Educational uploads may carry `disclosure.educationalDisclaimer: true`, displayed as the brief, subtle **“Contenido educativo no verificado”** notice. This is a disclaimer, **not** evidence that the content was reviewed, nor a guarantee of safety or accuracy. Show it consistently for educational content, not based on claimed credentials. AI-generated status is a separate disclosure.
+
+At scale, prioritize automated relevance and safety checks, rate limits, duplicate detection, user reports and risk-based escalation; do not promise universal human review. Escalation for dangerous material is safety moderation, not professional certification. Keep processing budgets and model costs measurable.
