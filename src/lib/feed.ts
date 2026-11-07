@@ -1,10 +1,14 @@
 export const FEED_TABS = ["Following", "Local", "Para ti"] as const;
 export type FeedTab = typeof FEED_TABS[number];
+export type VideoCreationMethod = "recorded"|"ai_assisted"|"ai_generated";
+export type ProfessionalReviewStatus = "verified"|"not_verified"|"not_applicable";
+export interface VideoDisclosure { creationMethod:VideoCreationMethod; professionalReview:ProfessionalReviewStatus }
 export interface FeedClip {
  id:string; postId:string; creatorId:string; video:string; avatar:string;
  author:string; handle:string; role:string; caption:string; audio:string;
  likes:number; comments:number; shares:number;
  chapter:"My Day"|"My Evening"|"My Night"; time:string;
+ disclosure?:VideoDisclosure;
 }
 const base="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/";
 export const FEED_POSTS: Omit<FeedClip,"id">[] = [
