@@ -160,6 +160,4 @@ export default function Professional() {
    </View>
   </>}
  </Screen>;
-}         <Button secondary title={action.busy?"Guardando…":"Guardar como secundaria"} onPress={()=>void action.run(()=>persistProfession(false),"Profesión secundaria guardada.")}/>
-         <Button title={action.busy?"Guardando…":"Guardar como principal"} onPress={()=>void action.run(()=>persistProfession(true),"Profesión principal guardada.")}/>
-
+}
