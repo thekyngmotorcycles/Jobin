@@ -170,20 +170,25 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
   </View>;
 }
 
+function BusinessAwardGlyph({label,icon}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"]}){
+ if(label==="Profesionalismo")return <Svg width={23} height={23} viewBox="0 0 24 24" accessible={false}><Path d="M2 7l3-2 4 3 2-1 3 1 3-3 5 3-3 6-3 2-4 3-3-2-3-3-2-1z" fill="none" stroke={BUSINESS_BADGE_NEUTRAL.ink} strokeWidth="1.65" strokeLinejoin="round"/><Path d="M9 8l3 3 2-1 5 4M7 12l5 5M9 10l6 6" fill="none" stroke={BUSINESS_BADGE_NEUTRAL.ink} strokeWidth="1.5" strokeLinecap="round"/></Svg>;
+ if(label==="En el mercado")return <Svg width={23} height={23} viewBox="0 0 24 24" accessible={false}><Path d="M3 11h18v10H3zM2 8h20l-2 4H4zM9 21v-6h6v6" fill="none" stroke={BUSINESS_BADGE_NEUTRAL.ink} strokeWidth="1.6" strokeLinejoin="round"/><Path d="M12 2c-2.2 0-3.5 1.5-3.5 3.2 0 2 3.5 5 3.5 5s3.5-3 3.5-5C15.5 3.5 14.2 2 12 2z" fill={BUSINESS_BADGE_NEUTRAL.face} stroke={BUSINESS_BADGE_NEUTRAL.ink} strokeWidth="1.3"/><Circle cx="12" cy="5.2" r="1" fill={BUSINESS_BADGE_NEUTRAL.ink}/></Svg>;
+ return <Ionicons name={icon} size={21} color={BUSINESS_BADGE_NEUTRAL.ink}/>;
+}
 function BusinessAward({label,icon,level,finish,surface}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"];level:number;finish:ReturnType<typeof jcardTokens>;surface:ReturnType<typeof businessInformationSurface>}){
  const tone=level===3?jcardCommon.businessGold:level===2?jcardCommon.businessSilver:level===1?jcardCommon.businessBronze:BUSINESS_BADGE_NEUTRAL.border;
  const caption=label.toUpperCase();
  const captionLines=caption==="ATENCIÓN AL CLIENTE"?["ATENCIÓN","AL CLIENTE"]:caption==="PRECIOS COMPETITIVOS"?["PRECIOS","COMPETITIVOS"]:caption==="EN EL MERCADO"?["EN EL","MERCADO"]:[caption];
  const points=AWARD_POINTS;
  const path="M"+points.replaceAll(" "," L")+" Z";
- return <View accessibilityLabel={label+": "+(level===0?"Sin acreditar":level===1?"Bronce":level===2?"Plata":"Oro")} style={{flex:1,minWidth:0,alignItems:"center",minHeight:83,marginHorizontal:1}}>
-  <View style={{width:"100%",minHeight:45,aspectRatio:1,alignItems:"center",justifyContent:"center"}}>
+ return <View accessibilityLabel={label+": "+(level===0?"Sin acreditar":level===1?"Bronce":level===2?"Plata":"Oro")} style={{flex:1,minWidth:0,alignItems:"center",minHeight:83,marginHorizontal:1,overflow:"visible"}}>
+  <View style={{width:"100%",minHeight:45,aspectRatio:1,alignItems:"center",justifyContent:"center",borderRadius:28,backgroundColor:"rgba(245,245,245,0.13)",shadowColor:"#000",shadowOffset:{width:0,height:3},shadowOpacity:0.23,shadowRadius:5,elevation:4}}>
    <Svg width="100%" height="100%" viewBox="0 0 54 54" style={{position:"absolute"}}><Defs><LinearGradient id={"metal-"+label.replace(/[^a-zA-Z0-9]/g,"")} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={level===3?BUSINESS_MEDAL_COLORS[0]:level===2?BUSINESS_MEDAL_COLORS[1]:level===1?BUSINESS_MEDAL_COLORS[2]:BUSINESS_MEDAL_COLORS[3]}/><Stop offset="24%" stopColor={level===3?BUSINESS_MEDAL_COLORS[4]:level===2?BUSINESS_MEDAL_COLORS[5]:level===1?BUSINESS_MEDAL_COLORS[6]:BUSINESS_MEDAL_COLORS[7]}/><Stop offset="53%" stopColor={level===3?BUSINESS_MEDAL_COLORS[8]:level===2?BUSINESS_MEDAL_COLORS[9]:level===1?BUSINESS_MEDAL_COLORS[10]:BUSINESS_MEDAL_COLORS[11]}/><Stop offset="77%" stopColor={level===3?BUSINESS_MEDAL_COLORS[12]:level===2?BUSINESS_MEDAL_COLORS[13]:level===1?BUSINESS_MEDAL_COLORS[14]:BUSINESS_MEDAL_COLORS[15]}/><Stop offset="100%" stopColor={level===3?BUSINESS_MEDAL_COLORS[16]:level===2?BUSINESS_MEDAL_COLORS[17]:level===1?BUSINESS_MEDAL_COLORS[18]:BUSINESS_MEDAL_COLORS[19]}/></LinearGradient></Defs><Path d={path} fill={"url(#metal-"+label.replace(/[^a-zA-Z0-9]/g,"")+")"} stroke={tone} strokeWidth="1.4"/><Circle cx="27" cy="27" r="21" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.65" strokeWidth="1.3"/><Circle cx="27" cy="27" r="19.2" fill={BUSINESS_BADGE_NEUTRAL.face} stroke={tone} strokeWidth="1.4"/><Path d="M 12 26 A 15 15 0 0 1 41 23" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.45" strokeWidth="2"/></Svg>
    <Ionicons name={icon} size={21} color={BUSINESS_BADGE_NEUTRAL.ink}/>
   </View>
-  <View style={{marginTop:-3,width:"100%",height:27,borderRadius:17,borderWidth:0.8,borderColor:BUSINESS_BADGE_NEUTRAL.border,backgroundColor:BUSINESS_BADGE_NEUTRAL.ribbon,justifyContent:"center",alignItems:"center",paddingHorizontal:1,overflow:"hidden"}}>
+  <View style={{marginTop:-3,width:"100%",height:27,borderRadius:17,borderWidth:0.8,borderColor:BUSINESS_BADGE_NEUTRAL.border,backgroundColor:"rgba(240,240,240,0.78)",shadowColor:"#000",shadowOffset:{width:0,height:2},shadowOpacity:0.18,shadowRadius:4,elevation:3,justifyContent:"center",alignItems:"center",paddingHorizontal:1,overflow:"hidden"}}>
    <Svg width="100%" height="100%" style={{position:"absolute"}} viewBox="0 0 80 27" preserveAspectRatio="none"><Defs><LinearGradient id="award-ribbon-texture" x1="0%" y1="0%" x2="0%" y2="100%"><Stop offset="0%" stopColor={BUSINESS_BADGE_NEUTRAL.face}/><Stop offset="42%" stopColor={BUSINESS_BADGE_NEUTRAL.ribbon}/><Stop offset="100%" stopColor={BUSINESS_BADGE_NEUTRAL.border} stopOpacity="0.32"/></LinearGradient></Defs><Path d="M 0 0 H 80 V 27 H 0 Z" fill="url(#award-ribbon-texture)"/><Path d="M 5 5 Q 40 0 75 5" stroke={BUSINESS_BADGE_NEUTRAL.face} strokeWidth="1" strokeOpacity="0.8" fill="none"/><Path d="M 5 23 Q 40 27 75 23" stroke={BUSINESS_BADGE_NEUTRAL.border} strokeWidth="0.5" strokeOpacity="0.5" fill="none"/></Svg>
-   {captionLines.map((line,i)=><Text key={i} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontSize:captionLines.length===1?6.5:7.3,lineHeight:9,fontWeight:"800",textAlign:"center",color:BUSINESS_BADGE_NEUTRAL.ink,includeFontPadding:false,width:"100%"}}>{line}</Text>)}
+   {captionLines.map((line,i)=><Text key={i} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontSize:7,lineHeight:9,fontWeight:"800",textAlign:"center",color:BUSINESS_BADGE_NEUTRAL.ink,includeFontPadding:false,width:"100%"}}>{line}</Text>)}
   </View>
   <Text numberOfLines={1} style={{fontSize:10,color:level===0?surface.pending:tone,letterSpacing:-1}}>{level===0?"☆☆☆":"★".repeat(level)+"☆".repeat(3-level)}</Text>
  </View>;
@@ -206,8 +211,8 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
   {label:"Atención al cliente",icon:"headset-outline" as const,level:voteLevel("service")},
   {label:"Precios competitivos",icon:"cash-outline" as const,level:voteLevel("prices")},
   {label:"Puntualidad",icon:"calendar-outline" as const,level:voteLevel("punctuality")},
-  {label:"Profesionalismo",icon:"person-outline" as const,level:voteLevel("professionalism")},
-  {label:"En el mercado",icon:"trophy-outline" as const,level:voteLevel("tenure")},
+  {label:"Profesionalismo",icon:"people-outline" as const,level:voteLevel("professionalism")},
+  {label:"En el mercado",icon:"storefront-outline" as const,level:voteLevel("tenure")},
  ];
  return <View onLayout={e=>{const {width,height}=e.nativeEvent.layout;setArtSize(prev=>prev.width===width&&prev.height===height?prev:{width,height});}} style={{flex:1,borderRadius:30,backgroundColor:finish.start,overflow:"hidden"}}>
   <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" viewBox="0 0 400 650" preserveAspectRatio="none" pointerEvents="none">
@@ -233,8 +238,8 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
      <View style={{flexDirection:"row",alignItems:"center",gap:6,marginTop:5}}>{hvacCategory?<View style={{width:20,height:20,alignItems:"center",justifyContent:"center"}}><Ionicons name="snow-outline" size={20} color={businessIconInk}/><Ionicons name="aperture-outline" size={11} color={businessIconInk} style={{position:"absolute"}}/></View>:<Ionicons name={categoryIcon} size={18} color={businessIconInk}/>}<Text numberOfLines={2} style={{flex:1,fontSize:13,fontWeight:"600",color:premium?finish.text:businessCardAccents.category}}>{company?category:card.role}</Text></View>
     </View>
     <View style={{alignItems:"center",gap:3,width:"33%",marginRight:-4,marginTop:-3}}>
-     <View style={{borderRadius:20,borderWidth:1,borderColor:finish.line,paddingVertical:3,paddingHorizontal:3,backgroundColor:surface.fill,alignItems:"center",elevation:2}}>
-      <Text numberOfLines={1} adjustsFontSizeToFit style={{color:surface.ink,fontSize:12,fontWeight:"700"}}>{ratingUnlocked?rating!.toFixed(1):"0.0"} <Text style={{color:ratingUnlocked?jcardCommon.businessGold:surface.pending}}>{ratingUnlocked?"★★★★★":"☆☆☆☆☆"}</Text></Text>
+     <View style={{borderRadius:20,borderWidth:1,borderColor:finish.line,paddingVertical:3,paddingHorizontal:3,backgroundColor:"rgba(32,33,36,0.68)",alignItems:"center",shadowColor:"#000",shadowOffset:{width:0,height:3},shadowOpacity:0.25,shadowRadius:6,elevation:5}}>
+      <Text numberOfLines={1} adjustsFontSizeToFit style={{color:"#FFFFFF",fontSize:12,fontWeight:"700"}}>{ratingUnlocked?rating!.toFixed(1):"0.0"} <Text style={{color:ratingUnlocked?jcardCommon.businessGold:surface.pending}}>{ratingUnlocked?"★★★★★":"☆☆☆☆☆"}</Text></Text>
      </View>
      <Text style={{color:finish.secondary,fontSize:10,textAlign:"center"}}>({reviewCount} {reviewCount===1?"reseña":"reseñas"})</Text>
      {!!b?.opened&&<View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="calendar-outline" size={13} color={finish.secondary}/><Text style={{color:finish.secondary,fontSize:10}}>Desde {b.opened}</Text></View>}
