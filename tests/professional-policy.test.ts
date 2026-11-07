@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {decideProfessionalRelevance,JOBIN_CONTENT_CATEGORIES} from "../server/moderation/professional-policy.ts";
+const evidence=(overrides:Record<string,unknown>={})=>({category:"work_demonstration" as const,visualEvidence:true,audioEvidence:false,onScreenTextEvidence:false,meaningfulWorkConnection:true,confidence:.96,explanation:"Work visibly demonstrated",...overrides});
+test("silent work demonstration is permitted",()=>assert.equal(decideProfessionalRelevance(evidence()),"approve"));
+test("subtitles alone can establish professional relevance",()=>assert.equal(decideProfessionalRelevance(evidence({visualEvidence:false,onScreenTextEvidence:true,category:"education"})),"approve"));
+test("personal gym routine unrelated to work is rejected",()=>assert.equal(decideProfessionalRelevance(evidence({category:null,meaningfulWorkConnection:false,confidence:.98})),"reject"));
+test("caption or profession alone cannot approve a clip",()=>assert.equal(decideProfessionalRelevance(evidence({visualEvidence:false,audioEvidence:false,onScreenTextEvidence:false})),"review"));
+test("professional humor is allowed when actually connected to work",()=>assert.equal(decideProfessionalRelevance(evidence({category:"professional_entertainment"})),"approve"));
+test("ambiguous clips require review",()=>assert.equal(decideProfessionalRelevance(evidence({confidence:.66})),"review"));
+test("invalid or unsupported evidence fails closed",()=>{assert.throws(()=>decideProfessionalRelevance(evidence({confidence:1.4})));assert.throws(()=>decideProfessionalRelevance(evidence({category:"lifestyle"})));assert.equal(JOBIN_CONTENT_CATEGORIES.length,5);});
