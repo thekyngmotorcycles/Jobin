@@ -40,7 +40,7 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  const [expanded,setExpanded]=useState(false);
  const [disclosureVisible,setDisclosureVisible]=useState(true);
  useEffect(()=>{setDisclosureVisible(true);if(!active)return;const timer=setTimeout(()=>setDisclosureVisible(false),4500);return()=>clearTimeout(timer);},[active,clip.postId]);
- const disclosureLabels=[clip.disclosure?.creationMethod==="ai_generated"?"Generado con IA":clip.disclosure?.creationMethod==="ai_assisted"?"Editado con IA":null,clip.disclosure?.professionalReview==="not_verified"?"Sin revisión profesional":null].filter((label):label is string=>!!label);
+ const disclosureLabels=[clip.disclosure?.creationMethod==="ai_generated"?"Generado con IA":clip.disclosure?.creationMethod==="ai_assisted"?"Editado con IA":null,clip.disclosure?.educationalDisclaimer?"Contenido educativo no verificado":null].filter((label):label is string=>!!label);
  const caption=clip.caption.trim().slice(0,200);
  const shortCaption=caption.split(/\s+/).slice(0,5).join(" ")+(caption.split(/\s+/).length>5?"…":"");const disc=useRef(new Animated.Value(0)).current;
  const player=useVideoPlayer(clip.video,p=>{p.loop=true;p.muted=true;});
