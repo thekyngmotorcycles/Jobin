@@ -8,7 +8,7 @@ import { memo, useCallback, useEffect, useId, useRef, useState } from "react";
 import { router } from "expo-router";
 import { Animated, Image, Linking, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Rect, Stop, Path, Circle, SvgXml, ClipPath, Image as SvgImage } from "react-native-svg";
 import {WORDMARK_XML} from "../theme/wordmark";
 import {JCARD_WORDMARK_XML} from "../theme/jcard-wordmark";
@@ -173,11 +173,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
 
 function BusinessAwardGlyph({label,icon}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"]}){
  const ink=BUSINESS_BADGE_NEUTRAL.ink;
- if(label==="Profesionalismo")return <Svg width={23} height={23} viewBox="0 0 24 24" accessible={false}>
-  <Path d="M2 8l3-2 3 3-3 5-3-2V8ZM22 8l-3-2-3 3 3 5 3-2V8Z" fill="none" stroke={ink} strokeWidth="1.6" strokeLinejoin="round"/>
-  <Path d="M7.2 9.5 10 7.7c.8-.5 1.5-.4 2.3 0l1 .5 2.5-1.1M8.1 10.2l2.1-1.3c.6-.4 1.2-.3 1.8.1l1.1.7c.6.4 1.4.4 2-.1l.9-.7" fill="none" stroke={ink} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  <Path d="m5.5 14 4.9 4.2c.6.5 1.3.5 1.8 0l.4-.5m-3.2-3.1 4 3.4c.6.5 1.3.4 1.7-.2l.3-.5m-3.3-3.1 3.5 2.9c.6.5 1.4.4 1.8-.2l.2-.5m-3.2-3.2 3.2 2.7c.7.5 1.5.2 1.8-.5l.4-1.2" fill="none" stroke={ink} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
- </Svg>;
+ if(label==="Profesionalismo")return <MaterialCommunityIcons name="handshake-outline" size={24} color={ink}/>;
  if(label==="En el mercado")return <Svg width={23} height={23} viewBox="0 0 24 24" accessible={false}>
   <Path d="M4 10h16v11H4V10ZM3 7h18l-1.5 4H4.5L3 7ZM7 7l-1 4M12 7v4M17 7l1 4" fill="none" stroke={ink} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
   <Path d="M8 21v-7h5v7M16 14h3v3h-3" fill="none" stroke={ink} strokeWidth="1.6" strokeLinejoin="round"/>
