@@ -29,14 +29,16 @@ export default function Professional() {
  const positions=useRef<Partial<Record<Section,number>>>({});
  const [editingProfession,setEditingProfession]=useState<string|null>(null);
  const [professionFormOpen,setProfessionFormOpen]=useState(false);
+ const [professionSaveError,setProfessionSaveError]=useState("");
  const professionFormRef=useRef<View>(null);
  const scrollToProfessionForm=()=>{const content=scrollRef.current?.getInnerViewNode();if(!content)return;professionFormRef.current?.measureLayout(content,(_x,y)=>scrollRef.current?.scrollTo({y:Math.max(0,y-24),animated:true}),()=>{});};
  useEffect(()=>{if(section!=="professions"||!professionFormOpen)return;const timer=setTimeout(scrollToProfessionForm,260);return()=>clearTimeout(timer);},[section,professionFormOpen,editingProfession]);
  const [formMode,setFormMode]=useState<"add"|"edit">("add");
  const [editedPrimary,setEditedPrimary]=useState(false);
  function openSection(id:Section){setSection(current=>current===id?null:id);}
- function openProfession(code:string,primary:boolean){choose(code);setSpecialties(w?.professions.find(p=>p.profession_code===code)?.specialties??[]);setFormMode("edit");setEditedPrimary(primary);setEditingProfession(code);setProfessionFormOpen(true);}
+ function openProfession(code:string,primary:boolean){setProfessionSaveError("");choose(code);setSpecialties(w?.professions.find(p=>p.profession_code===code)?.specialties??[]);setFormMode("edit");setEditedPrimary(primary);setEditingProfession(code);setProfessionFormOpen(true);}
  async function persistProfession(asPrimary:boolean){
+  setProfessionSaveError("");
   if(!profession)throw new Error("Selecciona una profesión.");
   if(w?.professions.some(p=>p.profession_code===profession&&p.primary_profession&&!asPrimary))throw new Error("Esta profesión ya es tu profesión principal.");
   await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:asPrimary});
@@ -46,7 +48,7 @@ export default function Professional() {
   if(!saved||saved.primary_profession!==asPrimary||specialties.some(item=>!saved.specialties?.includes(item)))throw new Error("No se pudo confirmar el guardado. Actualiza e inténtalo nuevamente.");
   setProfessionFormOpen(false);setEditingProfession(null);setProfession("");setSpecialties([]);
  }
- function addProfession(){setSpecialties([]);setProfession("");setTraining("graduado");setInstitution(null);setFormMode("add");setEditingProfession(null);setEditedPrimary(false);setProfessionFormOpen(true);}
+ function addProfession(){setProfessionSaveError("");setSpecialties([]);setProfession("");setTraining("graduado");setInstitution(null);setFormMode("add");setEditingProfession(null);setEditedPrimary(false);setProfessionFormOpen(true);}
  useEffect(()=>{if(!section)return;const t=setTimeout(()=>scrollRef.current?.scrollTo({y:Math.max(0,(positions.current[section]??0)-18),animated:true}),160);return()=>clearTimeout(t);},[section]);
  const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
  useEffect(()=>{let live=true;void (async()=>{try{const owner=await appearanceOwner();if(owner){const v=await readJCardVisibility(owner);if(live)setVisibility(v);}}catch{}})();return()=>{live=false;};},[]);
