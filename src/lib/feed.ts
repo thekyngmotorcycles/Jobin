@@ -1,8 +1,7 @@
 export const FEED_TABS = ["Following", "Local", "Para ti"] as const;
 export type FeedTab = typeof FEED_TABS[number];
 export type VideoCreationMethod = "recorded"|"ai_assisted"|"ai_generated";
-export type ProfessionalReviewStatus = "verified"|"not_verified"|"not_applicable";
-export interface VideoDisclosure { creationMethod:VideoCreationMethod; professionalReview:ProfessionalReviewStatus }
+export interface VideoDisclosure { creationMethod:VideoCreationMethod; educationalDisclaimer?:boolean }
 export interface FeedClip {
  id:string; postId:string; creatorId:string; video:string; avatar:string;
  author:string; handle:string; role:string; caption:string; audio:string;
