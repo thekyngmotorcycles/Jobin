@@ -38,6 +38,9 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  const [error,setError]=useState("");const [muted,setMuted]=useState(true);const [paused,setPaused]=useState(false);
  const [sheet,setSheet]=useState<"comments"|"creator"|null>(null);const [draft,setDraft]=useState("");const [shareError,setShareError]=useState("");
  const [expanded,setExpanded]=useState(false);
+ const [disclosureVisible,setDisclosureVisible]=useState(true);
+ useEffect(()=>{setDisclosureVisible(true);if(!active)return;const timer=setTimeout(()=>setDisclosureVisible(false),4500);return()=>clearTimeout(timer);},[active,clip.postId]);
+ const disclosureLabels=[clip.disclosure?.creationMethod==="ai_generated"?"Generado con IA":clip.disclosure?.creationMethod==="ai_assisted"?"Editado con IA":null,clip.disclosure?.professionalReview==="not_verified"?"Sin revisión profesional":null].filter((label):label is string=>!!label);
  const caption=clip.caption.trim().slice(0,200);
  const shortCaption=caption.split(/\s+/).slice(0,5).join(" ")+(caption.split(/\s+/).length>5?"…":"");const disc=useRef(new Animated.Value(0)).current;
  const player=useVideoPlayer(clip.video,p=>{p.loop=true;p.muted=true;});
@@ -61,6 +64,10 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  {paused&&<View style={{flex:1,justifyContent:"center",alignItems:"center"}}><Ionicons name="play" size={56} color={colors.mediaPlay}/></View>}
  </Pressable>
  <View pointerEvents="none" style={{position:"absolute",left:0,right:0,bottom:0,height:170+barHeight,backgroundColor:colors.mediaTint}}/>
+ {disclosureLabels.length>0&&<View style={{position:"absolute",top:112,left:12,right:70,alignItems:"flex-start"}}>
+  {disclosureVisible?<View pointerEvents="none" accessibilityLabel={disclosureLabels.join(". ")} style={{backgroundColor:colors.mediaNotice,borderRadius:12,paddingHorizontal:10,paddingVertical:5,maxWidth:"100%"}}><Text numberOfLines={2} style={{color:colors.mediaText,fontSize:11,fontWeight:"600"}}>{disclosureLabels.join("  ·  ")}</Text></View>
+  :<Pressable accessibilityRole="button" accessibilityLabel="Ver avisos del video" onPress={()=>setDisclosureVisible(true)} style={{backgroundColor:colors.mediaNotice,borderRadius:12,paddingHorizontal:9,paddingVertical:5}}><Ionicons name="information-circle-outline" size={15} color={colors.mediaText}/></Pressable>}
+ </View>}
  <View style={{position:"absolute",right:8,bottom:barHeight+12,alignItems:"center",gap:1,width:58}}>
  <Pressable accessibilityRole="button" accessibilityLabel={"Ver perfil de "+clip.author} onPress={()=>router.push({pathname:"/creator/[id]",params:{id:clip.creatorId}})} style={{alignItems:"center",marginBottom:2}}>
   <Avatar uri={clip.avatar} name={clip.author} size={52}/>
