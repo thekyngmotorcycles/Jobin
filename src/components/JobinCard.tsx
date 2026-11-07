@@ -173,7 +173,15 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
 
 function BusinessAwardGlyph({label,icon}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"]}){
  if(label==="Profesionalismo")return <Svg width={23} height={23} viewBox="0 0 24 24" accessible={false}><Path d="M2 7l3-2 4 3 2-1 3 1 3-3 5 3-3 6-3 2-4 3-3-2-3-3-2-1z" fill="none" stroke={BUSINESS_BADGE_NEUTRAL.ink} strokeWidth="1.65" strokeLinejoin="round"/><Path d="M9 8l3 3 2-1 5 4M7 12l5 5M9 10l6 6" fill="none" stroke={BUSINESS_BADGE_NEUTRAL.ink} strokeWidth="1.5" strokeLinecap="round"/></Svg>;
- if(label==="En el mercado")return <Svg width={23} height={23} viewBox="0 0 24 24" accessible={false}><Path d="M3 11h18v10H3zM2 8h20l-2 4H4zM9 21v-6h6v6" fill="none" stroke={BUSINESS_BADGE_NEUTRAL.ink} strokeWidth="1.6" strokeLinejoin="round"/><Path d="M12 2c-2.2 0-3.5 1.5-3.5 3.2 0 2 3.5 5 3.5 5s3.5-3 3.5-5C15.5 3.5 14.2 2 12 2z" fill={BUSINESS_BADGE_NEUTRAL.face} stroke={BUSINESS_BADGE_NEUTRAL.ink} strokeWidth="1.3"/><Circle cx="12" cy="5.2" r="1" fill={BUSINESS_BADGE_NEUTRAL.ink}/></Svg>;
+ if(label==="En el mercado")return <Svg width={27} height={27} viewBox="0 0 32 32" accessible={false}>
+  <Path d="M5 17H27V28H5Z" fill={BUSINESS_BADGE_NEUTRAL.ink}/>
+  <Path d="M4 13H28V18H4Z" fill={BUSINESS_BADGE_NEUTRAL.ink}/>
+  <Path d="M7 13L10 18H13L11 13ZM15 13L16 18H19L18 13ZM22 13L25 18H28L26 13Z" fill={BUSINESS_BADGE_NEUTRAL.face}/>
+  <Path d="M11 28V21H17V28M21 21H25V24H21" fill={BUSINESS_BADGE_NEUTRAL.face}/>
+  <Circle cx="16" cy="8" r="7.5" fill={BUSINESS_BADGE_NEUTRAL.face}/>
+  <Path d="M16 1C12 1 9 4 9 8c0 4.5 7 10 7 10s7-5.5 7-10c0-4-3-7-7-7Z" fill={BUSINESS_BADGE_NEUTRAL.ink} stroke={BUSINESS_BADGE_NEUTRAL.face} strokeWidth="1.2"/>
+  <Circle cx="16" cy="8" r="2.7" fill={BUSINESS_BADGE_NEUTRAL.face}/>
+ </Svg>;
  return <Ionicons name={icon} size={21} color={BUSINESS_BADGE_NEUTRAL.ink}/>;
 }
 function BusinessAward({label,icon,level,finish,surface,onPress}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"];level:number;finish:ReturnType<typeof jcardTokens>;surface:ReturnType<typeof businessInformationSurface>;onPress:()=>void}){
