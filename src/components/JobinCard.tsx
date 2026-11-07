@@ -172,17 +172,18 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
 }
 
 function BusinessAwardGlyph({label,icon}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"]}){
- if(label==="Profesionalismo")return <Svg width={23} height={23} viewBox="0 0 24 24" accessible={false}><Path d="M2 7l3-2 4 3 2-1 3 1 3-3 5 3-3 6-3 2-4 3-3-2-3-3-2-1z" fill="none" stroke={BUSINESS_BADGE_NEUTRAL.ink} strokeWidth="1.65" strokeLinejoin="round"/><Path d="M9 8l3 3 2-1 5 4M7 12l5 5M9 10l6 6" fill="none" stroke={BUSINESS_BADGE_NEUTRAL.ink} strokeWidth="1.5" strokeLinecap="round"/></Svg>;
- if(label==="En el mercado")return <Svg width={27} height={27} viewBox="0 0 32 32" accessible={false}>
-  <Path d="M5 17H27V28H5Z" fill={BUSINESS_BADGE_NEUTRAL.ink}/>
-  <Path d="M4 13H28V18H4Z" fill={BUSINESS_BADGE_NEUTRAL.ink}/>
-  <Path d="M7 13L10 18H13L11 13ZM15 13L16 18H19L18 13ZM22 13L25 18H28L26 13Z" fill={BUSINESS_BADGE_NEUTRAL.face}/>
-  <Path d="M11 28V21H17V28M21 21H25V24H21" fill={BUSINESS_BADGE_NEUTRAL.face}/>
-  <Circle cx="16" cy="8" r="7.5" fill={BUSINESS_BADGE_NEUTRAL.face}/>
-  <Path d="M16 1C12 1 9 4 9 8c0 4.5 7 10 7 10s7-5.5 7-10c0-4-3-7-7-7Z" fill={BUSINESS_BADGE_NEUTRAL.ink} stroke={BUSINESS_BADGE_NEUTRAL.face} strokeWidth="1.2"/>
-  <Circle cx="16" cy="8" r="2.7" fill={BUSINESS_BADGE_NEUTRAL.face}/>
+ const ink=BUSINESS_BADGE_NEUTRAL.ink;
+ if(label==="Profesionalismo")return <Svg width={23} height={23} viewBox="0 0 24 24" accessible={false}>
+  <Path d="M2 8l3-2 3 3-3 5-3-2V8ZM22 8l-3-2-3 3 3 5 3-2V8Z" fill="none" stroke={ink} strokeWidth="1.6" strokeLinejoin="round"/>
+  <Path d="M7.2 9.5 10 7.7c.8-.5 1.5-.4 2.3 0l1 .5 2.5-1.1M8.1 10.2l2.1-1.3c.6-.4 1.2-.3 1.8.1l1.1.7c.6.4 1.4.4 2-.1l.9-.7" fill="none" stroke={ink} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  <Path d="m5.5 14 4.9 4.2c.6.5 1.3.5 1.8 0l.4-.5m-3.2-3.1 4 3.4c.6.5 1.3.4 1.7-.2l.3-.5m-3.3-3.1 3.5 2.9c.6.5 1.4.4 1.8-.2l.2-.5m-3.2-3.2 3.2 2.7c.7.5 1.5.2 1.8-.5l.4-1.2" fill="none" stroke={ink} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
  </Svg>;
- return <Ionicons name={icon} size={21} color={BUSINESS_BADGE_NEUTRAL.ink}/>;
+ if(label==="En el mercado")return <Svg width={23} height={23} viewBox="0 0 24 24" accessible={false}>
+  <Path d="M4 10h16v11H4V10ZM3 7h18l-1.5 4H4.5L3 7ZM7 7l-1 4M12 7v4M17 7l1 4" fill="none" stroke={ink} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+  <Path d="M8 21v-7h5v7M16 14h3v3h-3" fill="none" stroke={ink} strokeWidth="1.6" strokeLinejoin="round"/>
+  <Path d="M8 4h8" fill="none" stroke={ink} strokeWidth="1.6" strokeLinecap="round"/>
+ </Svg>;
+ return <Ionicons name={icon} size={21} color={ink}/>;
 }
 function BusinessAward({label,icon,level,finish,surface,onPress}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"];level:number;finish:ReturnType<typeof jcardTokens>;surface:ReturnType<typeof businessInformationSurface>;onPress:()=>void}){
  const tone=level===3?jcardCommon.businessGold:level===2?jcardCommon.businessSilver:level===1?jcardCommon.businessBronze:BUSINESS_BADGE_NEUTRAL.border;
