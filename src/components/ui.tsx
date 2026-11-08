@@ -40,8 +40,8 @@ export function useUi() { const { colors,theme } = useTheme(); const chrome=menu
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
   notice: { padding: 16, borderRadius: 14, backgroundColor: chrome.sunflower ? chrome.surface : colors.accent, gap: 10, borderWidth: chrome.sunflower ? 1 : 0, borderColor: chrome.border },
   footer: { paddingVertical: 20, borderTopWidth: 1, borderTopColor: colors.line, gap: 6 },
-  pressed: { opacity: 0.65 },
-}), [colors, fs]); return { s, colors, fs, k }; }
+  pressed: { opacity: 0.82 },
+}), [colors, fs, chrome.sunflower, chrome.surface, chrome.border]); return { s, colors, fs, k }; }
 export function Button({ title, onPress, secondary = false, selected, label }: {
   title: string; onPress: () => void; secondary?: boolean; selected?: boolean; label?: string;
 }) {
