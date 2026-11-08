@@ -30,12 +30,12 @@ export default function Live(){
    contentContainerStyle={{paddingTop:inset.top+78,paddingBottom:contentBottom,gap:14}} showsVerticalScrollIndicator={false}>
    <WorkCategoryFilters selected={filter} onSelect={setFilter} scrollY={scrollY}/>
    <Pressable accessibilityRole="button" accessibilityLabel="Iniciar una transmisión de tu trabajo" onPress={()=>router.push("/live")}
-    style={{marginHorizontal:16,borderRadius:16,backgroundColor:glass?"rgba(39,42,47,0.84)":colors.accent,borderWidth:glass?1:0,borderColor:"rgba(255,255,255,0.25)",shadowColor:"#17191C",shadowOpacity:glass?.3:0,shadowRadius:15,shadowOffset:{width:0,height:6},elevation:glass?5:0,paddingHorizontal:18,paddingVertical:14,flexDirection:"row",alignItems:"center",gap:14}}>
+    style={{marginHorizontal:16,borderRadius:16,backgroundColor:glass?colors.glassPromo:colors.accent,borderWidth:glass?1:0,borderColor:colors.glassBorder,shadowColor:colors.glassShadow,shadowOpacity:glass?.3:0,shadowRadius:15,shadowOffset:{width:0,height:6},elevation:glass?5:0,paddingHorizontal:18,paddingVertical:14,flexDirection:"row",alignItems:"center",gap:14}}>
     <View style={{flex:1,gap:4}}>
-     <Text style={{color:glass?"#FFFFFF":colors.ink,fontSize:20,fontWeight:"800"}}>Tu trabajo. En tiempo real.</Text>
-     <Text style={{color:glass?"#E0E2E4":colors.muted,fontSize:12}}>Muestra lo que haces y conecta con nuevos clientes.</Text>
+     <Text style={{color:glass?colors.glassText:colors.ink,fontSize:20,fontWeight:"800"}}>Tu trabajo. En tiempo real.</Text>
+     <Text style={{color:glass?colors.glassMuted:colors.muted,fontSize:12}}>Muestra lo que haces y conecta con nuevos clientes.</Text>
     </View>
-    <View style={{alignItems:"center",gap:4}}><Ionicons name="radio-outline" size={26} color={glass?"#FFFFFF":colors.ink}/><Text style={{color:glass?"#FFFFFF":colors.ink,fontSize:11,fontWeight:"700"}}>Transmitir</Text></View>
+    <View style={{alignItems:"center",gap:4}}><Ionicons name="radio-outline" size={26} color={glass?colors.glassText:colors.ink}/><Text style={{color:glass?colors.glassText:colors.ink,fontSize:11,fontWeight:"700"}}>Transmitir</Text></View>
    </Pressable>
 
    <View style={{paddingHorizontal:16,gap:14}}>
