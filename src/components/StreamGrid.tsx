@@ -16,8 +16,8 @@ export function StreamCard({room,tall=false}:{room:LiveStream;tall?:boolean}){
  <View style={{flexDirection:"row",gap:4,alignItems:"center",backgroundColor:colors.mediaNotice,paddingVertical:5,paddingHorizontal:7,borderRadius:12}}><Ionicons name="eye-outline" color={colors.mediaText} size={12}/><Text style={{color:colors.mediaText,fontSize:10,fontWeight:"700"}}>{formatCount(room.viewers)}</Text></View>
  <Text style={{fontSize:9,fontWeight:"800",letterSpacing:.5,color:colors.inverse,backgroundColor:colors.ink,paddingVertical:5,paddingHorizontal:7,borderRadius:10}}>DEMO</Text>
  </View>
- <View style={{position:"absolute",bottom:0,left:0,right:0,padding:12,gap:7,backgroundColor:glass?"rgba(39,42,47,0.86)":colors.mediaCaption}}>
- <Text numberOfLines={2} style={{color:glass?"#FFFFFF":colors.mediaText,fontSize:16,fontWeight:"700",lineHeight:21}}>{room.title}</Text><Text numberOfLines={1} style={{color:glass?"#E2E4E6":colors.mediaText,fontSize:11}}>{room.host} · {room.city}</Text>
+ <View style={{position:"absolute",bottom:0,left:0,right:0,padding:12,gap:7,backgroundColor:glass?colors.glassCaption:colors.mediaCaption}}>
+ <Text numberOfLines={2} style={{color:glass?colors.glassText:colors.mediaText,fontSize:16,fontWeight:"700",lineHeight:21}}>{room.title}</Text><Text numberOfLines={1} style={{color:glass?colors.glassMuted:colors.mediaText,fontSize:11}}>{room.host} · {room.city}</Text>
  </View></ImageBackground></Pressable>;
 }
 export function StreamGrid({rooms}:{rooms:LiveStream[]}){
