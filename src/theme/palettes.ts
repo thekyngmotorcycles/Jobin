@@ -3,6 +3,7 @@ export const CAMEL_FOREGROUND="#5B4A47"; // Single reference swatch; change Came
 export const THEMES=[
  {id:"light",label:"Light"},{id:"dark",label:"Dark"},{id:"pink",label:"Pink"},
  {id:"navy-green",label:"Navy Green"},{id:"camel",label:"Camel"},
+ {id:"sunflower",label:"Amarillo · #FFCC01"},
 ] as const;
 export type ThemeName=typeof THEMES[number]["id"];
 export function isThemeName(value:unknown):value is ThemeName{return THEMES.some(t=>t.id===value);}
@@ -12,16 +13,17 @@ const bases={
  pink:{paper:"#fce5ef",ink:"#54243a"},
  "navy-green":{paper:"#E2ECD4",ink:"#35530A"},
  camel:{paper:"#F5EBDD",ink:CAMEL_FOREGROUND},
+ sunflower:{paper:"#FFCC01",ink:"#272A2F"},
 };
 /** Pink's original palette is intentionally preserved byte-for-byte. */
 export const ORIGINAL_PINK={ink:"#54243a",muted:"#80566a",paper:"#fce5ef",line:"#e5b5cb",accent:"#f7cddd",card:"#fff6fa",inverse:"#ffffff",reaction:"#b7386c"};
 const neutral={white:"#ffffff",black:"#000000"};
 function makeTheme(theme:ThemeName){
- const base=bases[theme];const card=composite(opacity(base.ink,.025),base.paper);const accent=composite(opacity(base.ink,.06),base.paper);
+ const base=bases[theme];const glass=theme==="sunflower";const card=glass?composite(opacity("#FFFFFF",.20),base.paper):composite(opacity(base.ink,.025),base.paper);const accent=glass?composite(opacity("#FFFFFF",.12),base.paper):composite(opacity(base.ink,.06),base.paper);
  const legacy=theme==="pink"?ORIGINAL_PINK:null;
  const colors={
   ink:base.ink,paper:base.paper,card:legacy?.card??card,accent:legacy?.accent??accent,
-  inverse:legacy?.inverse??base.paper,line:legacy?.line??opacity(base.ink,.18),
+  inverse:legacy?.inverse??base.paper,line:legacy?.line??opacity(base.ink,glass?.22:.18),
   muted:legacy?.muted??secondaryText(base.ink,[base.paper,card,accent]),
   reaction:legacy?.reaction??base.ink,wordmark:base.ink,icon:base.ink,
   navIcon:theme==="pink"?neutral.black:base.ink,transparent:opacity(base.ink,0),
