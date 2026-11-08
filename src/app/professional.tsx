@@ -22,7 +22,7 @@ export default function Professional() {
  const {s,colors}=useUi();
  const {theme}=useTheme();
  const sunflower=theme==="sunflower";
- const glassPanel=(expanded:boolean)=>sunflower&&!expanded?{backgroundColor:"rgba(39,42,47,0.83)",borderColor:"rgba(255,255,255,0.26)",shadowColor:"#17191C",shadowOpacity:0.27,shadowRadius:16,shadowOffset:{width:0,height:7},elevation:6}:undefined;
+ const glassPanel=(expanded:boolean)=>sunflower&&!expanded?{backgroundColor:colors.glassPanel,borderColor:colors.glassBorder,shadowColor:colors.glassShadow,shadowOpacity:0.27,shadowRadius:16,shadowOffset:{width:0,height:7},elevation:6}:undefined;
  const workspace=useProfessionalData(loadWorkspace,true);const catalog=useProfessionalData(loadCatalog);
  const action=useProfessionalAction(workspace.reload);
  const specialtyCatalog=useProfessionalData(loadSpecialtyCatalog);
@@ -73,7 +73,7 @@ export default function Professional() {
  const input={color:colors.ink,borderColor:colors.line,borderWidth:1,borderRadius:10,padding:12,minHeight:44};
  function choose(code:string){setProfession(code);setSpecialties(w?.professions.find(p=>p.profession_code===code)?.specialties??[]);const pp=w?.professions.find(p=>p.profession_code===code);setTraining(pp?.training_status??"graduado");setInstitution(pp?.institution_id??null);}
  const sectionRow=(id:Section,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}>
-  <Ionicons name={icon} size={25} color={sunflower&&section!==id?"#FFFFFF":colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined,color:sunflower&&section!==id?"#FFFFFF":colors.ink}]}>{title}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={sunflower&&section!==id?"#E2E4E6":colors.muted}/>
+  <Ionicons name={icon} size={25} color={sunflower&&section!==id?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined,color:sunflower&&section!==id?colors.glassText:colors.ink}]}>{title}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={sunflower&&section!==id?colors.glassMuted:colors.muted}/>
  </Pressable>;
  const save=()=>void action.run(async()=>{
   const legalName=name.trim().replace(/\s+/g," ");
@@ -161,7 +161,7 @@ export default function Professional() {
        <Pressable accessibilityRole="checkbox" accessibilityState={{checked:visibility.personal_enabled}} onPress={()=>{if(visibility.personal_enabled&&!visibility.business_enabled){Alert.alert("Al menos una JCard activa","Debes conservar activa la JCard personal o la de negocio.");return;}setVisibility(v=>({...v,personal_enabled:!v.personal_enabled}));}} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={visibility.personal_enabled?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar mi JCard personal en el perfil</Text></Pressable>
      </View>}
     </View>
-    <View style={[s.panel,glassPanel(false)]}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="color-palette-outline" size={25} color={sunflower?"#FFFFFF":colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined,color:sunflower?"#FFFFFF":colors.ink}]}>Apariencia</Text></View><Ionicons name="chevron-forward" size={20} color={sunflower?"#E2E4E6":colors.muted}/></Pressable></View>
+    <View style={[s.panel,glassPanel(false)]}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="color-palette-outline" size={25} color={sunflower?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined,color:sunflower?colors.glassText:colors.ink}]}>Apariencia</Text></View><Ionicons name="chevron-forward" size={20} color={sunflower?colors.glassMuted:colors.muted}/></Pressable></View>
     <Button title={action.busy?"Guardando…":"Guardar cambios de JCard"} onPress={save}/>
    </View>
   </>}
