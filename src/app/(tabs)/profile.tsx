@@ -1,3 +1,5 @@
+import {menuChrome} from "../../theme/menu-chrome";
+import {useTheme} from "../../state/ThemeProvider";
 import {cvRequests,respondCV,revokeCV,type CVRequest} from "../../lib/cv-access";
 import {identityVerified} from "../../lib/identity-status";
 import {pickBusinessGalleryPhoto,uploadBusinessPhoto} from "../../lib/business-media";
@@ -37,7 +39,7 @@ function validPhoneLabel(value:string):boolean{
  return /^(?:[\p{Regional_Indicator}]{2}|[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?(?:\u200D[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?)*)$/u.test(label);
 }
 export default function Profile() {
-  const { s, colors } = useUi();const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
+  const { s, colors } = useUi();const {theme}=useTheme();const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
   const [mode, setMode] = useState<Mode>("grid");
   const [verifiedIdentity,setVerifiedIdentity]=useState(false);
   const [profileToolsOpen,setProfileToolsOpen]=useState(false);
@@ -160,11 +162,11 @@ export default function Profile() {
         <View style={{flex:1,flexDirection:"row"}}>
           <View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:colors.scrim}}/>
           <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú de perfil" onPress={closeProfileMenu} style={{flex:1}}/>
-          <View style={{width:Math.min(screenWidth*0.88,410)}}><SafeAreaView edges={["top","bottom"]} style={{flex:1,backgroundColor:opacity(colors.paper,0.69),borderTopLeftRadius:18,borderBottomLeftRadius:18,overflow:"hidden"}}>
+          <View style={{width:Math.min(screenWidth*0.88,410)}}><SafeAreaView edges={["top","bottom"]} style={{flex:1,backgroundColor:chrome.surfaceTranslucent,borderTopLeftRadius:18,borderBottomLeftRadius:18,overflow:"hidden"}}>
             <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:22,paddingBottom:32,gap:10}}>
               <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingBottom:16}}>
-                <Text accessibilityRole="header" style={{color:colors.ink,fontWeight:"700",fontSize:22}}>Opciones del perfil</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={closeProfileMenu} style={{padding:8}}><Ionicons name="close" size={25} color={colors.ink}/></Pressable>
+                <Text accessibilityRole="header" style={{color:chrome.text,fontWeight:"700",fontSize:22}}>Opciones del perfil</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={closeProfileMenu} style={{padding:8}}><Ionicons name="close" size={25} color={chrome.text}/></Pressable>
               </View>
               <Button secondary title="Ver perfil ficticio (demo)" onPress={()=>{closeProfileMenu();router.push("/demo-profile");}}/>
               <Button secondary title="Reseñas de empresas" onPress={()=>{closeProfileMenu();router.push("/reviews");}}/>
