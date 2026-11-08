@@ -53,6 +53,8 @@ function makeTheme(theme:ThemeName){
   mediaDisc:theme==="pink"?"#555555":base.paper,
   mediaPovBackground:theme==="pink"?neutral.white:base.ink,
   mediaPovText:theme==="pink"?"#111111":base.paper,
+  glassPanel:opacity(base.ink,.83),glassBorder:opacity(neutral.white,.26),glassShadow:"#17191C",glassText:neutral.white,glassMuted:"#E2E4E6",
+  glassPromo:opacity(base.ink,.84),glassCaption:opacity(base.ink,.86),
   qrPaper:neutral.white,qrInk:theme==="dark"?neutral.black:base.ink,
  };
  // The fade's icon-level opacity is the minimum needed for 3:1 over either extreme of an image.
