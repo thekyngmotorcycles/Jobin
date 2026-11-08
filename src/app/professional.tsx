@@ -14,11 +14,15 @@ import {LanguageRing,LANGUAGE_LEVELS,languageLabel} from "../components/Language
 import {LanguagePicker} from "../components/LanguagePicker";
 import {canonicalLanguage} from "../lib/languages";
 import {Ionicons} from "@expo/vector-icons";
+import {useTheme} from "../state/ThemeProvider";
 import {ProfessionGlyph} from "../components/ProfessionGlyph";
 import type { JCardStatus } from "../lib/jcard";
 
 export default function Professional() {
  const {s,colors}=useUi();
+ const {theme}=useTheme();
+ const sunflower=theme==="sunflower";
+ const glassPanel=(expanded:boolean)=>sunflower&&!expanded?{backgroundColor:"rgba(39,42,47,0.83)",borderColor:"rgba(255,255,255,0.26)",shadowColor:"#17191C",shadowOpacity:0.27,shadowRadius:16,shadowOffset:{width:0,height:7},elevation:6}:undefined;
  const workspace=useProfessionalData(loadWorkspace,true);const catalog=useProfessionalData(loadCatalog);
  const action=useProfessionalAction(workspace.reload);
  const specialtyCatalog=useProfessionalData(loadSpecialtyCatalog);
@@ -69,7 +73,7 @@ export default function Professional() {
  const input={color:colors.ink,borderColor:colors.line,borderWidth:1,borderRadius:10,padding:12,minHeight:44};
  function choose(code:string){setProfession(code);setSpecialties(w?.professions.find(p=>p.profession_code===code)?.specialties??[]);const pp=w?.professions.find(p=>p.profession_code===code);setTraining(pp?.training_status??"graduado");setInstitution(pp?.institution_id??null);}
  const sectionRow=(id:Section,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}>
-  <Ionicons name={icon} size={25} color={colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>{title}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={colors.muted}/>
+  <Ionicons name={icon} size={25} color={sunflower&&section!==id?"#FFFFFF":colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined,color:sunflower&&section!==id?"#FFFFFF":colors.ink}]}>{title}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={sunflower&&section!==id?"#E2E4E6":colors.muted}/>
  </Pressable>;
  const save=()=>void action.run(async()=>{
   const legalName=name.trim().replace(/\s+/g," ");
@@ -86,7 +90,7 @@ export default function Professional() {
   {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
    {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
    <View style={{gap:6}}>
-    <View onLayout={e=>{positions.current.identity=e.nativeEvent.layout.y;}} style={s.panel}>
+    <View onLayout={e=>{positions.current.identity=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="identity")]}>
      {sectionRow("identity","Datos principales","person-outline")}
      {section==="identity"&&<View style={{gap:12,paddingBottom:12}}>
       <Text style={s.muted}>Nombre legal</Text><TextInput accessibilityLabel="Nombre legal" value={name} maxLength={30} onChangeText={value=>setName(value.replace(/[^\p{L}\p{M} \u0027\u2019-]/gu,"").slice(0,30))} style={input}/>
@@ -98,7 +102,7 @@ export default function Professional() {
       <View style={{gap:8,padding:12,borderWidth:1,borderColor:colors.line,borderRadius:12}}><Text style={s.muted}>{availability==="ACTIVE"?"Para mostrar una empresa en tu JCard, envíale una solicitud. Solo aparecerá después de que la empresa la apruebe.":"Puedes administrar o finalizar vínculos laborales anteriores. El nombre de la empresa solo se muestra mientras indiques que estás trabajando."}</Text><Button secondary title="Gestionar vínculos laborales" onPress={()=>router.push("/employer-links")}/></View>
      </View>}
     </View>
-    <View onLayout={e=>{positions.current.languages=e.nativeEvent.layout.y;}} style={s.panel}>
+    <View onLayout={e=>{positions.current.languages=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="languages")]}>
      {sectionRow("languages","Idiomas","globe-outline")}
      {section==="languages"&&<View style={{gap:16,paddingBottom:12}}>
       <Text style={s.muted}>El aro indica visualmente tu nivel. Se guarda como una puntuación compatible con tu JCard actual.</Text>
@@ -116,7 +120,7 @@ export default function Professional() {
       <Button secondary title="+ Agregar idioma" onPress={()=>setLanguages(items=>[...items,{name:"",fluency:"45"}])}/>
      </View>}
     </View>
-    {w.card.accountType==="personal"&&<View onLayout={e=>{positions.current.professions=e.nativeEvent.layout.y;}} style={s.panel}>
+    {w.card.accountType==="personal"&&<View onLayout={e=>{positions.current.professions=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="professions")]}>
      {sectionRow("professions","Profesiones y formación","school-outline")}
      {section==="professions"&&<View style={{gap:14,paddingBottom:12}}>
       <Text style={s.muted}>Puedes declarar tus profesiones sin un límite global. Una es principal y las demás secundarias. Declarar una profesión no verifica tus credenciales: los certificados se revisan por separado.</Text>
@@ -148,7 +152,7 @@ export default function Professional() {
       </View>}
      </View>}
     </View>}
-    <View onLayout={e=>{positions.current.privacy=e.nativeEvent.layout.y;}} style={s.panel}>
+    <View onLayout={e=>{positions.current.privacy=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="privacy")]}>
      {sectionRow("privacy","Privacidad de contacto","lock-closed-outline")}
      {section==="privacy"&&<View style={{gap:18,paddingBottom:12}}>
       <Text style={s.muted}>Ambos datos permanecen ocultos por defecto.</Text>
@@ -157,7 +161,7 @@ export default function Professional() {
        <Pressable accessibilityRole="checkbox" accessibilityState={{checked:visibility.personal_enabled}} onPress={()=>{if(visibility.personal_enabled&&!visibility.business_enabled){Alert.alert("Al menos una JCard activa","Debes conservar activa la JCard personal o la de negocio.");return;}setVisibility(v=>({...v,personal_enabled:!v.personal_enabled}));}} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={visibility.personal_enabled?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar mi JCard personal en el perfil</Text></Pressable>
      </View>}
     </View>
-    <View style={s.panel}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="color-palette-outline" size={25} color={colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>Apariencia</Text></View><Ionicons name="chevron-forward" size={20} color={colors.muted}/></Pressable></View>
+    <View style={[s.panel,glassPanel(false)]}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="color-palette-outline" size={25} color={sunflower?"#FFFFFF":colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined,color:sunflower?"#FFFFFF":colors.ink}]}>Apariencia</Text></View><Ionicons name="chevron-forward" size={20} color={sunflower?"#E2E4E6":colors.muted}/></Pressable></View>
     <Button title={action.busy?"Guardando…":"Guardar cambios de JCard"} onPress={save}/>
    </View>
   </>}
