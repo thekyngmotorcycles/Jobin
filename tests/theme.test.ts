@@ -6,8 +6,8 @@ import { THEMES,themeTokens,ORIGINAL_PINK,CAMEL_FOREGROUND,isThemeName } from ".
 import { composite,contrastRatio,opacity } from "../src/theme/color.ts";
 import { assistantBounds,clampAssistant,snapAssistant,restoreAssistant,parseAssistantPosition,ASSISTANT_SIZE } from "../src/lib/assistant-position.ts";
 import { ACCOUNT_IDENTITIES } from "../src/lib/account-identities.ts";
-test("five themes meet AA for text, secondary text and icons",()=>{
- assert.equal(THEMES.length,5);
+test("six themes meet AA for text, secondary text and icons",()=>{
+ assert.equal(THEMES.length,6);
  for(const {id} of THEMES){
   const p=themeTokens(id);
   for(const bg of [p.paper,p.card,p.accent]){
@@ -23,6 +23,9 @@ test("five themes meet AA for text, secondary text and icons",()=>{
   assert.equal(p.wordmark,p.ink);
  }
  assert.equal(themeTokens("camel").ink,CAMEL_FOREGROUND);
+ assert.equal(themeTokens("sunflower").paper,"#FFCC01");
+ assert.equal(themeTokens("sunflower").ink,"#272A2F");
+ assert.ok(isThemeName("sunflower"));
  assert.equal(themeTokens("navy-green").paper,"#E2ECD4");
  assert.ok(isThemeName("camel")&&!isThemeName("invalid"));
 });
