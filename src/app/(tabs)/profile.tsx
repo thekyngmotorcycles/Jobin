@@ -16,7 +16,7 @@ import { ProfessionPicker } from "../../components/ProfessionPicker";
 import { useProfessionalData } from "../../state/useProfessionalData";
 import { useCallback,useEffect,useState } from "react";
 import {getEmployerLinks} from "../../lib/employer-links";
-import { Animated, Image, Keyboard, Modal, Share, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Image, Keyboard, Modal, Share, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router,useFocusEffect,useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -41,15 +41,9 @@ export default function Profile() {
   const [mode, setMode] = useState<Mode>("grid");
   const [verifiedIdentity,setVerifiedIdentity]=useState(false);
   const [profileToolsOpen,setProfileToolsOpen]=useState(false);
-  const [menuMounted,setMenuMounted]=useState(false);
-  const menuOpenedAt=useRef(0);
-  const openProfileMenu=()=>{menuOpenedAt.current=Date.now();setMenuMounted(true);setProfileToolsOpen(true);};
-  const closeProfileMenu=()=>{setProfileToolsOpen(false);};
-  const dismissFromBackdrop=()=>{if(Date.now()-menuOpenedAt.current>450)closeProfileMenu();};
+  const openProfileMenu=()=>setProfileToolsOpen(true);
+  const closeProfileMenu=()=>setProfileToolsOpen(false);
   const {width:screenWidth}=useWindowDimensions();
-  const menuSlide=useRef(new Animated.Value(0)).current;
-  const menuBackdrop=useRef(new Animated.Value(0)).current;
-  useEffect(()=>{menuBackdrop.stopAnimation();menuBackdrop.setValue(profileToolsOpen?1:0);menuSlide.stopAnimation();Animated.timing(menuSlide,{toValue:profileToolsOpen?1:0,duration:profileToolsOpen?290:240,useNativeDriver:true}).start(({finished})=>{if(finished&&!profileToolsOpen)setMenuMounted(false);});return()=>menuSlide.stopAnimation();},[profileToolsOpen,menuSlide,menuBackdrop]);
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
   const [history, setHistory] = useState<EmploymentEntry[]>([]);
   const [incomingCV,setIncomingCV]=useState<CVRequest[]>([]);
@@ -162,11 +156,11 @@ export default function Profile() {
           <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>profileToolsOpen?closeProfileMenu():openProfileMenu()} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="ellipsis-horizontal" size={23} color={colors.ink}/></Pressable>
         </View>
       </View>
-      <Modal visible={menuMounted} transparent animationType="none" onRequestClose={closeProfileMenu} statusBarTranslucent={false}>
+      <Modal visible={profileToolsOpen} transparent animationType="none" onRequestClose={closeProfileMenu} statusBarTranslucent={false}>
         <View style={{flex:1,flexDirection:"row"}}>
-          <Animated.View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:colors.scrim,opacity:menuBackdrop}}/>
-          <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú de perfil" onPress={dismissFromBackdrop} style={{flex:1}}/>
-          <Animated.View style={{width:Math.min(screenWidth*0.88,410),transform:[{translateX:menuSlide.interpolate({inputRange:[0,1],outputRange:[Math.min(screenWidth*0.88,410),0]})}]}}><SafeAreaView edges={["top","bottom"]} style={{flex:1,backgroundColor:opacity(colors.paper,0.69),borderTopLeftRadius:18,borderBottomLeftRadius:18,overflow:"hidden"}}>
+          <View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:colors.scrim}}/>
+          <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú de perfil" onPress={closeProfileMenu} style={{flex:1}}/>
+          <View style={{width:Math.min(screenWidth*0.88,410)}}><SafeAreaView edges={["top","bottom"]} style={{flex:1,backgroundColor:opacity(colors.paper,0.69),borderTopLeftRadius:18,borderBottomLeftRadius:18,overflow:"hidden"}}>
             <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:22,paddingBottom:32,gap:10}}>
               <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingBottom:16}}>
                 <Text accessibilityRole="header" style={{color:colors.ink,fontWeight:"700",fontSize:22}}>Opciones del perfil</Text>
@@ -174,12 +168,12 @@ export default function Profile() {
               </View>
               <Button secondary title="Ver perfil ficticio (demo)" onPress={()=>{closeProfileMenu();router.push("/demo-profile");}}/>
               <Button secondary title="Reseñas de empresas" onPress={()=>{closeProfileMenu();router.push("/reviews");}}/>
-              <Button secondary title="Certificados y sellos" onPress={()=>{setProfileToolsOpen(false);router.push("/certificates");}}/>
-              <Button secondary title="Oportunidades laborales" onPress={()=>{setProfileToolsOpen(false);router.push("/opportunities");}}/>
-              {!!workspace.data?.organization&&<Button secondary title="Mi empresa o institución" onPress={()=>{setProfileToolsOpen(false);router.push("/company");}}/>}
-              {!!workspace.data?.reviewer&&<Button secondary title="Revisar acreditaciones" onPress={()=>{setProfileToolsOpen(false);router.push("/credential-review");}}/>}
+              <Button secondary title="Certificados y sellos" onPress={()=>{closeProfileMenu();router.push("/certificates");}}/>
+              <Button secondary title="Oportunidades laborales" onPress={()=>{closeProfileMenu();router.push("/opportunities");}}/>
+              {!!workspace.data?.organization&&<Button secondary title="Mi empresa o institución" onPress={()=>{closeProfileMenu();router.push("/company");}}/>}
+              {!!workspace.data?.reviewer&&<Button secondary title="Revisar acreditaciones" onPress={()=>{closeProfileMenu();router.push("/credential-review");}}/>}
             </ScrollView>
-          </SafeAreaView></Animated.View>
+          </SafeAreaView></View>
         </View>
       </Modal>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
