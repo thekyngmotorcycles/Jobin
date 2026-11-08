@@ -1,3 +1,4 @@
+import {menuChrome} from "../theme/menu-chrome";
 import { JobinWordmark } from "./JobinWordmark";
 import { useCallback, useMemo, type ReactNode, type RefObject } from "react";
 import { useTheme } from "../state/ThemeProvider";
@@ -10,7 +11,7 @@ import { useApp } from "../state/AppProvider";
 const BASE_WIDTH = 390;
 const MIN_SCALE = 0.95;
 const MAX_SCALE = 1.1;
-export function useUi() { const { colors } = useTheme(); const { width } = useWindowDimensions();
+export function useUi() { const { colors,theme } = useTheme(); const chrome=menuChrome(theme,colors); const { width } = useWindowDimensions();
  const effectiveWidth = Math.min(width, BASE_WIDTH * MAX_SCALE);
  const k = Math.round(Math.min(MAX_SCALE, Math.max(MIN_SCALE, effectiveWidth / BASE_WIDTH)) * 20) / 20;
  const fs = useCallback((size: number) => Math.round(size * k), [k]);
@@ -30,14 +31,14 @@ export function useUi() { const { colors } = useTheme(); const { width } = useWi
   panel: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: 18, padding: 22, gap: 16 },
   button: { minHeight: 46, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center", maxWidth: "100%" },
   buttonText: { color: colors.inverse, fontWeight: "600", fontSize: fs(14), textAlign: "center", flexShrink: 1 },
-  secondary: { backgroundColor: colors.accent },
-  secondaryText: { color: colors.ink },
+  secondary: { backgroundColor: chrome.sunflower ? chrome.surface : colors.accent, borderWidth: chrome.sunflower ? 1 : 0, borderColor: chrome.border },
+  secondaryText: { color: chrome.sunflower ? chrome.text : colors.ink },
   chip: { borderRadius: 24, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 14, minHeight: 44, justifyContent: "center", backgroundColor: colors.card },
   chipSelected: { backgroundColor: colors.ink, borderColor: colors.ink },
   chipText: { fontSize: fs(12), color: colors.ink },
   tag: { fontSize: fs(10), fontWeight: "600", color: colors.ink, backgroundColor: colors.accent, alignSelf: "flex-start", paddingVertical: 7, paddingHorizontal: 12, borderRadius: 18, overflow: "hidden" },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
-  notice: { padding: 16, borderRadius: 12, backgroundColor: colors.accent, gap: 10 },
+  notice: { padding: 16, borderRadius: 14, backgroundColor: chrome.sunflower ? chrome.surface : colors.accent, gap: 10, borderWidth: chrome.sunflower ? 1 : 0, borderColor: chrome.border },
   footer: { paddingVertical: 20, borderTopWidth: 1, borderTopColor: colors.line, gap: 6 },
   pressed: { opacity: 0.65 },
 }), [colors, fs]); return { s, colors, fs, k }; }
@@ -95,7 +96,7 @@ export function GridItem({ children }: { children: ReactNode }) {
   return <View style={{ width: width >= 1000 ? "31.5%" : width >= 700 ? "48%" : "100%" }}>{children}</View>;
 }
 export function Notice({ text, onClose }: { text: string; onClose: () => void }) {
-  const {s} = useUi();
-  return <View style={s.notice} accessibilityLiveRegion="polite"><Text style={s.text}>{text}</Text>
+  const {s,colors} = useUi();const {theme}=useTheme();const colorsNotice=menuChrome(theme,colors);
+  return <View style={s.notice} accessibilityLiveRegion="polite"><Text style={[s.text,{color:colorsNotice.text}]}>{text}</Text>
     <Button title="Cerrar aviso" secondary onPress={onClose} /></View>;
 }
