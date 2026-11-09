@@ -163,7 +163,6 @@ export default function Profile() {
         </View>
       </View>
         </View>
-      </View>
       <Modal visible={profileToolsOpen} transparent animationType="none" onRequestClose={closeProfileMenu} statusBarTranslucent={false}>
         <View style={{flex:1,flexDirection:"row"}}>
           <View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:colors.scrim}}/>
