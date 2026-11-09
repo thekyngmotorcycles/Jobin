@@ -44,6 +44,22 @@ jobs:
       - run: npm install --global eas-cli@27.1.0
       - name: Link or create the Expo project
         run: npm run expo:configure
+      - name: Validate EAS project identity before publishing or building
+        run: |
+          node - <<'JS'
+          const config=require("./app.json").expo;
+          const id=config.extra?.eas?.projectId;
+          const url=config.updates?.url;
+          if (!id || url !== `https://u.expo.dev/${id}`) {
+            console.error("Expo project ID and updates URL do not match.");
+            process.exit(1);
+          }
+          if (process.env.EXPO_PROJECT_ID && process.env.EXPO_PROJECT_ID !== id) {
+            console.error("EXPO_PROJECT_ID differs from the repository project ID. Refusing to publish an incompatible OTA update.");
+            process.exit(1);
+          }
+          console.log(`Validated Expo project ${id}; update URL ${url}`);
+          JS
       - name: Save real Expo project configuration and dependency lock
         run: |
           git config user.name "github-actions[bot]"
