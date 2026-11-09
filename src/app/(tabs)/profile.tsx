@@ -9,7 +9,8 @@ import { employmentMonths,experienceLabel } from "../../lib/employment";
 import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness,readBusinessRating,readBusinessExcellence } from "../../lib/jcard-cloud";
 import { useTabClearance } from "../../theme/navigation";
 import {opacity} from "../../theme/color";
-import {useRef} from "react";
+import {useId,useRef} from "react";
+import Svg,{Defs,LinearGradient,Rect,Stop} from "react-native-svg";
 import { MediaThumbnail } from "../../components/MediaThumbnail";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import { ProfessionalStatus } from "../../components/ProfessionalStatus";
@@ -46,6 +47,7 @@ export default function Profile() {
   const openProfileMenu=()=>setProfileToolsOpen(true);
   const closeProfileMenu=()=>setProfileToolsOpen(false);
   const {width:screenWidth}=useWindowDimensions();
+  const profileHeaderGradientId="profileHeader"+useId().replace(/[^a-z0-9]/gi,"");
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
   const [history, setHistory] = useState<EmploymentEntry[]>([]);
   const [incomingCV,setIncomingCV]=useState<CVRequest[]>([]);
@@ -151,11 +153,15 @@ export default function Profile() {
 
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8 }}>
+      <View style={{position:"absolute",top:0,left:0,right:0,zIndex:2,height:104,justifyContent:"flex-start"}}>
+        <Svg pointerEvents="none" width="100%" height="100%" style={{position:"absolute",top:0,left:0,right:0}} accessible={false}><Defs><LinearGradient id={profileHeaderGradientId} x1="0%" y1="0%" x2="0%" y2="100%"><Stop offset="0" stopColor={colors.paper} stopOpacity={1}/><Stop offset=".52" stopColor={colors.paper} stopOpacity={colors.navigationOpacity}/><Stop offset="1" stopColor={colors.paper} stopOpacity={0}/></LinearGradient></Defs><Rect width="100%" height="100%" fill={"url(#"+profileHeaderGradientId+")"}/></Svg>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8 }}>
         <JobinWordmark width={92} style={{ alignSelf: "flex-start" }} />
         <View style={{flexDirection:"row",alignItems:"center",gap:4}}>
           <Pressable accessibilityRole="button" accessibilityLabel="Mi red" onPress={()=>router.push("/my-network")} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="people-outline" size={23} color={colors.ink}/></Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>profileToolsOpen?closeProfileMenu():openProfileMenu()} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="ellipsis-horizontal" size={23} color={colors.ink}/></Pressable>
+        </View>
+      </View>
         </View>
       </View>
       <Modal visible={profileToolsOpen} transparent animationType="none" onRequestClose={closeProfileMenu} statusBarTranslucent={false}>
@@ -178,7 +184,7 @@ export default function Profile() {
           </SafeAreaView></View>
         </View>
       </Modal>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 80, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
 
