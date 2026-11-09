@@ -42,9 +42,8 @@ export function HomeSideMenu({visible,onClose,onNavigate}:{visible:boolean;onClo
  return <Modal visible={mounted} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent={false}>
   <View style={{flex:1,flexDirection:"row"}}>
    <Animated.View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:colors.scrim,opacity:backdrop}}/>
-   <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú tocando fuera" onPress={onClose} style={{flex:1}}/>
-   <Animated.View style={{width:panelWidth,transform:[{translateX:slide.interpolate({inputRange:[0,1],outputRange:[panelWidth,0]})}]}}>
-    <SafeAreaView edges={["top","bottom"]} onTouchStart={event=>{touchStart.current={x:event.nativeEvent.pageX,y:event.nativeEvent.pageY};}} onTouchEnd={event=>{const start=touchStart.current;if(start&&event.nativeEvent.pageX-start.x>70&&Math.abs(start.y-event.nativeEvent.pageY)<70)onClose();touchStart.current=null;}} style={{flex:1,backgroundColor:chrome.surfaceTranslucent,borderTopLeftRadius:18,borderBottomLeftRadius:18,overflow:"hidden"}}>
+   <Animated.View style={{width:panelWidth,transform:[{translateX:slide.interpolate({inputRange:[0,1],outputRange:[-panelWidth,0]})}]}}>
+    <SafeAreaView edges={["top","bottom"]} onTouchStart={event=>{touchStart.current={x:event.nativeEvent.pageX,y:event.nativeEvent.pageY};}} onTouchEnd={event=>{const start=touchStart.current;if(start&&start.x-event.nativeEvent.pageX>70&&Math.abs(start.y-event.nativeEvent.pageY)<70)onClose();touchStart.current=null;}} style={{flex:1,backgroundColor:chrome.surfaceTranslucent,borderTopRightRadius:18,borderBottomRightRadius:18,overflow:"hidden"}}>
      <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:22,paddingBottom:32,gap:10,alignItems:"stretch"}}>
       <View style={{flexDirection:"row",alignItems:"flex-start",justifyContent:"space-between",paddingBottom:16,gap:8}}>
        <Text accessibilityRole="header" style={{color:chrome.text,fontWeight:"700",fontSize:22,lineHeight:30,flex:1}}>Configuración</Text>
@@ -69,6 +68,7 @@ export function HomeSideMenu({visible,onClose,onNavigate}:{visible:boolean;onClo
      </ScrollView>
     </SafeAreaView>
    </Animated.View>
+   <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú tocando fuera" onPress={onClose} style={{flex:1}}/>
   </View>
  </Modal>;
 }
