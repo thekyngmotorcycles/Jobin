@@ -8,7 +8,6 @@ import {useEffect,useMemo,useRef,useState} from "react";
 import {Animated,Modal,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useUi} from "./ui";
-import {opacity} from "../theme/color";
 export const HOME_MENU_ITEMS=[
  {slug:"configuracion",label:"Configuración",icon:"person-circle-outline",description:"Preferencias generales de tu cuenta."},
  {slug:"centro-privacidad",label:"Centro de privacidad",icon:"lock-closed-outline",description:"Controla quién puede ver tu información."},
@@ -43,25 +42,26 @@ export function HomeSideMenu({visible,onClose,onNavigate}:{visible:boolean;onClo
  return <Modal visible={mounted} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent={false}>
   <View style={{flex:1,flexDirection:"row"}}>
    <Animated.View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:colors.scrim,opacity:backdrop}}/>
-   <Animated.View style={{width:panelWidth,transform:[{translateX:slide.interpolate({inputRange:[0,1],outputRange:[-panelWidth,0]})}]}}>
-    <SafeAreaView edges={["top","bottom"]} onTouchStart={event=>{touchStart.current={x:event.nativeEvent.pageX,y:event.nativeEvent.pageY};}} onTouchEnd={event=>{const start=touchStart.current;if(start&&start.x-event.nativeEvent.pageX>70&&Math.abs(start.y-event.nativeEvent.pageY)<70)onClose();touchStart.current=null;}} style={{flex:1,backgroundColor:chrome.surfaceTranslucent,borderTopRightRadius:18,borderBottomRightRadius:18,overflow:"hidden"}}>
+   <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú tocando fuera" onPress={onClose} style={{flex:1}}/>
+   <Animated.View style={{width:panelWidth,transform:[{translateX:slide.interpolate({inputRange:[0,1],outputRange:[panelWidth,0]})}]}}>
+    <SafeAreaView edges={["top","bottom"]} onTouchStart={event=>{touchStart.current={x:event.nativeEvent.pageX,y:event.nativeEvent.pageY};}} onTouchEnd={event=>{const start=touchStart.current;if(start&&event.nativeEvent.pageX-start.x>70&&Math.abs(start.y-event.nativeEvent.pageY)<70)onClose();touchStart.current=null;}} style={{flex:1,backgroundColor:chrome.surfaceTranslucent,borderTopLeftRadius:18,borderBottomLeftRadius:18,overflow:"hidden"}}>
      <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:22,paddingBottom:32,gap:10,alignItems:"stretch"}}>
       <View style={{flexDirection:"row",alignItems:"flex-start",justifyContent:"space-between",paddingBottom:16,gap:8}}>
        <Text accessibilityRole="header" style={{color:chrome.text,fontWeight:"700",fontSize:22,lineHeight:30,flex:1}}>Configuración</Text>
        <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={onClose} style={{padding:8}}><Text style={{color:chrome.text,fontSize:24}}>×</Text></Pressable>
       </View>
-      <View style={{flexDirection:"row",alignItems:"center",borderWidth:1,borderColor:chrome.border,borderRadius:14,paddingHorizontal:12,gap:10,marginBottom:14}}>
+      <View style={{flexDirection:"row",alignItems:"center",backgroundColor:chrome.action,borderWidth:1,borderColor:chrome.border,borderRadius:14,paddingHorizontal:12,gap:10,marginBottom:14}}>
        <Ionicons name="search-outline" size={21} color={chrome.muted}/>
        <TextInput accessibilityLabel="Buscar configuración" value={query} onChangeText={setQuery} placeholder="Buscar configuración" placeholderTextColor={chrome.muted} style={{flex:1,minHeight:50,color:chrome.text,fontSize:15}}/>
       </View>
       {filtered.map(group=><View key={group.title} style={{gap:9,marginBottom:15}}>
-       <Text accessibilityRole="header" style={{color:chrome.text,fontWeight:"700",fontSize:20}}>{group.title}</Text>
+       <Text accessibilityRole="header" style={{color:chrome.text,fontWeight:"700",fontSize:18}}>{group.title}</Text>
        <Text style={{color:chrome.muted,fontSize:13,marginBottom:4}}>{group.description}</Text>
        {group.items.map(entry=><Pressable key={entry.id} accessibilityRole="button" accessibilityLabel={entry.title}
         onPress={()=>{onNavigate?.();onClose();if(entry.route){router.push(entry.route as any);}else{router.push({pathname:"/settings/[item]",params:{item:entry.id}});}}}
-        style={({pressed})=>({flexDirection:"row",alignItems:"center",gap:13,paddingVertical:13,paddingHorizontal:10,borderRadius:12,backgroundColor:pressed?chrome.action:chrome.sunflower?opacity(chrome.text,0.065):colors.transparent,opacity:pressed?.72:1})}>
+        style={({pressed})=>({flexDirection:"row",alignItems:"center",gap:13,minHeight:68,paddingVertical:13,paddingHorizontal:14,borderRadius:14,backgroundColor:chrome.action,opacity:pressed?.78:1})}>
         <JobinSettingsIcon id={entry.id} size={25} color={chrome.text}/>
-        <View style={{flex:1,gap:3}}><Text style={{color:chrome.text,fontSize:15,fontWeight:"600"}}>{entry.title}</Text><Text style={{color:chrome.muted,fontSize:12}}>{entry.description}</Text></View>
+        <View style={{flex:1,gap:3}}><Text style={{color:chrome.text,fontSize:16,fontWeight:"600"}}>{entry.title}</Text><Text style={{color:chrome.muted,fontSize:12}}>{entry.description}</Text></View>
         <Ionicons name="chevron-forward" size={17} color={chrome.muted}/>
        </Pressable>)}
       </View>)}
@@ -69,7 +69,6 @@ export function HomeSideMenu({visible,onClose,onNavigate}:{visible:boolean;onClo
      </ScrollView>
     </SafeAreaView>
    </Animated.View>
-   <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú tocando fuera" onPress={onClose} style={{flex:1}}/>
   </View>
  </Modal>;
 }
