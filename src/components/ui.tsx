@@ -31,14 +31,14 @@ export function useUi() { const { colors,theme } = useTheme(); const chrome=menu
   panel: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: 18, padding: 22, gap: 16 },
   button: { minHeight: 46, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center", maxWidth: "100%" },
   buttonText: { color: colors.inverse, fontWeight: "600", fontSize: fs(14), textAlign: "center", flexShrink: 1 },
-  secondary: { backgroundColor: colors.accent, borderWidth: chrome.sunflower ? 1 : 0, borderColor: colors.line },
-  secondaryText: { color: colors.ink },
+  secondary: { backgroundColor: chrome.sunflower ? chrome.surface : colors.accent, borderWidth: chrome.sunflower ? 1 : 0, borderColor: chrome.border },
+  secondaryText: { color: chrome.sunflower ? chrome.text : colors.ink },
   chip: { borderRadius: 24, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 14, minHeight: 44, justifyContent: "center", backgroundColor: colors.card },
   chipSelected: { backgroundColor: colors.ink, borderColor: colors.ink },
   chipText: { fontSize: fs(12), color: colors.ink },
   tag: { fontSize: fs(10), fontWeight: "600", color: colors.ink, backgroundColor: colors.accent, alignSelf: "flex-start", paddingVertical: 7, paddingHorizontal: 12, borderRadius: 18, overflow: "hidden" },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
-  notice: { padding: 16, borderRadius: 14, backgroundColor: colors.accent, gap: 10, borderWidth: chrome.sunflower ? 1 : 0, borderColor: colors.line },
+  notice: { padding: 16, borderRadius: 14, backgroundColor: chrome.sunflower ? chrome.surface : colors.accent, gap: 10, borderWidth: chrome.sunflower ? 1 : 0, borderColor: chrome.border },
   footer: { paddingVertical: 20, borderTopWidth: 1, borderTopColor: colors.line, gap: 6 },
   pressed: { opacity: 0.82 },
 }), [colors, fs, chrome.sunflower, chrome.surface, chrome.border]); return { s, colors, fs, k }; }
@@ -96,7 +96,7 @@ export function GridItem({ children }: { children: ReactNode }) {
   return <View style={{ width: width >= 1000 ? "31.5%" : width >= 700 ? "48%" : "100%" }}>{children}</View>;
 }
 export function Notice({ text, onClose }: { text: string; onClose: () => void }) {
-  const {s,colors} = useUi();
-  return <View style={s.notice} accessibilityLiveRegion="polite"><Text style={s.text}>{text}</Text>
+  const {s,colors} = useUi();const {theme}=useTheme();const colorsNotice=menuChrome(theme,colors);
+  return <View style={s.notice} accessibilityLiveRegion="polite"><Text style={[s.text,{color:colorsNotice.text}]}>{text}</Text>
     <Button title="Cerrar aviso" secondary onPress={onClose} /></View>;
 }
