@@ -19,7 +19,7 @@ const bases={
 export const ORIGINAL_PINK={ink:"#54243a",muted:"#80566a",paper:"#fce5ef",line:"#e5b5cb",accent:"#f7cddd",card:"#fff6fa",inverse:"#ffffff",reaction:"#b7386c"};
 const neutral={white:"#ffffff",black:"#000000"};
 function makeTheme(theme:ThemeName){
- const base=bases[theme];const glass=theme==="sunflower";const card=glass?composite(opacity("#FFFFFF",.20),base.paper):theme==="light"?"#FFFFEC":composite(opacity(base.ink,.025),base.paper);const accent=glass?composite(opacity("#FFFFFF",.12),base.paper):theme==="light"?"#FFFFEC":composite(opacity(base.ink,.06),base.paper);
+ const base=bases[theme];const glass=theme==="sunflower";const card=glass?composite(opacity("#FFFFFF",.20),base.paper):composite(opacity(base.ink,.025),base.paper);const accent=glass?composite(opacity("#FFFFFF",.12),base.paper):theme==="light"?"#FFFFEC":composite(opacity(base.ink,.06),base.paper);
  const legacy=theme==="pink"?ORIGINAL_PINK:null;
  const colors={
   ink:base.ink,paper:base.paper,card:legacy?.card??card,accent:legacy?.accent??accent,
