@@ -81,6 +81,9 @@ jobs:
             eas channel:create development --non-interactive
           fi
           eas channel:edit development --branch development --non-interactive
+      - name: Build standalone Android preview APK (without development client)
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[expo-preview]')
+        run: eas build --profile preview --platform android --non-interactive --wait --json > expo-build.json
       - name: Build Android development app
         if: (github.event_name == 'workflow_dispatch' && inputs.build) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[expo-build]'))
         env:
