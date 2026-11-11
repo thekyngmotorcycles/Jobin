@@ -20,6 +20,7 @@ import { useCallback,useEffect,useState } from "react";
 import {getEmployerLinks} from "../../lib/employer-links";
 import { Image, Keyboard, Modal, Share, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Svg,{Defs,LinearGradient,Rect,Stop} from "react-native-svg";
 import { router,useFocusEffect,useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheet } from "../../components/social-ui";
@@ -151,7 +152,18 @@ export default function Profile() {
 
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8 }}>
+      <View style={{ position:"absolute",top:0,left:0,right:0,zIndex:10,height:60,flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8 }}>
+        <View pointerEvents="none" style={{position:"absolute",top:0,left:0,right:0,height:112}}>
+          <Svg width="100%" height="100%" accessible={false}>
+            <Defs><LinearGradient id="profileTopFade" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0" stopColor={colors.paper} stopOpacity={1}/>
+              <Stop offset=".4" stopColor={colors.paper} stopOpacity={colors.navigationOpacity}/>
+              <Stop offset=".75" stopColor={colors.paper} stopOpacity={.12}/>
+              <Stop offset="1" stopColor={colors.paper} stopOpacity={0}/>
+            </LinearGradient></Defs>
+            <Rect width="100%" height="100%" fill="url(#profileTopFade)"/>
+          </Svg>
+        </View>
         <JobinWordmark width={92} style={{ alignSelf: "flex-start" }} />
         <View style={{flexDirection:"row",alignItems:"center",gap:4}}>
           <Pressable accessibilityRole="button" accessibilityLabel="Mi red" onPress={()=>router.push("/my-network")} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="people-outline" size={23} color={colors.ink}/></Pressable>
@@ -178,7 +190,7 @@ export default function Profile() {
           </SafeAreaView></View>
         </View>
       </Modal>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 76, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
 
