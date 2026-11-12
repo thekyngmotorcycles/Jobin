@@ -19,7 +19,7 @@ import { useProfessionalData } from "../../state/useProfessionalData";
 import { useCallback,useEffect,useState } from "react";
 import {getEmployerLinks} from "../../lib/employer-links";
 import { Image, Keyboard, Modal, Share, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg,{Defs,LinearGradient,Rect,Stop} from "react-native-svg";
 import { router,useFocusEffect,useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -40,7 +40,7 @@ function validPhoneLabel(value:string):boolean{
  return /^(?:[\p{Regional_Indicator}]{2}|[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?(?:\u200D[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?)*)$/u.test(label);
 }
 export default function Profile() {
-  const { s, colors } = useUi();const {theme}=useTheme();const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
+  const { s, colors } = useUi();const insets=useSafeAreaInsets();const {theme}=useTheme();const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
   const [mode, setMode] = useState<Mode>("grid");
   const [verifiedIdentity,setVerifiedIdentity]=useState(false);
   const [profileToolsOpen,setProfileToolsOpen]=useState(false);
@@ -152,14 +152,14 @@ export default function Profile() {
 
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
-      <View style={{ position:"absolute",top:0,left:0,right:0,zIndex:10,height:60,flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8 }}>
+      <View style={{ position:"absolute",top:insets.top,left:0,right:0,zIndex:10,height:60,flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8 }}>
         <View pointerEvents="none" style={{position:"absolute",top:0,left:0,right:0,height:112}}>
           <Svg width="100%" height="100%" accessible={false}>
             <Defs><LinearGradient id="profileTopFade" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0" stopColor={colors.paper} stopOpacity={1}/>
-              <Stop offset=".4" stopColor={colors.paper} stopOpacity={colors.navigationOpacity}/>
-              <Stop offset=".75" stopColor={colors.paper} stopOpacity={.12}/>
-              <Stop offset="1" stopColor={colors.paper} stopOpacity={0}/>
+              <Stop offset="0" stopColor={colors.ink} stopOpacity={0.20}/>
+              <Stop offset=".30" stopColor={colors.ink} stopOpacity={0.13}/>
+              <Stop offset=".65" stopColor={colors.ink} stopOpacity={0.05}/>
+              <Stop offset="1" stopColor={colors.ink} stopOpacity={0}/>
             </LinearGradient></Defs>
             <Rect width="100%" height="100%" fill="url(#profileTopFade)"/>
           </Svg>
