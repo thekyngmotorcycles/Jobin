@@ -46,6 +46,21 @@
           "photosPermission": "Permite a Jobin mostrar las fotos de tu galería para elegir tu JCard.",
           "savePhotosPermission": "Permite a Jobin guardar fotos editadas."
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permite a Jobin grabar videos y transmitir tu trabajo en vivo.",
+          "microphonePermission": "Permite a Jobin grabar audio y transmitir tu trabajo en vivo.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "jobin-activity",
+          "color": "#C8A95C"
+        }
       ]
     ],
     "runtimeVersion": {
