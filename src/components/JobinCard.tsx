@@ -239,8 +239,19 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
      <View style={{flexDirection:"row",alignItems:"center",gap:6,marginTop:5}}>{hvacCategory?<View style={{width:20,height:20,alignItems:"center",justifyContent:"center"}}><Ionicons name="snow-outline" size={20} color={businessIconInk}/><Ionicons name="aperture-outline" size={11} color={businessIconInk} style={{position:"absolute"}}/></View>:<Ionicons name={categoryIcon} size={18} color={businessIconInk}/>}<Text numberOfLines={2} style={{flex:1,fontSize:13,fontWeight:"600",color:premium?finish.text:businessCardAccents.category}}>{company?category:card.role}</Text></View>
     </View>
     <View style={{alignItems:"center",gap:3,width:"33%",marginRight:-4,marginTop:-3}}>
-     <View style={{borderRadius:20,borderWidth:1,borderColor:finish.line,paddingVertical:3,paddingHorizontal:3,backgroundColor:jcardFloating.reviewFill,alignItems:"center",shadowColor:jcardFloating.shadow,shadowOffset:{width:0,height:3},shadowOpacity:0.25,shadowRadius:6,elevation:5}}>
-      <Text numberOfLines={1} adjustsFontSizeToFit style={{color:jcardFloating.reviewInk,fontSize:12,fontWeight:"700"}}>{ratingUnlocked?rating!.toFixed(1):"0.0"} <Text style={{color:ratingUnlocked?jcardCommon.businessGold:surface.pending}}>{ratingUnlocked?"★★★★★":"☆☆☆☆☆"}</Text></Text>
+     <View style={{borderRadius:22,borderWidth:1,borderColor:"rgba(255,255,255,0.72)",paddingVertical:5,paddingHorizontal:7,backgroundColor:"rgba(238,243,249,0.17)",alignItems:"center",justifyContent:"center",overflow:"visible",shadowColor:"#4D5C70",shadowOffset:{width:0,height:5},shadowOpacity:0.25,shadowRadius:9,elevation:5}}>
+      <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill} preserveAspectRatio="none">
+       <Defs><LinearGradient id="businessReviewGlass" x1="0%" y1="0%" x2="100%" y2="100%">
+        <Stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.88}/>
+        <Stop offset="23%" stopColor="#FFFFFF" stopOpacity={0.4}/>
+        <Stop offset="53%" stopColor="#C4CFDA" stopOpacity={0.15}/>
+        <Stop offset="82%" stopColor="#8C9BAC" stopOpacity={0.27}/>
+        <Stop offset="100%" stopColor="#FFFFFF" stopOpacity={0.52}/>
+       </LinearGradient></Defs>
+       <Rect width="100%" height="100%" rx={22} fill="url(#businessReviewGlass)"/>
+       <Path d="M 8 5 Q 55 0 110 5" fill="none" stroke="#FFFFFF" strokeOpacity={0.55} strokeWidth="1.5"/>
+      </Svg>
+      <Text numberOfLines={1} adjustsFontSizeToFit style={{color:"#303B49",fontSize:12,fontWeight:"700",textShadowColor:"rgba(255,255,255,0.75)",textShadowOffset:{width:0,height:1},textShadowRadius:1}}>{ratingUnlocked?rating!.toFixed(1):"0.0"} <Text style={{color:ratingUnlocked?jcardCommon.businessGold:"#687788"}}>{ratingUnlocked?"★★★★★":"☆☆☆☆☆"}</Text></Text>
      </View>
      <Text style={{color:finish.secondary,fontSize:10,textAlign:"center"}}>({reviewCount} {reviewCount===1?"reseña":"reseñas"})</Text>
      {!!b?.opened&&<View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="calendar-outline" size={13} color={finish.secondary}/><Text style={{color:finish.secondary,fontSize:10}}>Desde {b.opened}</Text></View>}
