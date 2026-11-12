@@ -1,0 +1,3 @@
+insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types) values ('personal-jcard-avatars','personal-jcard-avatars',true,2097152,array['image/jpeg','image/png','image/webp']) on conflict (id) do update set public=true,file_size_limit=2097152,allowed_mime_types=array['image/jpeg','image/png','image/webp'];
+create policy "personal_avatar_insert_owner" on storage.objects for insert to authenticated with check (bucket_id='personal-jcard-avatars' and (storage.foldername(name))[1]=(select auth.uid())::text);
+create policy "personal_avatar_select_public" on storage.objects for select to anon,authenticated using (bucket_id='personal-jcard-avatars');
