@@ -62,3 +62,5 @@ export function businessInformationSurface(background:string){
  const dark=contrastRatio(t.darkInk,background)>=4.5;
  return {fill:dark?t.dark:t.light,ink:dark?t.darkInk:t.lightInk,border:dark?t.darkBorder:t.lightBorder,pending:dark?t.pendingDark:t.pendingLight};
 }
+
+export const avatarEditorColors = {background:"#0B0D10",preview:"#20252B",accent:"#B8C8FF",text:"#FFFFFF"} as const;
