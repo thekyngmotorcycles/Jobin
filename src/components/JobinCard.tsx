@@ -21,7 +21,7 @@ import {loadPublicContact,loadVisiblePersonalContactDetails,type PersonalContact
 import { experienceLabel } from "../lib/employment";
 import {ProfessionGlyph} from "./ProfessionGlyph";
 import { LanguageRing, languageLabel, LANGUAGE_LEVELS } from "./LanguageRing";
-import { businessCardAccents, businessCardPaper, businessInformationSurface, jcardCommon, jcardFloating, jcardLayout, jcardTokens } from "../theme/jcard";
+import { businessCardAccents, businessCardPaper, businessInformationSurface, jcardCommon, jcardFloating, jcardReviewGlass, jcardLayout, jcardTokens } from "../theme/jcard";
 import {businessCategoryArt} from "../lib/business-category-art";
 import {categoryGlyph} from "../lib/category-icons";
 
@@ -239,19 +239,19 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
      <View style={{flexDirection:"row",alignItems:"center",gap:6,marginTop:5}}>{hvacCategory?<View style={{width:20,height:20,alignItems:"center",justifyContent:"center"}}><Ionicons name="snow-outline" size={20} color={businessIconInk}/><Ionicons name="aperture-outline" size={11} color={businessIconInk} style={{position:"absolute"}}/></View>:<Ionicons name={categoryIcon} size={18} color={businessIconInk}/>}<Text numberOfLines={2} style={{flex:1,fontSize:13,fontWeight:"600",color:premium?finish.text:businessCardAccents.category}}>{company?category:card.role}</Text></View>
     </View>
     <View style={{alignItems:"center",gap:3,width:"33%",marginRight:-4,marginTop:-3}}>
-     <View style={{borderRadius:22,borderWidth:1,borderColor:"rgba(255,255,255,0.72)",paddingVertical:5,paddingHorizontal:7,backgroundColor:"rgba(238,243,249,0.17)",alignItems:"center",justifyContent:"center",overflow:"visible",shadowColor:"#4D5C70",shadowOffset:{width:0,height:5},shadowOpacity:0.25,shadowRadius:9,elevation:5}}>
+     <View style={{borderRadius:22,borderWidth:1,borderColor:jcardReviewGlass.border,paddingVertical:5,paddingHorizontal:7,backgroundColor:jcardReviewGlass.fill,alignItems:"center",justifyContent:"center",overflow:"visible",shadowColor:jcardReviewGlass.shadow,shadowOffset:{width:0,height:5},shadowOpacity:0.25,shadowRadius:9,elevation:5}}>
       <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill} preserveAspectRatio="none">
        <Defs><LinearGradient id="businessReviewGlass" x1="0%" y1="0%" x2="100%" y2="100%">
-        <Stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.88}/>
-        <Stop offset="23%" stopColor="#FFFFFF" stopOpacity={0.4}/>
-        <Stop offset="53%" stopColor="#C4CFDA" stopOpacity={0.15}/>
-        <Stop offset="82%" stopColor="#8C9BAC" stopOpacity={0.27}/>
-        <Stop offset="100%" stopColor="#FFFFFF" stopOpacity={0.52}/>
+        <Stop offset="0%" stopColor=jcardReviewGlass.highlight stopOpacity={0.88}/>
+        <Stop offset="23%" stopColor=jcardReviewGlass.highlight stopOpacity={0.4}/>
+        <Stop offset="53%" stopColor=jcardReviewGlass.mid stopOpacity={0.15}/>
+        <Stop offset="82%" stopColor=jcardReviewGlass.shade stopOpacity={0.27}/>
+        <Stop offset="100%" stopColor=jcardReviewGlass.highlight stopOpacity={0.52}/>
        </LinearGradient></Defs>
        <Rect width="100%" height="100%" rx={22} fill="url(#businessReviewGlass)"/>
-       <Path d="M 8 5 Q 55 0 110 5" fill="none" stroke="#FFFFFF" strokeOpacity={0.55} strokeWidth="1.5"/>
+       <Path d="M 8 5 Q 55 0 110 5" fill="none" stroke=jcardReviewGlass.highlight strokeOpacity={0.55} strokeWidth="1.5"/>
       </Svg>
-      <Text numberOfLines={1} adjustsFontSizeToFit style={{color:"#303B49",fontSize:12,fontWeight:"700",textShadowColor:"rgba(255,255,255,0.75)",textShadowOffset:{width:0,height:1},textShadowRadius:1}}>{ratingUnlocked?rating!.toFixed(1):"0.0"} <Text style={{color:ratingUnlocked?jcardCommon.businessGold:"#687788"}}>{ratingUnlocked?"★★★★★":"☆☆☆☆☆"}</Text></Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit style={{color:jcardReviewGlass.ink,fontSize:12,fontWeight:"700",textShadowColor:jcardReviewGlass.textHighlight,textShadowOffset:{width:0,height:1},textShadowRadius:1}}>{ratingUnlocked?rating!.toFixed(1):"0.0"} <Text style={{color:ratingUnlocked?jcardCommon.businessGold:jcardReviewGlass.pending}}>{ratingUnlocked?"★★★★★":"☆☆☆☆☆"}</Text></Text>
      </View>
      <Text style={{color:finish.secondary,fontSize:10,textAlign:"center"}}>({reviewCount} {reviewCount===1?"reseña":"reseñas"})</Text>
      {!!b?.opened&&<View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="calendar-outline" size={13} color={finish.secondary}/><Text style={{color:finish.secondary,fontSize:10}}>Desde {b.opened}</Text></View>}
