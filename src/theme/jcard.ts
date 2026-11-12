@@ -41,6 +41,7 @@ export const jcardLayout = {
 export const proficiencyColors = {low:'#d84b54',middle:'#e4af42',high:'#219765'};
 export const businessCardAccents = {name:"#151B24",category:"#465B6C",contact:"#354553",icon:"#416477"};
 export const businessCardPaper = { background:"#ffffff", ink:"#111111", secondary:"#5d6165", border:"#dedede", muted:"#f5f5f5", outerBorder:"#e5e5e5" }; 
+export const jcardReviewGlass = { border:"rgba(255,255,255,0.72)",fill:"rgba(238,243,249,0.17)",shadow:"#4D5C70",highlight:"#FFFFFF",highlightSoft:"#FFFFFF",mid:"#C4CFDA",shade:"#8C9BAC",ink:"#303B49",pending:"#687788",textHighlight:"rgba(255,255,255,0.75)" } as const;
 export const jcardFloating = { modalBackdrop:"rgba(0,0,0,0.55)", shadow:"#000000", reviewFill:"rgba(32,33,36,0.68)", reviewInk:"#FFFFFF", awardFill:"rgba(245,245,245,0.13)", ribbonFill:"rgba(240,240,240,0.78)" } as const;
 export const jcardCommon = {
   cardShadowColor:"#000000", cardShadowSurface:"#FFFFFF",
