@@ -1,3 +1,4 @@
+import {consumePersonalPhotoChange} from "../../lib/personal-jcard-photo";
 import {menuChrome} from "../../theme/menu-chrome";
 import {useTheme} from "../../state/ThemeProvider";
 import {cvRequests,respondCV,revokeCV,type CVRequest} from "../../lib/cv-access";
@@ -86,6 +87,7 @@ export default function Profile() {
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address:"", contact:"" });
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace,true);
+ useFocusEffect(useCallback(()=>{if(consumePersonalPhotoChange())void workspace.reload();},[workspace.reload]));
   useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void identityVerified(id).then(v=>{if(live)setVerifiedIdentity(v);}).catch(()=>{if(live)setVerifiedIdentity(false);});return()=>{live=false;};},[workspace.data?.card.id]);
   const professionCatalog=useProfessionalData(loadCatalog);
   const [showEmploymentProfessionPicker,setShowEmploymentProfessionPicker]=useState(false);
