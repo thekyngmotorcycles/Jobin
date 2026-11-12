@@ -39,7 +39,14 @@
           "microphonePermission": "Permite a Jobin grabar audio en tus videos."
         }
       ],
-      "expo-video"
+      "expo-video",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Permite a Jobin mostrar las fotos de tu galería para elegir tu JCard.",
+          "savePhotosPermission": "Permite a Jobin guardar fotos editadas."
+        }
+      ]
     ],
     "runtimeVersion": {
       "policy": "fingerprint"

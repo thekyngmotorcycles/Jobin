@@ -1,8 +1,8 @@
-import {replacePersonalJCardPhoto} from "../lib/personal-jcard-photo";
+import {consumePersonalPhotoChange} from "../lib/personal-jcard-photo";
 import {appearanceOwner} from "../lib/jcard-appearance";
 import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {router} from "expo-router";
+import {router,useFocusEffect} from "expo-router";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Button, Chips, Notice, Screen, useUi } from "../components/ui";
 import { ProfessionPicker } from "../components/ProfessionPicker";
@@ -24,7 +24,8 @@ export default function Professional() {
  const {theme}=useTheme();
  const sunflower=theme==="sunflower";
  const glassPanel=(expanded:boolean)=>sunflower&&!expanded?{backgroundColor:colors.glassPanel,borderColor:colors.glassBorder,shadowColor:colors.glassShadow,shadowOpacity:0.27,shadowRadius:16,shadowOffset:{width:0,height:7},elevation:6}:undefined;
- const workspace=useProfessionalData(loadWorkspace,true);const catalog=useProfessionalData(loadCatalog);
+ const workspace=useProfessionalData(loadWorkspace,true);
+ useFocusEffect(useCallback(()=>{if(consumePersonalPhotoChange())void workspace.reload();},[workspace.reload]));const catalog=useProfessionalData(loadCatalog);
  const action=useProfessionalAction(workspace.reload);
  const specialtyCatalog=useProfessionalData(loadSpecialtyCatalog);
  const [specialties,setSpecialties]=useState<string[]>([]);
@@ -61,9 +62,7 @@ export default function Professional() {
  useEffect(()=>{let live=true;void loadContactPreferences().then(p=>{if(live){setShowEmail(p.show_email);setShowPhone(p.show_phone);}}).catch(()=>{});return()=>{live=false;};},[]);
  const [personalContacts,setPersonalContacts]=useState({email_primary:"",email_secondary:"",phone_primary:"",phone_secondary:""});
  useEffect(()=>{let live=true;void loadPersonalContactDetails().then(c=>{if(live)setPersonalContacts(c);}).catch(()=>{});return()=>{live=false;};},[]);
- const [photoBusy,setPhotoBusy]=useState(false);
- const [photoNotice,setPhotoNotice]=useState("");
- async function changePhoto(){if(photoBusy)return;setPhotoBusy(true);setPhotoNotice("");try{const url=await replacePersonalJCardPhoto();if(url){setPhotoNotice("Foto actualizada.");void workspace.reload();}}catch(e){setPhotoNotice(e instanceof Error?e.message:"No se pudo actualizar la foto.");}finally{setPhotoBusy(false);}}
+ function changePhoto(){router.push("/personal-avatar-editor");}
  const [name,setName]=useState("");const [handle,setHandle]=useState("");const [city,setCity]=useState("");const [region,setRegion]=useState("");
  const [availability,setAvailability]=useState<JCardStatus>("AVAILABLE");
 
@@ -97,8 +96,7 @@ export default function Professional() {
     <View onLayout={e=>{positions.current.identity=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="identity")]}>
      {sectionRow("identity","Datos principales","person-outline")}
      {section==="identity"&&<View style={{gap:12,paddingBottom:12}}>
-      <Button secondary title={photoBusy?"Actualizando foto...":"Cambiar foto de JCard personal"} onPress={()=>void changePhoto()}/>
-      {!!photoNotice&&<Text style={s.muted}>{photoNotice}</Text>}
+      <Button secondary title={"Cambiar foto de JCard personal"} onPress={changePhoto}/>
       <Text style={s.muted}>Nombre legal</Text><TextInput accessibilityLabel="Nombre legal" value={name} maxLength={30} onChangeText={value=>setName(value.replace(/[^\p{L}\p{M} \u0027\u2019-]/gu,"").slice(0,30))} style={input}/>
       <Text style={s.muted}>Nombre de usuario</Text><TextInput accessibilityLabel="Nombre de usuario" value={handle} onChangeText={setHandle} autoCapitalize="none" style={input}/>
       <Text style={s.muted}>Ciudad</Text><TextInput accessibilityLabel="Ciudad" value={city} onChangeText={setCity} style={input}/>

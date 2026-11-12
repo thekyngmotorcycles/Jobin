@@ -1,4 +1,4 @@
-import {replacePersonalJCardPhoto} from "../../lib/personal-jcard-photo";
+import {consumePersonalPhotoChange} from "../../lib/personal-jcard-photo";
 import {menuChrome} from "../../theme/menu-chrome";
 import {useTheme} from "../../state/ThemeProvider";
 import {cvRequests,respondCV,revokeCV,type CVRequest} from "../../lib/cv-access";
@@ -69,9 +69,8 @@ export default function Profile() {
   const [business,setBusiness]=useState<BusinessCardData>({name:"",opened:"",closed:"",services:[],location:"",licenseVerified:false,rating:null,reviewCount:0});
   const [businessDraft,setBusinessDraft]=useState({name:"",opened:"",closed:"",services:"",category:"",email:"",emailSecondary:"",phone:"",phoneSecondary:"",phoneLabel:"",phoneSecondaryLabel:"",location:""});
   useEffect(()=>{let live=true;void readCloudBusiness().then(async row=>{if(!live)return;if(row){setBusiness(b=>({...b,...row}));return;}const raw=await AsyncStorage.getItem("jobin.business.card.v1");if(raw){const local=JSON.parse(raw) as BusinessCardData;await writeCloudBusiness(local);if(live)setBusiness(local);}}).catch(()=>{AsyncStorage.getItem("jobin.business.card.v1").then(raw=>{if(live&&raw)setBusiness(JSON.parse(raw) as BusinessCardData);}).catch(()=>{});});return()=>{live=false;};},[]);
-  const [personalAvatar,setPersonalAvatar]=useState<string|null>(null);
-  const [personalPhotoBusy,setPersonalPhotoBusy]=useState(false);
-  async function changePersonalPhoto(){if(personalPhotoBusy)return;setPersonalPhotoBusy(true);try{const url=await replacePersonalJCardPhoto();if(url){setPersonalAvatar(url);setNotice("Foto de JCard personal actualizada.");}}catch(e){setNotice(e instanceof Error?e.message:"No se pudo cambiar la foto.");}finally{setPersonalPhotoBusy(false);}}
+  
+  function changePersonalPhoto(){router.push("/personal-avatar-editor");}
   const [businessImageBusy,setBusinessImageBusy]=useState(false);
   async function replaceBusinessImage(slot:"banner"|"avatar"){if(businessImageBusy)return;setBusinessImageBusy(true);try{const photo=await pickBusinessGalleryPhoto(slot);if(!photo)return;const owner=await cloudOwner();const uploaded=await uploadBusinessPhoto("business-profile-media",owner,photo,slot);const updated={...business,[slot==="banner"?"bannerUrl":"avatarUrl"]:uploaded.url};await writeCloudBusiness(updated);setBusiness(updated);await AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(updated));setNotice("Imagen empresarial actualizada.");}catch(e){setNotice(e instanceof Error?e.message:"No se pudo actualizar la imagen.");}finally{setBusinessImageBusy(false);}}
   function editBusiness(){router.push("/jcard-business-edit");}
@@ -88,6 +87,7 @@ export default function Profile() {
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address:"", contact:"" });
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace,true);
+ useFocusEffect(useCallback(()=>{if(consumePersonalPhotoChange())void workspace.reload();},[workspace.reload]));
   useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void identityVerified(id).then(v=>{if(live)setVerifiedIdentity(v);}).catch(()=>{if(live)setVerifiedIdentity(false);});return()=>{live=false;};},[workspace.data?.card.id]);
   const professionCatalog=useProfessionalData(loadCatalog);
   const [showEmploymentProfessionPicker,setShowEmploymentProfessionPicker]=useState(false);
@@ -199,7 +199,7 @@ export default function Profile() {
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
 
-          <JobinCard card={{...workspace.data.card,avatar:personalAvatar??workspace.data.card.avatar,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
+          <JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:history.length?Math.floor(employmentMonths(history)/12):workspace.data.card.years}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
 
         </View> : workspace.loading ? <JCardLoadingSkeleton/> : <ProfessionalStatus loading={false} error={workspace.error} retry={workspace.reload}/>}

@@ -1,6 +1,7 @@
 {
   "name": "jobin",
   "version": "0.2.0",
+  "description": "Jobin mobile and web application",
   "private": true,
   "main": "expo-router/entry",
   "engines": {
@@ -46,7 +47,9 @@
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
     "react-native-url-polyfill": "^2.0.0",
-    "react-native-web": "~0.21.0"
+    "react-native-web": "~0.21.0",
+    "expo-media-library": "~18.2.0",
+    "expo-image-manipulator": "~14.0.7"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
