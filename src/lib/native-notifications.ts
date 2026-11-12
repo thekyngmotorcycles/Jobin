@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
+import { jobinNativeColors } from "../theme/native";
 
 /**
  * Android notification setup is opt-in. Call only after a user enables push.
@@ -13,7 +14,7 @@ export async function prepareJobinPushNotifications(): Promise<string | null> {
       name: "Actividad de Jobin",
       importance: Notifications.AndroidImportance.DEFAULT,
       vibrationPattern: [0, 180, 120, 180],
-      lightColor: "#C8A95C",
+      lightColor: jobinNativeColors.notificationLight,
     });
   }
   const current = await Notifications.getPermissionsAsync();
