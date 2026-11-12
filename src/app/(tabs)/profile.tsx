@@ -1,4 +1,4 @@
-import {replacePersonalJCardPhoto,personalAvatarUrl} from "../../lib/personal-jcard-photo";
+import {replacePersonalJCardPhoto} from "../../lib/personal-jcard-photo";
 import {menuChrome} from "../../theme/menu-chrome";
 import {useTheme} from "../../state/ThemeProvider";
 import {cvRequests,respondCV,revokeCV,type CVRequest} from "../../lib/cv-access";
