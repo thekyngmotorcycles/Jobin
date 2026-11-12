@@ -1,7 +1,8 @@
+import {consumePersonalPhotoChange} from "../lib/personal-jcard-photo";
 import {appearanceOwner} from "../lib/jcard-appearance";
 import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {router} from "expo-router";
+import {router,useFocusEffect} from "expo-router";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Button, Chips, Notice, Screen, useUi } from "../components/ui";
 import { ProfessionPicker } from "../components/ProfessionPicker";
@@ -23,7 +24,8 @@ export default function Professional() {
  const {theme}=useTheme();
  const sunflower=theme==="sunflower";
  const glassPanel=(expanded:boolean)=>sunflower&&!expanded?{backgroundColor:colors.glassPanel,borderColor:colors.glassBorder,shadowColor:colors.glassShadow,shadowOpacity:0.27,shadowRadius:16,shadowOffset:{width:0,height:7},elevation:6}:undefined;
- const workspace=useProfessionalData(loadWorkspace,true);const catalog=useProfessionalData(loadCatalog);
+ const workspace=useProfessionalData(loadWorkspace,true);
+ useFocusEffect(useCallback(()=>{if(consumePersonalPhotoChange())void workspace.reload();},[workspace.reload]));const catalog=useProfessionalData(loadCatalog);
  const action=useProfessionalAction(workspace.reload);
  const specialtyCatalog=useProfessionalData(loadSpecialtyCatalog);
  const [specialties,setSpecialties]=useState<string[]>([]);
