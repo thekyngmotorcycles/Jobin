@@ -173,7 +173,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
 
 function BusinessAwardGlyph({label,icon}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"]}){
  const ink=BUSINESS_BADGE_NEUTRAL.ink;
- if(label==="Profesionalismo")return <Image source={require("../assets/professionalism-badge.jpg")} resizeMode="contain" style={{width:"79%",height:"79%",borderRadius:40}} accessibilityLabel="Apretón de manos, Profesionalismo"/>;
+ if(label==="Profesionalismo")return <Svg width={27} height={27} viewBox="0 0 32 32" accessible={false}><Path d="M2.5 11.5 8 9l4 3.2 3.6-2.4c1.2-.8 2.5-.8 3.7 0l3 2.1 2-1.7 5.2 2.5-4.6 10.1-3.4-.6-2.1 2c-.7.7-1.8.7-2.5 0l-1.4-1.4-1.2 1c-.8.7-1.8.6-2.5-.1l-4.9-5.1-2.5.8L2.5 11.5Z" fill="none" stroke={ink} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/><Path d="m12 12.2 3.5-2.5M15.1 15.1l6.4 6.8M12.8 18l4.9 5.2M10.4 20.2l3.2 3.5M8 9l-3 9M24.3 10.2l3.3 8.6M17 12.5l-2.7 2.1c-1.2.9-2.8.7-3.6-.3" fill="none" stroke={ink} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></Svg>;
  if(label==="En el mercado")return <Svg width={23} height={23} viewBox="0 0 24 24" accessible={false}>
   <Path d="M4 10h16v11H4V10ZM3 7h18l-1.5 4H4.5L3 7ZM7 7l-1 4M12 7v4M17 7l1 4" fill="none" stroke={ink} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
   <Path d="M8 21v-7h5v7M16 14h3v3h-3" fill="none" stroke={ink} strokeWidth="1.6" strokeLinejoin="round"/>
