@@ -1,5 +1,7 @@
 import {requireSupabase} from "./supabase";
 const BUCKET="personal-jcard-avatars";
+let photoChanged=false;
+export function consumePersonalPhotoChange():boolean{const changed=photoChanged;photoChanged=false;return changed;}
 export async function uploadPersonalJCardPhoto(uri:string,mime="image/jpeg"):Promise<string>{
  const response=await fetch(uri);
  if(!response.ok)throw new Error("No se pudo leer la fotografía.");
@@ -15,6 +17,7 @@ export async function uploadPersonalJCardPhoto(uri:string,mime="image/jpeg"):Pro
  if(uploaded.error)throw uploaded.error;
  const {error}=await db.from("profiles").update({avatar_path:path}).eq("id",user.id);
  if(error)throw error;
+ photoChanged=true;
  return db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 }
 export function personalAvatarUrl(path:string|undefined|null):string|undefined{
