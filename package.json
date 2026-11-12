@@ -1,6 +1,7 @@
 {
   "name": "jobin",
   "version": "0.2.0",
+  "description": "Jobin mobile and web application",
   "private": true,
   "main": "expo-router/entry",
   "engines": {
