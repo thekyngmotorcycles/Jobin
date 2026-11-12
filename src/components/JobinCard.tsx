@@ -173,7 +173,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
 
 function BusinessAwardGlyph({label,icon}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"]}){
  const ink=BUSINESS_BADGE_NEUTRAL.ink;
- if(label==="Profesionalismo")return <MaterialCommunityIcons name="handshake-outline" size={24} color={ink}/>;
+ if(label==="Profesionalismo")return <Image source={require("../assets/professionalism-badge.jpg")} resizeMode="contain" style={{width:"79%",height:"79%",borderRadius:40}} accessibilityLabel="Apretón de manos, Profesionalismo"/>;
  if(label==="En el mercado")return <Svg width={23} height={23} viewBox="0 0 24 24" accessible={false}>
   <Path d="M4 10h16v11H4V10ZM3 7h18l-1.5 4H4.5L3 7ZM7 7l-1 4M12 7v4M17 7l1 4" fill="none" stroke={ink} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
   <Path d="M8 21v-7h5v7M16 14h3v3h-3" fill="none" stroke={ink} strokeWidth="1.6" strokeLinejoin="round"/>
