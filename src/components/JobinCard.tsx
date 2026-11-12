@@ -242,14 +242,14 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
      <View style={{borderRadius:22,borderWidth:1,borderColor:jcardReviewGlass.border,paddingVertical:5,paddingHorizontal:7,backgroundColor:jcardReviewGlass.fill,alignItems:"center",justifyContent:"center",overflow:"visible",shadowColor:jcardReviewGlass.shadow,shadowOffset:{width:0,height:5},shadowOpacity:0.25,shadowRadius:9,elevation:5}}>
       <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill} preserveAspectRatio="none">
        <Defs><LinearGradient id="businessReviewGlass" x1="0%" y1="0%" x2="100%" y2="100%">
-        <Stop offset="0%" stopColor=jcardReviewGlass.highlight stopOpacity={0.88}/>
-        <Stop offset="23%" stopColor=jcardReviewGlass.highlight stopOpacity={0.4}/>
-        <Stop offset="53%" stopColor=jcardReviewGlass.mid stopOpacity={0.15}/>
-        <Stop offset="82%" stopColor=jcardReviewGlass.shade stopOpacity={0.27}/>
-        <Stop offset="100%" stopColor=jcardReviewGlass.highlight stopOpacity={0.52}/>
+        <Stop offset="0%" stopColor={jcardReviewGlass.highlight} stopOpacity={0.88}/>
+        <Stop offset="23%" stopColor={jcardReviewGlass.highlight} stopOpacity={0.4}/>
+        <Stop offset="53%" stopColor={jcardReviewGlass.mid} stopOpacity={0.15}/>
+        <Stop offset="82%" stopColor={jcardReviewGlass.shade} stopOpacity={0.27}/>
+        <Stop offset="100%" stopColor={jcardReviewGlass.highlight} stopOpacity={0.52}/>
        </LinearGradient></Defs>
        <Rect width="100%" height="100%" rx={22} fill="url(#businessReviewGlass)"/>
-       <Path d="M 8 5 Q 55 0 110 5" fill="none" stroke=jcardReviewGlass.highlight strokeOpacity={0.55} strokeWidth="1.5"/>
+       <Path d="M 8 5 Q 55 0 110 5" fill="none" stroke={jcardReviewGlass.highlight} strokeOpacity={0.55} strokeWidth="1.5"/>
       </Svg>
       <Text numberOfLines={1} adjustsFontSizeToFit style={{color:jcardReviewGlass.ink,fontSize:12,fontWeight:"700",textShadowColor:jcardReviewGlass.textHighlight,textShadowOffset:{width:0,height:1},textShadowRadius:1}}>{ratingUnlocked?rating!.toFixed(1):"0.0"} <Text style={{color:ratingUnlocked?jcardCommon.businessGold:jcardReviewGlass.pending}}>{ratingUnlocked?"★★★★★":"☆☆☆☆☆"}</Text></Text>
      </View>
