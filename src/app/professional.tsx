@@ -1,3 +1,4 @@
+import {replacePersonalJCardPhoto} from "../lib/personal-jcard-photo";
 import {appearanceOwner} from "../lib/jcard-appearance";
 import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -60,6 +61,9 @@ export default function Professional() {
  useEffect(()=>{let live=true;void loadContactPreferences().then(p=>{if(live){setShowEmail(p.show_email);setShowPhone(p.show_phone);}}).catch(()=>{});return()=>{live=false;};},[]);
  const [personalContacts,setPersonalContacts]=useState({email_primary:"",email_secondary:"",phone_primary:"",phone_secondary:""});
  useEffect(()=>{let live=true;void loadPersonalContactDetails().then(c=>{if(live)setPersonalContacts(c);}).catch(()=>{});return()=>{live=false;};},[]);
+ const [photoBusy,setPhotoBusy]=useState(false);
+ const [photoNotice,setPhotoNotice]=useState("");
+ async function changePhoto(){if(photoBusy)return;setPhotoBusy(true);setPhotoNotice("");try{const url=await replacePersonalJCardPhoto();if(url){setPhotoNotice("Foto actualizada.");void workspace.reload();}}catch(e){setPhotoNotice(e instanceof Error?e.message:"No se pudo actualizar la foto.");}finally{setPhotoBusy(false);}}
  const [name,setName]=useState("");const [handle,setHandle]=useState("");const [city,setCity]=useState("");const [region,setRegion]=useState("");
  const [availability,setAvailability]=useState<JCardStatus>("AVAILABLE");
 
@@ -93,6 +97,8 @@ export default function Professional() {
     <View onLayout={e=>{positions.current.identity=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="identity")]}>
      {sectionRow("identity","Datos principales","person-outline")}
      {section==="identity"&&<View style={{gap:12,paddingBottom:12}}>
+      <Button secondary title={photoBusy?"Actualizando foto...":"Cambiar foto de JCard personal"} onPress={()=>void changePhoto()}/>
+      {!!photoNotice&&<Text style={s.muted}>{photoNotice}</Text>}
       <Text style={s.muted}>Nombre legal</Text><TextInput accessibilityLabel="Nombre legal" value={name} maxLength={30} onChangeText={value=>setName(value.replace(/[^\p{L}\p{M} \u0027\u2019-]/gu,"").slice(0,30))} style={input}/>
       <Text style={s.muted}>Nombre de usuario</Text><TextInput accessibilityLabel="Nombre de usuario" value={handle} onChangeText={setHandle} autoCapitalize="none" style={input}/>
       <Text style={s.muted}>Ciudad</Text><TextInput accessibilityLabel="Ciudad" value={city} onChangeText={setCity} style={input}/>
