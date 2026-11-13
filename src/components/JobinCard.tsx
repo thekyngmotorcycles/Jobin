@@ -146,7 +146,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         <View style={{minHeight:62,justifyContent:"center",gap:7}}>
           <Text style={{fontSize:11,color:finish.secondary,textAlign:"center",letterSpacing:1.2}}>Idiomas</Text>
           <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:sealGap}}>
-            {card.languages.map((language,index)=><Pressable key={language.name+index} accessibilityRole="button" accessibilityLabel={"Idioma "+language.name+", "+languageLabel(language.fluency)+". Ver detalles"} onPress={()=>setInfo(languageDetails(language.name,language.fluency))} style={{alignItems:"center",justifyContent:"center",width:sealDiameter+4,height:sealDiameter+4,paddingVertical:0,transform:[{scale:sealDiameter/44}]}}>
+            {card.languages.map((language,index)=><Pressable key={language.name+index} accessibilityRole="button" accessibilityLabel={"Idioma "+language.name+", "+languageLabel(language.fluency)+". Ver detalles"} onPress={()=>setInfo(languageDetails(language.name,language.fluency))} style={{alignItems:"center",justifyContent:"center",width:theme==="light"?44:sealDiameter+4,height:theme==="light"?44:sealDiameter+4,paddingVertical:0,transform:theme==="light"?undefined:[{scale:sealDiameter/44}]}}>
               <LanguageRing name={language.name} value={language.fluency} color={finish.text} track={finish.line}/>
             </Pressable>)}
           </View>
