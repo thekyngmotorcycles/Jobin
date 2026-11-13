@@ -262,9 +262,11 @@ export default function Profile() {
         {mode === "grid" && (
           <View style={{ position: "relative" }}>
             <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-              {DEMO_VIDEOS.map(video => (
-                <View key={video.id} style={{ width: "33.33%", aspectRatio: 3 / 4, padding: 1 }}>
-                  <MediaThumbnail uri={video.thumbnail} label={video.title}/>
+              {DEMO_VIDEOS.map((video,index) => (
+                <View key={video.id} style={{ width: "33.33%", padding: 1.5 }}>
+                  <View style={{height:160,borderRadius:10,overflow:"hidden",backgroundColor:[jt.videoTile1,jt.videoTile2,jt.videoTile3][index%3]}}>
+                    <MediaThumbnail uri={video.thumbnail} label={video.title}/>
+                  </View>
                 </View>
               ))}
             </View>
