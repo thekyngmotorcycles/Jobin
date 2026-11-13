@@ -217,7 +217,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
  const [selectedAward,setSelectedAward]=useState<{label:string;level:number}|null>(null);
  const [artSize,setArtSize]=useState({width:0,height:0});
  const surface=businessInformationSurface(finish.start);
- const company=!!b?.name.trim();const businessName=(company?b!.name:card.name).trim().slice(0,30);const [businessNameWidth,setBusinessNameWidth]=useState(180);const nameFontSize=Math.max(14,Math.min(21,Math.floor(businessNameWidth/Math.max(8,businessName.length)*1.65)));const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
+ const company=!!b?.name.trim();const businessName=(company?b!.name:card.name).trim().slice(0,theme==="light"?120:30);const [businessNameWidth,setBusinessNameWidth]=useState(180);const nameFontSize=Math.max(14,Math.min(21,Math.floor(businessNameWidth/Math.max(8,businessName.length)*1.65)));const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
  const reviewCount=b?.reviewCount??0;const ratingUnlocked=reviewCount>=10&&rating!==null;const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
  const category=b?.category?.trim()||(/hvac|aire acondicionado|climatiz|refrigeraci/i.test([card.role,...(b?.services??[])].join(" "))?"Climatización":b?.services?.[0]||"Servicios profesionales");
  const art=businessCategoryArt(category);
