@@ -130,9 +130,10 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
             <ProfessionGlyph profession={card.role} fallback={primarySeal?.icon??"briefcase-outline"} size={19} color={finish.text}/>
           </Pressable>
         </View>
-        <View style={{flexDirection:"row",alignItems:"center",flexWrap:"wrap",gap:8}}>
-          {!!card.years&&<Text style={{backgroundColor:jobeen.cream,borderColor:jobeen.yellow,borderWidth:1,borderRadius:16,overflow:"hidden",paddingHorizontal:10,paddingVertical:5,color:jobeen.ink,fontSize:12}}>{card.years} {card.years===1?"año":"años"} de experiencia</Text>}
+        <View style={{flexDirection:"row",alignItems:"center",gap:8,minWidth:0}}>
           <Pressable accessibilityRole="button" accessibilityLabel="Información sobre disponibilidad" onPress={()=>setInfo(card.status==="ACTIVE"?"Trabajando actualmente\nLa persona indica que tiene un trabajo activo. Esto no significa que Jobeen haya confirmado su relación laboral.":"Disponible para trabajar\nLa persona indica que está abierta a nuevas oportunidades laborales o solicitudes de clientes.")} style={{minHeight:44,justifyContent:"center"}}><View style={{flexDirection:"row",alignItems:"center",gap:5,backgroundColor:jobeen.okBackground,borderRadius:18,paddingHorizontal:10,paddingVertical:6}}><View style={{width:7,height:7,borderRadius:4,backgroundColor:jobeen.okDot}}/><Text style={{color:jobeen.okText,fontWeight:"700",fontSize:11}}>{card.status==="ACTIVE"?"Trabajando":"Disponible"}</Text></View></Pressable>
+          {!!card.years&&<Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{flexShrink:1,backgroundColor:jobeen.cream,borderColor:jobeen.yellow,borderWidth:1,borderRadius:16,overflow:"hidden",paddingHorizontal:10,paddingVertical:5,color:jobeen.ink,fontSize:12}}>{card.years} {card.years===1?"año":"años"} de experiencia</Text>}
+
         </View>
         
         
