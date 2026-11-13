@@ -224,7 +224,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
 
   {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
   <View style={{flex:1,paddingHorizontal:0,paddingTop:0,paddingBottom:0,gap:0}}>
-   <View style={{flex:1,marginTop:0,borderTopLeftRadius:26,borderTopRightRadius:26,backgroundColor:finish.start,overflow:"hidden",paddingHorizontal:14,paddingTop:theme==="light"?10:18,paddingBottom:theme==="light"?6:10,gap:theme==="light"?3:5,zIndex:2}}>
+   <View style={{flex:1,marginTop:0,borderTopLeftRadius:26,borderTopRightRadius:26,backgroundColor:finish.start,overflow:"hidden",paddingHorizontal:theme==="light"?10:14,paddingTop:theme==="light"?8:18,paddingBottom:theme==="light"?6:10,gap:theme==="light"?3:5,zIndex:2}}>
    {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
    {theme==="light"&&<View style={{flexDirection:"row",alignItems:"center",gap:6,marginBottom:3}}><Svg width={16} height={16} viewBox="0 0 22 22" accessible={false}><Path d="M11 1.5 19.2 6.2v9.6L11 20.5 2.8 15.8V6.2Z" fill={jobeen.hexFront} stroke={jobeen.ink} strokeWidth={1.5}/></Svg><Text style={{fontSize:11,fontWeight:"800",letterSpacing:2,color:jobeen.ink}}>JCARD · NEGOCIOS</Text></View>}
    <View style={{flexDirection:"row",alignItems:"flex-start",gap:6,marginTop:-2}}>
@@ -262,11 +262,11 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
    </View>
    </View>
    <View style={{height:1,backgroundColor:finish.line,opacity:0.7,marginBottom:4}}/>
-   <View style={{flexDirection:"row",alignItems:"center",gap:3,minHeight:110}}>
+   <View style={{flexDirection:"row",alignItems:"center",gap:theme==="light"?2:3,minHeight:110}}>
     <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"flex-start",gap:1}}>
      {awards.map(a=><BusinessAward key={a.label} {...a} finish={finish} surface={surface} onPress={()=>setSelectedAward({label:a.label,level:a.level})}/>)}
     </View>
-    <View style={{width:1,height:theme==="light"?100:85,backgroundColor:finish.line,marginHorizontal:1}}/>
+    <View style={{width:1,height:theme==="light"?100:85,backgroundColor:finish.line,marginHorizontal:theme==="light"?0:1}}/>
     <View style={{position:"relative",alignSelf:"center"}}>
      {onShare&&<Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard de negocio" onPress={event=>{event.stopPropagation();onShare();}} style={{position:"absolute",right:2,top:-30,width:28,height:28,alignItems:"center",justifyContent:"center",zIndex:2}}><Ionicons name="share-social-outline" size={18} color={businessContactInk}/></Pressable>}
     <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:3,borderRadius:7,backgroundColor:jcardCommon.qrPaper,borderWidth:1,borderColor:jobeen.qrBorder,alignSelf:"center",flexShrink:0,minWidth:44,minHeight:44,justifyContent:"center",alignItems:"center"}}>
