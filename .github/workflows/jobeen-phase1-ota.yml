@@ -4,11 +4,17 @@ on:
     branches: [feature/jobeen-phase1-ui]
     paths:
       - ".github/workflows/jobeen-phase1-ota.yml"
+      - "src/**"
+      - "app/**"
+      - "assets/**"
+      - "package.json"
+      - "package-lock.json"
+      - "app.json"
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: jobeen-phase1-ota-preview
+  group: jobeen-phase1-development-ota
   cancel-in-progress: false
 jobs:
   publish-preview:
@@ -36,7 +42,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: jobeen-phase1-ota-result
+          name: jobeen-phase1-development-ota-result
           path: jobeen-ota.json
           if-no-files-found: ignore
       - name: Safety note
