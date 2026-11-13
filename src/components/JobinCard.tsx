@@ -181,12 +181,12 @@ function BusinessAwardGlyph({label,icon}:{label:string;icon:React.ComponentProps
  </Svg>;
  return <Ionicons name={icon} size={21} color={ink}/>;
 }
-function BusinessAward({label,icon,level,finish,surface,onPress}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"];level:number;finish:ReturnType<typeof jcardTokens>;surface:ReturnType<typeof businessInformationSurface>;onPress:()=>void}){
+function BusinessAward({label,icon,level,finish,surface,onPress,compact=false}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"];level:number;finish:ReturnType<typeof jcardTokens>;surface:ReturnType<typeof businessInformationSurface>;onPress:()=>void;compact?:boolean}){
  const tone=level===3?jcardCommon.businessGold:level===2?jcardCommon.businessSilver:level===1?jcardCommon.businessBronze:BUSINESS_BADGE_NEUTRAL.border;
  const points=AWARD_POINTS;
  const path="M"+points.replaceAll(" "," L")+" Z";
  return <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label+": "+(level===0?"Sin acreditar":level===1?"Bronce":level===2?"Plata":"Oro")} style={{flex:1,minWidth:0,alignItems:"center",minHeight:83,marginHorizontal:1,overflow:"visible"}}>
-  <View style={{width:"100%",minHeight:42,aspectRatio:1,alignItems:"center",justifyContent:"center",borderRadius:28,backgroundColor:jcardFloating.awardFill,shadowColor:jcardFloating.shadow,shadowOffset:{width:0,height:3},shadowOpacity:0.23,shadowRadius:5,elevation:4}}>
+  <View style={{width:"100%",minHeight:compact?34:42,aspectRatio:1,alignItems:"center",justifyContent:"center",borderRadius:28,backgroundColor:jcardFloating.awardFill,shadowColor:jcardFloating.shadow,shadowOffset:{width:0,height:3},shadowOpacity:0.23,shadowRadius:5,elevation:4}}>
    <Svg width="100%" height="100%" viewBox="0 0 54 54" style={{position:"absolute"}}><Defs><LinearGradient id={"metal-"+label.replace(/[^a-zA-Z0-9]/g,"")} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={level===3?BUSINESS_MEDAL_COLORS[0]:level===2?BUSINESS_MEDAL_COLORS[1]:level===1?BUSINESS_MEDAL_COLORS[2]:BUSINESS_MEDAL_COLORS[3]}/><Stop offset="24%" stopColor={level===3?BUSINESS_MEDAL_COLORS[4]:level===2?BUSINESS_MEDAL_COLORS[5]:level===1?BUSINESS_MEDAL_COLORS[6]:BUSINESS_MEDAL_COLORS[7]}/><Stop offset="53%" stopColor={level===3?BUSINESS_MEDAL_COLORS[8]:level===2?BUSINESS_MEDAL_COLORS[9]:level===1?BUSINESS_MEDAL_COLORS[10]:BUSINESS_MEDAL_COLORS[11]}/><Stop offset="77%" stopColor={level===3?BUSINESS_MEDAL_COLORS[12]:level===2?BUSINESS_MEDAL_COLORS[13]:level===1?BUSINESS_MEDAL_COLORS[14]:BUSINESS_MEDAL_COLORS[15]}/><Stop offset="100%" stopColor={level===3?BUSINESS_MEDAL_COLORS[16]:level===2?BUSINESS_MEDAL_COLORS[17]:level===1?BUSINESS_MEDAL_COLORS[18]:BUSINESS_MEDAL_COLORS[19]}/></LinearGradient></Defs><Path d={path} fill={"url(#metal-"+label.replace(/[^a-zA-Z0-9]/g,"")+")"} stroke={tone} strokeWidth="1.4"/><Circle cx="27" cy="27" r="21" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.65" strokeWidth="1.3"/><Circle cx="27" cy="27" r="19.2" fill={BUSINESS_BADGE_NEUTRAL.face} stroke={tone} strokeWidth="1.4"/><Path d="M 12 26 A 15 15 0 0 1 41 23" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.45" strokeWidth="2"/></Svg>
    <BusinessAwardGlyph label={label} icon={icon}/>
   </View>
@@ -264,7 +264,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
    <View style={{height:1,backgroundColor:finish.line,opacity:0.7,marginBottom:4}}/>
    <View style={{flexDirection:"row",alignItems:"center",gap:theme==="light"?2:3,minHeight:theme==="light"?102:110}}>
     <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"flex-start",gap:1}}>
-     {awards.map(a=><BusinessAward key={a.label} {...a} finish={finish} surface={surface} onPress={()=>setSelectedAward({label:a.label,level:a.level})}/>)}
+     {awards.map(a=><BusinessAward key={a.label} {...a} finish={finish} surface={surface} compact={theme==="light"} onPress={()=>setSelectedAward({label:a.label,level:a.level})}/>)}
     </View>
     <View style={{width:1,height:theme==="light"?100:85,backgroundColor:finish.line,marginHorizontal:theme==="light"?0:1}}/>
     <View style={{position:"relative",alignSelf:"center"}}>
