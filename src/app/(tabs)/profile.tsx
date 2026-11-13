@@ -162,15 +162,15 @@ export default function Profile() {
         <View pointerEvents="none" style={{position:"absolute",top:0,left:0,right:0,height:fadeHeight}}>
           <Svg width="100%" height="100%" accessible={false}>
             <Defs><LinearGradient id="profileTopFade" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0" stopColor={colors.paper} stopOpacity={1}/>
-              <Stop offset={1-fadeCenter} stopColor={colors.paper} stopOpacity={colors.navigationOpacity}/>
-              <Stop offset={1-fadeCenter*.4} stopColor={colors.paper} stopOpacity={.035}/>
-              <Stop offset="1" stopColor={colors.paper} stopOpacity={0}/>
+              <Stop offset="0" stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={1}/>
+              <Stop offset={1-fadeCenter} stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={colors.navigationOpacity}/>
+              <Stop offset={1-fadeCenter*.4} stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={.035}/>
+              <Stop offset="1" stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={0}/>
             </LinearGradient></Defs>
             <Rect width="100%" height="100%" fill="url(#profileTopFade)"/>
           </Svg>
         </View>
-        <JobinWordmark width={92} style={{ alignSelf: "flex-start" }} />
+        <JobinWordmark width={theme==="light"?112:92} style={{ alignSelf: "flex-start" }} />
         <View style={{flexDirection:"row",alignItems:"center",gap:4}}>
           <Pressable accessibilityRole="button" accessibilityLabel="Mi red" onPress={()=>router.push("/my-network")} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="people-outline" size={23} color={colors.ink}/></Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>profileToolsOpen?closeProfileMenu():openProfileMenu()} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="ellipsis-horizontal" size={23} color={colors.ink}/></Pressable>
