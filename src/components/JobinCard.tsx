@@ -100,9 +100,8 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:25,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
     <View style={{ padding:jcardLayout.padding, gap:8, flex:1, justifyContent:"space-between" }}>
       <View style={{ paddingTop:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
-        <View accessible accessibilityRole="header" accessibilityLabel="JCard Personal" style={{position:"absolute",top:0,left:0,right:0,alignItems:"center",justifyContent:"center"}}>
-          <SvgXml xml={JCARD_WORDMARK_XML.replace("currentColor",finish.text)} width={74} height={25} accessible={false}/>
-          <Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:12,lineHeight:16,color:finish.text,textAlign:"center",marginTop:0}}>Personal</Text>
+        <View accessible accessibilityRole="header" accessibilityLabel="JCard Personal" style={{position:"absolute",top:0,left:theme==="light"?0:0,right:theme==="light"?undefined:0,alignItems:theme==="light"?"flex-start":"center",justifyContent:"center"}}>
+          {theme==="light"?<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Svg width={16} height={16} viewBox="0 0 22 22" accessible={false}><Path d="M11 1.5 19.2 6.2v9.6L11 20.5 2.8 15.8V6.2Z" fill={jobeen.hexFront} stroke={jobeen.ink} strokeWidth={1.5}/></Svg><Text style={{fontSize:11,fontWeight:"800",letterSpacing:2,color:jobeen.ink}}>JCARD · PERSONAL</Text></View>:<><SvgXml xml={JCARD_WORDMARK_XML.replace("currentColor",finish.text)} width={74} height={25} accessible={false}/><Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:12,lineHeight:16,color:finish.text,textAlign:"center"}}>Personal</Text></>}
         </View>
         <Pressable disabled={!onEditPhoto} accessibilityRole={onEditPhoto?"button":undefined} accessibilityLabel={onEditPhoto?"Cambiar foto de JCard personal":undefined} onPress={event=>{event.stopPropagation();onEditPhoto?.();}} style={{width:jcardLayout.avatar+8,height:jcardLayout.qr+8}}>
           <Avatar uri={personalAvatarUrl(card.avatar)} name={card.name} size={jcardLayout.avatar}/>
