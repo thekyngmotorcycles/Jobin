@@ -288,7 +288,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
     </View>
     <View style={{width:1,height:theme==="light"?100:85,backgroundColor:finish.line,marginHorizontal:theme==="light"?0:1}}/>
     <View style={{position:"relative",alignSelf:"center"}}>
-     {onShare&&<Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard de negocio" onPress={event=>{event.stopPropagation();onShare();}} style={{position:"absolute",right:2,top:-30,width:28,height:28,alignItems:"center",justifyContent:"center",zIndex:2}}><Ionicons name="share-social-outline" size={18} color={businessContactInk}/></Pressable>}
+     {onShare&&<Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard de negocio" onPress={event=>{event.stopPropagation();onShare();}} hitSlop={8} style={{position:"absolute",right:2,top:-30,width:28,height:28,alignItems:"center",justifyContent:"center",zIndex:2}}><Ionicons name="share-social-outline" size={18} color={businessContactInk}/></Pressable>}
     <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:3,borderRadius:7,backgroundColor:jcardCommon.qrPaper,borderWidth:1,borderColor:jobeen.qrBorder,alignSelf:"center",flexShrink:0,minWidth:44,minHeight:44,justifyContent:"center",alignItems:"center"}}>
      <JCardQr value={card.profileUrl} size={theme==="light"?84:46}/>
     </Pressable>
