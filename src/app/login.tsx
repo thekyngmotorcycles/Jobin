@@ -26,11 +26,11 @@ export default function Login() {
   }catch(e){setError(e instanceof Error?e.message:"Error al iniciar sesión.");}
   finally{setBusy(false);}
  }
- return <AuthShell title="Log in" footer={<AuthAction secondary label="¿No tienes cuenta? Sign up" onPress={()=>router.replace("/account")}/>}>
+ return <AuthShell footer={<AuthAction secondary label="¿No tienes cuenta? Sign up" onPress={()=>router.replace("/account")}/>}>
   <AuthField label="Email" placeholder="Tu correo electrónico" value={email} onChangeText={setEmail} keyboardType="email-address"/>
   <AuthField label="Password" placeholder="Tu contraseña" value={password} onChangeText={setPassword} secure/>
   {!!error&&<Text accessibilityLiveRegion="polite" style={{color:authSilver.tone3}}>{error}</Text>}
-  <AuthAction secondary label="¿Olvidaste tu contraseña? Recuperar cuenta" onPress={()=>router.push("/recover-account")}/>
+  <AuthAction secondary label="Olvidaste tu contraseña" onPress={()=>router.push("/recover-account")}/>
   <AuthAction label={busy?"ENTRANDO…":"LOG IN"} disabled={busy} onPress={()=>void submit()}/>
  </AuthShell>;
 }
