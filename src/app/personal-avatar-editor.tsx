@@ -3,6 +3,7 @@ import {useEffect,useMemo,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Dimensions,FlatList,Image,PanResponder,Pressable,StyleSheet,Text,View} from "react-native";
 import {useRouter} from "expo-router";
 import {Ionicons} from "@expo/vector-icons";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 import * as MediaLibrary from "expo-media-library";
 import * as ImageManipulator from "expo-image-manipulator";
 import {uploadPersonalJCardPhoto} from "../lib/personal-jcard-photo";
@@ -11,7 +12,13 @@ const SIZE=Math.min(Dimensions.get("window").width-40,360);
 type Photo=MediaLibrary.Asset;
 export default function PersonalAvatarEditor(){
  const router=useRouter();
+ const insets=useSafeAreaInsets();
  const [photos,setPhotos]=useState<Photo[]>([]);
+ const [albums,setAlbums]=useState<MediaLibrary.Album[]>([]);
+ const [album,setAlbum]=useState<MediaLibrary.Album|null>(null);
+ const [albumMenu,setAlbumMenu]=useState(false);
+ const [galleryExpanded,setGalleryExpanded]=useState(false);
+ const [loadingAlbum,setLoadingAlbum]=useState(false);
  const [selected,setSelected]=useState<Photo|null>(null);
  const [permissionDenied,setPermissionDenied]=useState(false);
  const [busy,setBusy]=useState(false);
@@ -62,8 +69,16 @@ export default function PersonalAvatarEditor(){
    }
   }
  }),[dimensions.width,dimensions.height,selected?.id]);
- useEffect(()=>{let live=true;(async()=>{const p=await MediaLibrary.requestPermissionsAsync(false,["photo"]);if(!p.granted){if(live)setPermissionDenied(true);return;}const result=await MediaLibrary.getAssetsAsync({mediaType:"photo",first:80,sortBy:[["creationTime",false]]});if(live){setPhotos(result.assets);setSelected(result.assets[0]??null);}})().catch(e=>Alert.alert("Galería",String(e)));return()=>{live=false;};},[]);
+ useEffect(()=>{let live=true;(async()=>{const p=await MediaLibrary.requestPermissionsAsync(false,["photo"]);if(!p.granted){if(live)setPermissionDenied(true);return;}const result=await MediaLibrary.getAssetsAsync({mediaType:"photo",first:80,sortBy:[["creationTime",false]]});const folders=await MediaLibrary.getAlbumsAsync({includeSmartAlbums:true});if(live){setPhotos(result.assets);setAlbums(folders);setSelected(result.assets[0]??null);}})().catch(e=>Alert.alert("Galería",String(e)));return()=>{live=false;};},[]);
  useEffect(()=>{if(!selected)return;setZoom(1);setOffset({x:0,y:0});Image.getSize(selected.uri,(width,height)=>setDimensions({width,height}),()=>setDimensions({width:SIZE,height:SIZE}));},[selected?.id]);
+ async function chooseAlbum(next:MediaLibrary.Album|null){
+  setAlbumMenu(false);setLoadingAlbum(true);
+  try{
+   const result=await MediaLibrary.getAssetsAsync({album:next??undefined,mediaType:"photo",first:100,sortBy:[["creationTime",false]]});
+   setAlbum(next);setPhotos(result.assets);setSelected(result.assets[0]??null);
+  }catch(e){Alert.alert("No se pudo abrir la carpeta",e instanceof Error?e.message:String(e));}
+  finally{setLoadingAlbum(false);}
+ }
  const scale=Math.max(SIZE/dimensions.width,SIZE/dimensions.height)*zoom;
  const displayWidth=dimensions.width*scale,displayHeight=dimensions.height*scale;
  const maxX=Math.max(0,(displayWidth-SIZE)/2),maxY=Math.max(0,(displayHeight-SIZE)/2);
@@ -94,12 +109,21 @@ export default function PersonalAvatarEditor(){
   }catch(e){const detail=e instanceof Error?e.message:String(e);setSaveError(detail);Alert.alert("No se pudo guardar",detail);}finally{setBusy(false);}
  }
  return <View style={s.root}>
-  <View style={s.top}><Pressable accessibilityRole="button" accessibilityLabel="Cerrar sin guardar" hitSlop={12} disabled={busy} onPress={closeWithoutSaving} style={s.closeButton}><Ionicons name="close" size={19} color={avatarEditorColors.text}/></Pressable><Pressable disabled={!selected||busy} onPress={()=>void save()}><Text style={s.save}>{busy?"Guardando":"Guardar"}</Text></Pressable></View>
-  <View style={s.previewArea}>{selected?<View style={{width:SIZE,height:SIZE,borderRadius:SIZE/2,overflow:"hidden",backgroundColor:avatarEditorColors.preview}} {...pan.panHandlers}><Image source={{uri:selected.uri}} style={{width:displayWidth,height:displayHeight,position:"absolute",left:(SIZE-displayWidth)/2+dx,top:(SIZE-displayHeight)/2+dy}} resizeMode="stretch"/></View>:<ActivityIndicator/>}</View>
-
+  <View style={[s.top,{paddingTop:Math.max(insets.top,16),height:64+Math.max(insets.top,16)}]}><Pressable accessibilityRole="button" accessibilityLabel="Cerrar sin guardar" hitSlop={12} disabled={busy} onPress={closeWithoutSaving} style={s.closeButton}><Ionicons name="close" size={19} color={avatarEditorColors.text}/></Pressable><Pressable disabled={!selected||busy} onPress={()=>void save()}><Text style={s.save}>{busy?"Guardando":"Guardar"}</Text></Pressable></View>
+  {!galleryExpanded&&<View style={s.previewArea}>{selected?<View style={{width:SIZE,height:SIZE,borderRadius:SIZE/2,overflow:"hidden",backgroundColor:avatarEditorColors.preview}} {...pan.panHandlers}><Image source={{uri:selected.uri}} style={{width:displayWidth,height:displayHeight,position:"absolute",left:(SIZE-displayWidth)/2+dx,top:(SIZE-displayHeight)/2+dy}} resizeMode="stretch"/></View>:<ActivityIndicator/>}</View>}
   {!!saveError&&<Text accessibilityLiveRegion="polite" style={s.message}>No se pudo guardar: {saveError}</Text>}
-  <Text style={s.subheading}>Recientes</Text>
-  {permissionDenied?<Text style={s.message}>Habilita el acceso a las fotos en los permisos de Jobin.</Text>:<FlatList data={photos} numColumns={4} keyExtractor={p=>p.id} initialNumToRender={20} windowSize={5} renderItem={({item})=><Pressable style={s.cell} onPress={()=>setSelected(item)}><Image source={{uri:item.uri}} style={s.thumbnail}/>{selected?.id===item.id&&<View style={s.selected}/>}</Pressable>}/>}
+  <View style={s.galleryHeader}>
+   <Pressable accessibilityRole="button" accessibilityLabel="Seleccionar carpeta de fotos" onPress={()=>setAlbumMenu(v=>!v)} style={s.albumButton}>
+    <Text style={s.subheading}>{album?.title??"Recientes"}</Text><Ionicons name={albumMenu?"chevron-up":"chevron-down"} size={19} color={avatarEditorColors.text}/>
+   </Pressable>
+   <Pressable accessibilityRole="button" accessibilityLabel={galleryExpanded?"Reducir galería":"Expandir galería"} onPress={()=>{setGalleryExpanded(v=>!v);setAlbumMenu(false);}} style={s.expandButton}>
+    <Ionicons name={galleryExpanded?"chevron-down":"chevron-up"} size={23} color={avatarEditorColors.text}/>
+   </Pressable>
+  </View>
+  {albumMenu&&<View style={s.albumMenu}>
+   <FlatList data={[{id:"all",title:"Recientes"} as MediaLibrary.Album,...albums]} keyExtractor={a=>a.id} renderItem={({item})=><Pressable style={s.albumOption} onPress={()=>void chooseAlbum(item.id==="all"?null:item)}><Text style={s.albumText}>{item.title}</Text></Pressable>}/>
+  </View>}
+  {loadingAlbum?<ActivityIndicator/>:permissionDenied?<Text style={s.message}>Habilita el acceso a las fotos en los permisos de Jobin.</Text>:<FlatList style={s.galleryList} data={photos} numColumns={4} keyExtractor={p=>p.id} initialNumToRender={20} windowSize={5} renderItem={({item})=><Pressable style={s.cell} onPress={()=>{setSelected(item);setGalleryExpanded(false);}}><Image source={{uri:item.uri}} style={s.thumbnail}/>{selected?.id===item.id&&<View style={s.selected}/>}</Pressable>}/>}
  </View>;
 }
-const s=StyleSheet.create({root:{flex:1,backgroundColor:avatarEditorColors.background},top:{height:64,flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:20,zIndex:10,elevation:10,backgroundColor:avatarEditorColors.background},closeButton:{width:36,height:36,borderRadius:18,alignItems:"center",justifyContent:"center",shadowColor:avatarEditorColors.text,shadowOffset:{width:0,height:1},shadowOpacity:0.18,shadowRadius:2,elevation:2},save:{color:avatarEditorColors.accent,fontSize:17,fontWeight:"700",paddingVertical:10,paddingHorizontal:4},previewArea:{height:SIZE+28,marginTop:12,alignItems:"center",justifyContent:"center",zIndex:0},subheading:{color:avatarEditorColors.text,fontSize:20,fontWeight:"600",paddingHorizontal:18,paddingVertical:12},cell:{width:"25%",aspectRatio:1,padding:2},thumbnail:{width:"100%",height:"100%"},selected:{position:"absolute",inset:2,borderColor:avatarEditorColors.accent,borderWidth:3},message:{color:avatarEditorColors.text,padding:18}});
+const s=StyleSheet.create({root:{flex:1,backgroundColor:avatarEditorColors.background},top:{height:64,flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:20,zIndex:10,elevation:10,backgroundColor:avatarEditorColors.background},closeButton:{width:36,height:36,borderRadius:18,alignItems:"center",justifyContent:"center",shadowColor:avatarEditorColors.text,shadowOffset:{width:0,height:1},shadowOpacity:0.18,shadowRadius:2,elevation:2},save:{color:avatarEditorColors.accent,fontSize:17,fontWeight:"700",paddingVertical:10,paddingHorizontal:4},previewArea:{height:SIZE+28,marginTop:12,alignItems:"center",justifyContent:"center",zIndex:0},subheading:{color:avatarEditorColors.text,fontSize:20,fontWeight:"600"},galleryHeader:{minHeight:54,flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:18},albumButton:{flexDirection:"row",alignItems:"center",gap:9,paddingVertical:12},expandButton:{padding:12},galleryList:{flex:1},albumMenu:{maxHeight:220,zIndex:20,elevation:8,backgroundColor:avatarEditorColors.background},albumOption:{paddingHorizontal:22,paddingVertical:13},albumText:{color:avatarEditorColors.text,fontSize:16},cell:{width:"25%",aspectRatio:1,padding:2},thumbnail:{width:"100%",height:"100%"},selected:{position:"absolute",inset:2,borderColor:avatarEditorColors.accent,borderWidth:3},message:{color:avatarEditorColors.text,padding:18}});
