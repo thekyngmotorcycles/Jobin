@@ -1,4 +1,4 @@
-name: Jobeen phase 1 isolated OTA preview
+name: Jobeen phase 1 development OTA release
 on:
   push:
     branches: [feature/jobeen-phase1-ui]
@@ -29,9 +29,9 @@ jobs:
       - run: npm ci
       - run: npx expo install --check
       - run: npm run typecheck
-      - name: Publish to isolated EAS branch (do not change development channel)
+      - name: Publish to isolated EAS branch (retain existing development channel mapping)
         run: |
-          npx eas-cli@27.1.0 update --branch jobeen-phase1-preview --environment preview --platform android --message "Jobeen phase 1 visual preview" --non-interactive --json > jobeen-ota.json
+          npx eas-cli@27.1.0 update --branch development --environment preview --platform android --message "Jobeen phase 1 visual preview" --non-interactive --json > jobeen-ota.json
           cat jobeen-ota.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -40,4 +40,4 @@ jobs:
           path: jobeen-ota.json
           if-no-files-found: ignore
       - name: Safety note
-        run: echo "Published only to jobeen-phase1-preview. Existing development channel remains unchanged. Open preview explicitly from an Expo development client compatible with this runtime." >> "$GITHUB_STEP_SUMMARY"
+        run: echo "Published phase 1 to the development EAS update branch without changing GitHub development source or the channel mapping. Open preview explicitly from an Expo development client compatible with this runtime." >> "$GITHUB_STEP_SUMMARY"
