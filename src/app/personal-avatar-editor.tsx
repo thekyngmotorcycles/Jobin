@@ -18,6 +18,7 @@ export default function PersonalAvatarEditor(){
  const [album,setAlbum]=useState<MediaLibrary.Album|null>(null);
  const [albumMenu,setAlbumMenu]=useState(false);
  const [galleryExpanded,setGalleryExpanded]=useState(false);
+ const galleryTouchY=useRef<number|null>(null);
  const [loadingAlbum,setLoadingAlbum]=useState(false);
  const [selected,setSelected]=useState<Photo|null>(null);
  const [permissionDenied,setPermissionDenied]=useState(false);
@@ -112,7 +113,7 @@ export default function PersonalAvatarEditor(){
   <View style={[s.top,{paddingTop:Math.max(insets.top,16),height:64+Math.max(insets.top,16)}]}><Pressable accessibilityRole="button" accessibilityLabel="Cerrar sin guardar" hitSlop={12} disabled={busy} onPress={closeWithoutSaving} style={s.closeButton}><Ionicons name="close" size={19} color={avatarEditorColors.text}/></Pressable><Pressable disabled={!selected||busy} onPress={()=>void save()}><Text style={s.save}>{busy?"Guardando":"Guardar"}</Text></Pressable></View>
   {!galleryExpanded&&<View style={s.previewArea}>{selected?<View style={{width:SIZE,height:SIZE,borderRadius:SIZE/2,overflow:"hidden",backgroundColor:avatarEditorColors.preview}} {...pan.panHandlers}><Image source={{uri:selected.uri}} style={{width:displayWidth,height:displayHeight,position:"absolute",left:(SIZE-displayWidth)/2+dx,top:(SIZE-displayHeight)/2+dy}} resizeMode="stretch"/></View>:<ActivityIndicator/>}</View>}
   {!!saveError&&<Text accessibilityLiveRegion="polite" style={s.message}>No se pudo guardar: {saveError}</Text>}
-  <View style={s.galleryHeader}>
+  <View style={s.galleryHeader} onTouchStart={e=>{galleryTouchY.current=e.nativeEvent.pageY;}} onTouchEnd={e=>{if(galleryTouchY.current===null)return;const dy=e.nativeEvent.pageY-galleryTouchY.current;galleryTouchY.current=null;if(dy< -45){setGalleryExpanded(true);setAlbumMenu(false);}else if(dy>45){setGalleryExpanded(false);setAlbumMenu(false);}}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Seleccionar carpeta de fotos" onPress={()=>setAlbumMenu(v=>!v)} style={s.albumButton}>
     <Text style={s.subheading}>{album?.title??"Recientes"}</Text><Ionicons name={albumMenu?"chevron-up":"chevron-down"} size={19} color={avatarEditorColors.text}/>
    </Pressable>
