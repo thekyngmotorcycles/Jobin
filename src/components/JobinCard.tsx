@@ -245,6 +245,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
   <View style={{flex:1,paddingHorizontal:0,paddingTop:0,paddingBottom:0,gap:0}}>
    <View style={{flex:1,marginTop:0,borderTopLeftRadius:26,borderTopRightRadius:26,backgroundColor:finish.start,overflow:"hidden",paddingHorizontal:theme==="light"?10:14,paddingTop:theme==="light"?8:18,paddingBottom:theme==="light"?6:10,gap:theme==="light"?3:5,zIndex:2}}>
    {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
+   {theme==="light"&&appearance==="original"&&<JobeenHoneycomb color={jobeen.bizBorder} compact={artSize.width>0&&artSize.width<360}/>}
    {theme==="light"&&<View style={{flexDirection:"row",alignItems:"center",gap:6,marginBottom:3}}><Svg width={16} height={16} viewBox="0 0 22 22" accessible={false}><Path d="M11 1.5 19.2 6.2v9.6L11 20.5 2.8 15.8V6.2Z" fill={jobeen.hexFront} stroke={jobeen.ink} strokeWidth={1.5}/></Svg><Text style={{fontSize:11,fontWeight:"800",letterSpacing:2,color:jobeen.ink}}>JCARD · NEGOCIOS</Text></View>}
    <View style={{flexDirection:"row",alignItems:"flex-start",gap:6,marginTop:-2}}>
     <View style={{flex:1,minWidth:0}} onLayout={e=>{const w=Math.floor(e.nativeEvent.layout.width)-22;if(w>0&&Math.abs(w-businessNameWidth)>2)setBusinessNameWidth(w);}}>
