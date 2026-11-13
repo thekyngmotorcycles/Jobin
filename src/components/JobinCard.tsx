@@ -228,6 +228,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
   <View style={{flex:1,paddingHorizontal:0,paddingTop:0,paddingBottom:0,gap:0}}>
    <View style={{flex:1,marginTop:0,borderTopLeftRadius:26,borderTopRightRadius:26,backgroundColor:finish.start,overflow:"hidden",paddingHorizontal:14,paddingTop:18,paddingBottom:10,gap:5,zIndex:2}}>
    {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
+   {theme==="light"&&<View style={{flexDirection:"row",alignItems:"center",gap:6,marginBottom:3}}><Svg width={16} height={16} viewBox="0 0 22 22" accessible={false}><Path d="M11 1.5 19.2 6.2v9.6L11 20.5 2.8 15.8V6.2Z" fill={jobeen.hexFront} stroke={jobeen.ink} strokeWidth={1.5}/></Svg><Text style={{fontSize:11,fontWeight:"800",letterSpacing:2,color:jobeen.ink}}>JCARD · NEGOCIOS</Text></View>}
    <View style={{flexDirection:"row",alignItems:"flex-start",gap:6,marginTop:-2}}>
     <View style={{flex:1,minWidth:0}} onLayout={e=>{const w=Math.floor(e.nativeEvent.layout.width)-22;if(w>0&&Math.abs(w-businessNameWidth)>2)setBusinessNameWidth(w);}}>
      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"flex-start",gap:3}}>
@@ -271,7 +272,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
     <View style={{position:"relative",alignSelf:"center"}}>
      {onShare&&<Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard de negocio" onPress={event=>{event.stopPropagation();onShare();}} style={{position:"absolute",right:2,top:-30,width:28,height:28,alignItems:"center",justifyContent:"center",zIndex:2}}><Ionicons name="share-social-outline" size={18} color={businessContactInk}/></Pressable>}
     <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:3,borderRadius:7,backgroundColor:jcardCommon.qrPaper,borderWidth:1,borderColor:jobeen.qrBorder,alignSelf:"center",flexShrink:0}}>
-     <JCardQr value={card.profileUrl} size={46}/>
+     <JCardQr value={card.profileUrl} size={theme==="light"?64:46}/>
     </Pressable>
     </View>
    </View>
