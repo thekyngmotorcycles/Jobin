@@ -92,9 +92,11 @@ export default function PersonalAvatarEditor(){
  async function save(){
   if(!selected||busy)return;setSaveError("");setBusy(true);
   try{
-   const info=await MediaLibrary.getAssetInfoAsync(selected);
-   const uri=info.localUri??info.uri;
-   const sourceW=info.width||dimensions.width,sourceH=info.height||dimensions.height;
+   // The gallery asset already provides its URI and dimensions. Reading full asset
+   // metadata on Android can require ACCESS_MEDIA_LOCATION for EXIF GPS data,
+   // which is unnecessary for cropping and saving a profile photograph.
+   const uri=selected.uri;
+   const sourceW=selected.width||dimensions.width,sourceH=selected.height||dimensions.height;
    const factor=Math.max(SIZE/sourceW,SIZE/sourceH)*zoom;
    const cropSize=Math.floor(SIZE/factor);
    const originX=Math.max(0,Math.min(sourceW-cropSize,Math.round((sourceW-cropSize)/2-dx/factor)));
