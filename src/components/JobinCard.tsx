@@ -308,6 +308,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const frontRotate=rotation.interpolate({inputRange:[-3600,3600],outputRange:["-3600deg","3600deg"],extrapolate:"extend"});
  const backRotate=rotation.interpolate({inputRange:[-3600,3600],outputRange:["-3420deg","3780deg"],extrapolate:"extend"});
  const cardTheme=previewTheme??theme;
+ const cardColors=jobeenTokens(cardTheme);
  const share=async (side:"personal"|"business")=>{
   const label=side==="business"?(card.business?.name?.trim()||card.name):card.name;
   const separator=card.profileUrl.includes("?")?"&":"?";
@@ -325,18 +326,16 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
    </Animated.View>
 
    </View>
-   {canFlip&&<Pressable accessibilityRole="button" accessibilityLabel={back?"Girar JCard a cara personal":"Girar JCard para ver el reverso"} accessibilityHint="Toca o desliza horizontalmente la tarjeta para girarla" onPress={toggle} style={{alignSelf:"center",width:"68%",height:31,justifyContent:"center",alignItems:"center",marginTop:1}}>
-    <View pointerEvents="none" style={{position:"absolute",top:0,width:"90%",height:12,borderRadius:100,backgroundColor:theme==="dark"?jcardCommon.flipShadowDark:jcardCommon.flipShadow,transform:[{scaleX:0.92}]}}/>
-    <View pointerEvents="none" style={{width:86,height:21,borderRadius:30,alignItems:"center",justifyContent:"center",backgroundColor:theme==="dark"?jcardCommon.flipSurfaceDark:jcardCommon.flipSurface,borderWidth:1,borderColor:theme==="dark"?jcardCommon.flipOutlineDark:jcardCommon.flipOutline}}>
-      <Ionicons name="sync-outline" size={16} color={theme==="dark"?jcardCommon.flipInkDark:jcardCommon.editInk}/>
-    </View>
+   {canFlip&&<Pressable accessibilityRole="button" accessibilityLabel={back?"Volver a la JCard personal":"Ver datos de negocios"} accessibilityHint="Toca o desliza horizontalmente la tarjeta para girarla" onPress={toggle} style={{alignSelf:"center",minHeight:44,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:7,paddingHorizontal:12}}>
+    <Ionicons name="sync-outline" size={17} color={cardColors.ink2}/>
+    <Text style={{fontSize:12,color:cardColors.ink2}}>{back?"Toca la tarjeta para ver los datos personales":"Toca la tarjeta para ver los datos de negocios"}</Text>
    </Pressable>}
    {showOwnerActions&&<View style={{flexDirection:"row",gap:10,paddingTop:10}}>
-    <Pressable accessibilityRole="button" accessibilityLabel={back?"Compartir JCard de negocio":"Compartir JCard personal"} onPress={()=>void share(back?"business":"personal")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,backgroundColor:colors.ink}}>
-      <Ionicons name="share-social-outline" size={20} color={colors.paper}/><Text style={{color:colors.paper,fontWeight:"700"}}>Compartir</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={back?"Compartir JCard de negocio":"Compartir JCard personal"} onPress={()=>void share(back?"business":"personal")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,backgroundColor:cardColors.ink}}>
+      <Ionicons name="share-social-outline" size={20} color={cardColors.surface}/><Text style={{color:cardColors.surface,fontWeight:"700"}}>Compartir</Text>
     </Pressable>
-    <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,borderWidth:1,borderColor:colors.line,backgroundColor:colors.accent}}>
-      <Ionicons name="create-outline" size={20} color={colors.ink}/><Text style={{color:colors.ink,fontWeight:"700"}}>Editar JCard</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,borderWidth:1,borderColor:cardColors.yellow,backgroundColor:cardColors.cream}}>
+      <Ionicons name="create-outline" size={20} color={cardColors.ink}/><Text style={{color:cardColors.ink,fontWeight:"700"}}>Editar JCard</Text>
     </Pressable>
    </View>}
   </View>
