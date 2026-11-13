@@ -15,6 +15,7 @@ export default function PersonalAvatarEditor(){
  const [selected,setSelected]=useState<Photo|null>(null);
  const [permissionDenied,setPermissionDenied]=useState(false);
  const [busy,setBusy]=useState(false);
+ const [saveError,setSaveError]=useState("");
  const [zoom,setZoom]=useState(1);
  const [offset,setOffset]=useState({x:0,y:0});
  const [dimensions,setDimensions]=useState({width:SIZE,height:SIZE});
@@ -73,7 +74,7 @@ export default function PersonalAvatarEditor(){
   else router.replace("/professional");
  }
  async function save(){
-  if(!selected||busy)return;setBusy(true);
+  if(!selected||busy)return;setSaveError("");setBusy(true);
   try{
    const info=await MediaLibrary.getAssetInfoAsync(selected);
    const uri=info.localUri??info.uri;
@@ -90,14 +91,15 @@ export default function PersonalAvatarEditor(){
    await uploadPersonalJCardPhoto(result.base64??"","image/jpeg");
    if(router.canGoBack())router.back();
    else router.replace("/professional");
-  }catch(e){Alert.alert("No se pudo guardar",e instanceof Error?e.message:String(e));}finally{setBusy(false);}
+  }catch(e){const detail=e instanceof Error?e.message:String(e);setSaveError(detail);Alert.alert("No se pudo guardar",detail);}finally{setBusy(false);}
  }
  return <View style={s.root}>
-  <View style={s.top}><Pressable accessibilityRole="button" accessibilityLabel="Cerrar sin guardar" hitSlop={12} disabled={busy} onPress={closeWithoutSaving} style={s.closeButton}><Ionicons name="close" size={22} color={avatarEditorColors.text}/></Pressable><Pressable disabled={!selected||busy} onPress={()=>void save()}><Text style={s.save}>{busy?"Guardando":"Guardar"}</Text></Pressable></View>
+  <View style={s.top}><Pressable accessibilityRole="button" accessibilityLabel="Cerrar sin guardar" hitSlop={12} disabled={busy} onPress={closeWithoutSaving} style={s.closeButton}><Ionicons name="close" size={19} color={avatarEditorColors.text}/></Pressable><Pressable disabled={!selected||busy} onPress={()=>void save()}><Text style={s.save}>{busy?"Guardando":"Guardar"}</Text></Pressable></View>
   <View style={s.previewArea}>{selected?<View style={{width:SIZE,height:SIZE,borderRadius:SIZE/2,overflow:"hidden",backgroundColor:avatarEditorColors.preview}} {...pan.panHandlers}><Image source={{uri:selected.uri}} style={{width:displayWidth,height:displayHeight,position:"absolute",left:(SIZE-displayWidth)/2+dx,top:(SIZE-displayHeight)/2+dy}} resizeMode="stretch"/></View>:<ActivityIndicator/>}</View>
 
+  {!!saveError&&<Text accessibilityLiveRegion="polite" style={s.message}>No se pudo guardar: {saveError}</Text>}
   <Text style={s.subheading}>Recientes</Text>
   {permissionDenied?<Text style={s.message}>Habilita el acceso a las fotos en los permisos de Jobin.</Text>:<FlatList data={photos} numColumns={4} keyExtractor={p=>p.id} initialNumToRender={20} windowSize={5} renderItem={({item})=><Pressable style={s.cell} onPress={()=>setSelected(item)}><Image source={{uri:item.uri}} style={s.thumbnail}/>{selected?.id===item.id&&<View style={s.selected}/>}</Pressable>}/>}
  </View>;
 }
-const s=StyleSheet.create({root:{flex:1,backgroundColor:avatarEditorColors.background},top:{height:54,flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:20,zIndex:2},closeButton:{width:36,height:36,borderRadius:18,alignItems:"center",justifyContent:"center",shadowColor:avatarEditorColors.text,shadowOffset:{width:0,height:1},shadowOpacity:0.18,shadowRadius:2,elevation:2},save:{color:avatarEditorColors.accent,fontSize:17,fontWeight:"700"},previewArea:{height:SIZE+16,alignItems:"center",justifyContent:"center"},subheading:{color:avatarEditorColors.text,fontSize:20,fontWeight:"600",paddingHorizontal:18,paddingVertical:12},cell:{width:"25%",aspectRatio:1,padding:2},thumbnail:{width:"100%",height:"100%"},selected:{position:"absolute",inset:2,borderColor:avatarEditorColors.accent,borderWidth:3},message:{color:avatarEditorColors.text,padding:18}});
+const s=StyleSheet.create({root:{flex:1,backgroundColor:avatarEditorColors.background},top:{height:64,flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:20,zIndex:10,elevation:10,backgroundColor:avatarEditorColors.background},closeButton:{width:36,height:36,borderRadius:18,alignItems:"center",justifyContent:"center",shadowColor:avatarEditorColors.text,shadowOffset:{width:0,height:1},shadowOpacity:0.18,shadowRadius:2,elevation:2},save:{color:avatarEditorColors.accent,fontSize:17,fontWeight:"700",paddingVertical:10,paddingHorizontal:4},previewArea:{height:SIZE+28,marginTop:12,alignItems:"center",justifyContent:"center",zIndex:0},subheading:{color:avatarEditorColors.text,fontSize:20,fontWeight:"600",paddingHorizontal:18,paddingVertical:12},cell:{width:"25%",aspectRatio:1,padding:2},thumbnail:{width:"100%",height:"100%"},selected:{position:"absolute",inset:2,borderColor:avatarEditorColors.accent,borderWidth:3},message:{color:avatarEditorColors.text,padding:18}});
