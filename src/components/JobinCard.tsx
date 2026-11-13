@@ -151,7 +151,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
           </View>
         </View>
 
-        {secondarySeals.length>0&&theme==="light"&&<Pressable accessibilityRole="button" accessibilityLabel="Ver profesiones secundarias" onPress={()=>setInfo("Otras profesiones\n"+secondarySeals.map(seal=>seal.profession+" · "+experienceLabel(seal.months??0)).join("\n"))} style={{minHeight:28,alignItems:"center",justifyContent:"center",paddingHorizontal:8}}><Text numberOfLines={1} style={{fontSize:11,fontWeight:"600",color:jobeen.ink2}}>Otras profesiones ({secondarySeals.length}) · Ver detalles</Text></Pressable>}
+        {secondarySeals.length>0&&theme==="light"&&<Pressable accessibilityRole="button" accessibilityLabel="Ver profesiones secundarias" onPress={()=>setInfo("Otras profesiones\n"+secondarySeals.map(seal=>seal.profession+" · "+experienceLabel(seal.months??0)).join("\n"))} style={{minHeight:44,alignItems:"center",justifyContent:"center",paddingHorizontal:8}}><Text numberOfLines={1} style={{fontSize:11,fontWeight:"600",color:jobeen.ink2}}>Otras profesiones ({secondarySeals.length}) · Ver detalles</Text></Pressable>}
         {secondarySeals.length>0&&theme!=="light"&&<View style={{minHeight:62,justifyContent:"center",gap:7,marginTop:4,paddingTop:7,borderTopWidth:1,borderTopColor:finish.line}}>
           <Text style={{fontSize:11,color:finish.secondary,textAlign:"center",letterSpacing:0.8}}>Otras profesiones</Text>
           <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:sealGap}}>
