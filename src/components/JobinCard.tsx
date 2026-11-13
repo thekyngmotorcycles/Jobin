@@ -98,8 +98,8 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
     </Svg>
     {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:25,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
-    <View style={{ padding:jcardLayout.padding, gap:8, flex:1, justifyContent:"space-between" }}>
-      <View style={{ paddingTop:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
+    <View style={{ padding:theme==="light"?12:jcardLayout.padding, gap:theme==="light"?5:8, flex:1, justifyContent:"space-between" }}>
+      <View style={{ paddingTop:theme==="light"?18:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
         <View accessible accessibilityRole="header" accessibilityLabel="JCard Personal" style={{position:"absolute",top:0,left:theme==="light"?0:0,right:theme==="light"?undefined:0,alignItems:theme==="light"?"flex-start":"center",justifyContent:"center"}}>
           {theme==="light"?<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Svg width={16} height={16} viewBox="0 0 22 22" accessible={false}><Path d="M11 1.5 19.2 6.2v9.6L11 20.5 2.8 15.8V6.2Z" fill={jobeen.hexFront} stroke={jobeen.ink} strokeWidth={1.5}/></Svg><Text style={{fontSize:11,fontWeight:"800",letterSpacing:2,color:jobeen.ink}}>JCARD · PERSONAL</Text></View>:<><SvgXml xml={JCARD_WORDMARK_XML.replace("currentColor",finish.text)} width={74} height={25} accessible={false}/><Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:12,lineHeight:16,color:finish.text,textAlign:"center"}}>Personal</Text></>}
         </View>
@@ -226,7 +226,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
 
   {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
   <View style={{flex:1,paddingHorizontal:0,paddingTop:0,paddingBottom:0,gap:0}}>
-   <View style={{flex:1,marginTop:0,borderTopLeftRadius:26,borderTopRightRadius:26,backgroundColor:finish.start,overflow:"hidden",paddingHorizontal:14,paddingTop:18,paddingBottom:10,gap:5,zIndex:2}}>
+   <View style={{flex:1,marginTop:0,borderTopLeftRadius:26,borderTopRightRadius:26,backgroundColor:finish.start,overflow:"hidden",paddingHorizontal:14,paddingTop:theme==="light"?10:18,paddingBottom:theme==="light"?6:10,gap:theme==="light"?3:5,zIndex:2}}>
    {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
    {theme==="light"&&<View style={{flexDirection:"row",alignItems:"center",gap:6,marginBottom:3}}><Svg width={16} height={16} viewBox="0 0 22 22" accessible={false}><Path d="M11 1.5 19.2 6.2v9.6L11 20.5 2.8 15.8V6.2Z" fill={jobeen.hexFront} stroke={jobeen.ink} strokeWidth={1.5}/></Svg><Text style={{fontSize:11,fontWeight:"800",letterSpacing:2,color:jobeen.ink}}>JCARD · NEGOCIOS</Text></View>}
    <View style={{flexDirection:"row",alignItems:"flex-start",gap:6,marginTop:-2}}>
