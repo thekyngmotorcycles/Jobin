@@ -18,7 +18,48 @@ export default function PersonalAvatarEditor(){
  const [offset,setOffset]=useState({x:0,y:0});
  const [dimensions,setDimensions]=useState({width:SIZE,height:SIZE});
  const offsetRef=useRef(offset);offsetRef.current=offset;
- const pan=useMemo(()=>PanResponder.create({onStartShouldSetPanResponder:()=>true,onMoveShouldSetPanResponder:()=>true,onPanResponderGrant:()=>{offsetRef.current=offset;},onPanResponderMove:(_,g)=>setOffset({x:offsetRef.current.x+g.dx,y:offsetRef.current.y+g.dy})}),[selected]);
+ const zoomRef=useRef(zoom);zoomRef.current=zoom;
+ const gesture=useRef({x:0,y:0,zoom:1,distance:0,centerX:0,centerY:0});
+ const pan=useMemo(()=>PanResponder.create({
+  onStartShouldSetPanResponder:()=>true,
+  onMoveShouldSetPanResponder:()=>true,
+  onPanResponderGrant:(event)=>{
+   const touches=event.nativeEvent.touches;
+   const a=touches[0],b=touches[1];
+   gesture.current={x:offsetRef.current.x,y:offsetRef.current.y,zoom:zoomRef.current,
+    distance:a&&b?Math.hypot(a.pageX-b.pageX,a.pageY-b.pageY):0,
+    centerX:a&&b?(a.pageX+b.pageX)/2:0,centerY:a&&b?(a.pageY+b.pageY)/2:0};
+  },
+  onPanResponderMove:(event,g)=>{
+   const touches=event.nativeEvent.touches;
+   if(touches.length>=2){
+    const [a,b]=touches;
+    const distance=Math.hypot(a.pageX-b.pageX,a.pageY-b.pageY);
+    if(!gesture.current.distance){
+     gesture.current={x:offsetRef.current.x,y:offsetRef.current.y,zoom:zoomRef.current,
+      distance,centerX:(a.pageX+b.pageX)/2,centerY:(a.pageY+b.pageY)/2};
+     return;
+    }
+    const nextZoom=Math.max(1,Math.min(4,gesture.current.zoom*distance/gesture.current.distance));
+    setZoom(nextZoom);
+    const baseScale=Math.max(SIZE/dimensions.width,SIZE/dimensions.height);
+    const maxX=Math.max(0,(dimensions.width*baseScale*nextZoom-SIZE)/2);
+    const maxY=Math.max(0,(dimensions.height*baseScale*nextZoom-SIZE)/2);
+    const nextX=gesture.current.x+((a.pageX+b.pageX)/2-gesture.current.centerX);
+    const nextY=gesture.current.y+((a.pageY+b.pageY)/2-gesture.current.centerY);
+    setOffset({x:Math.max(-maxX,Math.min(maxX,nextX)),y:Math.max(-maxY,Math.min(maxY,nextY))});
+   }else if(touches.length===1){
+    if(gesture.current.distance){
+     gesture.current={x:offsetRef.current.x,y:offsetRef.current.y,zoom:zoomRef.current,distance:0,centerX:0,centerY:0};
+     return;
+    }
+    const baseScale=Math.max(SIZE/dimensions.width,SIZE/dimensions.height);
+    const maxX=Math.max(0,(dimensions.width*baseScale*zoomRef.current-SIZE)/2);
+    const maxY=Math.max(0,(dimensions.height*baseScale*zoomRef.current-SIZE)/2);
+    setOffset({x:Math.max(-maxX,Math.min(maxX,gesture.current.x+g.dx)),y:Math.max(-maxY,Math.min(maxY,gesture.current.y+g.dy))});
+   }
+  }
+ }),[dimensions.width,dimensions.height,selected?.id]);
  useEffect(()=>{let live=true;(async()=>{const p=await MediaLibrary.requestPermissionsAsync(false,["photo"]);if(!p.granted){if(live)setPermissionDenied(true);return;}const result=await MediaLibrary.getAssetsAsync({mediaType:"photo",first:80,sortBy:[["creationTime",false]]});if(live){setPhotos(result.assets);setSelected(result.assets[0]??null);}})().catch(e=>Alert.alert("Galería",String(e)));return()=>{live=false;};},[]);
  useEffect(()=>{if(!selected)return;setZoom(1);setOffset({x:0,y:0});Image.getSize(selected.uri,(width,height)=>setDimensions({width,height}),()=>setDimensions({width:SIZE,height:SIZE}));},[selected?.id]);
  const scale=Math.max(SIZE/dimensions.width,SIZE/dimensions.height)*zoom;
@@ -47,9 +88,9 @@ export default function PersonalAvatarEditor(){
  return <View style={s.root}>
   <View style={s.top}><Pressable onPress={()=>router.back()}><Text style={s.action}>✕</Text></Pressable><Text style={s.heading}>Foto de JCard</Text><Pressable disabled={!selected||busy} onPress={()=>void save()}><Text style={s.save}>{busy?"Guardando":"Guardar"}</Text></Pressable></View>
   <View style={s.previewArea}>{selected?<View style={{width:SIZE,height:SIZE,borderRadius:SIZE/2,overflow:"hidden",backgroundColor:avatarEditorColors.preview}} {...pan.panHandlers}><Image source={{uri:selected.uri}} style={{width:displayWidth,height:displayHeight,position:"absolute",left:(SIZE-displayWidth)/2+dx,top:(SIZE-displayHeight)/2+dy}} resizeMode="stretch"/></View>:<ActivityIndicator/>}</View>
-  <View style={s.zoomRow}><Pressable onPress={()=>setZoom(z=>Math.max(1,+(z-0.1).toFixed(2)))}><Text style={s.action}>−</Text></Pressable><Text style={s.zoomLabel}>Zoom {Math.round(zoom*100)} %</Text><Pressable onPress={()=>setZoom(z=>Math.min(3,+(z+0.1).toFixed(2)))}><Text style={s.action}>＋</Text></Pressable></View>
+
   <Text style={s.subheading}>Recientes</Text>
   {permissionDenied?<Text style={s.message}>Habilita el acceso a las fotos en los permisos de Jobin.</Text>:<FlatList data={photos} numColumns={4} keyExtractor={p=>p.id} initialNumToRender={20} windowSize={5} renderItem={({item})=><Pressable style={s.cell} onPress={()=>setSelected(item)}><Image source={{uri:item.uri}} style={s.thumbnail}/>{selected?.id===item.id&&<View style={s.selected}/>}</Pressable>}/>}
  </View>;
 }
-const s=StyleSheet.create({root:{flex:1,backgroundColor:avatarEditorColors.background},top:{height:68,flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:20},heading:{color:avatarEditorColors.text,fontSize:17,fontWeight:"600"},action:{color:avatarEditorColors.text,fontSize:29},save:{color:avatarEditorColors.accent,fontSize:17,fontWeight:"700"},previewArea:{flex:1,minHeight:220,alignItems:"center",justifyContent:"center"},zoomRow:{flexDirection:"row",alignItems:"center",justifyContent:"space-around",paddingVertical:12},zoomLabel:{color:avatarEditorColors.text},subheading:{color:avatarEditorColors.text,fontSize:20,fontWeight:"600",paddingHorizontal:18,paddingVertical:12},cell:{width:"25%",aspectRatio:1,padding:2},thumbnail:{width:"100%",height:"100%"},selected:{position:"absolute",inset:2,borderColor:avatarEditorColors.accent,borderWidth:3},message:{color:avatarEditorColors.text,padding:18}});
+const s=StyleSheet.create({root:{flex:1,backgroundColor:avatarEditorColors.background},top:{height:68,flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:20},heading:{color:avatarEditorColors.text,fontSize:17,fontWeight:"600"},action:{color:avatarEditorColors.text,fontSize:29},save:{color:avatarEditorColors.accent,fontSize:17,fontWeight:"700"},previewArea:{flex:1,minHeight:220,alignItems:"center",justifyContent:"center"},subheading:{color:avatarEditorColors.text,fontSize:20,fontWeight:"600",paddingHorizontal:18,paddingVertical:12},cell:{width:"25%",aspectRatio:1,padding:2},thumbnail:{width:"100%",height:"100%"},selected:{position:"absolute",inset:2,borderColor:avatarEditorColors.accent,borderWidth:3},message:{color:avatarEditorColors.text,padding:18}});
