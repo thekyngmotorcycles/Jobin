@@ -1,3 +1,4 @@
+import {jobeenTokens} from "../theme/jobeen";
 import {personalAvatarUrl} from "../lib/personal-jcard-photo";
 import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import {useFocusEffect} from "expo-router";
@@ -61,11 +62,12 @@ function languageDetails(name:string,fluency:number){
 }
 function CardFace({ card, theme, appearance="original", expanded = false, onEdit, onQr, onShare, onEditPhoto, contact, employerLink }: { card: CardData; theme: ThemeName; appearance?:JCardPremiumBackgroundId; expanded?: boolean; onEdit?: () => void; onQr?: () => void; onShare?: () => void; onEditPhoto?: () => void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null }) {
   const { s, fs } = useUi();
+  const jobeen=jobeenTokens(theme);
   const { fontScale } = useWindowDimensions();
   const gradientId = "jcard" + useId().replace(/[^a-zA-Z0-9]/g, "");
   const shineId=gradientId+"shine";
-  const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=appearance==="original";
-  const finish = {...jcardTokens(theme, jcardTier(card.rating, card.reviewCount)),start:premium?.base??businessCardPaper.background,end:premium?.base??businessCardPaper.background,text:premium?.ink??businessCardPaper.ink,secondary:premium?.ink??businessCardPaper.secondary,line:premium?.line??businessCardPaper.border,sealFill:businessCardPaper.muted,pendingFill:businessCardPaper.muted};
+  const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=false;
+  const finish = {...jcardTokens(theme, jcardTier(card.rating, card.reviewCount)),start:premium?.base??jobeen.surface,end:premium?.base??jobeen.surface,text:premium?.ink??jobeen.ink,secondary:premium?.ink??jobeen.ink2,line:premium?.line??jobeen.line,sealFill:businessCardPaper.muted,pendingFill:businessCardPaper.muted};
   const [artSize,setArtSize]=useState({width:0,height:0});
  const [selectedAward,setSelectedAward]=useState<{label:string;level:number}|null>(null);
   const rating = displayedRating(card.rating, card.reviewCount);
@@ -81,7 +83,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
   const sealGap = sealCount > 8 ? 2 : 4;
   const bodySize = Math.max(12, fs(expanded ? 14 : 13));
   const lineStyle = { color:finish.text, fontSize:bodySize, lineHeight:bodySize * 1.5 };
-  return <View onLayout={e=>{const {width,height}=e.nativeEvent.layout;setArtSize(prev=>prev.width===width&&prev.height===height?prev:{width,height});}} style={[s.panel, { flex:1, padding:0, gap:0, borderRadius:jcardLayout.radius, borderColor:finish.line, backgroundColor:finish.start, overflow:"hidden" }]}>
+  return <View onLayout={e=>{const {width,height}=e.nativeEvent.layout;setArtSize(prev=>prev.width===width&&prev.height===height?prev:{width,height});}} style={[s.panel, { flex:1, padding:0, gap:0, borderRadius:28, borderColor:finish.line, backgroundColor:finish.start, overflow:"hidden" }]}>
     <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" viewBox="0 0 400 650" preserveAspectRatio="none" accessible={false} pointerEvents="none">
       <Defs><LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
         <Stop offset="0%" stopColor={finish.start}/><Stop offset="100%" stopColor={finish.end}/>
@@ -95,7 +97,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
       {showDecorativeCurves&&<Path d="M-20 420 C105 250 225 300 420 95" stroke={embossInk} strokeOpacity={embossStrength*0.7} strokeWidth="2" fill="none"/>}
     </Svg>
     {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
-    <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
+    <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:25,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
     <View style={{ padding:jcardLayout.padding, gap:8, flex:1, justifyContent:"space-between" }}>
       <View style={{ paddingTop:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
         <View accessible accessibilityRole="header" accessibilityLabel="JCard Personal" style={{position:"absolute",top:0,left:0,right:0,alignItems:"center",justifyContent:"center"}}>
@@ -117,7 +119,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         <View style={{gap:0,marginTop:0}}>
         <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
           <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:4}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={[s.h3,{color:finish.text,fontSize:Math.max(18,fs(expanded?20:19)),lineHeight:Math.max(23,fs(expanded?26:25)),flexShrink:1}]}>{card.name}</Text><Pressable accessibilityRole="button" accessibilityLabel={card.identityVerified?"Persona verificada":"Persona sin verificar"} onPress={()=>setInfo(card.identityVerified?"Identidad verificada por Jobin. Esta insignia no certifica licencias ni competencias profesionales.":"Identidad sin verificar. Para obtener la insignia se requerirá nombre legal, correo y teléfono confirmados, documento de identidad y validación de identidad.")} style={{width:19,height:19,alignItems:"center",justifyContent:"center",flexShrink:0}}><View style={{transform:[{scale:0.72}]}}><IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/></View></Pressable></View>
-          {!!card.years&&<Pressable accessibilityRole="button" accessibilityLabel="Información sobre experiencia general" onPress={()=>setInfo("Experiencia general\nEs el tiempo total trabajado en todas las profesiones y sectores registrados. Los períodos que coinciden se cuentan una sola vez.")} style={{alignItems:"flex-end",maxWidth:"38%"}}>
+          {false&&!!card.years&&<Pressable accessibilityRole="button" accessibilityLabel="Información sobre experiencia general" onPress={()=>setInfo("Experiencia general\nEs el tiempo total trabajado en todas las profesiones y sectores registrados. Los períodos que coinciden se cuentan una sola vez.")} style={{alignItems:"flex-end",maxWidth:"38%"}}>
             <Text style={{fontSize:11,fontWeight:"600",color:finish.secondary,textAlign:"right"}}>{card.years} {card.years===1?"año":"años"}</Text>
             <Text style={{fontSize:9,color:finish.secondary,textAlign:"right"}}>Experiencia general</Text>
           </Pressable>}
@@ -133,10 +135,11 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
           </Pressable>
         </View>
         <View style={{flexDirection:"row",alignItems:"center",flexWrap:"wrap",gap:8}}>
+          {!!card.years&&<Text style={{backgroundColor:jobeen.cream,borderColor:jobeen.yellow,borderWidth:1,borderRadius:16,overflow:"hidden",paddingHorizontal:10,paddingVertical:5,color:jobeen.ink,fontSize:12}}>{card.years} {card.years===1?"año":"años"} de experiencia</Text>}
           <Pressable accessibilityRole="button" accessibilityLabel="Información sobre disponibilidad" onPress={()=>setInfo(card.status==="ACTIVE"?"Trabajando actualmente\nLa persona indica que tiene un trabajo activo. Esto no significa que Jobin haya confirmado su relación laboral.":"Disponible para trabajar\nLa persona indica que está abierta a nuevas oportunidades laborales o solicitudes de clientes.")}><Text style={{color:finish.text,fontWeight:"700",fontSize:10,letterSpacing:0.7,textDecorationLine:"underline"}}>{card.status==="ACTIVE"?"TRABAJANDO":"DISPONIBLE"} ⓘ</Text></Pressable>
         </View>
-        {[contact?.details?.email_primary||contact?.email,contact?.details?.email_secondary].filter(Boolean).map((email,i)=><Pressable key={"email"+i} accessibilityRole="link" onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>setInfo("No se encontró una aplicación de correo disponible."))} style={{alignSelf:"stretch"}}><Text numberOfLines={1} ellipsizeMode="tail" style={[lineStyle,{textDecorationLine:"underline"}]}>{email}</Text></Pressable>)}
-        {!!(contact?.details?.phone_primary||contact?.phone||contact?.details?.phone_secondary)&&<View style={{flexDirection:"row",alignItems:"center",gap:5,alignSelf:"stretch"}}>{[contact?.details?.phone_primary||contact?.phone,contact?.details?.phone_secondary].filter(Boolean).map((phone,i)=><View key={"phone"+i} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:4}}>{i>0&&<View style={{width:1,height:15,backgroundColor:finish.line}}/>}<Pressable accessibilityRole="link" style={{flex:1}} onPress={()=>void Linking.openURL("tel:"+phone!.replace(/[^+\d]/g,"")).catch(()=>{})}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={lineStyle}>{phone}</Text></Pressable></View>)}</View>}
+        {false&&[contact?.details?.email_primary||contact?.email,contact?.details?.email_secondary].filter(Boolean).map((email,i)=><Pressable key={"email"+i} accessibilityRole="link" onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>setInfo("No se encontró una aplicación de correo disponible."))} style={{alignSelf:"stretch"}}><Text numberOfLines={1} ellipsizeMode="tail" style={[lineStyle,{textDecorationLine:"underline"}]}>{email}</Text></Pressable>)}
+        {false&&!!(contact?.details?.phone_primary||contact?.phone||contact?.details?.phone_secondary)&&<View style={{flexDirection:"row",alignItems:"center",gap:5,alignSelf:"stretch"}}>{[contact?.details?.phone_primary||contact?.phone,contact?.details?.phone_secondary].filter(Boolean).map((phone,i)=><View key={"phone"+i} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:4}}>{i>0&&<View style={{width:1,height:15,backgroundColor:finish.line}}/>}<Pressable accessibilityRole="link" style={{flex:1}} onPress={()=>void Linking.openURL("tel:"+phone!.replace(/[^+\d]/g,"")).catch(()=>{})}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={lineStyle}>{phone}</Text></Pressable></View>)}</View>}
 
         {card.status==="ACTIVE"&&employerLink&&<Pressable accessibilityRole="link" onPress={()=>router.push({pathname:"/company",params:{id:employerLink.id}})}><Text style={[lineStyle,{textDecorationLine:"underline"}]}>Trabaja en {employerLink.name} · @{employerLink.handle} ↗</Text><Text style={{fontSize:10,color:finish.secondary}}>Vínculo laboral verificado por la empresa</Text></Pressable>}
 
