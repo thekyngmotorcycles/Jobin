@@ -274,6 +274,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
     <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:3,borderRadius:7,backgroundColor:jcardCommon.qrPaper,borderWidth:1,borderColor:jobeen.qrBorder,alignSelf:"center",flexShrink:0}}>
      <JCardQr value={card.profileUrl} size={theme==="light"?64:46}/>
     </Pressable>
+    {theme==="light"&&<Text numberOfLines={1} style={{fontSize:9,fontWeight:"600",color:jobeen.textSoft,textAlign:"center",marginTop:3}}>Guardar contacto</Text>}
     </View>
    </View>
   </View>
