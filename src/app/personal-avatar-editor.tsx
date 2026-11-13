@@ -86,9 +86,10 @@ export default function PersonalAvatarEditor(){
    context.crop({originX,originY,width:Math.min(cropSize,sourceW),height:Math.min(cropSize,sourceH)});
    context.resize({width:512,height:512});
    const rendered=await context.renderAsync();
-   const result=await rendered.saveAsync({format:ImageManipulator.SaveFormat.JPEG,compress:0.75});
-   await uploadPersonalJCardPhoto(result.uri,"image/jpeg");
-   router.back();
+   const result=await rendered.saveAsync({format:ImageManipulator.SaveFormat.JPEG,compress:0.75,base64:true});
+   await uploadPersonalJCardPhoto(result.base64??"","image/jpeg");
+   if(router.canGoBack())router.back();
+   else router.replace("/professional");
   }catch(e){Alert.alert("No se pudo guardar",e instanceof Error?e.message:String(e));}finally{setBusy(false);}
  }
  return <View style={s.root}>
