@@ -197,7 +197,7 @@ function BusinessAward({label,icon,level,finish,surface,onPress}:{label:string;i
  </Pressable>;
 }
 export function BusinessFace({card,theme,appearance="original",contact,onQr,onShare,canEditMedia=false,onEditMedia,visibility=DEFAULT_JCARD_VISIBILITY}:{card:CardData;theme:ThemeName;appearance?:JCardPremiumBackgroundId;contact?:{email:string|null;phone:string|null};onQr?:()=>void;onShare?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void;visibility?:typeof DEFAULT_JCARD_VISIBILITY}){
- const b=card.business;const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=appearance==="original";const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:premium?.base??businessCardPaper.background,end:premium?.base??businessCardPaper.background,text:premium?.ink??businessCardPaper.ink,secondary:premium?.ink??businessCardPaper.secondary,line:premium?.line??businessCardPaper.border,sealFill:businessCardPaper.muted};
+ const b=card.business;const jobeen=jobeenTokens(theme);const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=false;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:premium?.base??jobeen.biz,end:premium?.base??jobeen.biz,text:premium?.ink??jobeen.ink,secondary:premium?.ink??jobeen.textSoft,line:premium?.line??jobeen.bizBorder,sealFill:jobeen.surface};
  const [selectedAward,setSelectedAward]=useState<{label:string;level:number}|null>(null);
  const [artSize,setArtSize]=useState({width:0,height:0});
  const surface=businessInformationSurface(finish.start);
