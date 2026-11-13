@@ -42,6 +42,23 @@ const IDENTITY_BADGE_CONTOUR=(()=>{
 })();
 const JCARD_LEFT_CURVES=Array.from({length:15},(_,i)=>({d:`M ${-45+i*10} 330 C ${42+i*4} 235, ${-20+i*8} 116, ${78+i*7} -25`,index:i}));
 const JCARD_BOTTOM_CURVES=Array.from({length:16},(_,i)=>({d:`M ${-45+i*13} 675 C ${60+i*8} 540, ${235+i*4} 555, ${440+i*2} 395`,index:i}));
+/** Subtle honeycomb motif from the approved Light JCard references. */
+const HONEYCOMB_CELLS=Array.from({length:9},(_,row)=>Array.from({length:8},(_,col)=>{
+ const x=col*24+(row%2?12:0)-5,y=row*21-6;
+ const vertices=Array.from({length:6},(_,side)=>{
+  const angle=Math.PI/3*side-Math.PI/6;
+  return (x+13*Math.cos(angle)).toFixed(1)+","+(y+13*Math.sin(angle)).toFixed(1);
+ }).join(" L");
+ const fade=Math.max(0,Math.min(1,(x+20)/125))*Math.max(0,Math.min(1,(165-y)/115));
+ return {key:row+"-"+col,d:"M"+vertices+" Z",opacity:fade*0.45};
+})).flat();
+function JobeenHoneycomb({color,compact=false}:{color:string;compact?:boolean}){
+ return <View pointerEvents="none" style={{position:"absolute",top:0,right:0,width:compact?150:190,height:compact?118:150,overflow:"hidden"}}>
+  <Svg width="100%" height="100%" viewBox="0 0 190 150" accessible={false}>
+   {HONEYCOMB_CELLS.map(cell=><Path key={cell.key} d={cell.d} stroke={color} strokeWidth="1.1" strokeOpacity={cell.opacity} fill="none"/>)}
+  </Svg>
+ </View>;
+}
 const AWARD_POINTS=Array.from({length:48},(_,i)=>{const t=i*Math.PI/24-Math.PI/2;const radius=i%2?23:25;return (27+radius*Math.cos(t)).toFixed(2)+","+(27+radius*Math.sin(t)).toFixed(2);}).join(" ");
 const JCardQr=memo(function JCardQr({value,size}:{value:string;size:number}){
  return <QRCode value={value} size={size} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>;
@@ -97,6 +114,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
       {showDecorativeCurves&&<Path d="M-20 420 C105 250 225 300 420 95" stroke={embossInk} strokeOpacity={embossStrength*0.7} strokeWidth="2" fill="none"/>}
     </Svg>
     {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
+    {theme==="light"&&appearance==="original"&&<JobeenHoneycomb color={jobeen.bizBorder} compact={artSize.width>0&&artSize.width<360}/> }
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:25,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
     <View style={{ padding:theme==="light"?12:jcardLayout.padding, gap:theme==="light"?5:8, flex:1, justifyContent:"space-between" }}>
       <View style={{ paddingTop:theme==="light"?18:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
