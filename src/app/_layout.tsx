@@ -48,6 +48,7 @@ function Navigation() {
  <Stack.Screen name="credential-review" options={{title:"Revisión de acreditaciones"}}/>
  <Stack.Screen name="opportunities" options={{title:"Oportunidades profesionales"}}/>
  <Stack.Screen name="jcard" options={{title:"JCard"}}/>
+ <Stack.Screen name="personal-avatar-editor" options={{headerShown:false}}/>
  <Stack.Screen name="jcard-backgrounds" options={{title:"Apariencia"}}/>
  <Stack.Screen name="jcard-business-backgrounds" options={{title:"Apariencia de negocio"}}/>
  <Stack.Screen name="jcard-business-edit" options={{title:"JCard de negocio"}}/>
