@@ -264,7 +264,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
    </View>
    </View>
    <View style={{height:1,backgroundColor:finish.line,opacity:0.7,marginBottom:4}}/>
-   <View style={{flexDirection:"row",alignItems:"center",gap:3,minHeight:110}}>
+   <View style={{flexDirection:"row",alignItems:"center",gap:3,minHeight:theme==="light"?82:110}}>
     <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"flex-start",gap:1}}>
      {awards.map(a=><BusinessAward key={a.label} {...a} finish={finish} surface={surface} onPress={()=>setSelectedAward({label:a.label,level:a.level})}/>)}
     </View>
@@ -293,7 +293,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const [back,setBack]=useState(initialSide==="business"),[qrOpen,setQrOpen]=useState(false);
  const canFlip=showOwnerActions||(visibility.personal_enabled&&visibility.business_enabled);
  const activeBusiness=!visibility.personal_enabled&&visibility.business_enabled;
- const cardHeight = 450;
+ const cardHeight = (previewTheme??theme)==="light"?364:450;
  const rotation=useRef(new Animated.Value(initialSide==="business"?180:0)).current;
  const angle=useRef(initialSide==="business"?180:0);
  useEffect(()=>{if(!canFlip){setBack(activeBusiness);angle.current=activeBusiness?180:0;rotation.stopAnimation();rotation.setValue(angle.current);}},[canFlip,activeBusiness,rotation]);
