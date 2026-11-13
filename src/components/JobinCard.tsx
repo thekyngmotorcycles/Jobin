@@ -322,7 +322,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
 
    </View>
    {canFlip&&<Pressable accessibilityRole="button" accessibilityLabel={back?"Volver a la JCard personal":"Ver datos de negocios"} accessibilityHint="Toca o desliza horizontalmente la tarjeta para girarla" onPress={toggle} style={{alignSelf:"center",minHeight:44,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:7,paddingHorizontal:12}}>
-    <Ionicons name="sync-outline" size={17} color={cardColors.ink2}/>
+    {cardTheme!=="light"&&<Ionicons name="sync-outline" size={17} color={cardColors.ink2}/>}
     <Text style={{fontSize:12,color:cardColors.ink2}}>{back?"Toca la tarjeta para ver los datos personales":"Toca la tarjeta para ver los datos de negocios"}</Text>
    </Pressable>}
    {showOwnerActions&&<View style={{flexDirection:"row",gap:10,paddingTop:10}}>
