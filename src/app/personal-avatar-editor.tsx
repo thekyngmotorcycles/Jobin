@@ -2,6 +2,7 @@ import {avatarEditorColors} from "../theme/jcard";
 import {useEffect,useMemo,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Dimensions,FlatList,Image,PanResponder,Pressable,StyleSheet,Text,View} from "react-native";
 import {useRouter} from "expo-router";
+import {Ionicons} from "@expo/vector-icons";
 import * as MediaLibrary from "expo-media-library";
 import * as ImageManipulator from "expo-image-manipulator";
 import {uploadPersonalJCardPhoto} from "../lib/personal-jcard-photo";
@@ -66,6 +67,11 @@ export default function PersonalAvatarEditor(){
  const displayWidth=dimensions.width*scale,displayHeight=dimensions.height*scale;
  const maxX=Math.max(0,(displayWidth-SIZE)/2),maxY=Math.max(0,(displayHeight-SIZE)/2);
  const dx=Math.max(-maxX,Math.min(maxX,offset.x)),dy=Math.max(-maxY,Math.min(maxY,offset.y));
+ function closeWithoutSaving(){
+  if(busy)return;
+  if(router.canGoBack())router.back();
+  else router.replace("/professional");
+ }
  async function save(){
   if(!selected||busy)return;setBusy(true);
   try{
@@ -86,11 +92,11 @@ export default function PersonalAvatarEditor(){
   }catch(e){Alert.alert("No se pudo guardar",e instanceof Error?e.message:String(e));}finally{setBusy(false);}
  }
  return <View style={s.root}>
-  <View style={s.top}><Pressable onPress={()=>router.back()}><Text style={s.action}>✕</Text></Pressable><Text style={s.heading}>Foto de JCard</Text><Pressable disabled={!selected||busy} onPress={()=>void save()}><Text style={s.save}>{busy?"Guardando":"Guardar"}</Text></Pressable></View>
+  <View style={s.top}><Pressable accessibilityRole="button" accessibilityLabel="Cerrar sin guardar" hitSlop={12} disabled={busy} onPress={closeWithoutSaving} style={s.closeButton}><Ionicons name="close" size={22} color={avatarEditorColors.text}/></Pressable><Pressable disabled={!selected||busy} onPress={()=>void save()}><Text style={s.save}>{busy?"Guardando":"Guardar"}</Text></Pressable></View>
   <View style={s.previewArea}>{selected?<View style={{width:SIZE,height:SIZE,borderRadius:SIZE/2,overflow:"hidden",backgroundColor:avatarEditorColors.preview}} {...pan.panHandlers}><Image source={{uri:selected.uri}} style={{width:displayWidth,height:displayHeight,position:"absolute",left:(SIZE-displayWidth)/2+dx,top:(SIZE-displayHeight)/2+dy}} resizeMode="stretch"/></View>:<ActivityIndicator/>}</View>
 
   <Text style={s.subheading}>Recientes</Text>
   {permissionDenied?<Text style={s.message}>Habilita el acceso a las fotos en los permisos de Jobin.</Text>:<FlatList data={photos} numColumns={4} keyExtractor={p=>p.id} initialNumToRender={20} windowSize={5} renderItem={({item})=><Pressable style={s.cell} onPress={()=>setSelected(item)}><Image source={{uri:item.uri}} style={s.thumbnail}/>{selected?.id===item.id&&<View style={s.selected}/>}</Pressable>}/>}
  </View>;
 }
-const s=StyleSheet.create({root:{flex:1,backgroundColor:avatarEditorColors.background},top:{height:68,flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:20},heading:{color:avatarEditorColors.text,fontSize:17,fontWeight:"600"},action:{color:avatarEditorColors.text,fontSize:29},save:{color:avatarEditorColors.accent,fontSize:17,fontWeight:"700"},previewArea:{flex:1,minHeight:220,alignItems:"center",justifyContent:"center"},subheading:{color:avatarEditorColors.text,fontSize:20,fontWeight:"600",paddingHorizontal:18,paddingVertical:12},cell:{width:"25%",aspectRatio:1,padding:2},thumbnail:{width:"100%",height:"100%"},selected:{position:"absolute",inset:2,borderColor:avatarEditorColors.accent,borderWidth:3},message:{color:avatarEditorColors.text,padding:18}});
+const s=StyleSheet.create({root:{flex:1,backgroundColor:avatarEditorColors.background},top:{height:54,flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:20,zIndex:2},closeButton:{width:36,height:36,borderRadius:18,alignItems:"center",justifyContent:"center",shadowColor:avatarEditorColors.text,shadowOffset:{width:0,height:1},shadowOpacity:0.18,shadowRadius:2,elevation:2},save:{color:avatarEditorColors.accent,fontSize:17,fontWeight:"700"},previewArea:{height:SIZE+16,alignItems:"center",justifyContent:"center"},subheading:{color:avatarEditorColors.text,fontSize:20,fontWeight:"600",paddingHorizontal:18,paddingVertical:12},cell:{width:"25%",aspectRatio:1,padding:2},thumbnail:{width:"100%",height:"100%"},selected:{position:"absolute",inset:2,borderColor:avatarEditorColors.accent,borderWidth:3},message:{color:avatarEditorColors.text,padding:18}});
