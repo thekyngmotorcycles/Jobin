@@ -227,11 +227,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
 
   {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
   <View style={{flex:1,paddingHorizontal:0,paddingTop:0,paddingBottom:0,gap:0}}>
-   <View style={{height:104,position:"relative",zIndex:0}}>
-    {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:<View style={{flex:1,backgroundColor:art.tint,alignItems:"flex-end",justifyContent:"center",paddingRight:20}}><Ionicons name={art.icon} size={66} color={BUSINESS_MEDAL_COLORS[1]} style={{opacity:0.55}}/></View>}
-    {canEditMedia&&onEditMedia&&<Pressable accessibilityRole="button" accessibilityLabel="Cambiar banner empresarial desde la galería" onPress={()=>onEditMedia("banner")} style={{position:"absolute",right:9,top:9,width:25,height:25,borderRadius:13,backgroundColor:jcardCommon.editBackground,alignItems:"center",justifyContent:"center"}}><Ionicons name="pencil-outline" size={13} color={jcardCommon.editInk}/></Pressable>}
-   </View>
-   <View style={{flex:1,marginTop:-18,borderTopLeftRadius:26,borderTopRightRadius:26,backgroundColor:premium?finish.start:businessCardPaper.background,overflow:"hidden",paddingHorizontal:14,paddingTop:18,paddingBottom:10,gap:5,zIndex:2}}>
+   <View style={{flex:1,marginTop:0,borderTopLeftRadius:26,borderTopRightRadius:26,backgroundColor:finish.start,overflow:"hidden",paddingHorizontal:14,paddingTop:18,paddingBottom:10,gap:5,zIndex:2}}>
    {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
    <View style={{flexDirection:"row",alignItems:"flex-start",gap:6,marginTop:-2}}>
     <View style={{flex:1,minWidth:0}} onLayout={e=>{const w=Math.floor(e.nativeEvent.layout.width)-22;if(w>0&&Math.abs(w-businessNameWidth)>2)setBusinessNameWidth(w);}}>
