@@ -1,10 +1,11 @@
-import { View,type StyleProp,type ViewStyle } from "react-native";
-import { SvgXml } from "react-native-svg";
+import { Text,View,type StyleProp,type ViewStyle } from "react-native";
 import { useTheme } from "../state/ThemeProvider";
-import { WORDMARK_ASPECT,WORDMARK_XML } from "../theme/wordmark";
+import { jobeenTokens } from "../theme/jobeen";
+
+/** Jobeen script lettering; native cursive fallback until a licensed script font is bundled. */
 export function JobinWordmark({width=112,style}:{width?:number;style?:StyleProp<ViewStyle>}){
- const {colors}=useTheme();
- return <View testID="jobin-wordmark" accessible accessibilityLabel="Jobin" accessibilityRole="image" style={[{width,maxWidth:"100%",aspectRatio:WORDMARK_ASPECT,alignSelf:"center",backgroundColor:colors.transparent},style]}>
-  <SvgXml xml={WORDMARK_XML} width="100%" height="100%" color={colors.wordmark} accessible={false}/>
+ const {theme}=useTheme();const t=jobeenTokens(theme);
+ return <View testID="jobin-wordmark" accessible accessibilityLabel="Jobeen" accessibilityRole="image" style={[{width,maxWidth:"100%",alignSelf:"center",alignItems:"center",justifyContent:"center"},style]}>
+  <Text numberOfLines={1} adjustsFontSizeToFit style={{fontFamily:"cursive",fontStyle:"italic",fontWeight:"700",fontSize:width*0.29,color:t.ink}}>Jobeen</Text>
  </View>;
 }
