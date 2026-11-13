@@ -1,24 +1,29 @@
 import { authSilver } from "../theme/auth-silver";
 import { Ionicons } from "@expo/vector-icons";
 import { JobinWordmark } from "./JobinWordmark";
-import { useState, type ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export function AuthShell({ title, children, footer }: { title: string; children: ReactNode; footer: ReactNode }) {
+export function AuthShell({ title, children, footer }: { title?: string; children: ReactNode; footer: ReactNode }) {
  const { width } = useWindowDimensions();
  const isWeb = Platform.OS === "web";
+ const scrollRef = useRef<ScrollView>(null);
+ useEffect(()=>{
+  const sub=Keyboard.addListener("keyboardDidShow",()=>scrollRef.current?.scrollToEnd({animated:true}));
+  return ()=>sub.remove();
+ },[]);
  return <SafeAreaView style={{ flex: 1, backgroundColor: authSilver.tone4 }}>
   <View pointerEvents="none" style={{ position:"absolute",top:"-12%",left:"-35%",width:"170%",height:"50%",backgroundColor:authSilver.tone5,transform:[{rotate:"-19deg"}] }}/>
   <View pointerEvents="none" style={{ position:"absolute",top:"43%",left:"-20%",width:"160%",height:"37%",backgroundColor:authSilver.tone6,transform:[{rotate:"21deg"}] }}/>
   <View pointerEvents="none" style={{ position:"absolute",bottom:"-14%",left:"-30%",width:"170%",height:"48%",backgroundColor:authSilver.tone7,transform:[{rotate:"-17deg"}] }}/>
-  <KeyboardAvoidingView behavior={Platform.OS==="ios"?"padding":undefined} style={{flex:1}}>
-   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{flexGrow:1,paddingHorizontal:20,paddingTop:24,paddingBottom:24,justifyContent:"center"}}>
+  <KeyboardAvoidingView behavior={Platform.OS==="ios"?"padding":"height"} style={{flex:1}}>
+   <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{flexGrow:1,paddingHorizontal:20,paddingTop:24,paddingBottom:24,justifyContent:"center"}}>
     <View style={{alignItems:"center",marginBottom:18,gap:8}}>
      <JobinWordmark width={isWeb?112:122}/>
     </View>
     <View style={{width:"100%",maxWidth:410,alignSelf:"center",borderRadius:18,backgroundColor:authSilver.tone10,borderWidth:1,borderColor:authSilver.tone11,padding:width<390?18:22,gap:13,shadowColor:authSilver.tone12,shadowOpacity:0.10,shadowRadius:10,elevation:2}}>
-     <Text style={{textAlign:"center",color:authSilver.tone13,fontSize:25,fontWeight:"600",marginBottom:5}}>{title}</Text>
+     {title?<Text style={{textAlign:"center",color:authSilver.tone13,fontSize:25,fontWeight:"600",marginBottom:5}}>{title}</Text>:null}
      {children}
     </View>
     <View style={{alignItems:"center",marginTop:16}}>{footer}</View>
