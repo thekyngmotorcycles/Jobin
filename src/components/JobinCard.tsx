@@ -282,7 +282,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
    </View>
    </View>
    <View style={{height:1,backgroundColor:finish.line,opacity:0.7,marginBottom:4}}/>
-   <View style={{flexDirection:"row",alignItems:"center",gap:theme==="light"?2:3,minHeight:theme==="light"?102:110}}>
+   <View style={{flexDirection:"row",alignItems:"center",gap:theme==="light"?2:3,minHeight:theme==="light"?112:110}}>
     <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"flex-start",gap:1}}>
      {awards.map(a=><BusinessAward key={a.label} {...a} finish={finish} surface={surface} compact={theme==="light"} onPress={()=>setSelectedAward({label:a.label,level:a.level})}/>)}
     </View>
