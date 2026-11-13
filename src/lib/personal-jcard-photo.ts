@@ -2,10 +2,11 @@ import {requireSupabase} from "./supabase";
 const BUCKET="personal-jcard-avatars";
 let photoChanged=false;
 export function consumePersonalPhotoChange():boolean{const changed=photoChanged;photoChanged=false;return changed;}
-export async function uploadPersonalJCardPhoto(uri:string,mime="image/jpeg"):Promise<string>{
- const response=await fetch(uri);
- if(!response.ok)throw new Error("No se pudo leer la fotografía.");
- const bytes=await response.arrayBuffer();
+export async function uploadPersonalJCardPhoto(base64:string,mime="image/jpeg"):Promise<string>{
+ if(!base64)throw new Error("No se pudo leer la fotografía procesada.");
+ const decoded=atob(base64);
+ const bytes=new Uint8Array(decoded.length);
+ for(let i=0;i<decoded.length;i++)bytes[i]=decoded.charCodeAt(i);
  if(!bytes.byteLength||bytes.byteLength>2097152)throw new Error("La fotografía debe pesar menos de 2 MB. Selecciona una imagen más pequeña.");
 
  if(!["image/jpeg","image/png","image/webp"].includes(mime))throw new Error("Selecciona una imagen JPG, PNG o WEBP.");
