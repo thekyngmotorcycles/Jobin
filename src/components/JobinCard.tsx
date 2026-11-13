@@ -63,7 +63,7 @@ function languageDetails(name:string,fluency:number){
 function CardFace({ card, theme, appearance="original", expanded = false, onEdit, onQr, onShare, onEditPhoto, contact, employerLink }: { card: CardData; theme: ThemeName; appearance?:JCardPremiumBackgroundId; expanded?: boolean; onEdit?: () => void; onQr?: () => void; onShare?: () => void; onEditPhoto?: () => void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null }) {
   const { s, fs } = useUi();
   const jobeen=jobeenTokens(theme);
-  const { fontScale } = useWindowDimensions();
+  const { fontScale, width:screenWidth } = useWindowDimensions();
   const gradientId = "jcard" + useId().replace(/[^a-zA-Z0-9]/g, "");
   const shineId=gradientId+"shine";
   const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=false;
@@ -145,7 +145,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
 
         </View>
       </View>
-      <View style={{height:secondarySeals.length?166:92,borderTopWidth:1,borderTopColor:finish.line,paddingTop:secondarySeals.length?9:5,paddingBottom:secondarySeals.length?17:0,justifyContent:"space-evenly"}}>
+      <View style={{height:theme==="light"?76:(secondarySeals.length?166:92),borderTopWidth:1,borderTopColor:finish.line,paddingTop:theme==="light"?3:(secondarySeals.length?9:5),paddingBottom:theme==="light"?0:(secondarySeals.length?17:0),justifyContent:"space-evenly"}}>
         <View style={{minHeight:62,justifyContent:"center",gap:7}}>
           <Text style={{fontSize:11,color:finish.secondary,textAlign:"center",letterSpacing:1.2}}>Idiomas</Text>
           <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:sealGap}}>
@@ -155,7 +155,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
           </View>
         </View>
 
-        {secondarySeals.length>0&&<View style={{minHeight:62,justifyContent:"center",gap:7,marginTop:4,paddingTop:7,borderTopWidth:1,borderTopColor:finish.line}}>
+        {secondarySeals.length>0&&theme!=="light"&&<View style={{minHeight:62,justifyContent:"center",gap:7,marginTop:4,paddingTop:7,borderTopWidth:1,borderTopColor:finish.line}}>
           <Text style={{fontSize:11,color:finish.secondary,textAlign:"center",letterSpacing:0.8}}>Otras profesiones</Text>
           <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:sealGap}}>
             {secondarySeals.slice(0,5).map(seal=><Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\nEspecialidades: "+(seal.specialties?.length?seal.specialties.join(", "):"No declaradas")+"\nExperiencia registrada: "+experienceLabel(seal.months??0)+".\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:sealDiameter+4,height:sealDiameter+4,alignItems:"center",justifyContent:"center"}}>
