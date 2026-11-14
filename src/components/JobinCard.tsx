@@ -92,7 +92,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
   const embossStrength=finish.start===finish.end?0.20:0.12;
   const [info,setInfo]=useState<string|null>(null);
   // Keep the verification seal beside the final visible name line, even for long legal names.
-  const fullDisplayName=card.name.trim().replace(/\\s+/g," ");
+  const fullDisplayName=card.name.trim().replace(/\s+/g," ");
   const visibleName=Array.from(fullDisplayName).slice(0,25).join("")+(Array.from(fullDisplayName).length>25?"…":"");
   const nameFontSize=visibleName.length>22?15:visibleName.length>17?17:19;
   const nameBreakAt=visibleName.length>17?visibleName.lastIndexOf(" ",17):-1;
