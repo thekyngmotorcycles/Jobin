@@ -87,7 +87,6 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
   const finish = {...jcardTokens(theme, jcardTier(card.rating, card.reviewCount)),start:premium?.base??jobeen.surface,end:premium?.base??jobeen.surface,text:premium?.ink??jobeen.ink,secondary:premium?.ink??jobeen.ink2,line:premium?.line??jobeen.line,sealFill:businessCardPaper.muted,pendingFill:businessCardPaper.muted};
   const [artSize,setArtSize]=useState({width:0,height:0});
  const [selectedAward,setSelectedAward]=useState<{label:string;level:number}|null>(null);
- const [showBusinessVerification,setShowBusinessVerification]=useState(false);
   const rating = displayedRating(card.rating, card.reviewCount);
   const embossInk=finish.text;
   const embossStrength=finish.start===finish.end?0.20:0.12;
@@ -216,6 +215,7 @@ function BusinessAward({label,icon,level,finish,surface,onPress,compact=false}:{
 export function BusinessFace({card,theme,appearance="original",contact,onQr,onShare,canEditMedia=false,onEditMedia,visibility=DEFAULT_JCARD_VISIBILITY}:{card:CardData;theme:ThemeName;appearance?:JCardPremiumBackgroundId;contact?:{email:string|null;phone:string|null};onQr?:()=>void;onShare?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void;visibility?:typeof DEFAULT_JCARD_VISIBILITY}){
  const b=card.business;const jobeen=jobeenTokens(theme);const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=false;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:premium?.base??jobeen.biz,end:premium?.base??jobeen.biz,text:premium?.ink??jobeen.ink,secondary:premium?.ink??jobeen.textSoft,line:premium?.line??jobeen.bizBorder,sealFill:jobeen.surface};
  const [selectedAward,setSelectedAward]=useState<{label:string;level:number}|null>(null);
+ const [showBusinessVerification,setShowBusinessVerification]=useState(false);
  const [artSize,setArtSize]=useState({width:0,height:0});
  const surface=businessInformationSurface(finish.start);
  const company=!!b?.name.trim();const businessName=(company?b!.name:card.name).trim().slice(0,theme==="light"?120:30);const [businessNameWidth,setBusinessNameWidth]=useState(180);const nameFontSize=Math.max(14,Math.min(21,Math.floor(businessNameWidth/Math.max(8,theme==="light"?Math.ceil(businessName.length/2):businessName.length)*1.65)));const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
