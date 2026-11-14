@@ -1,0 +1,49 @@
+name: Jobeen phase 1 development OTA release
+on:
+  push:
+    branches: [feature/jobeen-phase1-ui]
+    paths:
+      - ".github/workflows/jobeen-phase1-ota.yml"
+      - "src/**"
+      - "app/**"
+      - "assets/**"
+      - "package.json"
+      - "package-lock.json"
+      - "app.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: jobeen-phase1-development-ota
+  cancel-in-progress: false
+jobs:
+  publish-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/jobeen-phase1-ui
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify Expo token
+        run: test -n "$EXPO_TOKEN" || { echo "::error::Missing EXPO_TOKEN"; exit 1; }
+      - run: npm ci
+      - run: npx expo install --check
+      - run: npm run typecheck
+      - name: Publish to isolated EAS branch (retain existing development channel mapping)
+        run: |
+          npx eas-cli@27.1.0 update --branch development --environment preview --platform android --message "Jobeen phase 1 visual preview" --non-interactive --json > jobeen-ota.json
+          cat jobeen-ota.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jobeen-phase1-development-ota-result
+          path: jobeen-ota.json
+          if-no-files-found: ignore
+      - name: Safety note
+        run: echo "Published phase 1 to the development EAS update branch without changing GitHub development source or the channel mapping. Open preview explicitly from an Expo development client compatible with this runtime." >> "$GITHUB_STEP_SUMMARY"

@@ -1,5 +1,6 @@
 import {consumePersonalPhotoChange} from "../../lib/personal-jcard-photo";
 import {menuChrome} from "../../theme/menu-chrome";
+import {jobeenTokens} from "../../theme/jobeen";
 import {useTheme} from "../../state/ThemeProvider";
 import {cvRequests,respondCV,revokeCV,type CVRequest} from "../../lib/cv-access";
 import {identityVerified} from "../../lib/identity-status";
@@ -42,7 +43,7 @@ function validPhoneLabel(value:string):boolean{
  return /^(?:[\p{Regional_Indicator}]{2}|[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?(?:\u200D[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?)*)$/u.test(label);
 }
 export default function Profile() {
-  const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
+  const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
   const [mode, setMode] = useState<Mode>("grid");
   const [verifiedIdentity,setVerifiedIdentity]=useState(false);
   const [profileToolsOpen,setProfileToolsOpen]=useState(false);
@@ -150,26 +151,26 @@ export default function Profile() {
   const tabIcon = (icon: keyof typeof Ionicons.glyphMap, label: string, value: Mode | "live", active: boolean) => (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected: active }}
       onPress={() => (value === "live" ? openLive() : setMode(value))}
-      style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: active ? colors.ink : colors.transparent }}>
-      <Ionicons name={icon} size={22} color={active ? colors.inverse : colors.ink} />
+      style={{ width: 54, height: 44, borderBottomWidth:active?3:0,borderBottomColor:jt.yellow,alignItems: "center", justifyContent: "center" }}>
+      <Ionicons name={icon} size={22} color={active ? jt.ink : jt.ink2} />
     </Pressable>
   );
 
   return (
-    <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
+    <SafeAreaView edges={["top", "left", "right"]} style={[s.screen,{backgroundColor:jt.bg}]}>
       <View style={{ position:"absolute",top:insets.top,left:0,right:0,zIndex:10,height:60,flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8 }}>
         <View pointerEvents="none" style={{position:"absolute",top:0,left:0,right:0,height:fadeHeight}}>
           <Svg width="100%" height="100%" accessible={false}>
             <Defs><LinearGradient id="profileTopFade" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0" stopColor={colors.paper} stopOpacity={1}/>
-              <Stop offset={1-fadeCenter} stopColor={colors.paper} stopOpacity={colors.navigationOpacity}/>
-              <Stop offset={1-fadeCenter*.4} stopColor={colors.paper} stopOpacity={.035}/>
-              <Stop offset="1" stopColor={colors.paper} stopOpacity={0}/>
+              <Stop offset="0" stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={1}/>
+              <Stop offset={1-fadeCenter} stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={colors.navigationOpacity}/>
+              <Stop offset={1-fadeCenter*.4} stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={.035}/>
+              <Stop offset="1" stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={0}/>
             </LinearGradient></Defs>
             <Rect width="100%" height="100%" fill="url(#profileTopFade)"/>
           </Svg>
         </View>
-        <JobinWordmark width={92} style={{ alignSelf: "flex-start" }} />
+        <JobinWordmark width={theme==="light"?112:92} style={{ alignSelf: "flex-start" }} />
         <View style={{flexDirection:"row",alignItems:"center",gap:4}}>
           <Pressable accessibilityRole="button" accessibilityLabel="Mi red" onPress={()=>router.push("/my-network")} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="people-outline" size={23} color={colors.ink}/></Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>profileToolsOpen?closeProfileMenu():openProfileMenu()} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="ellipsis-horizontal" size={23} color={colors.ink}/></Pressable>
@@ -205,7 +206,7 @@ export default function Profile() {
         </View> : workspace.loading ? <JCardLoadingSkeleton/> : <ProfessionalStatus loading={false} error={workspace.error} retry={workspace.reload}/>}
 
 
-        <View style={{flexDirection:"row",justifyContent:"space-around",alignItems:"center",borderBottomWidth:1,borderBottomColor:colors.line,paddingVertical:8}}>
+        <View style={{flexDirection:"row",justifyContent:"space-around",alignItems:"center",borderBottomWidth:1,borderBottomColor:jt.line,paddingVertical:0}}>
           {tabIcon("school-outline","Historial profesional","cv",mode==="cv")}
           {tabIcon("play-outline","Videos","videos",mode==="videos")}
           {tabIcon("radio-outline","Transmisiones en vivo","live",mode==="live")}
@@ -261,9 +262,11 @@ export default function Profile() {
         {mode === "grid" && (
           <View style={{ position: "relative" }}>
             <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-              {DEMO_VIDEOS.map(video => (
-                <View key={video.id} style={{ width: "33.33%", aspectRatio: 3 / 4, padding: 1 }}>
-                  <MediaThumbnail uri={video.thumbnail} label={video.title}/>
+              {DEMO_VIDEOS.map((video,index) => (
+                <View key={video.id} style={{ width: "33.33%", padding: 1.5 }}>
+                  <View style={{height:160,borderRadius:10,overflow:"hidden",backgroundColor:[jt.videoTile1,jt.videoTile2,jt.videoTile3][index%3]}}>
+                    <MediaThumbnail uri={video.thumbnail} label={video.title}/>
+                  </View>
                 </View>
               ))}
             </View>
