@@ -124,23 +124,24 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         <Pressable disabled={!onEditPhoto} accessibilityRole={onEditPhoto?"button":undefined} accessibilityLabel={onEditPhoto?"Cambiar foto de JCard personal":undefined} onPress={event=>{event.stopPropagation();onEditPhoto?.();}} style={{width:theme==="light"?100:jcardLayout.avatar+8,height:theme==="light"?100:jcardLayout.qr+8,justifyContent:"center",alignItems:"center",minWidth:44,minHeight:44}}>
           <View style={{borderRadius:52,borderWidth:theme==="light"?3:0,borderColor:jobeen.yellow,padding:theme==="light"?1:0}}><Avatar uri={personalAvatarUrl(card.avatar)} name={card.name} size={theme==="light"?92:jcardLayout.avatar}/></View>
         </Pressable>
-        <View style={{alignItems:"center",gap:7,position:"relative"}}>
+        {theme!=="light"&&<View style={{alignItems:"center",gap:7,position:"relative"}}>
           {onShare&&<Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard personal" onPress={event=>{event.stopPropagation();onShare();}} style={{position:"absolute",right:0,top:-30,width:28,height:28,alignItems:"center",justifyContent:"center",zIndex:2}}><Ionicons name="share-social-outline" size={18} color={finish.text}/></Pressable>}
           <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR" onPress={event=>{event.stopPropagation();onQr?.();}} style={{ backgroundColor:jcardCommon.qrPaper, padding:theme==="light"?2:jcardLayout.qrQuietZone, borderRadius:6,minWidth:44,minHeight:44,justifyContent:"center",alignItems:"center",borderWidth:theme==="light"?1:0,borderColor:jobeen.qrBorder }}>
             <JCardQr value={card.profileUrl} size={theme==="light"?56:jcardLayout.qr}/>
           </Pressable>
-        </View>
+        </View>}
+        {theme==="light"&&<View style={{flex:1,minWidth:0,justifyContent:"center",paddingLeft:8,paddingTop:8}}><View style={{flexDirection:"row",alignItems:"center",gap:4}}><Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.72} style={{fontSize:22,lineHeight:26,fontWeight:"700",color:finish.text,flexShrink:1}}>{card.name}</Text><Pressable accessibilityRole="button" accessibilityLabel={card.identityVerified?"Persona verificada":"Persona sin verificar"} hitSlop={12} onPress={()=>setInfo(card.identityVerified?"Identidad verificada por Jobeen.":"Identidad sin verificar.")}><IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/></Pressable></View><Text numberOfLines={1} style={{color:finish.secondary,fontSize:14,marginTop:3}}>@{card.handle}</Text></View>}
       </View>
 
       <View style={{flex:1,minHeight:0,justifyContent:"flex-start",gap:5,paddingTop:0,paddingBottom:4}}>
-        <View style={{gap:0,marginTop:0}}>
+        {theme!=="light"&&<View style={{gap:0,marginTop:0}}>
         <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
           <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:4}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={[s.h3,{color:finish.text,fontSize:Math.max(20,fs(expanded?22:22)),lineHeight:Math.max(23,fs(expanded?26:25)),flexShrink:1}]}>{card.name}</Text><Pressable accessibilityRole="button" accessibilityLabel={card.identityVerified?"Persona verificada":"Persona sin verificar"} hitSlop={theme==="light"?13:undefined} onPress={()=>setInfo(card.identityVerified?"Identidad verificada por Jobeen. Esta insignia no certifica licencias ni competencias profesionales.":"Identidad sin verificar. Para obtener la insignia se requerirá nombre legal, correo y teléfono confirmados, documento de identidad y validación de identidad.")} style={{width:19,height:19,alignItems:"center",justifyContent:"center",flexShrink:0}}><View style={{transform:[{scale:0.72}]}}><IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/></View></Pressable></View>
           
         </View>
         <Text numberOfLines={1} style={{color:finish.secondary,fontSize:14,lineHeight:19,marginTop:0}}>@{card.handle}</Text>
         {typeof card.followers==="number"&&<Text style={{color:finish.secondary,fontSize:10}}>{card.followers.toLocaleString()} seguidores</Text>}
-        </View>
+        </View>}
         <View style={{flex:1,minHeight:0,justifyContent:"center",gap:4,paddingTop:0}}>
         <View style={{flexDirection:"row",alignItems:"center",gap:7,width:"100%"}}>
           <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[lineStyle,{fontWeight:"600",flexShrink:1,flexGrow:0}]}>{primaryProfession}{!!card.primarySpecialties?.length?" / Especializado":""}</Text>
@@ -160,7 +161,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
 
         </View>
       </View>
-      <View style={{height:theme==="light"?(secondarySeals.length?94:76):(secondarySeals.length?166:92),borderTopWidth:1,borderTopColor:finish.line,paddingTop:theme==="light"?3:(secondarySeals.length?9:5),paddingBottom:theme==="light"?0:(secondarySeals.length?17:0),justifyContent:"space-evenly"}}>
+      <View style={{height:theme==="light"?76:(secondarySeals.length?166:92),borderTopWidth:1,borderTopColor:finish.line,paddingTop:theme==="light"?3:(secondarySeals.length?9:5),paddingBottom:theme==="light"?0:(secondarySeals.length?17:0),justifyContent:"space-evenly"}}>
         <View style={{minHeight:62,justifyContent:"center",gap:7}}>
           <Text style={{fontSize:11,color:finish.secondary,textAlign:"center",letterSpacing:1.2}}>Idiomas</Text>
           <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:sealGap}}>
@@ -170,7 +171,6 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
           </View>
         </View>
 
-        {secondarySeals.length>0&&theme==="light"&&<Pressable accessibilityRole="button" accessibilityLabel="Ver profesiones secundarias" onPress={()=>setInfo("Otras profesiones\n"+secondarySeals.map(seal=>seal.profession+" · "+experienceLabel(seal.months??0)).join("\n"))} style={{minHeight:44,alignItems:"center",justifyContent:"center",paddingHorizontal:8}}><Text numberOfLines={1} style={{fontSize:11,fontWeight:"600",color:jobeen.ink2}}>Otras profesiones ({secondarySeals.length}) · Ver detalles</Text></Pressable>}
         {secondarySeals.length>0&&theme!=="light"&&<View style={{minHeight:62,justifyContent:"center",gap:7,marginTop:4,paddingTop:7,borderTopWidth:1,borderTopColor:finish.line}}>
           <Text style={{fontSize:11,color:finish.secondary,textAlign:"center",letterSpacing:0.8}}>Otras profesiones</Text>
           <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:sealGap}}>
@@ -186,6 +186,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         </View>}
       </View>
     </View>
+    {theme==="light"&&<Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR personal" onPress={event=>{event.stopPropagation();onQr?.();}} style={{position:"absolute",bottom:12,right:12,width:44,height:44,borderRadius:8,borderWidth:1,borderColor:jobeen.qrBorder,backgroundColor:jobeen.surface,alignItems:"center",justifyContent:"center",zIndex:5}}><JCardQr value={card.profileUrl} size={36}/></Pressable>}
     <Modal visible={info!==null} transparent animationType="fade" onRequestClose={()=>setInfo(null)}><View style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}><View style={{backgroundColor:jcardCommon.qrPaper,borderRadius:20,padding:24,gap:16}}><Text style={{fontSize:18,fontWeight:"700",color:jcardCommon.qrInk}}>Información</Text><ScrollView style={{maxHeight:440}} nestedScrollEnabled contentContainerStyle={{paddingBottom:8}}><Text style={{fontSize:15,lineHeight:23,color:jcardCommon.qrInk}}>{info}</Text></ScrollView><Button title="Entendido" onPress={()=>setInfo(null)}/></View></View></Modal>
   </View>;
 }
@@ -283,15 +284,15 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
    </View>
    </View>
    <View style={{height:1,backgroundColor:finish.line,opacity:0.7,marginBottom:4}}/>
-   <View style={{flexDirection:"row",alignItems:"center",gap:theme==="light"?2:3,minHeight:theme==="light"?112:110}}>
+   <View style={{flexDirection:"row",alignItems:"center",gap:theme==="light"?2:3,minHeight:theme==="light"?94:110}}>
     <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"flex-start",gap:1}}>
      {awards.map(a=><BusinessAward key={a.label} {...a} finish={finish} surface={surface} compact={theme==="light"} onPress={()=>setSelectedAward({label:a.label,level:a.level})}/>)}
     </View>
-    <View style={{width:1,height:theme==="light"?100:85,backgroundColor:finish.line,marginHorizontal:theme==="light"?0:1}}/>
+    <View style={{width:1,height:theme==="light"?84:85,backgroundColor:finish.line,marginHorizontal:theme==="light"?0:1}}/>
     <View style={{position:"relative",alignSelf:"center"}}>
      {onShare&&<Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard de negocio" onPress={event=>{event.stopPropagation();onShare();}} hitSlop={8} style={{position:"absolute",right:2,top:-30,width:28,height:28,alignItems:"center",justifyContent:"center",zIndex:2}}><Ionicons name="share-social-outline" size={18} color={businessContactInk}/></Pressable>}
     <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:3,borderRadius:7,backgroundColor:jcardCommon.qrPaper,borderWidth:1,borderColor:jobeen.qrBorder,alignSelf:"center",flexShrink:0,minWidth:44,minHeight:44,justifyContent:"center",alignItems:"center"}}>
-     <JCardQr value={card.profileUrl} size={theme==="light"?84:46}/>
+     <JCardQr value={card.profileUrl} size={theme==="light"?60:46}/>
     </Pressable>
     {theme==="light"&&<Text numberOfLines={1} style={{fontSize:9,fontWeight:"600",color:jobeen.textSoft,textAlign:"center",marginTop:3}}>Guardar contacto</Text>}
     </View>
