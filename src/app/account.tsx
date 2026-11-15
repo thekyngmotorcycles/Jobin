@@ -21,7 +21,7 @@ export default function Account() {
   if(busy)return;
   setNotice("");
   const handle=username.trim().replace(/^@/,"").toLowerCase();
-  if(!name.trim()||!email.trim()||!/^\+[1-9]\d{7,14}$/.test(phone.trim())||password.length<8||password.length>128){setNotice("Completa nombre, correo y contraseña de entre 8 y 128 caracteres.");return;}
+  if(!name.trim()||!email.trim()||password.length<8||password.length>128){setNotice("Completa nombre, correo y contraseña de entre 8 y 128 caracteres.");return;}
   if(!VALID_USERNAME.test(handle)){setNotice("El usuario debe tener 3 a 30 caracteres: letras minúsculas, números o guiones bajos; comienza con una letra.");return;}
   if(password!==confirmPassword){setNotice("Las contraseñas no coinciden.");return;}
   setBusy(true);
