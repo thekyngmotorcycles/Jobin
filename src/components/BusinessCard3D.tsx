@@ -1,7 +1,7 @@
 import {JCARD_FLIP_GLARE} from "../theme/jobeen";
 import {jcardCommon} from "../theme/jcard";
 import {useCallback, useEffect, type ReactNode} from "react";
-import {Platform, StyleSheet, View} from "react-native";
+import {Platform, StyleSheet} from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
 import Animated, {cancelAnimation, interpolate, runOnJS, useAnimatedReaction, useAnimatedStyle, useSharedValue, withSequence, withSpring} from "react-native-reanimated";
 import {LinearGradient} from "expo-linear-gradient";
