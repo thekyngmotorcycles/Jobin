@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useEffect,useState} from "react";
 import {router} from "expo-router";
 import {ActivityIndicator,KeyboardAvoidingView,Platform,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -25,6 +25,7 @@ export default function ChooseUsername(){
  const [selected,setSelected]=useState<string[]>([]);
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState("");
+ useEffect(()=>{let active=true;void (async()=>{const client=requireSupabase();const {data:{user}}=await client.auth.getUser();if(!user)return;const {data:owned}=await client.from("usernames").select("username").eq("user_id",user.id).maybeSingle();if(active){if(owned?.username)setUsername(owned.username);const current=user.user_metadata?.display_name;if(typeof current==="string"&&!/^Nuevo usuario$/i.test(current))setName(current);}})().catch(()=>{});return()=>{active=false;};},[]);
  async function saveIdentity(){
   if(busy)return;
   const handle=username.trim().replace(/^@/,"").toLowerCase();
