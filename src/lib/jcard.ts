@@ -20,6 +20,8 @@ export interface CardData {
   role: string;
   primarySpecialties?: readonly string[];
   years: number;
+  /** CV months for the displayed primary profession; undefined when unavailable. */
+  primaryExperienceMonths?: number;
   status: JCardStatus;
   employer: string | null;
   rating: number | null;
