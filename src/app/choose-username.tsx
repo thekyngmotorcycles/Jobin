@@ -30,6 +30,10 @@ export default function ChooseUsername(){
  const [availability,setAvailability]=useState<"idle"|"checking"|"available"|"taken"|"owned"|"invalid">("idle");
  const scroll=useRef<ScrollView>(null);
  const [message,setMessage]=useState("");
+ useEffect(()=>{
+  Keyboard.dismiss();
+  scroll.current?.scrollTo({y:0,animated:false});
+ },[step]);
  useEffect(()=>{let active=true;void (async()=>{
   const client=requireSupabase();const {data:{user},error:userError}=await client.auth.getUser();
   if(userError||!user)throw userError??new Error("Sesión no disponible");
