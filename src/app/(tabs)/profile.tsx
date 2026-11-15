@@ -151,6 +151,12 @@ export default function Profile() {
   const primaryProfessionKey=professionKey(workspace.data?.card.role??"");
   const primaryEntries=history.filter(entry=>(entry.professions?.length?entry.professions:[entry.role]).some(value=>professionKey(value)===primaryProfessionKey));
   const primaryExperienceMonths=employmentMonths(primaryEntries);
+  const secondaryProfessions=(workspace.data?.professions??[]).filter(profession=>!profession.primary_profession).map(profession=>{
+    const catalog=catalogProfessions.find(item=>item.code===profession.profession_code);
+    const matchingHistory=history.filter(entry=>(entry.professions?.length?entry.professions:[entry.role]).some(value=>professionKey(value)===profession.profession_code));
+    const matchedSeal=uniqueSeals.find(seal=>professionKey(seal.profession)===profession.profession_code);
+    return {code:profession.profession_code,name:profession.label,icon:(matchedSeal?.icon??catalog?.icon??"briefcase-outline") as JCardSeal["icon"],months:employmentMonths(matchingHistory),verified:matchedSeal?.verified??false};
+  });
   const tabIcon = (icon: keyof typeof Ionicons.glyphMap, label: string, value: Mode | "live", active: boolean) => (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected: active }}
       onPress={() => (value === "live" ? openLive() : setMode(value))}
@@ -203,7 +209,7 @@ export default function Profile() {
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {workspace.data?.card ? <View style={{gap:10}}>
 
-          <JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
+          <JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
           <ProfessionalTrustMark worker={workspace.data.card.id}/>
 
         </View> : workspace.loading ? <JCardLoadingSkeleton/> : <ProfessionalStatus loading={false} error={workspace.error} retry={workspace.reload}/>}
