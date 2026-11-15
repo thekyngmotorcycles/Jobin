@@ -1,3 +1,4 @@
+import {jobeenTokens} from "../theme/jobeen";
 import {personalAvatarUrl} from "../lib/personal-jcard-photo";
 import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import {useFocusEffect} from "expo-router";
@@ -41,6 +42,23 @@ const IDENTITY_BADGE_CONTOUR=(()=>{
 })();
 const JCARD_LEFT_CURVES=Array.from({length:15},(_,i)=>({d:`M ${-45+i*10} 330 C ${42+i*4} 235, ${-20+i*8} 116, ${78+i*7} -25`,index:i}));
 const JCARD_BOTTOM_CURVES=Array.from({length:16},(_,i)=>({d:`M ${-45+i*13} 675 C ${60+i*8} 540, ${235+i*4} 555, ${440+i*2} 395`,index:i}));
+/** Subtle honeycomb motif from the approved Light JCard references. */
+const HONEYCOMB_CELLS=Array.from({length:9},(_,row)=>Array.from({length:8},(_,col)=>{
+ const x=col*24+(row%2?12:0)-5,y=row*21-6;
+ const vertices=Array.from({length:6},(_,side)=>{
+  const angle=Math.PI/3*side-Math.PI/6;
+  return (x+13*Math.cos(angle)).toFixed(1)+","+(y+13*Math.sin(angle)).toFixed(1);
+ }).join(" L");
+ const fade=Math.max(0,Math.min(1,(x+20)/125))*Math.max(0,Math.min(1,(165-y)/115));
+ return {key:row+"-"+col,d:"M"+vertices+" Z",opacity:fade*0.45};
+})).flat();
+function JobeenHoneycomb({color,compact=false}:{color:string;compact?:boolean}){
+ return <View pointerEvents="none" style={{position:"absolute",top:0,right:0,width:compact?150:190,height:compact?118:150,overflow:"hidden"}}>
+  <Svg width="100%" height="100%" viewBox="0 0 190 150" accessible={false}>
+   {HONEYCOMB_CELLS.map(cell=><Path key={cell.key} d={cell.d} stroke={color} strokeWidth="1.1" strokeOpacity={cell.opacity} fill="none"/>)}
+  </Svg>
+ </View>;
+}
 const AWARD_POINTS=Array.from({length:48},(_,i)=>{const t=i*Math.PI/24-Math.PI/2;const radius=i%2?23:25;return (27+radius*Math.cos(t)).toFixed(2)+","+(27+radius*Math.sin(t)).toFixed(2);}).join(" ");
 const JCardQr=memo(function JCardQr({value,size}:{value:string;size:number}){
  return <QRCode value={value} size={size} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>;
@@ -61,17 +79,25 @@ function languageDetails(name:string,fluency:number){
 }
 function CardFace({ card, theme, appearance="original", expanded = false, onEdit, onQr, onShare, onEditPhoto, contact, employerLink }: { card: CardData; theme: ThemeName; appearance?:JCardPremiumBackgroundId; expanded?: boolean; onEdit?: () => void; onQr?: () => void; onShare?: () => void; onEditPhoto?: () => void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null }) {
   const { s, fs } = useUi();
+  const jobeen=jobeenTokens(theme);
   const { fontScale } = useWindowDimensions();
   const gradientId = "jcard" + useId().replace(/[^a-zA-Z0-9]/g, "");
   const shineId=gradientId+"shine";
-  const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=appearance==="original";
-  const finish = {...jcardTokens(theme, jcardTier(card.rating, card.reviewCount)),start:premium?.base??businessCardPaper.background,end:premium?.base??businessCardPaper.background,text:premium?.ink??businessCardPaper.ink,secondary:premium?.ink??businessCardPaper.secondary,line:premium?.line??businessCardPaper.border,sealFill:businessCardPaper.muted,pendingFill:businessCardPaper.muted};
+  const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=false;
+  const finish = {...jcardTokens(theme, jcardTier(card.rating, card.reviewCount)),start:premium?.base??jobeen.surface,end:premium?.base??jobeen.surface,text:premium?.ink??jobeen.ink,secondary:premium?.ink??jobeen.ink2,line:premium?.line??jobeen.line,sealFill:businessCardPaper.muted,pendingFill:businessCardPaper.muted};
   const [artSize,setArtSize]=useState({width:0,height:0});
  const [selectedAward,setSelectedAward]=useState<{label:string;level:number}|null>(null);
   const rating = displayedRating(card.rating, card.reviewCount);
   const embossInk=finish.text;
   const embossStrength=finish.start===finish.end?0.20:0.12;
   const [info,setInfo]=useState<string|null>(null);
+  // Keep the verification seal beside the final visible name line, even for long legal names.
+  const fullDisplayName=card.name.trim().replace(/\s+/g," ");
+  const visibleName=Array.from(fullDisplayName).slice(0,25).join("")+(Array.from(fullDisplayName).length>25?"…":"");
+  const nameFontSize=visibleName.length>22?15:visibleName.length>17?17:19;
+  const nameBreakAt=visibleName.length>17?visibleName.lastIndexOf(" ",17):-1;
+  const firstNameLine=nameBreakAt>5?visibleName.slice(0,nameBreakAt):visibleName;
+  const lastNameLine=nameBreakAt>5?visibleName.slice(nameBreakAt+1):null;
   const primaryProfession=card.role.trim().replace(/^Técnico HVAC\s*\/\s*climatización y aire acondicionado$/i,"Técnico HVAC").replace(/\s*[-–/]\s*aire acondicionado\s*$/i,"").trim();
   const primarySeal=card.seals.find(seal=>/hvac/i.test(primaryProfession)?/hvac|aire acondicionado/i.test(seal.profession):seal.profession.trim().toLocaleLowerCase()===primaryProfession.toLocaleLowerCase());
   const secondarySeals=card.seals.filter(seal=>!(/hvac/i.test(primaryProfession)&&/hvac|aire acondicionado/i.test(seal.profession))&&seal.profession.trim().toLocaleLowerCase()!==primaryProfession.toLocaleLowerCase());
@@ -81,7 +107,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
   const sealGap = sealCount > 8 ? 2 : 4;
   const bodySize = Math.max(12, fs(expanded ? 14 : 13));
   const lineStyle = { color:finish.text, fontSize:bodySize, lineHeight:bodySize * 1.5 };
-  return <View onLayout={e=>{const {width,height}=e.nativeEvent.layout;setArtSize(prev=>prev.width===width&&prev.height===height?prev:{width,height});}} style={[s.panel, { flex:1, padding:0, gap:0, borderRadius:jcardLayout.radius, borderColor:finish.line, backgroundColor:finish.start, overflow:"hidden" }]}>
+  return <View onLayout={e=>{const {width,height}=e.nativeEvent.layout;setArtSize(prev=>prev.width===width&&prev.height===height?prev:{width,height});}} style={[s.panel, { flex:1, padding:0, gap:0, borderRadius:28, borderColor:finish.line, backgroundColor:finish.start, overflow:"hidden" }]}>
     <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" viewBox="0 0 400 650" preserveAspectRatio="none" accessible={false} pointerEvents="none">
       <Defs><LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
         <Stop offset="0%" stopColor={finish.start}/><Stop offset="100%" stopColor={finish.end}/>
@@ -95,64 +121,69 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
       {showDecorativeCurves&&<Path d="M-20 420 C105 250 225 300 420 95" stroke={embossInk} strokeOpacity={embossStrength*0.7} strokeWidth="2" fill="none"/>}
     </Svg>
     {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
-    <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:jcardLayout.radius-3,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
-    <View style={{ padding:jcardLayout.padding, gap:8, flex:1, justifyContent:"space-between" }}>
-      <View style={{ paddingTop:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
-        <View accessible accessibilityRole="header" accessibilityLabel="JCard Personal" style={{position:"absolute",top:0,left:0,right:0,alignItems:"center",justifyContent:"center"}}>
-          <SvgXml xml={JCARD_WORDMARK_XML.replace("currentColor",finish.text)} width={74} height={25} accessible={false}/>
-          <Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:12,lineHeight:16,color:finish.text,textAlign:"center",marginTop:0}}>Personal</Text>
-        </View>
-        <Pressable disabled={!onEditPhoto} accessibilityRole={onEditPhoto?"button":undefined} accessibilityLabel={onEditPhoto?"Cambiar foto de JCard personal":undefined} onPress={event=>{event.stopPropagation();onEditPhoto?.();}} style={{width:jcardLayout.avatar+8,height:jcardLayout.qr+8}}>
-          <Avatar uri={personalAvatarUrl(card.avatar)} name={card.name} size={jcardLayout.avatar}/>
+    {theme==="light"&&appearance==="original"&&<JobeenHoneycomb color={jobeen.bizBorder} compact={artSize.width>0&&artSize.width<360}/> }
+    <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:25,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
+    <View style={{ padding:theme==="light"?12:jcardLayout.padding, gap:theme==="light"?5:8, flex:1, justifyContent:"space-between" }}>
+      <View style={{ paddingTop:theme==="light"?43:Math.max(22, 20 * fontScale), flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
+        <View accessible accessibilityRole="header" accessibilityLabel="JCard Personal" style={{position:"absolute",top:0,left:0,right:0,alignItems:"center",justifyContent:"center"}}>{theme==="light"?<View style={{opacity:0.095,width:74,height:26,alignItems:"center",justifyContent:"center"}}><SvgXml xml={JCARD_WORDMARK_XML.replace("currentColor",jobeen.ink)} width={74} height={26} accessible={false}/></View>:<><SvgXml xml={JCARD_WORDMARK_XML.replace("currentColor",finish.text)} width={74} height={25} accessible={false}/><Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:12,lineHeight:16,color:finish.text,textAlign:"center"}}>Personal</Text></>}</View>
+        <Pressable disabled={!onEditPhoto} accessibilityRole={onEditPhoto?"button":undefined} accessibilityLabel={onEditPhoto?"Cambiar foto de JCard personal":undefined} onPress={event=>{event.stopPropagation();onEditPhoto?.();}} style={{width:theme==="light"?92:jcardLayout.avatar+8,height:theme==="light"?92:jcardLayout.qr+8,justifyContent:"center",alignItems:"center",minWidth:44,minHeight:44}}>
+          <View style={{width:theme==="light"?90:undefined,height:theme==="light"?90:undefined,borderRadius:theme==="light"?45:52,borderWidth:theme==="light"?3:0,borderColor:jobeen.yellow,padding:theme==="light"?2:0,alignItems:"center",justifyContent:"center",overflow:"hidden"}}><Avatar uri={personalAvatarUrl(card.avatar)} name={card.name} size={theme==="light"?80:jcardLayout.avatar}/></View>
         </Pressable>
-        <View style={{alignItems:"center",gap:7,position:"relative"}}>
+        {theme!=="light"&&<View style={{alignItems:"center",gap:7,position:"relative"}}>
           {onShare&&<Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard personal" onPress={event=>{event.stopPropagation();onShare();}} style={{position:"absolute",right:0,top:-30,width:28,height:28,alignItems:"center",justifyContent:"center",zIndex:2}}><Ionicons name="share-social-outline" size={18} color={finish.text}/></Pressable>}
-          <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR" onPress={event=>{event.stopPropagation();onQr?.();}} style={{ backgroundColor:jcardCommon.qrPaper, padding:jcardLayout.qrQuietZone, borderRadius:6 }}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR" onPress={event=>{event.stopPropagation();onQr?.();}} style={{ backgroundColor:jcardCommon.qrPaper, padding:jcardLayout.qrQuietZone, borderRadius:6,minWidth:44,minHeight:44,justifyContent:"center",alignItems:"center",borderWidth:0,borderColor:jobeen.qrBorder }}>
             <JCardQr value={card.profileUrl} size={jcardLayout.qr}/>
           </Pressable>
-        </View>
+        </View>}
+        {theme==="light"&&<View style={{flex:1,minWidth:0,justifyContent:"center",paddingLeft:8,paddingTop:8}}><View style={{alignItems:"flex-start",minWidth:0}}>
+          {lastNameLine&&<Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={{fontSize:nameFontSize,lineHeight:nameFontSize+4,fontWeight:"700",color:finish.text,maxWidth:"100%"}}>{firstNameLine}</Text>}
+          <View style={{flexDirection:"row",alignItems:"center",gap:3,maxWidth:"100%",minWidth:0}}>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontSize:nameFontSize,lineHeight:nameFontSize+4,fontWeight:"700",color:finish.text,flexShrink:1}}>{lastNameLine??firstNameLine}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={card.identityVerified?"Persona verificada":"Persona sin verificar"} hitSlop={12} onPress={()=>setInfo(card.identityVerified?"Identidad verificada por Jobeen.":"Identidad sin verificar.")} style={{width:17,height:19,alignItems:"center",justifyContent:"center",flexShrink:0}}><View style={{transform:[{scale:0.64}]}}><IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/></View></Pressable>
+          </View>
+        </View><Text numberOfLines={1} style={{color:finish.secondary,fontSize:12,marginTop:2}}>@{card.handle}</Text>        {theme==="light"&&<View style={{flexDirection:"row",alignItems:"center",gap:5,marginTop:3}}><Pressable accessibilityRole="button" accessibilityLabel="Detalles de la profesión principal" hitSlop={10} onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nEspecialidades: "+(card.primarySpecialties?.length?card.primarySpecialties.join(", "):"No declaradas"))} style={{flexDirection:"row",alignItems:"center",gap:5,flexShrink:1}}><ProfessionGlyph profession={card.role} fallback={primarySeal?.icon??"briefcase-outline"} size={17} color={finish.text}/><Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8} style={{fontSize:13,fontWeight:"600",color:finish.text,flexShrink:1}}>{primaryProfession}{!!card.primarySpecialties?.length?" · Especializado":""}</Text></Pressable></View>}
+</View>}
       </View>
 
-      <View style={{flex:1,minHeight:0,justifyContent:"flex-start",gap:5,paddingTop:0,paddingBottom:4}}>
-        <View style={{gap:0,marginTop:0}}>
+      <View style={{flex:1,minHeight:0,justifyContent:"flex-start",gap:5,paddingTop:0,paddingBottom:theme==="light"?18:4}}>
+        {theme!=="light"&&<View style={{gap:0,marginTop:0}}>
         <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
-          <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:4}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={[s.h3,{color:finish.text,fontSize:Math.max(18,fs(expanded?20:19)),lineHeight:Math.max(23,fs(expanded?26:25)),flexShrink:1}]}>{card.name}</Text><Pressable accessibilityRole="button" accessibilityLabel={card.identityVerified?"Persona verificada":"Persona sin verificar"} onPress={()=>setInfo(card.identityVerified?"Identidad verificada por Jobin. Esta insignia no certifica licencias ni competencias profesionales.":"Identidad sin verificar. Para obtener la insignia se requerirá nombre legal, correo y teléfono confirmados, documento de identidad y validación de identidad.")} style={{width:19,height:19,alignItems:"center",justifyContent:"center",flexShrink:0}}><View style={{transform:[{scale:0.72}]}}><IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/></View></Pressable></View>
-          {!!card.years&&<Pressable accessibilityRole="button" accessibilityLabel="Información sobre experiencia general" onPress={()=>setInfo("Experiencia general\nEs el tiempo total trabajado en todas las profesiones y sectores registrados. Los períodos que coinciden se cuentan una sola vez.")} style={{alignItems:"flex-end",maxWidth:"38%"}}>
-            <Text style={{fontSize:11,fontWeight:"600",color:finish.secondary,textAlign:"right"}}>{card.years} {card.years===1?"año":"años"}</Text>
-            <Text style={{fontSize:9,color:finish.secondary,textAlign:"right"}}>Experiencia general</Text>
-          </Pressable>}
+          <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:4}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={[s.h3,{color:finish.text,fontSize:Math.max(20,fs(expanded?22:22)),lineHeight:Math.max(23,fs(expanded?26:25)),flexShrink:1}]}>{card.name}</Text><Pressable accessibilityRole="button" accessibilityLabel={card.identityVerified?"Persona verificada":"Persona sin verificar"} hitSlop={undefined} onPress={()=>setInfo(card.identityVerified?"Identidad verificada por Jobeen. Esta insignia no certifica licencias ni competencias profesionales.":"Identidad sin verificar. Para obtener la insignia se requerirá nombre legal, correo y teléfono confirmados, documento de identidad y validación de identidad.")} style={{width:19,height:19,alignItems:"center",justifyContent:"center",flexShrink:0}}><View style={{transform:[{scale:0.72}]}}><IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/></View></Pressable></View>
+          
         </View>
-        <Text numberOfLines={1} style={{color:finish.secondary,fontSize:11,lineHeight:15,marginTop:-2}}>@{card.handle}</Text>
+        <Text numberOfLines={1} style={{color:finish.secondary,fontSize:14,lineHeight:19,marginTop:0}}>@{card.handle}</Text>
         {typeof card.followers==="number"&&<Text style={{color:finish.secondary,fontSize:10}}>{card.followers.toLocaleString()} seguidores</Text>}
-        </View>
-        <View style={{flex:1,minHeight:0,justifyContent:"center",gap:4,paddingTop:0}}>
-        <View style={{flexDirection:"row",alignItems:"center",gap:7,width:"100%"}}>
+        </View>}
+        <View style={{flex:1,minHeight:0,justifyContent:theme==="light"?"flex-start":"center",gap:4,paddingTop:theme==="light"?12:0}}>
+        {theme!=="light"&&<View style={{flexDirection:"row",alignItems:"center",gap:7,width:"100%"}}>
           <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[lineStyle,{fontWeight:"600",flexShrink:1,flexGrow:0}]}>{primaryProfession}{!!card.primarySpecialties?.length?" / Especializado":""}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="Detalles de la profesión principal" onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nEspecialidades: "+(card.primarySpecialties?.length?card.primarySpecialties.join(", "):"No declaradas")+"\nExperiencia en esta profesión: "+(primarySeal&&primarySeal.months?experienceLabel(primarySeal.months):"Sin experiencia registrada")+".\n"+(primarySeal?.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{padding:3,borderWidth:1,borderColor:finish.line,borderRadius:18,flexShrink:0}}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Detalles de la profesión principal" onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nEspecialidades: "+(card.primarySpecialties?.length?card.primarySpecialties.join(", "):"No declaradas")+"\nExperiencia en esta profesión: "+(primarySeal&&primarySeal.months?experienceLabel(primarySeal.months):"Sin experiencia registrada")+".\n"+(primarySeal?.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:undefined,height:undefined,alignItems:"center",justifyContent:"center",padding:3,borderWidth:1,borderColor:finish.line,borderRadius:22,flexShrink:0}}>
             <ProfessionGlyph profession={card.role} fallback={primarySeal?.icon??"briefcase-outline"} size={19} color={finish.text}/>
           </Pressable>
+        </View>}
+        <View style={{flexDirection:"row",alignItems:"center",gap:8,minWidth:0,alignSelf:theme==="light"?"center":undefined,justifyContent:theme==="light"?"center":undefined,marginTop:theme==="light"?10:undefined}}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Información sobre disponibilidad" onPress={()=>setInfo(card.status==="ACTIVE"?"Trabajando actualmente\nLa persona indica que tiene un trabajo activo. Esto no significa que Jobeen haya confirmado su relación laboral.":"Disponible para trabajar\nLa persona indica que está abierta a nuevas oportunidades laborales o solicitudes de clientes.")} style={{minHeight:44,justifyContent:"center"}}><View style={{flexDirection:"row",alignItems:"center",gap:5,backgroundColor:jobeen.okBackground,borderRadius:18,paddingHorizontal:10,paddingVertical:6}}><View style={{width:7,height:7,borderRadius:4,backgroundColor:jobeen.okDot}}/><Text style={{color:jobeen.okText,fontWeight:"700",fontSize:11}}>{card.status==="ACTIVE"?"Trabajando":"Disponible"}</Text></View></Pressable>
+          {!!card.years&&<Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{flexShrink:1,backgroundColor:jobeen.cream,borderColor:jobeen.yellow,borderWidth:1,borderRadius:16,overflow:"hidden",paddingHorizontal:10,paddingVertical:5,color:jobeen.ink,fontSize:12}}>{card.years} {card.years===1?"año":"años"} de experiencia</Text>}
+
         </View>
-        <View style={{flexDirection:"row",alignItems:"center",flexWrap:"wrap",gap:8}}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Información sobre disponibilidad" onPress={()=>setInfo(card.status==="ACTIVE"?"Trabajando actualmente\nLa persona indica que tiene un trabajo activo. Esto no significa que Jobin haya confirmado su relación laboral.":"Disponible para trabajar\nLa persona indica que está abierta a nuevas oportunidades laborales o solicitudes de clientes.")}><Text style={{color:finish.text,fontWeight:"700",fontSize:10,letterSpacing:0.7,textDecorationLine:"underline"}}>{card.status==="ACTIVE"?"TRABAJANDO":"DISPONIBLE"} ⓘ</Text></Pressable>
-        </View>
-        {[contact?.details?.email_primary||contact?.email,contact?.details?.email_secondary].filter(Boolean).map((email,i)=><Pressable key={"email"+i} accessibilityRole="link" onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>setInfo("No se encontró una aplicación de correo disponible."))} style={{alignSelf:"stretch"}}><Text numberOfLines={1} ellipsizeMode="tail" style={[lineStyle,{textDecorationLine:"underline"}]}>{email}</Text></Pressable>)}
-        {!!(contact?.details?.phone_primary||contact?.phone||contact?.details?.phone_secondary)&&<View style={{flexDirection:"row",alignItems:"center",gap:5,alignSelf:"stretch"}}>{[contact?.details?.phone_primary||contact?.phone,contact?.details?.phone_secondary].filter(Boolean).map((phone,i)=><View key={"phone"+i} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:4}}>{i>0&&<View style={{width:1,height:15,backgroundColor:finish.line}}/>}<Pressable accessibilityRole="link" style={{flex:1}} onPress={()=>void Linking.openURL("tel:"+phone!.replace(/[^+\d]/g,"")).catch(()=>{})}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={lineStyle}>{phone}</Text></Pressable></View>)}</View>}
+        
+        
 
         {card.status==="ACTIVE"&&employerLink&&<Pressable accessibilityRole="link" onPress={()=>router.push({pathname:"/company",params:{id:employerLink.id}})}><Text style={[lineStyle,{textDecorationLine:"underline"}]}>Trabaja en {employerLink.name} · @{employerLink.handle} ↗</Text><Text style={{fontSize:10,color:finish.secondary}}>Vínculo laboral verificado por la empresa</Text></Pressable>}
 
         </View>
       </View>
-      <View style={{height:secondarySeals.length?166:92,borderTopWidth:1,borderTopColor:finish.line,paddingTop:secondarySeals.length?9:5,paddingBottom:secondarySeals.length?17:0,justifyContent:"space-evenly"}}>
-        <View style={{minHeight:62,justifyContent:"center",gap:7}}>
-          <Text style={{fontSize:11,color:finish.secondary,textAlign:"center",letterSpacing:1.2}}>Idiomas</Text>
+      <View style={{height:theme==="light"?76:(secondarySeals.length?166:92),borderTopWidth:1,borderTopColor:finish.line,paddingTop:theme==="light"?3:(secondarySeals.length?9:5),paddingBottom:theme==="light"?0:(secondarySeals.length?17:0),justifyContent:"space-evenly"}}>
+        {theme==="light"?<View style={{minHeight:62,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8,paddingHorizontal:12}}><Text style={{fontSize:11,fontWeight:"700",letterSpacing:0.5,color:finish.secondary,textAlign:"center",minWidth:64}}>Idiomas</Text><View style={{width:1,height:24,backgroundColor:finish.line}}/>{card.languages.slice(0,2).map((language,index)=><Pressable key={language.name+index} accessibilityRole="button" accessibilityLabel={"Idioma "+language.name+", "+languageLabel(language.fluency)+". Ver detalles"} onPress={()=>setInfo(languageDetails(language.name,language.fluency))} style={{flex:1,minWidth:0,minHeight:44,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:4}}><View style={{width:25,height:25,borderRadius:13,backgroundColor:jobeen.yellow,alignItems:"center",justifyContent:"center"}}><Text style={{fontSize:10,fontWeight:"800",color:jobeen.ink}}>{language.name.toLowerCase().startsWith("es")?"ES":language.name.toLowerCase().startsWith("in")||language.name.toLowerCase().startsWith("en")?"EN":language.name.slice(0,2).toUpperCase()}</Text></View><View style={{flexShrink:1,justifyContent:"center",alignItems:"flex-start",gap:1}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{fontSize:10,color:finish.text}}>{language.name}</Text><Text numberOfLines={1} style={{fontSize:10,color:finish.text}}>{Math.round(language.fluency)}%</Text></View></Pressable>)}</View>:<View style={{minHeight:62,justifyContent:"center",gap:7}}>
+          {<Text style={{fontSize:11,color:finish.secondary,textAlign:"center",letterSpacing:1.2}}>Idiomas</Text>}
           <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:sealGap}}>
             {card.languages.map((language,index)=><Pressable key={language.name+index} accessibilityRole="button" accessibilityLabel={"Idioma "+language.name+", "+languageLabel(language.fluency)+". Ver detalles"} onPress={()=>setInfo(languageDetails(language.name,language.fluency))} style={{alignItems:"center",justifyContent:"center",width:sealDiameter+4,height:sealDiameter+4,paddingVertical:0,transform:[{scale:sealDiameter/44}]}}>
               <LanguageRing name={language.name} value={language.fluency} color={finish.text} track={finish.line}/>
             </Pressable>)}
           </View>
-        </View>
+        </View>}
 
-        {secondarySeals.length>0&&<View style={{minHeight:62,justifyContent:"center",gap:7,marginTop:4,paddingTop:7,borderTopWidth:1,borderTopColor:finish.line}}>
+        {secondarySeals.length>0&&theme!=="light"&&<View style={{minHeight:62,justifyContent:"center",gap:7,marginTop:4,paddingTop:7,borderTopWidth:1,borderTopColor:finish.line}}>
           <Text style={{fontSize:11,color:finish.secondary,textAlign:"center",letterSpacing:0.8}}>Otras profesiones</Text>
           <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:sealGap}}>
             {secondarySeals.slice(0,5).map(seal=><Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\nEspecialidades: "+(seal.specialties?.length?seal.specialties.join(", "):"No declaradas")+"\nExperiencia registrada: "+experienceLabel(seal.months??0)+".\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:sealDiameter+4,height:sealDiameter+4,alignItems:"center",justifyContent:"center"}}>
@@ -167,6 +198,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         </View>}
       </View>
     </View>
+    {theme==="light"&&<Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR personal" onPress={event=>{event.stopPropagation();onQr?.();}} style={{position:"absolute",top:12,right:12,width:44,height:44,borderRadius:8,borderWidth:1,borderColor:jobeen.qrBorder,backgroundColor:jobeen.surface,alignItems:"center",justifyContent:"center",zIndex:5,elevation:7,shadowColor:jobeen.ink,shadowOpacity:0.27,shadowRadius:9,shadowOffset:{width:0,height:3}}}><Ionicons name="qr-code-outline" size={30} color={jobeen.ink}/></Pressable>}
     <Modal visible={info!==null} transparent animationType="fade" onRequestClose={()=>setInfo(null)}><View style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}><View style={{backgroundColor:jcardCommon.qrPaper,borderRadius:20,padding:24,gap:16}}><Text style={{fontSize:18,fontWeight:"700",color:jcardCommon.qrInk}}>Información</Text><ScrollView style={{maxHeight:440}} nestedScrollEnabled contentContainerStyle={{paddingBottom:8}}><Text style={{fontSize:15,lineHeight:23,color:jcardCommon.qrInk}}>{info}</Text></ScrollView><Button title="Entendido" onPress={()=>setInfo(null)}/></View></View></Modal>
   </View>;
 }
@@ -181,32 +213,33 @@ function BusinessAwardGlyph({label,icon}:{label:string;icon:React.ComponentProps
  </Svg>;
  return <Ionicons name={icon} size={21} color={ink}/>;
 }
-function BusinessAward({label,icon,level,finish,surface,onPress}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"];level:number;finish:ReturnType<typeof jcardTokens>;surface:ReturnType<typeof businessInformationSurface>;onPress:()=>void}){
+function BusinessAward({label,icon,level,finish,surface,onPress,compact=false}:{label:string;icon:React.ComponentProps<typeof Ionicons>["name"];level:number;finish:ReturnType<typeof jcardTokens>;surface:ReturnType<typeof businessInformationSurface>;onPress:()=>void;compact?:boolean}){
  const tone=level===3?jcardCommon.businessGold:level===2?jcardCommon.businessSilver:level===1?jcardCommon.businessBronze:BUSINESS_BADGE_NEUTRAL.border;
  const points=AWARD_POINTS;
  const path="M"+points.replaceAll(" "," L")+" Z";
- return <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label+": "+(level===0?"Sin acreditar":level===1?"Bronce":level===2?"Plata":"Oro")} style={{flex:1,minWidth:0,alignItems:"center",minHeight:83,marginHorizontal:1,overflow:"visible"}}>
-  <View style={{width:"100%",minHeight:42,aspectRatio:1,alignItems:"center",justifyContent:"center",borderRadius:28,backgroundColor:jcardFloating.awardFill,shadowColor:jcardFloating.shadow,shadowOffset:{width:0,height:3},shadowOpacity:0.23,shadowRadius:5,elevation:4}}>
+ return <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label+": "+(level===0?"Sin acreditar":level===1?"Bronce":level===2?"Plata":"Oro")} hitSlop={compact?{top:4,bottom:4,left:3,right:3}:undefined} style={{flex:1,minWidth:0,alignItems:"center",justifyContent:"center",minHeight:compact?59:77,marginHorizontal:compact?0:1,overflow:"visible"}}>
+  <View style={{width:compact?43:"100%",height:compact?43:undefined,minHeight:compact?43:42,aspectRatio:1,alignItems:"center",justifyContent:"center",borderRadius:28,backgroundColor:jcardFloating.awardFill,shadowColor:jcardFloating.shadow,shadowOffset:{width:0,height:3},shadowOpacity:0.23,shadowRadius:5,elevation:4}}>
    <Svg width="100%" height="100%" viewBox="0 0 54 54" style={{position:"absolute"}}><Defs><LinearGradient id={"metal-"+label.replace(/[^a-zA-Z0-9]/g,"")} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={level===3?BUSINESS_MEDAL_COLORS[0]:level===2?BUSINESS_MEDAL_COLORS[1]:level===1?BUSINESS_MEDAL_COLORS[2]:BUSINESS_MEDAL_COLORS[3]}/><Stop offset="24%" stopColor={level===3?BUSINESS_MEDAL_COLORS[4]:level===2?BUSINESS_MEDAL_COLORS[5]:level===1?BUSINESS_MEDAL_COLORS[6]:BUSINESS_MEDAL_COLORS[7]}/><Stop offset="53%" stopColor={level===3?BUSINESS_MEDAL_COLORS[8]:level===2?BUSINESS_MEDAL_COLORS[9]:level===1?BUSINESS_MEDAL_COLORS[10]:BUSINESS_MEDAL_COLORS[11]}/><Stop offset="77%" stopColor={level===3?BUSINESS_MEDAL_COLORS[12]:level===2?BUSINESS_MEDAL_COLORS[13]:level===1?BUSINESS_MEDAL_COLORS[14]:BUSINESS_MEDAL_COLORS[15]}/><Stop offset="100%" stopColor={level===3?BUSINESS_MEDAL_COLORS[16]:level===2?BUSINESS_MEDAL_COLORS[17]:level===1?BUSINESS_MEDAL_COLORS[18]:BUSINESS_MEDAL_COLORS[19]}/></LinearGradient></Defs><Path d={path} fill={"url(#metal-"+label.replace(/[^a-zA-Z0-9]/g,"")+")"} stroke={tone} strokeWidth="1.4"/><Circle cx="27" cy="27" r="21" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.65" strokeWidth="1.3"/><Circle cx="27" cy="27" r="19.2" fill={BUSINESS_BADGE_NEUTRAL.face} stroke={tone} strokeWidth="1.4"/><Path d="M 12 26 A 15 15 0 0 1 41 23" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.45" strokeWidth="2"/></Svg>
    <BusinessAwardGlyph label={label} icon={icon}/>
   </View>
-  <Text numberOfLines={1} style={{fontSize:10,color:level===0?surface.pending:tone,letterSpacing:-1}}>{level===0?"☆☆☆":"★".repeat(level)+"☆".repeat(3-level)}</Text>
+  <Text numberOfLines={1} style={{fontSize:10,color:compact?jobeenTokens("light").ink:(level===0?surface.pending:tone),letterSpacing:-1}}>{level===0?"☆☆☆":"★".repeat(level)+"☆".repeat(3-level)}</Text>
  </Pressable>;
 }
 export function BusinessFace({card,theme,appearance="original",contact,onQr,onShare,canEditMedia=false,onEditMedia,visibility=DEFAULT_JCARD_VISIBILITY}:{card:CardData;theme:ThemeName;appearance?:JCardPremiumBackgroundId;contact?:{email:string|null;phone:string|null};onQr?:()=>void;onShare?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void;visibility?:typeof DEFAULT_JCARD_VISIBILITY}){
- const b=card.business;const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=appearance==="original";const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:premium?.base??businessCardPaper.background,end:premium?.base??businessCardPaper.background,text:premium?.ink??businessCardPaper.ink,secondary:premium?.ink??businessCardPaper.secondary,line:premium?.line??businessCardPaper.border,sealFill:businessCardPaper.muted};
+ const b=card.business;const jobeen=jobeenTokens(theme);const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=false;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:premium?.base??jobeen.biz,end:premium?.base??jobeen.biz,text:premium?.ink??jobeen.ink,secondary:premium?.ink??jobeen.textSoft,line:premium?.line??jobeen.bizBorder,sealFill:jobeen.surface};
  const [selectedAward,setSelectedAward]=useState<{label:string;level:number}|null>(null);
+ const [showBusinessVerification,setShowBusinessVerification]=useState(false);
  const [artSize,setArtSize]=useState({width:0,height:0});
  const surface=businessInformationSurface(finish.start);
- const company=!!b?.name.trim();const businessName=(company?b!.name:card.name).trim().slice(0,30);const [businessNameWidth,setBusinessNameWidth]=useState(180);const nameFontSize=Math.max(14,Math.min(21,Math.floor(businessNameWidth/Math.max(8,businessName.length)*1.65)));const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
+ const company=!!b?.name.trim();const businessName=Array.from((company?b!.name:card.name).trim()).slice(0,30).join("");const [businessNameWidth,setBusinessNameWidth]=useState(180);const nameFontSize=Math.max(14,Math.min(21,Math.floor(businessNameWidth/Math.max(8,theme==="light"?Math.ceil(businessName.length/2):businessName.length)*1.65)));const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
  const reviewCount=b?.reviewCount??0;const ratingUnlocked=reviewCount>=10&&rating!==null;const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
  const category=b?.category?.trim()||(/hvac|aire acondicionado|climatiz|refrigeraci/i.test([card.role,...(b?.services??[])].join(" "))?"Climatización":b?.services?.[0]||"Servicios profesionales");
  const art=businessCategoryArt(category);
  const hvacCategory=/hvac|climatiz|aire acondicionado/i.test(category)&&!/refrigeraci/i.test(category);
  const refrigerationCategory=/refrigeraci/i.test(category)&&!/climatiz/i.test(category);
  const categoryIcon=hvacCategory?categoryGlyph("climate"):refrigerationCategory?categoryGlyph("refrigeration"):art.icon;
- const businessContactInk=premium?finish.text:businessCardAccents.contact;
- const businessIconInk=premium?finish.text:businessCardAccents.icon;
+ const businessContactInk=premium?finish.text:jobeen.ink;
+ const businessIconInk=premium?finish.text:jobeen.ink;
  const voteLevel=(key:"service"|"prices"|"punctuality"|"professionalism"|"tenure")=>{const total=b?.excellenceReviewCount??0;const percent=total>0?100*(b?.excellenceVotes?.[key]??0)/total:0;return (b?.reviewCount??0)<20||!(b?.excellenceVotes?.[key]??0)?0:percent>63?3:percent>33?2:1;};
  const awards=[
   {label:"Atención al cliente",icon:"headset-outline" as const,level:voteLevel("service")},
@@ -224,62 +257,36 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
 
   {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
   <View style={{flex:1,paddingHorizontal:0,paddingTop:0,paddingBottom:0,gap:0}}>
-   <View style={{height:104,position:"relative",zIndex:0}}>
-    {!!b?.bannerUrl?<Image source={{uri:b.bannerUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}} accessibilityLabel="Banner del negocio"/>:<View style={{flex:1,backgroundColor:art.tint,alignItems:"flex-end",justifyContent:"center",paddingRight:20}}><Ionicons name={art.icon} size={66} color={BUSINESS_MEDAL_COLORS[1]} style={{opacity:0.55}}/></View>}
-    {canEditMedia&&onEditMedia&&<Pressable accessibilityRole="button" accessibilityLabel="Cambiar banner empresarial desde la galería" onPress={()=>onEditMedia("banner")} style={{position:"absolute",right:9,top:9,width:25,height:25,borderRadius:13,backgroundColor:jcardCommon.editBackground,alignItems:"center",justifyContent:"center"}}><Ionicons name="pencil-outline" size={13} color={jcardCommon.editInk}/></Pressable>}
-   </View>
-   <View style={{flex:1,marginTop:-18,borderTopLeftRadius:26,borderTopRightRadius:26,backgroundColor:premium?finish.start:businessCardPaper.background,overflow:"hidden",paddingHorizontal:14,paddingTop:18,paddingBottom:10,gap:5,zIndex:2}}>
+   <View style={{flex:1,marginTop:0,borderTopLeftRadius:26,borderTopRightRadius:26,backgroundColor:finish.start,overflow:"hidden",paddingHorizontal:theme==="light"?10:14,paddingTop:theme==="light"?22:18,paddingBottom:theme==="light"?17:10,gap:theme==="light"?3:5,zIndex:2}}>
    {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
-   <View style={{flexDirection:"row",alignItems:"flex-start",gap:6,marginTop:-2}}>
-    <View style={{flex:1,minWidth:0}} onLayout={e=>{const w=Math.floor(e.nativeEvent.layout.width)-22;if(w>0&&Math.abs(w-businessNameWidth)>2)setBusinessNameWidth(w);}}>
-     <View style={{flexDirection:"row",alignItems:"center",justifyContent:"flex-start",gap:3}}>
-      <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.9} style={{flexShrink:1,fontSize:nameFontSize,lineHeight:nameFontSize*1.2,fontWeight:"700",color:premium?finish.text:businessCardAccents.name}}>{businessName}</Text>
-      <Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={16} color={b?.licenseVerified?jcardCommon.verifiedBubble :jcardCommon.unverifiedBubble} accessibilityLabel={b?.licenseVerified?"Empresa verificada":"Empresa sin verificar"}/>
-     </View>
-     <View style={{flexDirection:"row",alignItems:"center",gap:6,marginTop:5}}>{hvacCategory?<View style={{width:20,height:20,alignItems:"center",justifyContent:"center"}}><Ionicons name="snow-outline" size={20} color={businessIconInk}/><Ionicons name="aperture-outline" size={11} color={businessIconInk} style={{position:"absolute"}}/></View>:<Ionicons name={categoryIcon} size={18} color={businessIconInk}/>}<Text numberOfLines={2} style={{flex:1,fontSize:13,fontWeight:"600",color:premium?finish.text:businessCardAccents.category}}>{company?category:card.role}</Text></View>
-    </View>
-    <View style={{alignItems:"center",gap:3,width:"33%",marginRight:-4,marginTop:-3}}>
-     <View style={{borderRadius:22,borderWidth:1,borderColor:jcardReviewGlass.border,paddingVertical:5,paddingHorizontal:7,backgroundColor:jcardReviewGlass.fill,alignItems:"center",justifyContent:"center",overflow:"visible",shadowColor:jcardReviewGlass.shadow,shadowOffset:{width:0,height:5},shadowOpacity:0.25,shadowRadius:9,elevation:5}}>
-      <Svg pointerEvents="none" width="100%" height="100%" style={StyleSheet.absoluteFill} preserveAspectRatio="none">
-       <Defs><LinearGradient id="businessReviewGlass" x1="0%" y1="0%" x2="100%" y2="100%">
-        <Stop offset="0%" stopColor={jcardReviewGlass.highlight} stopOpacity={0.88}/>
-        <Stop offset="23%" stopColor={jcardReviewGlass.highlight} stopOpacity={0.4}/>
-        <Stop offset="53%" stopColor={jcardReviewGlass.mid} stopOpacity={0.15}/>
-        <Stop offset="82%" stopColor={jcardReviewGlass.shade} stopOpacity={0.27}/>
-        <Stop offset="100%" stopColor={jcardReviewGlass.highlight} stopOpacity={0.52}/>
-       </LinearGradient></Defs>
-       <Rect width="100%" height="100%" rx={22} fill="url(#businessReviewGlass)"/>
-       <Path d="M 8 5 Q 55 0 110 5" fill="none" stroke={jcardReviewGlass.highlight} strokeOpacity={0.55} strokeWidth="1.5"/>
-      </Svg>
-      <Text numberOfLines={1} adjustsFontSizeToFit style={{color:jcardReviewGlass.ink,fontSize:12,fontWeight:"700",textShadowColor:jcardReviewGlass.textHighlight,textShadowOffset:{width:0,height:1},textShadowRadius:1}}>{ratingUnlocked?rating!.toFixed(1):"0.0"} <Text style={{color:ratingUnlocked?jcardCommon.businessGold:jcardReviewGlass.pending}}>{ratingUnlocked?"★★★★★":"☆☆☆☆☆"}</Text></Text>
-     </View>
-     <Text style={{color:finish.secondary,fontSize:10,textAlign:"center"}}>({reviewCount} {reviewCount===1?"reseña":"reseñas"})</Text>
-     {!!b?.opened&&<View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="calendar-outline" size={13} color={finish.secondary}/><Text style={{color:finish.secondary,fontSize:10}}>Desde {b.opened}</Text></View>}
+   {theme==="light"&&appearance==="original"&&<JobeenHoneycomb color={jobeen.bizBorder} compact={artSize.width>0&&artSize.width<360}/>}
+
+   <View style={{flexDirection:"row",alignItems:"center",gap:9,marginTop:9,paddingRight:49}}>
+    <Pressable disabled={!canEditMedia} accessibilityLabel="Foto del negocio" onPress={event=>{event.stopPropagation();onEditMedia?.("avatar");}} style={{width:64,height:64,borderRadius:32,borderWidth:2,borderColor:jobeen.yellow,backgroundColor:jobeen.surface,alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>{b?.avatarUrl?<Image source={{uri:b.avatarUrl}} style={{width:60,height:60,borderRadius:30}}/>:<Ionicons name="person-outline" size={27} color={businessIconInk}/>}</Pressable>
+    <View style={{flex:1,minWidth:0,gap:3}}>
+     <View style={{flexDirection:"row",alignItems:"center",gap:3}}><Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7} style={{flexShrink:1,fontSize:15,lineHeight:18,fontWeight:"700",color:finish.text}}>{businessName.length>15?businessName.slice(0,15).trimEnd()+"\n"+businessName.slice(15):businessName}</Text><Pressable accessibilityRole="button" accessibilityLabel="Verificación de empresa" onPress={event=>{event.stopPropagation();setShowBusinessVerification(true);}} style={{width:18,height:20,alignItems:"center",justifyContent:"center",flexShrink:0}}><Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={16} color={b?.licenseVerified?jcardCommon.verifiedBubble:jcardCommon.unverifiedBubble}/></Pressable></View>
+     <View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name={categoryIcon} size={14} color={businessIconInk}/><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{flexShrink:1,fontSize:12,color:finish.secondary}}>{company?category:card.role}</Text></View>
+     <View style={{flexDirection:"row",alignItems:"center",gap:4}}><Text style={{fontSize:11,fontWeight:"700",color:finish.text}}><Text style={{color:jcardCommon.businessGold}}>★</Text> {ratingUnlocked?rating!.toFixed(1):"0.0"}</Text><Text numberOfLines={1} style={{fontSize:10,color:finish.secondary}}>· ({reviewCount} {reviewCount===1?"reseña":"reseñas"})</Text></View>
     </View>
    </View>
-   <View style={{flex:1,justifyContent:"space-evenly",paddingVertical:7,minHeight:0,alignSelf:"stretch"}}>\n    <View style={{gap:5,alignSelf:"stretch"}}>
-     {(visibility.business_show_email?[b?.email,b?.emailSecondary]:[]).filter(Boolean).map((email,i)=><Pressable key={"business-email"+i} accessibilityRole="link" accessibilityLabel={"Enviar correo a "+email} onPress={()=>void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>{})} style={{flexDirection:"row",alignItems:"center",gap:6,alignSelf:"stretch"}}><Ionicons name="mail-outline" size={14} color={businessIconInk}/><Text numberOfLines={1} ellipsizeMode="tail" style={{flex:1,fontSize:11,color:businessContactInk}}>{email}</Text></Pressable>)}
-     {visibility.business_show_phone&&!!(b?.phone||b?.phoneSecondary)&&<View style={{flexDirection:"row",alignItems:"center",gap:4,alignSelf:"stretch"}}><Ionicons name="call-outline" size={14} color={businessIconInk}/>{[{number:b?.phone,label:b?.phoneLabel},{number:b?.phoneSecondary,label:b?.phoneSecondaryLabel}].filter(x=>!!x.number).map((item,i)=><View key={"business-phone"+i} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:3}}>{i>0&&<View style={{height:16,width:1,backgroundColor:finish.line,marginHorizontal:2}}/>}<Pressable accessibilityRole="link" style={{flex:1}} onPress={()=>void Linking.openURL("tel:"+item.number!.replace(/[^+\d]/g,"")).catch(()=>{})}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontSize:11,color:businessContactInk}}>{item.label?item.label+" ":""}{item.number}</Text></Pressable></View>)}</View>}
-     {!!b?.location&&<View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="location-outline" size={15} color={businessIconInk}/><Text numberOfLines={2} style={{flex:1,fontSize:11,color:businessContactInk}}>{b.location}</Text></View>}
+
+   {!!b?.services?.length&&<View style={{alignSelf:"stretch",paddingHorizontal:8,marginTop:4}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:14,fontWeight:"500",color:finish.secondary}}>{b.services.filter(Boolean).join(" · ")}</Text></View>}
+   <View style={{flex:1,justifyContent:"center",gap:theme==="light"?3:6,paddingVertical:theme==="light"?3:7,minHeight:0,alignSelf:"stretch"}}>
+    <View style={{gap:theme==="light"?0:5,alignSelf:"stretch"}}>
+     {(visibility.business_show_email?(theme==="light"?[b?.email??b?.emailSecondary]:[b?.email,b?.emailSecondary]):[]).filter(Boolean).map((email,i)=><Pressable key={"business-email"+i} accessibilityRole="link" accessibilityLabel={"Enviar correo a "+email} onPress={event=>{event.stopPropagation();void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>{});}} style={{flexDirection:"row",alignItems:"center",gap:6,alignSelf:"flex-start",maxWidth:"100%",minHeight:40,paddingRight:10}}><View style={{width:theme==="light"?30:14,height:theme==="light"?30:14,borderRadius:15,backgroundColor:theme==="light"?jobeen.yellow:undefined,alignItems:"center",justifyContent:"center"}}><Ionicons name="mail-outline" size={14} color={businessIconInk}/></View><Text numberOfLines={1} ellipsizeMode="tail" style={{flexShrink:1,fontSize:11,color:businessContactInk}}>{email}</Text></Pressable>)}
+     {visibility.business_show_phone&&!!(b?.phone||b?.phoneSecondary)&&<View style={{flexDirection:"row",alignItems:"center",gap:4,alignSelf:"stretch",minHeight:44}}><View style={{width:theme==="light"?30:14,height:theme==="light"?30:14,borderRadius:15,backgroundColor:theme==="light"?jobeen.yellow:undefined,alignItems:"center",justifyContent:"center"}}><Ionicons name="call-outline" size={14} color={businessIconInk}/></View>{[{number:b?.phone,label:b?.phoneLabel},{number:b?.phoneSecondary,label:b?.phoneSecondaryLabel}].filter(x=>!!x.number).map((item,i)=><View key={"business-phone"+i} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:3}}>{i>0&&<View style={{height:16,width:1,backgroundColor:finish.line,marginHorizontal:2}}/>}<Pressable accessibilityRole="link" style={{alignSelf:"flex-start",maxWidth:"100%",minHeight:40,justifyContent:"center",paddingHorizontal:5}} onPress={event=>{event.stopPropagation();void Linking.openURL("tel:"+item.number!.replace(/[^+\d]/g,"")).catch(()=>{});}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontSize:11,color:businessContactInk}}>{item.label?item.label+" ":""}{item.number}</Text></Pressable></View>)}{theme==="light"&&!!(b?.phone||b?.phoneSecondary)&&<Pressable accessibilityRole="link" accessibilityLabel="Abrir WhatsApp del negocio" onPress={event=>{event.stopPropagation();void Linking.openURL("https://wa.me/"+(b?.phone||b?.phoneSecondary||"").replace(/\D/g,"")).catch(()=>{});}} style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}><View style={{width:30,height:30,borderRadius:15,backgroundColor:jobeen.ink,alignItems:"center",justifyContent:"center"}}><Ionicons name="logo-whatsapp" size={17} color={jobeen.surface}/></View></Pressable>}</View>}
+     {!!b?.location&&<View style={{flexDirection:"row",alignItems:"center",gap:6,minHeight:theme==="light"?34:undefined}}><View style={{width:theme==="light"?30:15,height:theme==="light"?30:15,borderRadius:15,backgroundColor:theme==="light"?jobeen.yellow:undefined,alignItems:"center",justifyContent:"center"}}><Ionicons name="location-outline" size={15} color={businessIconInk}/></View><Text numberOfLines={2} style={{flex:1,fontSize:11,color:businessContactInk}}>{b.location}</Text></View>}
    </View>
-    {!!b?.services?.length&&<View style={{alignSelf:"stretch",alignItems:"center",justifyContent:"center",paddingHorizontal:8,marginTop:4}}><Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:10,lineHeight:14,textAlign:"center",color:businessContactInk}}>{b.services.join(" · ")}</Text></View>}
    </View>
    <View style={{height:1,backgroundColor:finish.line,opacity:0.7,marginBottom:4}}/>
-   <View style={{flexDirection:"row",alignItems:"center",gap:3,minHeight:110}}>
-    <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"flex-start",gap:1}}>
-     {awards.map(a=><BusinessAward key={a.label} {...a} finish={finish} surface={surface} onPress={()=>setSelectedAward({label:a.label,level:a.level})}/>)}
-    </View>
-    <View style={{width:1,height:85,backgroundColor:finish.line,marginHorizontal:1}}/>
-    <View style={{position:"relative",alignSelf:"center"}}>
-     {onShare&&<Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard de negocio" onPress={event=>{event.stopPropagation();onShare();}} style={{position:"absolute",right:2,top:-30,width:28,height:28,alignItems:"center",justifyContent:"center",zIndex:2}}><Ionicons name="share-social-outline" size={18} color={businessContactInk}/></Pressable>}
-    <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={()=>onQr?.()} style={{padding:3,borderRadius:7,backgroundColor:jcardCommon.qrPaper,borderWidth:1,borderColor:jcardCommon.qrBorder,alignSelf:"center",flexShrink:0}}>
-     <JCardQr value={card.profileUrl} size={46}/>
-    </Pressable>
-    </View>
+   <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:5,minHeight:65,paddingHorizontal:5,marginTop:4}}>
+    {awards.map(a=><BusinessAward key={a.label} {...a} finish={finish} surface={surface} compact={theme==="light"} onPress={()=>setSelectedAward({label:a.label,level:a.level})}/>)}
+   </View>
    </View>
   </View>
-  </View>
- <Modal visible={selectedAward!==null} transparent animationType="fade" onRequestClose={()=>setSelectedAward(null)}><View style={{flex:1,justifyContent:"center",padding:24,backgroundColor:jcardFloating.modalBackdrop}}><Pressable style={StyleSheet.absoluteFill} onPress={()=>setSelectedAward(null)} accessibilityLabel="Cerrar información"/><View style={{backgroundColor:finish.start,borderRadius:20,padding:22,borderWidth:1,borderColor:finish.line}}><View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}><Text style={{fontSize:19,fontWeight:"800",color:finish.text,flex:1}}>{selectedAward?.label}</Text><Pressable onPress={()=>setSelectedAward(null)} accessibilityRole="button" accessibilityLabel="Cerrar"><Ionicons name="close-circle-outline" size={27} color={finish.text}/></Pressable></View><Text style={{fontSize:15,fontWeight:"700",color:finish.text,marginTop:12}}>{selectedAward?.level===3?"Oro":selectedAward?.level===2?"Plata":selectedAward?.level===1?"Bronce":"Sin color"}</Text><Text style={{fontSize:14,lineHeight:21,color:finish.secondary,marginTop:8}}>{selectedAward?.level===0?"Este negocio aún no reúne suficientes reseñas para obtener un sello de color. No significa que su servicio sea malo.":selectedAward?.level===1?"Bronce: los clientes han reconocido esta cualidad en sus reseñas.":selectedAward?.level===2?"Plata: una proporción importante de las reseñas reconoce esta cualidad.":"Oro: una proporción destacada de las reseñas reconoce esta cualidad."}</Text><Text style={{fontSize:12,lineHeight:18,color:finish.secondary,marginTop:12}}>Los sellos se calculan a partir de reseñas de usuarios y no son certificaciones profesionales de Jobin.</Text></View></View></Modal>
+ <Pressable accessibilityRole="button" accessibilityLabel="Ampliar código QR del negocio" onPress={event=>{event.stopPropagation();onQr?.();}} style={{position:"absolute",top:12,right:12,width:44,height:44,borderRadius:8,borderWidth:1,borderColor:jobeen.qrBorder,backgroundColor:jobeen.surface,alignItems:"center",justifyContent:"center",zIndex:8,elevation:7,shadowColor:jobeen.ink,shadowOpacity:0.27,shadowRadius:9,shadowOffset:{width:0,height:3}}}><Ionicons name="qr-code-outline" size={29} color={jobeen.ink}/></Pressable>
+ <Modal visible={showBusinessVerification} transparent animationType="fade" onRequestClose={()=>setShowBusinessVerification(false)}><View style={{flex:1,justifyContent:"center",padding:24,backgroundColor:jcardFloating.modalBackdrop}}><Pressable style={StyleSheet.absoluteFill} onPress={()=>setShowBusinessVerification(false)} accessibilityLabel="Cerrar información"/><View style={{backgroundColor:finish.start,borderRadius:20,padding:22,borderWidth:1,borderColor:finish.line}}><Text style={{fontSize:19,fontWeight:"800",color:finish.text}}>{b?.licenseVerified?"Empresa verificada":"Empresa sin verificar"}</Text><Text style={{fontSize:14,lineHeight:21,color:finish.secondary,marginTop:12}}>{b?.licenseVerified?"Esta empresa figura como verificada en Jobeen. La insignia no garantiza la calidad del servicio ni sustituye la comprobación de licencias profesionales.":"Esta empresa todavía no figura como verificada en Jobeen. La ausencia de la insignia no indica que sus servicios sean deficientes."}</Text><Pressable accessibilityRole="button" accessibilityLabel="Cerrar" onPress={()=>setShowBusinessVerification(false)} style={{minHeight:44,alignSelf:"flex-end",justifyContent:"center",marginTop:12}}><Text style={{fontSize:14,fontWeight:"700",color:finish.text}}>Cerrar</Text></Pressable></View></View></Modal>
+ <Modal visible={selectedAward!==null} transparent animationType="fade" onRequestClose={()=>setSelectedAward(null)}><View style={{flex:1,justifyContent:"center",padding:24,backgroundColor:jcardFloating.modalBackdrop}}><Pressable style={StyleSheet.absoluteFill} onPress={()=>setSelectedAward(null)} accessibilityLabel="Cerrar información"/><View style={{backgroundColor:finish.start,borderRadius:20,padding:22,borderWidth:1,borderColor:finish.line}}><View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}><Text style={{fontSize:19,fontWeight:"800",color:finish.text,flex:1}}>{selectedAward?.label}</Text><Pressable onPress={()=>setSelectedAward(null)} accessibilityRole="button" accessibilityLabel="Cerrar"><Ionicons name="close-circle-outline" size={27} color={finish.text}/></Pressable></View><Text style={{fontSize:15,fontWeight:"700",color:finish.text,marginTop:12}}>{selectedAward?.level===3?"Oro":selectedAward?.level===2?"Plata":selectedAward?.level===1?"Bronce":"Sin color"}</Text><Text style={{fontSize:14,lineHeight:21,color:finish.secondary,marginTop:8}}>{selectedAward?.level===0?"Este negocio aún no reúne suficientes reseñas para obtener un sello de color. No significa que su servicio sea malo.":selectedAward?.level===1?"Bronce: los clientes han reconocido esta cualidad en sus reseñas.":selectedAward?.level===2?"Plata: una proporción importante de las reseñas reconoce esta cualidad.":"Oro: una proporción destacada de las reseñas reconoce esta cualidad."}</Text><Text style={{fontSize:12,lineHeight:18,color:finish.secondary,marginTop:12}}>Los sellos se calculan a partir de reseñas de usuarios y no son certificaciones profesionales de Jobeen.</Text></View></View></Modal>
  </View>;
 }
 export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,onEditPersonalPhoto,ownerId,showOwnerActions=false,initialSide="personal",employerLink}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;onEditBusinessMedia?:(slot:"banner"|"avatar")=>void;onEditPersonalPhoto?:()=>void;ownerId?:string;showOwnerActions?:boolean;initialSide?:"personal"|"business";employerLink?:{id:string;name:string;handle:string}|null}){
@@ -294,7 +301,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const [back,setBack]=useState(initialSide==="business"),[qrOpen,setQrOpen]=useState(false);
  const canFlip=showOwnerActions||(visibility.personal_enabled&&visibility.business_enabled);
  const activeBusiness=!visibility.personal_enabled&&visibility.business_enabled;
- const cardHeight = 450;
+ const cardHeight = (previewTheme??theme)==="light"?364:450;
  const rotation=useRef(new Animated.Value(initialSide==="business"?180:0)).current;
  const angle=useRef(initialSide==="business"?180:0);
  useEffect(()=>{if(!canFlip){setBack(activeBusiness);angle.current=activeBusiness?180:0;rotation.stopAnimation();rotation.setValue(angle.current);}},[canFlip,activeBusiness,rotation]);
@@ -305,6 +312,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const frontRotate=rotation.interpolate({inputRange:[-3600,3600],outputRange:["-3600deg","3600deg"],extrapolate:"extend"});
  const backRotate=rotation.interpolate({inputRange:[-3600,3600],outputRange:["-3420deg","3780deg"],extrapolate:"extend"});
  const cardTheme=previewTheme??theme;
+ const cardColors=jobeenTokens(cardTheme);
  const share=async (side:"personal"|"business")=>{
   const label=side==="business"?(card.business?.name?.trim()||card.name):card.name;
   const separator=card.profileUrl.includes("?")?"&":"?";
@@ -313,7 +321,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  };
  return <>
   <View style={{width:"100%",maxWidth:520,alignSelf:"center"}}>
-   <View style={{borderRadius:30,backgroundColor:jcardCommon.cardShadowSurface,shadowColor:jcardCommon.cardShadowColor,shadowOffset:{width:0,height:7},shadowOpacity:0.27,shadowRadius:16,elevation:9}} {...(canFlip?responder.panHandlers:{})}>
+   <Pressable accessibilityRole={canFlip?"button":undefined} accessibilityLabel={canFlip?(back?"Girar a JCard personal":"Girar a JCard de negocio"):undefined} onPress={canFlip?toggle:undefined} style={{borderRadius:30,backgroundColor:jcardCommon.cardShadowSurface,shadowColor:jcardCommon.cardShadowColor,shadowOffset:{width:0,height:7},shadowOpacity:0.27,shadowRadius:16,elevation:9}} {...(canFlip?responder.panHandlers:{})}>
    <Animated.View pointerEvents={back?"none":"auto"} style={{height:cardHeight,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:frontRotate}]}}>
     {(showOwnerActions||visibility.personal_enabled)&&<CardFace card={card} theme={cardTheme} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onEditPhoto={showOwnerActions?onEditPersonalPhoto:undefined} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>}
    </Animated.View>
@@ -321,19 +329,17 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
     <View style={{height:cardHeight}}>{(showOwnerActions||visibility.business_enabled)&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} visibility={visibility}/>}</View>
    </Animated.View>
 
-   </View>
-   {canFlip&&<Pressable accessibilityRole="button" accessibilityLabel={back?"Girar JCard a cara personal":"Girar JCard para ver el reverso"} accessibilityHint="Toca o desliza horizontalmente la tarjeta para girarla" onPress={toggle} style={{alignSelf:"center",width:"68%",height:31,justifyContent:"center",alignItems:"center",marginTop:1}}>
-    <View pointerEvents="none" style={{position:"absolute",top:0,width:"90%",height:12,borderRadius:100,backgroundColor:theme==="dark"?jcardCommon.flipShadowDark:jcardCommon.flipShadow,transform:[{scaleX:0.92}]}}/>
-    <View pointerEvents="none" style={{width:86,height:21,borderRadius:30,alignItems:"center",justifyContent:"center",backgroundColor:theme==="dark"?jcardCommon.flipSurfaceDark:jcardCommon.flipSurface,borderWidth:1,borderColor:theme==="dark"?jcardCommon.flipOutlineDark:jcardCommon.flipOutline}}>
-      <Ionicons name="sync-outline" size={16} color={theme==="dark"?jcardCommon.flipInkDark:jcardCommon.editInk}/>
-    </View>
+   </Pressable>
+   {canFlip&&<Pressable accessibilityRole="button" accessibilityLabel={back?"Volver a la JCard personal":"Ver datos de negocios"} accessibilityHint="Toca o desliza horizontalmente la tarjeta para girarla" onPress={toggle} style={{alignSelf:"stretch",minHeight:36,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,paddingHorizontal:8}}>
+    {cardTheme!=="light"&&<Ionicons name="sync-outline" size={17} color={cardColors.ink2}/>}
+    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontSize:11,color:cardColors.ink2,textAlign:"center",flexShrink:1}}>{back?"Toca para ver datos personales":"Toca para ver datos de negocio"}</Text>
    </Pressable>}
    {showOwnerActions&&<View style={{flexDirection:"row",gap:10,paddingTop:10}}>
-    <Pressable accessibilityRole="button" accessibilityLabel={back?"Compartir JCard de negocio":"Compartir JCard personal"} onPress={()=>void share(back?"business":"personal")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,backgroundColor:colors.ink}}>
-      <Ionicons name="share-social-outline" size={20} color={colors.paper}/><Text style={{color:colors.paper,fontWeight:"700"}}>Compartir</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={back?"Compartir JCard de negocio":"Compartir JCard personal"} onPress={()=>void share(back?"business":"personal")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,backgroundColor:cardColors.ink}}>
+      <Ionicons name="share-social-outline" size={20} color={cardColors.surface}/><Text style={{color:cardColors.surface,fontWeight:"700"}}>Compartir</Text>
     </Pressable>
-    <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,borderWidth:1,borderColor:colors.line,backgroundColor:colors.accent}}>
-      <Ionicons name="create-outline" size={20} color={colors.ink}/><Text style={{color:colors.ink,fontWeight:"700"}}>Editar JCard</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,borderWidth:1,borderColor:cardColors.yellow,backgroundColor:cardColors.cream}}>
+      <Ionicons name="create-outline" size={20} color={cardColors.ink}/><Text style={{color:cardColors.ink,fontWeight:"700"}}>Editar JCard</Text>
     </Pressable>
    </View>}
   </View>
