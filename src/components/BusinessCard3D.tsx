@@ -118,7 +118,7 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
 }
 
 const styles=StyleSheet.create({
-  shell:{width:"100%",borderRadius:30,backgroundColor:"transparent",shadowOffset:{width:0,height:8},overflow:"visible"},
+  shell:{width:"100%",borderRadius:30,shadowOffset:{width:0,height:8},overflow:"visible"},
   face:{width:"100%",backfaceVisibility:"hidden"},
   reverse:{position:"absolute",top:0,left:0,right:0},
   glareMask:{borderRadius:30,overflow:"hidden"},
