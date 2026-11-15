@@ -1,7 +1,7 @@
 import {router} from "expo-router";
-import {useState} from "react";
+import {useRef,useState} from "react";
 import * as Linking from "expo-linking";
-import {KeyboardAvoidingView,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
+import {KeyboardAvoidingView,Keyboard,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
 import Svg,{Path} from "react-native-svg";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {Ionicons} from "@expo/vector-icons";
@@ -21,10 +21,12 @@ export default function Login(){
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState("");
  const [visible,setVisible]=useState(false);
+ const scrollRef=useRef<ScrollView>(null);
+ const [keyboardVisible,setKeyboardVisible]=useState(false);
  function continueEmail(){
   setError("");
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())){setError("Escribe un correo electrónico válido.");return;}
-  setStep("password");
+  Keyboard.dismiss();setKeyboardVisible(false);setStep("password");
  }
  async function submit(){
   if(busy)return;
@@ -38,12 +40,12 @@ export default function Login(){
   }catch(e){setError(e instanceof Error?e.message:"No se pudo iniciar sesión.");}
   finally{setBusy(false);}
  }
- async function social(provider:"Google"|"Apple"){
+ async function social(provider:"Google"){
   if(busy)return;
   setBusy(true);setError("");
   try{
    const {data,error:oauthError}=await requireSupabase().auth.signInWithOAuth({
-    provider:provider==="Apple"?"apple":"google",
+    provider:"google",
     options:{redirectTo:"jobin://",skipBrowserRedirect:true}
    });
    if(oauthError)throw oauthError;
@@ -53,22 +55,21 @@ export default function Login(){
  }
  const button=(label:string,onPress:()=>void,secondary=false)=> <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} disabled={busy} style={{minHeight:46,borderRadius:9,backgroundColor:secondary?palette.background:palette.black,borderWidth:secondary?1:0,borderColor:palette.border,justifyContent:"center",alignItems:"center",opacity:busy?0.65:1}}><Text style={{fontSize:15,fontWeight:"700",color:secondary?palette.black:palette.white}}>{label}</Text></Pressable>;
  return <SafeAreaView style={{flex:1,backgroundColor:palette.background}}>
-  <KeyboardAvoidingView behavior={Platform.OS==="ios"?"padding":undefined} style={{flex:1}}>
-   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{flexGrow:1,justifyContent:"center",paddingHorizontal:26,paddingVertical:24}}>
+  <KeyboardAvoidingView behavior={Platform.OS==="ios"?"padding":"height"} style={{flex:1}}>
+   <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets={Platform.OS==="ios"} contentContainerStyle={{flexGrow:1,justifyContent:keyboardVisible?"flex-start":"center",paddingHorizontal:26,paddingVertical:24}}>
     <View style={{width:"100%",maxWidth:380,alignSelf:"center"}}>
      <View style={{alignItems:"center",marginBottom:38}}><JobinWordmark width={compact?112:124}/></View>
      <Text style={{fontSize:compact?19:21,fontWeight:"700",color:palette.black,textAlign:"center",marginBottom:20}}>{step==="email"?"Inicia sesión o regístrate":"Introduce tu contraseña"}</Text>
      <View style={{gap:11}}>
       {step==="email"?<View style={{backgroundColor:palette.field,borderRadius:11,minHeight:46,flexDirection:"row",alignItems:"center",paddingHorizontal:16}}>
-       <TextInput accessibilityLabel="Correo electrónico" placeholder="Correo electrónico" placeholderTextColor={palette.muted} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="emailAddress" autoComplete="email" value={email} onChangeText={setEmail} onSubmitEditing={continueEmail} returnKeyType="next" style={{flex:1,color:palette.black,fontSize:15,paddingVertical:10}}/>
+       <TextInput accessibilityLabel="Correo electrónico" placeholder="Correo electrónico" placeholderTextColor={palette.muted} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="emailAddress" autoComplete="email" value={email} onChangeText={setEmail} onFocus={()=>{setKeyboardVisible(true);scrollRef.current?.scrollTo({y:0,animated:true});}} onBlur={()=>setKeyboardVisible(false)} onSubmitEditing={continueEmail} returnKeyType="next" style={{flex:1,color:palette.black,fontSize:15,paddingVertical:10}}/>
        {!!email&&<Pressable accessibilityRole="button" accessibilityLabel="Borrar correo" onPress={()=>setEmail("")} style={{padding:7}}><Ionicons name="close-circle" size={21} color={palette.clear}/></Pressable>}
-      </View>:<><Text style={{fontSize:15,color:palette.muted,textAlign:"center"}}>{email}</Text><View style={{backgroundColor:palette.field,borderRadius:11,minHeight:55,flexDirection:"row",alignItems:"center",paddingHorizontal:16}}><TextInput accessibilityLabel="Contraseña" placeholder="Contraseña" placeholderTextColor={palette.muted} secureTextEntry={!visible} textContentType="password" autoComplete="current-password" value={password} onChangeText={setPassword} onSubmitEditing={()=>void submit()} style={{flex:1,color:palette.black,fontSize:17,paddingVertical:12}}/><Pressable accessibilityLabel={visible?"Ocultar contraseña":"Mostrar contraseña"} onPress={()=>setVisible(v=>!v)} style={{padding:8}}><Ionicons name={visible?"eye-off-outline":"eye-outline"} size={22} color={palette.muted}/></Pressable></View></>}
+      </View>:<><Text style={{fontSize:15,color:palette.muted,textAlign:"center"}}>{email}</Text><View style={{backgroundColor:palette.field,borderRadius:11,minHeight:55,flexDirection:"row",alignItems:"center",paddingHorizontal:16}}><TextInput accessibilityLabel="Contraseña" placeholder="Contraseña" placeholderTextColor={palette.muted} secureTextEntry={!visible} textContentType="password" autoComplete="current-password" value={password} onChangeText={setPassword} onFocus={()=>{setKeyboardVisible(true);scrollRef.current?.scrollTo({y:0,animated:true});}} onBlur={()=>setKeyboardVisible(false)} onSubmitEditing={()=>void submit()} style={{flex:1,color:palette.black,fontSize:17,paddingVertical:12}}/><Pressable accessibilityLabel={visible?"Ocultar contraseña":"Mostrar contraseña"} onPress={()=>setVisible(v=>!v)} style={{padding:8}}><Ionicons name={visible?"eye-off-outline":"eye-outline"} size={22} color={palette.muted}/></Pressable></View></>}
       {!!error&&<Text accessibilityLiveRegion="polite" style={{color:palette.error,fontSize:13}}>{error}</Text>}
       {button(step==="email"?"Continuar":busy?"Entrando…":"Iniciar sesión",()=>step==="email"?continueEmail():void submit())}
       {step==="password"&&<><Pressable onPress={()=>router.push("/recover-account")} style={{paddingVertical:8,alignItems:"center"}}><Text style={{color:palette.black}}>¿Olvidaste tu contraseña?</Text></Pressable><Pressable onPress={()=>setStep("email")} style={{alignItems:"center",paddingVertical:5}}><Text style={{color:palette.muted}}>Cambiar correo</Text></Pressable></>}
       {step==="email"&&<><Text style={{textAlign:"center",color:palette.muted,fontSize:14,marginVertical:1}}>o</Text>
        <Pressable accessibilityRole="button" onPress={()=>social("Google")} style={{minHeight:47,borderRadius:9,borderWidth:1,borderColor:palette.border,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:12}}><GoogleMark/><Text style={{fontSize:15,fontWeight:"700",color:palette.black}}>Continuar con Google</Text></Pressable>
-       {<Pressable accessibilityRole="button" onPress={()=>social("Apple")} style={{minHeight:54,borderRadius:11,borderWidth:1,borderColor:palette.border,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:12}}><Ionicons name="logo-apple" size={21} color={palette.black}/><Text style={{fontSize:17,fontWeight:"700",color:palette.black}}>Continuar con Apple</Text></Pressable>}
        <Pressable onPress={()=>router.push("/account")} style={{alignItems:"center",paddingVertical:10}}><Text style={{fontSize:13,color:palette.black}}>¿No tienes cuenta? <Text style={{fontWeight:"700"}}>Regístrate</Text></Text></Pressable>
       </>}
      </View>
