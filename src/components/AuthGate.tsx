@@ -67,11 +67,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
     if(!supabase)throw new Error("Supabase no está configurado");
     const {data,error}=await supabase.auth.exchangeCodeForSession(decodeURIComponent(code));
     if(error)throw error;
-    if(!data.session)throw new Error("Google no devolvió una sesión válida");
+    if(!data.session)throw new Error("El proveedor de acceso no devolvió una sesión válida");
     await startJobinSession();
     await checkUsername(data.session.user.id,data.session.user.user_metadata?.account_setup_completed!==true);
     if(active)setSignedIn(true);
-   }catch(error){console.warn("Google OAuth callback failed:",error);}
+   }catch(error){console.warn("Social OAuth callback failed:",error);}
    finally{if(active){setHandlingOAuth(false);setReady(true);}}
    return true;
   }
