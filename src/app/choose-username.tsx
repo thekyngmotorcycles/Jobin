@@ -45,9 +45,11 @@ export default function ChooseUsername(){
   if(ownedError||profileError||jcardError)throw ownedError??profileError??jcardError;
   if(!active)return;
   const legal=profile?.display_name && profile.display_name!=="Nuevo usuario"?profile.display_name:"";
-  const current=owned?.username && !/^u_[0-9a-f]{12,}$/i.test(owned.username)?owned.username:"";
+  // Legacy accounts stored their chosen handle in jcard_profiles before usernames existed.
+  const existing=owned?.username || jcard?.handle || "";
+  const current=!/^u_[0-9a-f]{12,}$/i.test(existing) && VALID.test(existing.toLowerCase())?existing.toLowerCase():"";
   setName(legal);setSavedName(!!legal);
-  setUsername(current);setSavedUsername(!!current && current.toLowerCase()===jcard?.handle?.toLowerCase());
+  setUsername(current);setSavedUsername(!!current && (!owned?.username || owned.username.toLowerCase()===jcard?.handle?.toLowerCase()));
   setLoaded(true);
  })().catch(error=>{if(active){setMessage(error instanceof Error?error.message:"No se pudieron cargar tus datos.");setLoaded(true);}});return()=>{active=false;};},[]);
  useEffect(()=>{
