@@ -1,5 +1,5 @@
 import {router} from "expo-router";
-import {useRef,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import * as Linking from "expo-linking";
 import {KeyboardAvoidingView,Keyboard,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
 import Svg,{Path} from "react-native-svg";
@@ -21,6 +21,9 @@ export default function Login(){
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState("");
  const [visible,setVisible]=useState(false);
+ const [lastTyped,setLastTyped]=useState("");
+ useEffect(()=>{if(!lastTyped)return;const timeout=setTimeout(()=>setLastTyped(""),850);return()=>clearTimeout(timeout);},[lastTyped]);
+ function updatePassword(value:string){setPassword(previous=>{setLastTyped(value.length>previous.length?value.slice(-1):"");return value;});}
  const scrollRef=useRef<ScrollView>(null);
  const [keyboardVisible,setKeyboardVisible]=useState(false);
  function continueEmail(){
@@ -64,7 +67,7 @@ export default function Login(){
       {step==="email"?<View style={{backgroundColor:palette.field,borderRadius:11,minHeight:46,flexDirection:"row",alignItems:"center",paddingHorizontal:16}}>
        <TextInput accessibilityLabel="Correo electrónico" placeholder="Correo electrónico" placeholderTextColor={palette.muted} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="emailAddress" autoComplete="email" value={email} onChangeText={setEmail} onFocus={()=>{setKeyboardVisible(true);scrollRef.current?.scrollTo({y:0,animated:true});}} onBlur={()=>setKeyboardVisible(false)} onSubmitEditing={continueEmail} returnKeyType="next" style={{flex:1,color:palette.black,fontSize:15,paddingVertical:10}}/>
        {!!email&&<Pressable accessibilityRole="button" accessibilityLabel="Borrar correo" onPress={()=>setEmail("")} style={{padding:7}}><Ionicons name="close-circle" size={21} color={palette.clear}/></Pressable>}
-      </View>:<><Text style={{fontSize:15,color:palette.muted,textAlign:"center"}}>{email}</Text><View style={{backgroundColor:palette.field,borderRadius:11,minHeight:55,flexDirection:"row",alignItems:"center",paddingHorizontal:16}}><TextInput accessibilityLabel="Contraseña" placeholder="Contraseña" placeholderTextColor={palette.muted} secureTextEntry={!visible} textContentType="password" autoComplete="current-password" value={password} onChangeText={setPassword} onFocus={()=>{setKeyboardVisible(true);scrollRef.current?.scrollTo({y:0,animated:true});}} onBlur={()=>setKeyboardVisible(false)} onSubmitEditing={()=>void submit()} style={{flex:1,color:palette.black,fontSize:17,paddingVertical:12}}/><Pressable accessibilityLabel={visible?"Ocultar contraseña":"Mostrar contraseña"} onPress={()=>setVisible(v=>!v)} style={{padding:8}}><Ionicons name={visible?"eye-off-outline":"eye-outline"} size={22} color={palette.muted}/></Pressable></View></>}
+      </View>:<><Text style={{fontSize:15,color:palette.muted,textAlign:"center"}}>{email}</Text><View style={{backgroundColor:palette.field,borderRadius:11,minHeight:55,flexDirection:"row",alignItems:"center",paddingHorizontal:16}}><TextInput accessibilityLabel="Contraseña" placeholder="Contraseña" placeholderTextColor={palette.muted} secureTextEntry={!visible} textContentType="password" autoComplete="current-password" value={password} onChangeText={updatePassword} onFocus={()=>{setKeyboardVisible(true);scrollRef.current?.scrollTo({y:0,animated:true});}} onBlur={()=>setKeyboardVisible(false)} onSubmitEditing={()=>void submit()} style={{flex:1,color:palette.black,fontSize:17,paddingVertical:12}}/>{!visible&&!!lastTyped&&<Text accessible={false} style={{fontSize:16,color:palette.muted,minWidth:15,textAlign:"center"}}>{lastTyped}</Text>}<Pressable accessibilityLabel={visible?"Ocultar contraseña":"Mostrar contraseña"} onPress={()=>setVisible(v=>!v)} style={{padding:8}}><Ionicons name={visible?"eye-off-outline":"eye-outline"} size={22} color={palette.muted}/></Pressable></View></>}
       {!!error&&<Text accessibilityLiveRegion="polite" style={{color:palette.error,fontSize:13}}>{error}</Text>}
       {button(step==="email"?"Continuar":busy?"Entrando…":"Iniciar sesión",()=>step==="email"?continueEmail():void submit())}
       {step==="password"&&<><Pressable onPress={()=>router.push("/recover-account")} style={{paddingVertical:8,alignItems:"center"}}><Text style={{color:palette.black}}>¿Olvidaste tu contraseña?</Text></Pressable><Pressable onPress={()=>setStep("email")} style={{alignItems:"center",paddingVertical:5}}><Text style={{color:palette.muted}}>Cambiar correo</Text></Pressable></>}
