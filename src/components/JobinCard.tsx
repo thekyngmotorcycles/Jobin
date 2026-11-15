@@ -164,7 +164,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         </View>}
         <View style={{flexDirection:"row",alignItems:"center",gap:8,minWidth:0,alignSelf:theme==="light"?"center":undefined,justifyContent:theme==="light"?"center":undefined,marginTop:theme==="light"?10:undefined}}>
           <Pressable accessibilityRole="button" accessibilityLabel="Información sobre disponibilidad" onPress={()=>setInfo(card.status==="ACTIVE"?"Trabajando actualmente\nLa persona indica que tiene un trabajo activo. Esto no significa que Jobeen haya confirmado su relación laboral.":"Disponible para trabajar\nLa persona indica que está abierta a nuevas oportunidades laborales o solicitudes de clientes.")} style={{minHeight:44,justifyContent:"center"}}><View style={{flexDirection:"row",alignItems:"center",gap:5,backgroundColor:jobeen.okBackground,borderRadius:18,paddingHorizontal:10,paddingVertical:6}}><View style={{width:7,height:7,borderRadius:4,backgroundColor:jobeen.okDot}}/><Text style={{color:jobeen.okText,fontWeight:"700",fontSize:11}}>{card.status==="ACTIVE"?"Trabajando":"Disponible"}</Text></View></Pressable>
-          {card.primaryExperienceMonths!==undefined&&<Pressable accessibilityRole="button" accessibilityLabel="Ver experiencia por profesión" onPress={event=>{event.stopPropagation();setExperienceOpen(true);}} style={{flexShrink:1,backgroundColor:jobeen.cream,borderColor:jobeen.yellow,borderWidth:1,borderRadius:16,paddingHorizontal:10,paddingVertical:5,minHeight:32,justifyContent:"center"}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{color:jobeen.ink,fontSize:12}}>{card.primaryExperienceMonths>0?experienceLabel(card.primaryExperienceMonths)+" de experiencia":"Experiencia pendiente"}  <Ionicons name="information-circle-outline" size={12} color={jobeen.ink}/></Text></Pressable>}
+          {card.primaryExperienceMonths!==undefined&&<Pressable accessibilityRole="button" accessibilityLabel="Ver experiencia por profesión" onPress={event=>{event.stopPropagation();setExperienceOpen(true);}} style={{flexShrink:1,backgroundColor:jobeen.cream,borderColor:jobeen.yellow,borderWidth:1,borderRadius:18,paddingHorizontal:14,paddingVertical:7,minHeight:38,alignItems:"center",justifyContent:"center"}}><View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:6}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{color:jobeen.ink,fontSize:14,fontWeight:"600",textAlign:"center"}}>{card.primaryExperienceMonths>=12?Math.floor(card.primaryExperienceMonths/12)+(card.primaryExperienceMonths%12?"+":"")+" "+(Math.floor(card.primaryExperienceMonths/12)===1?"Año":"Años"):card.primaryExperienceMonths>0?card.primaryExperienceMonths+" "+(card.primaryExperienceMonths===1?"Mes":"Meses"):"Sin experiencia"}</Text><Ionicons name="information-circle-outline" size={15} color={jobeen.ink}/></View></Pressable>}
 
         </View>
         
@@ -209,13 +209,13 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
             <ProfessionGlyph profession={primaryProfession} fallback={primarySeal?.icon??"briefcase-outline"} size={22} color={jcardCommon.qrInk}/>
             <View style={{flex:1}}><Text numberOfLines={2} style={{fontWeight:"700",color:jcardCommon.qrInk}}>{primaryProfession}</Text><Text style={{fontSize:12,color:jcardCommon.qrInk}}>{card.primaryExperienceMonths?experienceLabel(card.primaryExperienceMonths):"Sin experiencia registrada"}</Text></View>
           </View>
-          {secondarySeals.length>0&&<><View style={{height:1,backgroundColor:finish.line,marginVertical:2}}/>
+          {!!card.secondaryProfessions?.length&&<><View style={{height:1,backgroundColor:finish.line,marginVertical:2}}/>
             <Text style={{fontSize:12,fontWeight:"700",color:jcardCommon.qrInk}}>Profesiones secundarias</Text>
             <ScrollView style={{maxHeight:220}} contentContainerStyle={{gap:10}}>
-              {secondarySeals.map(seal=><View key={seal.id} style={{flexDirection:"row",alignItems:"center",gap:9}}>
-                <View style={{width:28,height:28,borderRadius:14,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center"}}><ProfessionGlyph profession={seal.profession} fallback={seal.icon} size={17} color={jcardCommon.qrInk}/></View>
-                <Text numberOfLines={2} style={{flex:1,fontSize:12,color:jcardCommon.qrInk}}>{seal.profession}</Text>
-                <Text style={{fontSize:12,fontWeight:"600",color:jcardCommon.qrInk}}>{seal.months?experienceLabel(seal.months):"Sin registrar"}</Text>
+              {card.secondaryProfessions?.map(profession=><View key={profession.code} style={{flexDirection:"row",alignItems:"center",gap:9}}>
+                <View style={{width:28,height:28,borderRadius:14,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center"}}><ProfessionGlyph profession={profession.name} fallback={profession.icon} size={17} color={jcardCommon.qrInk}/></View>
+                <Text numberOfLines={2} style={{flex:1,fontSize:12,color:jcardCommon.qrInk}}>{profession.name}</Text>
+                <Text style={{fontSize:12,fontWeight:"600",color:jcardCommon.qrInk}}>{profession.months?experienceLabel(profession.months):"Sin registrar"}</Text>
               </View>)}
             </ScrollView></>}
           <Button title="Cerrar" onPress={()=>setExperienceOpen(false)}/>
