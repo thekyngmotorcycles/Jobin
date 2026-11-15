@@ -1,5 +1,6 @@
 import {router} from "expo-router";
-import {useState} from "react";
+import {useEffect,useState} from "react";
+import * as Linking from "expo-linking";
 import {KeyboardAvoidingView,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
 import Svg,{Path} from "react-native-svg";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -37,7 +38,42 @@ export default function Login(){
   }catch(e){setError(e instanceof Error?e.message:"No se pudo iniciar sesión.");}
   finally{setBusy(false);}
  }
- function social(provider:"Google"|"Apple"){setError("El acceso con "+provider+" requiere configurar el proveedor OAuth y su retorno seguro en Supabase. Por ahora, utiliza tu correo y contraseña.");}
+ useEffect(()=>{
+  let active=true;
+  async function finish(url:string){
+   if(!url.startsWith("jobin://"))return;
+   try{
+    const parsed=new URL(url);
+    const code=parsed.searchParams.get("code");
+    const errorMessage=parsed.searchParams.get("error_description")||parsed.searchParams.get("error");
+    if(errorMessage)throw new Error(errorMessage);
+    if(!code)return;
+    const {data,error:exchangeError}=await requireSupabase().auth.exchangeCodeForSession(code);
+    if(exchangeError)throw exchangeError;
+    if(!data.session)throw new Error("Google no devolvió una sesión válida.");
+    await startJobinSession();
+    if(active)router.replace("/videos");
+   }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudo completar el acceso con Google.");}
+   finally{if(active)setBusy(false);}
+  }
+  const subscription=Linking.addEventListener("url",event=>{void finish(event.url);});
+  void Linking.getInitialURL().then(url=>{if(url)void finish(url);});
+  return ()=>{active=false;subscription.remove();};
+ },[]);
+ async function social(provider:"Google"|"Apple"){
+  if(busy)return;
+  if(provider==="Apple"){setError("El acceso con Apple todavía no está configurado.");return;}
+  setBusy(true);setError("");
+  try{
+   const {data,error:oauthError}=await requireSupabase().auth.signInWithOAuth({
+    provider:"google",
+    options:{redirectTo:"jobin://",skipBrowserRedirect:true}
+   });
+   if(oauthError)throw oauthError;
+   if(!data.url)throw new Error("Google no devolvió la dirección de acceso.");
+   await Linking.openURL(data.url);
+  }catch(e){setError(e instanceof Error?e.message:"No se pudo abrir el acceso con Google.");setBusy(false);}
+ }
  const button=(label:string,onPress:()=>void,secondary=false)=> <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} disabled={busy} style={{minHeight:46,borderRadius:9,backgroundColor:secondary?palette.background:palette.black,borderWidth:secondary?1:0,borderColor:palette.border,justifyContent:"center",alignItems:"center",opacity:busy?0.65:1}}><Text style={{fontSize:15,fontWeight:"700",color:secondary?palette.black:palette.white}}>{label}</Text></Pressable>;
  return <SafeAreaView style={{flex:1,backgroundColor:palette.background}}>
   <KeyboardAvoidingView behavior={Platform.OS==="ios"?"padding":undefined} style={{flex:1}}>
