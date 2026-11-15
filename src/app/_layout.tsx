@@ -1,3 +1,5 @@
+import "react-native-gesture-handler";
+import {GestureHandlerRootView} from "react-native-gesture-handler";
 import { NoticeProvider } from "../state/NoticeProvider";
 import { AuthGate } from "../components/AuthGate";
 import { SafetyAccountGate } from "../components/SafetyAccountGate";
@@ -63,5 +65,5 @@ function Navigation() {
  </Stack></>;
 }
 export default function RootLayout() {
- return <SafeAreaProvider><ThemeProvider><AppProvider><SocialProvider><NoticeProvider><IconFontGate><AuthGate><SafetyAccountGate><Navigation/></SafetyAccountGate></AuthGate></IconFontGate></NoticeProvider></SocialProvider></AppProvider></ThemeProvider></SafeAreaProvider>;
+ return <GestureHandlerRootView style={{flex:1}}><SafeAreaProvider><ThemeProvider><AppProvider><SocialProvider><NoticeProvider><IconFontGate><AuthGate><SafetyAccountGate><Navigation/></SafetyAccountGate></AuthGate></IconFontGate></NoticeProvider></SocialProvider></AppProvider></ThemeProvider></SafeAreaProvider></GestureHandlerRootView>;
 }
