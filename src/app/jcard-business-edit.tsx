@@ -38,7 +38,7 @@ export default function BusinessEditor(){
   if(section==="services"&&(data.services.filter(Boolean).length>3||data.services.join(", ").length>100)){setNotice("Máximo 3 servicios y 100 caracteres.");return;}
   if(section==="contact"&&[data.phoneLabel,data.phoneSecondaryLabel].some(v=>v&&Array.from(v).length>4)){setNotice("Identificadores: máximo 4 caracteres.");return;}
   setSaving(true);setNotice("");
-  try{if(section==="privacy"){await saveJCardVisibility(visibility);}else{const stored=await readCloudBusiness()??empty;const keys=sections.find(item=>item.id===section)?.keys??[];const clean={...stored};for(const key of keys){(clean as unknown as Record<string,unknown>)[key]=key==="services"?data.services.filter(Boolean):key==="name"?data.name.trim():data[key];}await writeCloudBusiness(clean);await AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(clean));}setOpen(null);}
+  try{if(section==="privacy"){await saveJCardVisibility(visibility);}else{const stored=await readCloudBusiness()??empty;const keys=sections.find(item=>item.id===section)?.keys??[];const clean:BusinessCardData={...empty,...stored};for(const key of keys){(clean as unknown as Record<string,unknown>)[key]=key==="services"?data.services.filter(Boolean):key==="name"?data.name.trim():data[key];}await writeCloudBusiness(clean);await AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(clean));}setOpen(null);}
   catch(e){setNotice(e instanceof Error?e.message:"No se pudieron guardar los cambios.");}finally{setSaving(false);}
  }
  return <Screen demo={false} hideHeader hideFooter title="JCard de negocio" subtitle="">
