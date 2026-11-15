@@ -1,19 +1,21 @@
-import { authSilver } from "../theme/auth-silver";
+import { loginPalette as palette } from "../theme/auth-silver";
 import { ProfessionPicker } from "../components/ProfessionPicker";
 import { loadCatalog } from "../lib/professional-api";
 import { useProfessionalData } from "../state/useProfessionalData";
 import { ORGANIZATION_LABELS, type OrganizationKind } from "../lib/professional-types";
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { JobinWordmark } from "../components/JobinWordmark";
 import { router } from "expo-router";
-import { AuthAction, AuthField, AuthShell } from "../components/AuthForms";
+import { AuthField } from "../components/AuthForms";
 import { startJobinSession } from "../components/AuthGate";
-import { Chips, useUi } from "../components/ui";
+import { Chips } from "../components/ui";
 import { requireSupabase } from "../lib/supabase";
 
 const VALID_USERNAME = /^[a-z][a-z0-9_]{2,29}$/;
 export default function Account() {
- const {colors,s}=useUi();
+ const {width}=useWindowDimensions();
  const [kind,setKind]=useState<"personal"|"company"|"both">("personal");
  const [name,setName]=useState("");
  const [username,setUsername]=useState("");
@@ -63,28 +65,30 @@ export default function Account() {
   }catch(error){setNotice(error instanceof Error?error.message:"No se pudo completar el registro.");}
   finally{setBusy(false);}
  }
- return <AuthShell title="Sign up" footer={<AuthAction secondary label="¿Ya tienes cuenta? Log in" onPress={()=>router.replace("/login")}/>}>
-  <Text style={{fontSize:13,color:authSilver.tone1,textAlign:"center"}}>Crea tu cuenta ahora. Puedes completar tu JCard más adelante.</Text>
-  <Text style={{fontWeight:"700",color:authSilver.tone2}}>Tipo de cuenta</Text>
-  <View style={{gap:8}}>{([["personal","Solo personal"],["company","Solo empresa"],["both","Personal y empresa"]] as const).map(([value,label])=><AuthAction key={value} secondary label={(kind===value?"✓ ":"")+label} onPress={()=>setKind(value)}/>)}</View>
-  {kind!=="personal"&&<View style={{gap:8}}>
-   <Text style={{fontWeight:"700",color:authSilver.tone2}}>Tipo de organización</Text>
-   {(["company","education","government"] as const).map(value=><AuthAction key={value} secondary label={(value===organizationKind?"✓ ":"")+ORGANIZATION_LABELS[value]} onPress={()=>setOrganizationKind(value)}/>)}
-  </View>}
-  {kind!=="company"&&<View style={{gap:8}}>
-   <Text style={{fontWeight:"700",color:authSilver.tone2}}>Profesión (opcional)</Text>
-   {!!catalog.error&&<Text style={{color:authSilver.tone3}}>{catalog.error}</Text>}
-   <ProfessionPicker catalog={catalog.data} value={profession} onChange={setProfession}/>
-   <Chips values={["graduado","in_academy"] as const} value={training} onChange={setTraining} label="Formación"/>
-  </View>}
-  <AuthField label="Nombre legal (obligatorio)" placeholder="Tu nombre" value={name} onChangeText={setName} autoCapitalize="words"/>
-  <AuthField label="Nombre de usuario" placeholder="@usuario_en_minusculas" value={username} onChangeText={value=>setUsername(value.toLowerCase().replace(/[^a-z0-9_@]/g,""))}/>
-  <AuthField label="Correo para iniciar sesión (obligatorio por ahora)" placeholder="Tu correo" value={email} onChangeText={setEmail} keyboardType="email-address"/>
-  <AuthField label="Teléfono (obligatorio)" placeholder="+15550000000" value={phone} onChangeText={setPhone} keyboardType="phone-pad"/>
-  <Text style={{color:authSilver.tone1,fontSize:12}}>La visibilidad del correo y teléfono se configura después, desde Editar JCard. Debes verificar ambos antes de publicar reseñas.</Text>
-  <AuthField label="Contraseña" placeholder="Mínimo 8 caracteres" value={password} onChangeText={setPassword} secure/>
-  <AuthField label="Confirmar contraseña" placeholder="Repite tu contraseña" value={confirmPassword} onChangeText={setConfirmPassword} secure/>
-  {!!notice&&<Text accessibilityLiveRegion="polite" style={{color:authSilver.tone3}}>{notice}</Text>}
-  <AuthAction label={busy?"CREANDO…":"SIGN UP"} onPress={()=>void submit()} disabled={busy}/>
- </AuthShell>;
+ const option=(label:string,selected:boolean,onPress:()=>void)=><Pressable key={label} accessibilityRole="button" accessibilityState={{selected}} onPress={onPress} style={{minHeight:46,borderRadius:9,borderWidth:1,borderColor:selected?palette.black:palette.border,backgroundColor:selected?palette.field:palette.background,justifyContent:"center",alignItems:"center",paddingHorizontal:12}}><Text style={{fontSize:15,fontWeight:selected?"700":"500",color:palette.black}}>{selected?"✓  ":""}{label}</Text></Pressable>;
+ const heading=(label:string)=><Text style={{fontSize:15,fontWeight:"700",color:palette.black,marginBottom:4}}>{label}</Text>;
+ return <SafeAreaView style={{flex:1,backgroundColor:palette.background}}>
+  <KeyboardAvoidingView behavior={Platform.OS==="ios"?"padding":undefined} style={{flex:1}}>
+   <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{paddingHorizontal:26,paddingTop:30,paddingBottom:36}}>
+    <View style={{width:"100%",maxWidth:380,alignSelf:"center",gap:14}}>
+     <View style={{alignItems:"center",marginBottom:18}}><JobinWordmark width={width<370?112:124}/></View>
+     <Text style={{textAlign:"center",fontSize:width<370?22:24,fontWeight:"700",color:palette.black,marginBottom:2}}>Regístrate</Text>
+     <Text style={{fontSize:13,color:palette.muted,textAlign:"center",marginBottom:6}}>Crea tu cuenta ahora. Puedes completar tu JCard más adelante.</Text>
+     <View style={{gap:9}}>{heading("Tipo de cuenta")}{([["personal","Solo personal"],["company","Solo empresa"],["both","Personal y empresa"]] as const).map(([value,label])=>option(label,kind===value,()=>setKind(value)))}</View>
+     {kind!=="personal"&&<View style={{gap:9}}>{heading("Tipo de organización")}{(["company","education","government"] as const).map(value=>option(ORGANIZATION_LABELS[value],value===organizationKind,()=>setOrganizationKind(value)))}</View>}
+     {kind!=="company"&&<View style={{gap:10}}>{heading("Profesión (opcional)")}{!!catalog.error&&<Text style={{color:palette.error,fontSize:13}}>{catalog.error}</Text>}<ProfessionPicker catalog={catalog.data} value={profession} onChange={setProfession}/><Chips values={["graduado","in_academy"] as const} value={training} onChange={setTraining} label="Formación"/></View>}
+     <AuthField label="Nombre legal (obligatorio)" placeholder="Tu nombre" value={name} onChangeText={setName} autoCapitalize="words"/>
+     <AuthField label="Nombre de usuario" placeholder="@usuario_en_minusculas" value={username} onChangeText={value=>setUsername(value.toLowerCase().replace(/[^a-z0-9_@]/g,""))}/>
+     <AuthField label="Correo electrónico (obligatorio)" placeholder="Tu correo" value={email} onChangeText={setEmail} keyboardType="email-address"/>
+     <AuthField label="Teléfono (obligatorio)" placeholder="+15550000000" value={phone} onChangeText={setPhone} keyboardType="phone-pad"/>
+     <Text style={{color:palette.muted,fontSize:12}}>La visibilidad del correo y teléfono se configura desde Editar JCard. Debes verificar ambos antes de publicar reseñas.</Text>
+     <AuthField label="Contraseña" placeholder="Mínimo 8 caracteres" value={password} onChangeText={setPassword} secure/>
+     <AuthField label="Confirmar contraseña" placeholder="Repite tu contraseña" value={confirmPassword} onChangeText={setConfirmPassword} secure/>
+     {!!notice&&<Text accessibilityLiveRegion="polite" style={{color:palette.error,fontSize:13}}>{notice}</Text>}
+     <Pressable accessibilityRole="button" accessibilityLabel="Registrarse" disabled={busy} onPress={()=>void submit()} style={{minHeight:47,borderRadius:9,backgroundColor:palette.black,alignItems:"center",justifyContent:"center",opacity:busy?0.6:1,marginTop:4}}><Text style={{fontSize:15,fontWeight:"700",color:palette.white}}>{busy?"Creando cuenta…":"Registrarse"}</Text></Pressable>
+     <Pressable accessibilityRole="button" onPress={()=>router.replace("/login")} style={{paddingVertical:12,alignItems:"center"}}><Text style={{fontSize:13,color:palette.black}}>¿Ya tienes cuenta? <Text style={{fontWeight:"700"}}>Iniciar sesión</Text></Text></Pressable>
+    </View>
+   </ScrollView>
+  </KeyboardAvoidingView>
+ </SafeAreaView>;
 }
