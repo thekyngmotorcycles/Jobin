@@ -1,6 +1,6 @@
 import {JCARD_FLIP_GLARE} from "../theme/jobeen";
 import {jcardCommon, jcardFlipShadow} from "../theme/jcard";
-import {useCallback, useEffect, type ReactNode} from "react";
+import {createContext, useCallback, useEffect, useRef, type ReactNode} from "react";
 import {Platform, StyleSheet} from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
 import Animated, {cancelAnimation, interpolate, runOnJS, useAnimatedReaction, useAnimatedStyle, useSharedValue, withSequence, withSpring} from "react-native-reanimated";
@@ -19,6 +19,8 @@ export interface BusinessCardProps {
   shadowColor?: string;
 }
 
+/** Child action controls mark their touches so the card flip never steals a link/button tap. */
+export const CardFlipInteractionContext=createContext<(()=>void)|null>(null);
 const SPRING={damping:22,stiffness:155,mass:0.9,overshootClamping:true};
 const DRAG_DISTANCE=230;
 function lightImpact(){
@@ -26,6 +28,8 @@ function lightImpact(){
 }
 
 export function BusinessCard3D({front,back,height,enabled=true,initialSide="personal",side,onSideChange,shadowColor=jcardCommon.cardShadowColor}:BusinessCardProps){
+  const interactiveTouch=useRef(false);
+  const markInteractive=useCallback(()=>{interactiveTouch.current=true;},[]);
   const angle=useSharedValue(initialSide==="business"?180:0);
   const lift=useSharedValue(1);
   const panStart=useSharedValue(0);
@@ -51,7 +55,7 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
     [enabled]
   );
 
-  const tap=Gesture.Tap().enabled(enabled).maxDistance(12).runOnJS(true).onEnd(()=>{
+  const tap=Gesture.Tap().enabled(enabled).maxDistance(12).runOnJS(true).onEnd(()=>{\n    if(interactiveTouch.current)return;
     const next=side==="personal"?"business":"personal";
     lift.value=withSequence(withSpring(1.04,SPRING),withSpring(1,SPRING));
     angle.value=withSpring(next==="business"?180:0,SPRING);
@@ -114,12 +118,12 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
         </Animated.View>
       </Animated.View>
     </Animated.View>
-  </GestureDetector>;
+  </GestureDetector></CardFlipInteractionContext.Provider>;
 }
 
 const styles=StyleSheet.create({
   shell:{width:"100%",borderRadius:30,overflow:"visible"},
-  face:{width:"100%",backfaceVisibility:"hidden",boxShadow:jcardFlipShadow.rest},
+  face:{width:"100%",borderRadius:30,backfaceVisibility:"hidden",boxShadow:jcardFlipShadow.rest,overflow:"hidden"},
   reverse:{position:"absolute",top:0,left:0,right:0},
   glareMask:{borderRadius:30,overflow:"hidden"},
   glare:{position:"absolute",top:-80,bottom:-80,width:110,left:"50%"},
