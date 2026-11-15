@@ -1,3 +1,5 @@
+import {JCARD_FLIP_GLARE} from "../theme/jobeen";
+import {jcardCommon} from "../theme/jcard";
 import {useCallback, useEffect, type ReactNode} from "react";
 import {Platform, StyleSheet, View} from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
@@ -23,7 +25,7 @@ function lightImpact(){
   if(Platform.OS!=="web")void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(()=>{});
 }
 
-export function BusinessCard3D({front,back,height,enabled=true,initialSide="personal",side,onSideChange,shadowColor="#252019"}:BusinessCardProps){
+export function BusinessCard3D({front,back,height,enabled=true,initialSide="personal",side,onSideChange,shadowColor=jcardCommon.cardShadowColor}:BusinessCardProps){
   const angle=useSharedValue(initialSide==="business"?180:0);
   const lift=useSharedValue(1);
   const panStart=useSharedValue(0);
@@ -108,7 +110,7 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
       </Animated.View>
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill,styles.glareMask]}>
         <Animated.View style={[styles.glare,glareStyle]}>
-          <LinearGradient colors={["transparent","rgba(255,255,255,0.55)","transparent"]} locations={[0,0.5,1]} start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
+          <LinearGradient colors={JCARD_FLIP_GLARE} locations={[0,0.5,1]} start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
         </Animated.View>
       </Animated.View>
     </Animated.View>
