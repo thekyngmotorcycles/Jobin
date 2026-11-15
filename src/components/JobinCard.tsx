@@ -336,7 +336,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  };
  return <>
   <View style={{width:"100%",maxWidth:520,alignSelf:"center"}}>
-   <BusinessCard3D height={cardHeight} enabled={canFlip} initialSide={initialSide} side={back?"business":"personal"} onSideChange={side=>setBack(side)} shadowColor={jcardCommon.cardShadowColor}
+   <BusinessCard3D height={cardHeight} enabled={canFlip} initialSide={initialSide} side={back?"business":"personal"} onSideChange={side=>setBack(side==="business")} shadowColor={jcardCommon.cardShadowColor}
      front={(showOwnerActions||visibility.personal_enabled)?<CardFace card={card} theme={cardTheme} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onEditPhoto={showOwnerActions?onEditPersonalPhoto:undefined} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>:null}
      back={<View style={{height:cardHeight}}>{(showOwnerActions||visibility.business_enabled)&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} visibility={visibility}/>}</View>}
    />
