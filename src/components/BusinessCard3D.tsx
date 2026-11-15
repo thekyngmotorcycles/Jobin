@@ -1,7 +1,7 @@
 import {useCallback, useEffect, type ReactNode} from "react";
 import {Platform, StyleSheet, View} from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
-import Animated, {cancelAnimation, interpolate, runOnJS, useAnimatedReaction, useAnimatedStyle, useSharedValue, withSpring} from "react-native-reanimated";
+import Animated, {cancelAnimation, interpolate, runOnJS, useAnimatedReaction, useAnimatedStyle, useSharedValue, withSequence, withSpring} from "react-native-reanimated";
 import {LinearGradient} from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 
@@ -35,8 +35,10 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
       cancelAnimation(angle);
       angle.value=side==="business"?180:0;
       lift.value=1;
+    }else if(!moving.value){
+      angle.value=withSpring(side==="business"?180:0,SPRING);
     }
-  },[enabled,side,angle,lift]);
+  },[enabled,side,angle,lift,moving]);
 
   // Cross the midpoint once per flip, including while dragging.
   useAnimatedReaction(
@@ -49,9 +51,8 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
 
   const tap=Gesture.Tap().enabled(enabled).maxDistance(12).runOnJS(true).onEnd(()=>{
     const next=side==="personal"?"business":"personal";
-    lift.value=withSpring(1.04,SPRING);
+    lift.value=withSequence(withSpring(1.04,SPRING),withSpring(1,SPRING));
     angle.value=withSpring(next==="business"?180:0,SPRING);
-    lift.value=withSpring(1,SPRING);
     onSide(next);
   });
   const pan=Gesture.Pan().enabled(enabled).activeOffsetX([-12,12]).failOffsetY([-18,18])
