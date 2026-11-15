@@ -36,6 +36,7 @@ function Navigation() {
  <Stack.Screen name="settings/cierre-cuenta" options={{title:"Administrar cuenta"}}/>
  <Stack.Screen name="menu/[section]" options={{title:"Configuración y privacidad"}}/>
  <Stack.Screen name="account" options={{title:"Sign up",headerShown:false}}/>
+ <Stack.Screen name="choose-username" options={{title:"Nombre de usuario",headerShown:false}}/>
  <Stack.Screen name="login" options={{title:"Log in",headerShown:false}}/>
  <Stack.Screen name="recover-account" options={{title:"Recuperar cuenta",headerShown:false}}/>
  <Stack.Screen name="change-password" options={{title:"Nueva contraseña"}}/>

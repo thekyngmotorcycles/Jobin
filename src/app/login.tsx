@@ -1,36 +1,80 @@
-import { authSilver } from "../theme/auth-silver";
-import { router } from "expo-router";
-import { useState } from "react";
-import { Text } from "react-native";
-import { AuthAction, AuthField, AuthShell } from "../components/AuthForms";
-import { requireSupabase } from "../lib/supabase";
-import { startJobinSession } from "../components/AuthGate";
+import {router} from "expo-router";
+import {useState} from "react";
+import * as Linking from "expo-linking";
+import {KeyboardAvoidingView,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
+import Svg,{Path} from "react-native-svg";
+import {SafeAreaView} from "react-native-safe-area-context";
+import {Ionicons} from "@expo/vector-icons";
+import {JobinWordmark} from "../components/JobinWordmark";
+import {loginPalette as palette} from "../theme/auth-silver";
+import {requireSupabase} from "../lib/supabase";
+import {startJobinSession} from "../components/AuthGate";
 
-export default function Login() {
+
+function GoogleMark(){return <Svg width={21} height={21} viewBox="0 0 48 48" accessibilityLabel="Google"><Path fill={palette.googleRed} d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><Path fill={palette.googleBlue} d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.25 5.48-4.76 7.18l7.73 6C44.42 38.03 46.98 31.88 46.98 24.55z"/><Path fill={palette.googleYellow} d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.2A23.9 23.9 0 0 0 0 24c0 3.87.93 7.51 2.56 10.78l7.97-6.19z"/><Path fill={palette.googleGreen} d="M24 48c6.48 0 11.93-2.13 15.91-5.8l-7.73-6c-2.15 1.45-4.92 2.3-8.18 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.97 6.19C6.51 42.62 14.62 48 24 48z"/></Svg>}
+export default function Login(){
+ const {width}=useWindowDimensions();
+ const compact=width<370;
  const [email,setEmail]=useState("");
  const [password,setPassword]=useState("");
- const [error,setError]=useState("");
+ const [step,setStep]=useState<"email"|"password">("email");
  const [busy,setBusy]=useState(false);
- async function submit() {
-  if(busy)return;
+ const [error,setError]=useState("");
+ const [visible,setVisible]=useState(false);
+ function continueEmail(){
   setError("");
-  if(!email.trim()||!password){setError("Escribe tu correo y contraseña.");return;}
-  setBusy(true);
-  try {
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())){setError("Escribe un correo electrónico válido.");return;}
+  setStep("password");
+ }
+ async function submit(){
+  if(busy)return;
+  if(!password){setError("Escribe tu contraseña.");return;}
+  setBusy(true);setError("");
+  try{
    const {data,error:authError}=await requireSupabase().auth.signInWithPassword({email:email.trim().toLowerCase(),password});
    if(authError)throw authError;
    if(!data.session)throw new Error("No se pudo iniciar la sesión.");
-   await startJobinSession();
-   setPassword("");
-   router.replace("/videos");
-  }catch(e){setError(e instanceof Error?e.message:"Error al iniciar sesión.");}
+   await startJobinSession();setPassword("");router.replace("/videos");
+  }catch(e){setError(e instanceof Error?e.message:"No se pudo iniciar sesión.");}
   finally{setBusy(false);}
  }
- return <AuthShell footer={<AuthAction secondary label="¿No tienes cuenta? Sign up" onPress={()=>router.replace("/account")}/>}>
-  <AuthField label="Email" placeholder="Tu correo electrónico" value={email} onChangeText={setEmail} keyboardType="email-address"/>
-  <AuthField label="Password" placeholder="Tu contraseña" value={password} onChangeText={setPassword} secure/>
-  {!!error&&<Text accessibilityLiveRegion="polite" style={{color:authSilver.tone3}}>{error}</Text>}
-  <AuthAction secondary label="Olvidaste tu contraseña" onPress={()=>router.push("/recover-account")}/>
-  <AuthAction label={busy?"ENTRANDO…":"LOG IN"} disabled={busy} onPress={()=>void submit()}/>
- </AuthShell>;
+ async function social(provider:"Google"|"Apple"){
+  if(busy)return;
+  if(provider==="Apple"){setError("El acceso con Apple todavía no está configurado.");return;}
+  setBusy(true);setError("");
+  try{
+   const {data,error:oauthError}=await requireSupabase().auth.signInWithOAuth({
+    provider:"google",
+    options:{redirectTo:"jobin://",skipBrowserRedirect:true}
+   });
+   if(oauthError)throw oauthError;
+   if(!data.url)throw new Error("Google no devolvió la dirección de acceso.");
+   await Linking.openURL(data.url);
+  }catch(e){setError(e instanceof Error?e.message:"No se pudo abrir el acceso con Google.");setBusy(false);}
+ }
+ const button=(label:string,onPress:()=>void,secondary=false)=> <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} disabled={busy} style={{minHeight:46,borderRadius:9,backgroundColor:secondary?palette.background:palette.black,borderWidth:secondary?1:0,borderColor:palette.border,justifyContent:"center",alignItems:"center",opacity:busy?0.65:1}}><Text style={{fontSize:15,fontWeight:"700",color:secondary?palette.black:palette.white}}>{label}</Text></Pressable>;
+ return <SafeAreaView style={{flex:1,backgroundColor:palette.background}}>
+  <KeyboardAvoidingView behavior={Platform.OS==="ios"?"padding":undefined} style={{flex:1}}>
+   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{flexGrow:1,justifyContent:"center",paddingHorizontal:26,paddingVertical:24}}>
+    <View style={{width:"100%",maxWidth:380,alignSelf:"center"}}>
+     <View style={{alignItems:"center",marginBottom:38}}><JobinWordmark width={compact?112:124}/></View>
+     <Text style={{fontSize:compact?19:21,fontWeight:"700",color:palette.black,textAlign:"center",marginBottom:20}}>{step==="email"?"Inicia sesión o regístrate":"Introduce tu contraseña"}</Text>
+     <View style={{gap:11}}>
+      {step==="email"?<View style={{backgroundColor:palette.field,borderRadius:11,minHeight:46,flexDirection:"row",alignItems:"center",paddingHorizontal:16}}>
+       <TextInput accessibilityLabel="Correo electrónico" placeholder="Correo electrónico" placeholderTextColor={palette.muted} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="emailAddress" autoComplete="email" value={email} onChangeText={setEmail} onSubmitEditing={continueEmail} returnKeyType="next" style={{flex:1,color:palette.black,fontSize:15,paddingVertical:10}}/>
+       {!!email&&<Pressable accessibilityRole="button" accessibilityLabel="Borrar correo" onPress={()=>setEmail("")} style={{padding:7}}><Ionicons name="close-circle" size={21} color={palette.clear}/></Pressable>}
+      </View>:<><Text style={{fontSize:15,color:palette.muted,textAlign:"center"}}>{email}</Text><View style={{backgroundColor:palette.field,borderRadius:11,minHeight:55,flexDirection:"row",alignItems:"center",paddingHorizontal:16}}><TextInput accessibilityLabel="Contraseña" placeholder="Contraseña" placeholderTextColor={palette.muted} secureTextEntry={!visible} textContentType="password" autoComplete="current-password" value={password} onChangeText={setPassword} onSubmitEditing={()=>void submit()} style={{flex:1,color:palette.black,fontSize:17,paddingVertical:12}}/><Pressable accessibilityLabel={visible?"Ocultar contraseña":"Mostrar contraseña"} onPress={()=>setVisible(v=>!v)} style={{padding:8}}><Ionicons name={visible?"eye-off-outline":"eye-outline"} size={22} color={palette.muted}/></Pressable></View></>}
+      {!!error&&<Text accessibilityLiveRegion="polite" style={{color:palette.error,fontSize:13}}>{error}</Text>}
+      {button(step==="email"?"Continuar":busy?"Entrando…":"Iniciar sesión",()=>step==="email"?continueEmail():void submit())}
+      {step==="password"&&<><Pressable onPress={()=>router.push("/recover-account")} style={{paddingVertical:8,alignItems:"center"}}><Text style={{color:palette.black}}>¿Olvidaste tu contraseña?</Text></Pressable><Pressable onPress={()=>setStep("email")} style={{alignItems:"center",paddingVertical:5}}><Text style={{color:palette.muted}}>Cambiar correo</Text></Pressable></>}
+      {step==="email"&&<><Text style={{textAlign:"center",color:palette.muted,fontSize:14,marginVertical:1}}>o</Text>
+       <Pressable accessibilityRole="button" onPress={()=>social("Google")} style={{minHeight:47,borderRadius:9,borderWidth:1,borderColor:palette.border,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:12}}><GoogleMark/><Text style={{fontSize:15,fontWeight:"700",color:palette.black}}>Continuar con Google</Text></Pressable>
+       {<Pressable accessibilityRole="button" onPress={()=>social("Apple")} style={{minHeight:54,borderRadius:11,borderWidth:1,borderColor:palette.border,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:12}}><Ionicons name="logo-apple" size={21} color={palette.black}/><Text style={{fontSize:17,fontWeight:"700",color:palette.black}}>Continuar con Apple</Text></Pressable>}
+       <Pressable onPress={()=>router.push("/account")} style={{alignItems:"center",paddingVertical:10}}><Text style={{fontSize:13,color:palette.black}}>¿No tienes cuenta? <Text style={{fontWeight:"700"}}>Regístrate</Text></Text></Pressable>
+      </>}
+     </View>
+    </View>
+   </ScrollView>
+  </KeyboardAvoidingView>
+ </SafeAreaView>;
 }
