@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState, type ReactNode } from "react";
+import * as Linking from "expo-linking";
 import { ActivityIndicator, AppState, View } from "react-native";
 import { router, usePathname } from "expo-router";
 import { supabase } from "../lib/supabase";
@@ -19,6 +20,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
  const pathname = usePathname();
  const [ready, setReady] = useState(false);
  const [signedIn, setSignedIn] = useState(false);
+ const [handlingOAuth, setHandlingOAuth] = useState(true);
  useEffect(() => {
   let active = true;
   async function check() {
@@ -39,20 +41,41 @@ export function AuthGate({ children }: { children: ReactNode }) {
    } catch { if (active) setSignedIn(false); }
    finally { if (active) setReady(true); }
   }
-  void check();
-  const appSubscription = AppState.addEventListener("change", state => { if(state==="active") void check(); });
+  async function handleOAuthUrl(url:string|null){
+   if(!url || !url.startsWith("jobin:"))return false;
+   const code = /[?&]code=([^&#]+)/.exec(url)?.[1];
+   if(!code)return false;
+   if(active)setHandlingOAuth(true);
+   try{
+    if(!supabase)throw new Error("Supabase no está configurado");
+    const {data,error}=await supabase.auth.exchangeCodeForSession(decodeURIComponent(code));
+    if(error)throw error;
+    if(!data.session)throw new Error("Google no devolvió una sesión válida");
+    await startJobinSession();
+    if(active)setSignedIn(true);
+   }catch(error){console.warn("Google OAuth callback failed:",error);}
+   finally{if(active){setHandlingOAuth(false);setReady(true);}}
+   return true;
+  }
+  void Linking.getInitialURL().then(async url=>{
+   const handled=await handleOAuthUrl(url);
+   if(!handled){if(active)setHandlingOAuth(false);void check();}
+  }).catch(()=>{if(active)setHandlingOAuth(false);void check();});
+  const linkSubscription=Linking.addEventListener("url",event=>{void handleOAuthUrl(event.url).then(handled=>{if(!handled)void check();});});
+
+  const appSubscription = AppState.addEventListener("change", state => { if(state==="active" && !handlingOAuth) void check(); });
   const subscription = supabase?.auth.onAuthStateChange((event) => {
    if (event === "SIGNED_OUT") { void AsyncStorage.removeItem(KEY); if (active) setSignedIn(false); }
    if (event === "SIGNED_IN") { if (active) setSignedIn(true); }
   });
-  return () => { active = false; subscription?.data.subscription.unsubscribe(); appSubscription.remove(); };
+  return () => { active = false; subscription?.data.subscription.unsubscribe(); appSubscription.remove(); linkSubscription.remove(); };
  }, []);
  useEffect(() => {
-  if (!ready) return;
+  if (!ready || handlingOAuth) return;
   if (!signedIn && !AUTH_ROUTES.includes(pathname)) router.replace("/login");
   if (signedIn && AUTH_ROUTES.includes(pathname)) router.replace("/videos");
 
- }, [ready, signedIn, pathname]);
- if (!ready) return <View style={{ flex: 1, justifyContent: "center" }}><ActivityIndicator /></View>;
+ }, [ready, signedIn, pathname, handlingOAuth]);
+ if (!ready || handlingOAuth) return <View style={{ flex: 1, justifyContent: "center" }}><ActivityIndicator /></View>;
  return children;
 }
