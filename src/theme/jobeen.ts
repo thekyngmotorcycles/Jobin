@@ -27,3 +27,6 @@ export function jobeenTokens(theme:ThemeName){
  };
 }
 export const exportedJobeenTokens=LIGHT_JOBEEN;
+
+/** Light sweep for the premium JCard flip; centralized to preserve theme color invariants. */
+export const JCARD_FLIP_GLARE=["transparent","rgba(255,255,255,0.55)","transparent"] as const;
