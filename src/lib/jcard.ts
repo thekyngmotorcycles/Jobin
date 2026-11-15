@@ -22,6 +22,8 @@ export interface CardData {
   years: number;
   /** CV months for the displayed primary profession; undefined when unavailable. */
   primaryExperienceMonths?: number;
+  /** Secondary professions configured in Edit JCard, including those without an awarded seal. */
+  secondaryProfessions?: readonly {code:string;name:string;icon:JCardSeal["icon"];months:number;verified:boolean}[];
   status: JCardStatus;
   employer: string | null;
   rating: number | null;
