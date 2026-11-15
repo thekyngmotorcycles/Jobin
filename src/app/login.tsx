@@ -4,10 +4,11 @@ import {ActivityIndicator,KeyboardAvoidingView,Platform,Pressable,ScrollView,Tex
 import {SafeAreaView} from "react-native-safe-area-context";
 import {Ionicons} from "@expo/vector-icons";
 import {JobinWordmark} from "../components/JobinWordmark";
+import {loginPalette as palette} from "../theme/auth-silver";
 import {requireSupabase} from "../lib/supabase";
 import {startJobinSession} from "../components/AuthGate";
 
-const palette={background:"#F7F7F7",black:"#080808",field:"#E5E5E5",muted:"#777777",border:"#C6C6C6",white:"#FFFFFF",error:"#A32832"} as const;
+
 export default function Login(){
  const {width}=useWindowDimensions();
  const [email,setEmail]=useState("");
@@ -50,7 +51,7 @@ export default function Login(){
       {button(step==="email"?"Continuar":busy?"Entrando…":"Iniciar sesión",()=>step==="email"?continueEmail():void submit())}
       {step==="password"&&<><Pressable onPress={()=>router.push("/recover-account")} style={{paddingVertical:8,alignItems:"center"}}><Text style={{color:palette.black}}>¿Olvidaste tu contraseña?</Text></Pressable><Pressable onPress={()=>setStep("email")} style={{alignItems:"center",paddingVertical:5}}><Text style={{color:palette.muted}}>Cambiar correo</Text></Pressable></>}
       {step==="email"&&<><Text style={{textAlign:"center",color:palette.muted,fontSize:16,marginVertical:2}}>o</Text>
-       <Pressable accessibilityRole="button" onPress={()=>social("Google")} style={{minHeight:54,borderRadius:11,borderWidth:1,borderColor:palette.border,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:12}}><Text style={{fontSize:23,fontWeight:"700",color:"#4285F4"}}>G</Text><Text style={{fontSize:17,fontWeight:"700",color:palette.black}}>Continuar con Google</Text></Pressable>
+       <Pressable accessibilityRole="button" onPress={()=>social("Google")} style={{minHeight:54,borderRadius:11,borderWidth:1,borderColor:palette.border,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:12}}><Text style={{fontSize:23,fontWeight:"700",color:palette.google}}>G</Text><Text style={{fontSize:17,fontWeight:"700",color:palette.black}}>Continuar con Google</Text></Pressable>
        {Platform.OS==="ios"&&<Pressable accessibilityRole="button" onPress={()=>social("Apple")} style={{minHeight:54,borderRadius:11,borderWidth:1,borderColor:palette.border,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:12}}><Ionicons name="logo-apple" size={23} color={palette.black}/><Text style={{fontSize:17,fontWeight:"700",color:palette.black}}>Continuar con Apple</Text></Pressable>}
        <Pressable onPress={()=>router.push("/account")} style={{alignItems:"center",paddingVertical:15}}><Text style={{fontSize:15,color:palette.black}}>¿No tienes cuenta? <Text style={{fontWeight:"700"}}>Regístrate</Text></Text></Pressable>
       </>}
