@@ -8,6 +8,7 @@ import { supabase } from "../lib/supabase";
 const KEY = "jobin:session-start";
 const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 const AUTH_ROUTES = ["/login", "/account"];
+const USERNAME_ROUTE="/choose-username";
 
 export async function startJobinSession() {
  await AsyncStorage.setItem(KEY, String(Date.now()));
@@ -21,8 +22,15 @@ export function AuthGate({ children }: { children: ReactNode }) {
  const [ready, setReady] = useState(false);
  const [signedIn, setSignedIn] = useState(false);
  const [handlingOAuth, setHandlingOAuth] = useState(true);
+ const [needsUsername,setNeedsUsername]=useState(false);
  useEffect(() => {
   let active = true;
+  async function checkUsername(userId:string,providers:string[]){
+   if(!providers.includes("google")){if(active)setNeedsUsername(false);return;}
+   const {data,error}=await supabase!.from("usernames").select("username").eq("user_id",userId).maybeSingle();
+   if(error)throw error;
+   if(active)setNeedsUsername(!data);
+  }
   async function check() {
    if (!supabase) { if (active) { setSignedIn(false); setReady(true); } return; }
    try {
@@ -36,6 +44,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
      if (active) setSignedIn(false);
     } else {
      if (!started) await startJobinSession();
+     await checkUsername(session.user.id,session.user.identities?.map(i=>i.provider)??[]);
      if (active) setSignedIn(true);
     }
    } catch { if (active) setSignedIn(false); }
@@ -52,6 +61,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     if(error)throw error;
     if(!data.session)throw new Error("Google no devolvió una sesión válida");
     await startJobinSession();
+    await checkUsername(data.session.user.id,data.session.user.identities?.map(i=>i.provider)??[]);
     if(active)setSignedIn(true);
    }catch(error){console.warn("Google OAuth callback failed:",error);}
    finally{if(active){setHandlingOAuth(false);setReady(true);}}
@@ -73,9 +83,10 @@ export function AuthGate({ children }: { children: ReactNode }) {
  useEffect(() => {
   if (!ready || handlingOAuth) return;
   if (!signedIn && !AUTH_ROUTES.includes(pathname)) router.replace("/login");
-  if (signedIn && AUTH_ROUTES.includes(pathname)) router.replace("/videos");
+  if(signedIn && needsUsername && pathname!==USERNAME_ROUTE)router.replace(USERNAME_ROUTE);
+  if(signedIn && !needsUsername && (AUTH_ROUTES.includes(pathname)||pathname===USERNAME_ROUTE))router.replace("/videos");
 
- }, [ready, signedIn, pathname, handlingOAuth]);
+ }, [ready, signedIn, pathname, handlingOAuth,needsUsername]);
  if (!ready || handlingOAuth) return <View style={{ flex: 1, justifyContent: "center" }}><ActivityIndicator /></View>;
  return children;
 }
