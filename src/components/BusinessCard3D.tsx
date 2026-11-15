@@ -62,17 +62,20 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
     angle.value=withSpring(next==="business"?180:0,SPRING);
     onSide(next);
   });
-  const pan=Gesture.Pan().enabled(enabled).activeOffsetX([-12,12]).failOffsetY([-18,18])
+  const pan=Gesture.Pan().enabled(enabled).activeOffsetX([-12,12]).failOffsetY([-18,18]).runOnJS(true)
     .onBegin(()=>{
+      if(interactiveTouch.current)return;
       cancelAnimation(angle);
       panStart.value=angle.value;
       moving.value=true;
       lift.value=withSpring(1.04,SPRING);
     })
     .onUpdate(event=>{
+      if(interactiveTouch.current)return;
       angle.value=Math.max(0,Math.min(180,panStart.value-event.translationX/DRAG_DISTANCE*180));
     })
     .onEnd(event=>{
+      if(interactiveTouch.current)return;
       const projected=angle.value-event.velocityX*0.09;
       const target=projected>=90?180:0;
       angle.value=withSpring(target,{...SPRING,velocity:-event.velocityX/DRAG_DISTANCE*180});
