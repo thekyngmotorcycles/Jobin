@@ -25,6 +25,8 @@ export const loginPalette={background:"#F7F7F7",black:"#080808",field:"#E5E5E5",
 
 /** Palette for the two-step Jobeen account setup. */
 export const accountSetupPalette={
+ completed:"#e5e5e5",
+ available:"#23734b",
  ink:"#171717",
  muted:"#777",
  gold:"#b79a4a",
