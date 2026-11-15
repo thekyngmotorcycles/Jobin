@@ -121,7 +121,7 @@ export default function PersonalAvatarEditor(){
     const photo={uri:result.uri,name:"business-avatar.jpg",mimeType:"image/jpeg",size:0};
     const uploaded=await uploadBusinessPhoto("business-profile-media",owner,photo,"avatar");
     const current=(await readCloudBusiness())??(JSON.parse((await AsyncStorage.getItem("jobin.business.card.v1"))??"{}") as BusinessCardData);
-    const updated={...current,avatarUrl:uploaded.url};
+    const updated:BusinessCardData={name:"",opened:"",closed:"",services:[],location:"",licenseVerified:false,rating:null,reviewCount:0,...current,avatarUrl:uploaded.url};
     await writeCloudBusiness(updated);
     await AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(updated));
    }else await uploadPersonalJCardPhoto(result.base64??"","image/jpeg");
