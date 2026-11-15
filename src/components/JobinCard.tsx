@@ -81,7 +81,7 @@ function languageDetails(name:string,fluency:number){
 /** Interactive controls take priority over the parent JCard tap gesture. */
 const Pressable:typeof NativePressable = ((props:React.ComponentProps<typeof NativePressable>)=>{
  const markInteractive=useContext(CardFlipInteractionContext);
- return <NativePressable {...props} onTouchStart={event=>{markInteractive?.();props.onTouchStart?.(event);}}/>;
+ return <NativePressable {...props} onTouchStart={event=>{if(!props.disabled&&typeof props.onPress==="function")markInteractive?.();props.onTouchStart?.(event);}}/>;
 }) as typeof NativePressable;
 
 function CardFace({ card, theme, appearance="original", expanded = false, onEdit, onQr, onShare, onEditPhoto, contact, employerLink }: { card: CardData; theme: ThemeName; appearance?:JCardPremiumBackgroundId; expanded?: boolean; onEdit?: () => void; onQr?: () => void; onShare?: () => void; onEditPhoto?: () => void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null }) {
