@@ -90,7 +90,7 @@ export default function Professional() {
   const nextLanguages=target==="languages"?languages:fresh.card.languages;
   if(nextLanguages.some(l=>!canonicalLanguage(l.name)||!Number.isInteger(Number(l.fluency))||Number(l.fluency)<0||Number(l.fluency)>100))throw new Error("Completa el idioma y selecciona un nivel válido.");
   if(new Set(nextLanguages.map(l=>canonicalLanguage(l.name))).size!==nextLanguages.length)throw new Error("No puedes agregar el mismo idioma dos veces.");
-  await professionalMutation("jobin_save_jcard",{legal_name:legalName,handle:target==="identity"?handle:fresh.card.handle,city:target==="identity"?city:fresh.profile.city,region:target==="identity"?region:fresh.profile.region,availability:target==="identity"?availability:fresh.card.status,languages:nextLanguages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))});
+  await professionalMutation("jobin_save_jcard",{legal_name:legalName,handle:target==="identity"?handle:fresh.card.handle,city:target==="identity"?city:(fresh.profile.city??""),region:target==="identity"?region:(fresh.profile.region??""),availability:target==="identity"?availability:fresh.card.status,languages:nextLanguages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))});
  },"").then(ok=>{if(ok){setSection(null);void workspace.reload();}});
 
  return <Screen demo={false} hideHeader hideFooter scrollRef={scrollRef} title="Editar mi JCard" subtitle="">
