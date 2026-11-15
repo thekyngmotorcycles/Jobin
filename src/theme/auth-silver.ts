@@ -20,3 +20,5 @@ export const authSilver = {
  tone19: "rgba(255,255,255,0.4)",
  tone20: "#FDFDFD",
 } as const;
+
+export const loginPalette={background:"#F7F7F7",black:"#080808",field:"#E5E5E5",muted:"#777777",border:"#C6C6C6",white:"#FFFFFF",error:"#A32832",clear:"#ADADAD",google:"#4285F4"} as const;
