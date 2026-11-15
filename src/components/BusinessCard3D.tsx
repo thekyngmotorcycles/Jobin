@@ -109,7 +109,7 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
     };
   });
   return <CardFlipInteractionContext.Provider value={markInteractive}><GestureDetector gesture={gesture}>
-    <Animated.View style={[styles.shell,{height},outerStyle]}>
+    <Animated.View onTouchStartCapture={()=>{interactiveTouch.current=false;}} style={[styles.shell,{height},outerStyle]}>
       <Animated.View pointerEvents={side==="personal"?"auto":"none"} style={[styles.face,{height,shadowColor},frontStyle]}>
         {front}
       </Animated.View>
