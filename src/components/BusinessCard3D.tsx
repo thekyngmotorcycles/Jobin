@@ -1,5 +1,5 @@
 import {JCARD_FLIP_GLARE} from "../theme/jobeen";
-import {jcardCommon} from "../theme/jcard";
+import {jcardCommon, jcardFlipShadow} from "../theme/jcard";
 import {useCallback, useEffect, type ReactNode} from "react";
 import {Platform, StyleSheet} from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
@@ -83,14 +83,14 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
 
   const outerStyle=useAnimatedStyle(()=>({
     transform:[{scale:lift.value}],
-    shadowOpacity:interpolate(lift.value,[1,1.04],[0.22,0.38]),
-    shadowRadius:interpolate(lift.value,[1,1.04],[14,24]),
-    elevation:interpolate(lift.value,[1,1.04],[7,15]),
+
   }));
   const frontStyle=useAnimatedStyle(()=>({
+    opacity:angle.value<90?1:0,
     transform:[{perspective:1000},{rotateY:`${angle.value}deg`}],
   }));
   const backStyle=useAnimatedStyle(()=>({
+    opacity:angle.value>90?1:0,
     transform:[{perspective:1000},{rotateY:`${angle.value+180}deg`}],
   }));
   const glareStyle=useAnimatedStyle(()=>{
@@ -101,11 +101,11 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
     };
   });
   return <GestureDetector gesture={gesture}>
-    <Animated.View style={[styles.shell,{height,shadowColor},outerStyle]}>
-      <Animated.View pointerEvents={side==="personal"?"auto":"none"} style={[styles.face,{height},frontStyle]}>
+    <Animated.View style={[styles.shell,{height},outerStyle]}>
+      <Animated.View pointerEvents={side==="personal"?"auto":"none"} style={[styles.face,{height,shadowColor},frontStyle]}>
         {front}
       </Animated.View>
-      <Animated.View pointerEvents={side==="business"?"auto":"none"} style={[styles.face,styles.reverse,{height},backStyle]}>
+      <Animated.View pointerEvents={side==="business"?"auto":"none"} style={[styles.face,styles.reverse,{height,shadowColor},backStyle]}>
         {back}
       </Animated.View>
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill,styles.glareMask]}>
@@ -118,8 +118,8 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
 }
 
 const styles=StyleSheet.create({
-  shell:{width:"100%",borderRadius:30,shadowOffset:{width:0,height:8},overflow:"visible"},
-  face:{width:"100%",backfaceVisibility:"hidden"},
+  shell:{width:"100%",borderRadius:30,overflow:"visible"},
+  face:{width:"100%",backfaceVisibility:"hidden",boxShadow:jcardFlipShadow.rest},
   reverse:{position:"absolute",top:0,left:0,right:0},
   glareMask:{borderRadius:30,overflow:"hidden"},
   glare:{position:"absolute",top:-80,bottom:-80,width:110,left:"50%"},
