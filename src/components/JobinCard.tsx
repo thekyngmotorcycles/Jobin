@@ -1,3 +1,4 @@
+import {BusinessCard3D} from "./BusinessCard3D";
 import {jobeenTokens} from "../theme/jobeen";
 import {personalAvatarUrl} from "../lib/personal-jcard-photo";
 import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
@@ -8,7 +9,7 @@ import {JCardPremiumTexture} from "./JCardPremiumTexture";
 import {BUSINESS_BADGE_NEUTRAL,BUSINESS_MEDAL_COLORS} from "../theme/business-medals";
 import { memo, useCallback, useEffect, useId, useRef, useState } from "react";
 import { router } from "expo-router";
-import { Animated, Image, Linking, Modal, PanResponder, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Animated, Image, Linking, Modal, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Rect, Stop, Path, Circle, SvgXml, ClipPath, Image as SvgImage } from "react-native-svg";
@@ -323,15 +324,8 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const canFlip=showOwnerActions||(visibility.personal_enabled&&visibility.business_enabled);
  const activeBusiness=!visibility.personal_enabled&&visibility.business_enabled;
  const cardHeight = (previewTheme??theme)==="light"?364:450;
- const rotation=useRef(new Animated.Value(initialSide==="business"?180:0)).current;
- const angle=useRef(initialSide==="business"?180:0);
- useEffect(()=>{if(!canFlip){setBack(activeBusiness);angle.current=activeBusiness?180:0;rotation.stopAnimation();rotation.setValue(angle.current);}},[canFlip,activeBusiness,rotation]);
- const rotate=(direction:number)=>{if(!canFlip)return;const next=angle.current+direction*180;angle.current=next;setBack(v=>!v);rotation.stopAnimation();Animated.timing(rotation,{toValue:next,useNativeDriver:true,duration:420}).start(({finished})=>{if(finished&&Math.abs(angle.current)>=1800){angle.current=angle.current%360;rotation.setValue(angle.current);}});};
- const toggle=()=>rotate(1);
- const responder=useRef(PanResponder.create({onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>28&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,onPanResponderRelease:(_,g)=>{if(Math.abs(g.dx)>65)toggleRef.current(g.dx<0?1:-1);}})).current;
- const toggleRef=useRef(rotate);toggleRef.current=rotate;
- const frontRotate=rotation.interpolate({inputRange:[-3600,3600],outputRange:["-3600deg","3600deg"],extrapolate:"extend"});
- const backRotate=rotation.interpolate({inputRange:[-3600,3600],outputRange:["-3420deg","3780deg"],extrapolate:"extend"});
+ useEffect(()=>{if(!canFlip)setBack(activeBusiness);},[canFlip,activeBusiness]);
+ const toggle=()=>{if(canFlip)setBack(value=>!value);};
  const cardTheme=previewTheme??theme;
  const cardColors=jobeenTokens(cardTheme);
  const share=async (side:"personal"|"business")=>{
@@ -342,15 +336,10 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  };
  return <>
   <View style={{width:"100%",maxWidth:520,alignSelf:"center"}}>
-   <Pressable accessibilityRole={canFlip?"button":undefined} accessibilityLabel={canFlip?(back?"Girar a JCard personal":"Girar a JCard de negocio"):undefined} onPress={canFlip?toggle:undefined} style={{borderRadius:30,backgroundColor:jcardCommon.cardShadowSurface,shadowColor:jcardCommon.cardShadowColor,shadowOffset:{width:0,height:7},shadowOpacity:0.27,shadowRadius:16,elevation:9}} {...(canFlip?responder.panHandlers:{})}>
-   <Animated.View pointerEvents={back?"none":"auto"} style={{height:cardHeight,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:frontRotate}]}}>
-    {(showOwnerActions||visibility.personal_enabled)&&<CardFace card={card} theme={cardTheme} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onEditPhoto={showOwnerActions?onEditPersonalPhoto:undefined} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>}
-   </Animated.View>
-   <Animated.View pointerEvents={back?"auto":"none"} style={{position:"absolute",top:0,left:0,right:0,backfaceVisibility:"hidden",transform:[{perspective:1000},{rotateY:backRotate}]}}>
-    <View style={{height:cardHeight}}>{(showOwnerActions||visibility.business_enabled)&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} visibility={visibility}/>}</View>
-   </Animated.View>
-
-   </Pressable>
+   <BusinessCard3D height={cardHeight} enabled={canFlip} initialSide={initialSide} side={back?"business":"personal"} onSideChange={side=>setBack(side)} shadowColor={jcardCommon.cardShadowColor}
+     front={(showOwnerActions||visibility.personal_enabled)?<CardFace card={card} theme={cardTheme} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onEditPhoto={showOwnerActions?onEditPersonalPhoto:undefined} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>:null}
+     back={<View style={{height:cardHeight}}>{(showOwnerActions||visibility.business_enabled)&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onQr={()=>setQrOpen(true)} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} visibility={visibility}/>}</View>}
+   />
    {canFlip&&<Pressable accessibilityRole="button" accessibilityLabel={back?"Volver a la JCard personal":"Ver datos de negocios"} accessibilityHint="Toca o desliza horizontalmente la tarjeta para girarla" onPress={toggle} style={{alignSelf:"stretch",minHeight:36,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,paddingHorizontal:8}}>
     {cardTheme!=="light"&&<Ionicons name="sync-outline" size={17} color={cardColors.ink2}/>}
     <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontSize:11,color:cardColors.ink2,textAlign:"center",flexShrink:1}}>{back?"Toca para ver datos personales":"Toca para ver datos de negocio"}</Text>
