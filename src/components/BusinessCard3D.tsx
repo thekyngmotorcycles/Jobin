@@ -108,7 +108,7 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
       transform:[{translateX:interpolate(angle.value,[0,90,180],[-260,0,260])},{rotate:"-24deg"}],
     };
   });
-  return <GestureDetector gesture={gesture}>
+  return <CardFlipInteractionContext.Provider value={markInteractive}><GestureDetector gesture={gesture}>
     <Animated.View style={[styles.shell,{height},outerStyle]}>
       <Animated.View pointerEvents={side==="personal"?"auto":"none"} style={[styles.face,{height,shadowColor},frontStyle]}>
         {front}
