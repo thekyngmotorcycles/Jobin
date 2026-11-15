@@ -102,7 +102,7 @@ export default function ChooseUsername(){
    const {error:metadataError}=await client.auth.updateUser({data:{display_name:legal,username:handle}});
    if(metadataError)throw metadataError;
    const {data:confirmed,error:confirmError}=await client.rpc("jobin_jcard_data",{target:user.id});
-   if(confirmError||!confirmed||confirmed.name!==legal||confirmed.handle?.toLowerCase()!==handle)throw new Error("No se pudo confirmar la actualización de tu JCard.");
+   if(confirmError||!confirmed||typeof confirmed!=="object"||Array.isArray(confirmed)||confirmed.name!==legal||typeof confirmed.handle!=="string"||confirmed.handle.toLowerCase()!==handle)throw new Error("No se pudo confirmar la actualización de tu JCard.");
    setSavedName(true);setSavedUsername(true);setStep(2);
   }catch(error){setMessage(error instanceof Error?error.message:"No se pudo guardar tu identidad.");}
   finally{setBusy(false);}
