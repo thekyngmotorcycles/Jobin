@@ -22,3 +22,21 @@ export const authSilver = {
 } as const;
 
 export const loginPalette={background:"#F7F7F7",black:"#080808",field:"#E5E5E5",muted:"#777777",border:"#C6C6C6",white:"#FFFFFF",error:"#A32832",clear:"#ADADAD",google:"#4285F4",googleRed:"#EA4335",googleBlue:"#4285F4",googleYellow:"#FBBC05",googleGreen:"#34A853"} as const;
+
+/** Palette for the two-step Jobeen account setup. */
+export const accountSetupPalette={
+ ink:"#171717",
+ muted:"#777",
+ gold:"#b79a4a",
+ paper:"#fcfbf8",
+ progressInactive:"#dededc",
+ fieldSoft:"#f0f0ef",
+ placeholder:"#999",
+ outline:"#e3e3e1",
+ selected:"#fff9e8",
+ white:"#fff",
+ iconSurface:"#f5f3ed",
+ checkboxOutline:"#c8c8c8",
+ button:"#111",
+ footer:"#b3b3b3",
+} as const;
