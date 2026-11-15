@@ -9,6 +9,6 @@ const key=process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || backendConfig.publ
 // Static web export runs in Node, where browser storage is unavailable.
 const canPersist = Platform.OS !== "web" || typeof window !== "undefined";
 export const supabase=url&&key?createClient<Database>(url,key,{
- auth:{storage:canPersist ? AsyncStorage : undefined,persistSession:canPersist,autoRefreshToken:canPersist,detectSessionInUrl:false}
+ auth:{storage:canPersist ? AsyncStorage : undefined,persistSession:canPersist,autoRefreshToken:canPersist,detectSessionInUrl:false,flowType:"pkce"}
 }):null;
 export function requireSupabase(){if(!supabase)throw new Error("Supabase todavía no está configurado. Puedes explorar la app en modo demo.");return supabase;}
