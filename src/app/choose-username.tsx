@@ -55,9 +55,12 @@ export default function ChooseUsername(){
   const timer=setTimeout(()=>{void (async()=>{
    const client=requireSupabase();const {data:{user}}=await client.auth.getUser();
    if(!user)throw new Error("Sesión no disponible");
-   const {data,error}=await client.from("usernames").select("user_id").eq("username",handle).maybeSingle();
-   if(error)throw error;
-   if(active)setAvailability(!data?"available":data.user_id===user.id?"owned":"taken");
+   const [{data,error},{data:cardMatch,error:cardError}]=await Promise.all([
+    client.from("usernames").select("user_id").eq("username",handle).maybeSingle(),
+    client.from("jcard_profiles").select("profile_id").ilike("handle",handle).maybeSingle()
+   ]);
+   if(error||cardError)throw error??cardError;
+   if(active)setAvailability((data&&data.user_id!==user.id)||(cardMatch&&cardMatch.profile_id!==user.id)?"taken":data?.user_id===user.id||cardMatch?.profile_id===user.id?"owned":"available");
   })().catch(()=>{if(active)setAvailability("idle");});},350);
   return()=>{active=false;clearTimeout(timer);};
  },[username,loaded]);
@@ -79,9 +82,12 @@ export default function ChooseUsername(){
     client.from("profiles").select("city,region").eq("id",user.id).single()
    ]);
    if(ownedError||cardError||profileError||!card||!profile)throw ownedError??cardError??profileError??new Error("JCard no disponible");
-   const {data:collision,error:collisionError}=await client.from("usernames").select("user_id").eq("username",handle).maybeSingle();
-   if(collisionError)throw collisionError;
-   if(collision && collision.user_id!==user.id)throw new Error("Ese nombre de usuario ya está ocupado.");
+   const [{data:collision,error:collisionError},{data:cardCollision,error:cardCollisionError}]=await Promise.all([
+    client.from("usernames").select("user_id").eq("username",handle).maybeSingle(),
+    client.from("jcard_profiles").select("profile_id").ilike("handle",handle).maybeSingle()
+   ]);
+   if(collisionError||cardCollisionError)throw collisionError??cardCollisionError;
+   if((collision&&collision.user_id!==user.id)||(cardCollision&&cardCollision.profile_id!==user.id))throw new Error("Ese nombre de usuario ya está ocupado.");
    // Existing JCard RPC updates the profile and JCard handle together.
    const {error:cardSaveError}=await client.rpc("jobin_save_jcard",{
     legal_name:legal,handle,languages:card.languages,availability:card.availability,
