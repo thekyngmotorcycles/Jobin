@@ -78,21 +78,25 @@ export default function Professional() {
  const sectionRow=(id:Section,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}>
   <Ionicons name={icon} size={25} color={sunflower&&section!==id?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined,color:sunflower&&section!==id?colors.glassText:colors.ink}]}>{title}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={sunflower&&section!==id?colors.glassMuted:colors.muted}/>
  </Pressable>;
- const save=()=>void action.run(async()=>{
-  const legalName=name.trim().replace(/\s+/g," ");
-  if(!/^[\p{L}\p{M}]+(?:[ \u0027\u2019-][\p{L}\p{M}]+)*$/u.test(legalName)||Array.from(legalName).length>30)throw new Error("El nombre debe tener entre 1 y 30 caracteres, solo letras y separadores de nombre; sin números, símbolos ni emojis.");
-  if(languages.some(l=>!canonicalLanguage(l.name)||!Number.isInteger(Number(l.fluency))||Number(l.fluency)<0||Number(l.fluency)>100))throw new Error("Completa el idioma y selecciona un nivel válido.");
-  if(new Set(languages.map(l=>canonicalLanguage(l.name))).size!==languages.length)throw new Error("No puedes agregar el mismo idioma dos veces.");
-  for(const key of ["email_primary","email_secondary"] as const){const v=personalContacts[key].trim();if(v&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))throw new Error("Revisa el correo electrónico.");}
-  await savePersonalContactDetails(personalContacts);
-  await saveContactPreferences({show_email:showEmail,show_phone:showPhone});
-  await saveJCardVisibility(visibility);
-  await professionalMutation("jobin_save_jcard",{legal_name:legalName,handle,city,region,availability,languages:languages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))});
- },"").then(ok=>{if(ok)router.replace("/(tabs)/profile");});
+ const saveSection=(target:"identity"|"languages"|"privacy")=>void action.run(async()=>{
+  if(target==="privacy"){await saveContactPreferences({show_email:showEmail,show_phone:showPhone});await saveJCardVisibility(visibility);return;}
+  const fresh=await loadWorkspace();if(!fresh)throw new Error("No se pudieron cargar los datos actuales.");
+  const legalName=target==="identity"?name.trim().replace(/\\s+/g," "):fresh.card.name;
+  if(target==="identity"){
+   if(!/^[\\p{L}\\p{M}]+(?:[ \\u0027\\u2019-][\\p{L}\\p{M}]+)*$/u.test(legalName)||Array.from(legalName).length>30)throw new Error("El nombre debe tener entre 1 y 30 caracteres.");
+   for(const key of ["email_primary","email_secondary"] as const){const v=personalContacts[key].trim();if(v&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v))throw new Error("Revisa el correo electrónico.");}
+   await savePersonalContactDetails(personalContacts);
+  }
+  const nextLanguages=target==="languages"?languages:fresh.card.languages;
+  if(nextLanguages.some(l=>!canonicalLanguage(l.name)||!Number.isInteger(Number(l.fluency))||Number(l.fluency)<0||Number(l.fluency)>100))throw new Error("Completa el idioma y selecciona un nivel válido.");
+  if(new Set(nextLanguages.map(l=>canonicalLanguage(l.name))).size!==nextLanguages.length)throw new Error("No puedes agregar el mismo idioma dos veces.");
+  await professionalMutation("jobin_save_jcard",{legal_name:legalName,handle:target==="identity"?handle:fresh.card.handle,city:target==="identity"?city:fresh.profile.city,region:target==="identity"?region:fresh.profile.region,availability:target==="identity"?availability:fresh.card.status,languages:nextLanguages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))});
+ },"").then(ok=>{if(ok){setSection(null);void workspace.reload();}});
+
  return <Screen demo={false} hideHeader hideFooter scrollRef={scrollRef} title="Editar mi JCard" subtitle="">
   {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
    {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
-   <View style={{gap:6}}>
+   <View style={{gap:6,paddingTop:0,paddingBottom:8}}>
     <View onLayout={e=>{positions.current.identity=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="identity")]}>
      {sectionRow("identity","Datos principales","person-outline")}
      {section==="identity"&&<View style={{gap:12,paddingBottom:12}}>
@@ -149,7 +153,7 @@ export default function Professional() {
        {training!=="practica"&&<Button secondary title={institution?"Quitar institución":"Sin institución seleccionada"} onPress={()=>setInstitution(null)}/>}
        {training!=="practica"&&(education.loading?<Text style={s.muted}>Buscando instituciones…</Text>:education.error?<Text style={s.muted}>{education.error}</Text>:education.data?.map(school=><Button key={school.id} secondary title={(institution===school.id?"✓ ":"")+school.name} onPress={()=>setInstitution(school.id)}/>))}
        {training!=="practica"&&!education.loading&&!education.error&&education.data?.length===0&&<Text style={s.muted}>No hay instituciones preaprobadas para esta profesión. Puedes continuar sin seleccionar una.</Text>}
-       {formMode==="edit"?<Button title="Guardar profesión" onPress={()=>void action.run(async()=>{if(!profession)throw new Error("Selecciona una profesión.");if(editedPrimary&&editingProfession&&editingProfession!==profession){await replacePrimaryProfession(editingProfession,profession,training,institution);}else if(!editedPrimary&&editingProfession&&editingProfession!==profession){await replaceSecondaryProfession(editingProfession,profession,training,institution);}else{await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:editedPrimary});}await saveProfessionSpecialties(profession,specialties);setProfessionFormOpen(false);setEditingProfession(null);},"Profesión actualizada.")}/>:<>
+       {formMode==="edit"?<Button title="Guardar" onPress={()=>void action.run(async()=>{if(!profession)throw new Error("Selecciona una profesión.");if(editedPrimary&&editingProfession&&editingProfession!==profession){await replacePrimaryProfession(editingProfession,profession,training,institution);}else if(!editedPrimary&&editingProfession&&editingProfession!==profession){await replaceSecondaryProfession(editingProfession,profession,training,institution);}else{await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:editedPrimary});}await saveProfessionSpecialties(profession,specialties);setProfessionFormOpen(false);setEditingProfession(null);},"Profesión actualizada.")}/>:<>
         <Button secondary title="Guardar como secundaria" onPress={()=>void action.run(async()=>{if(!profession)throw new Error("Selecciona una profesión.");await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:false});await saveProfessionSpecialties(profession,specialties);setProfessionFormOpen(false);},"Profesión secundaria guardada.")}/>
         <Button title="Guardar como principal" onPress={()=>void action.run(async()=>{if(!profession)throw new Error("Selecciona una profesión.");await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:true});await saveProfessionSpecialties(profession,specialties);setProfessionFormOpen(false);},"Profesión principal guardada.")}/>
        </>}
@@ -166,7 +170,7 @@ export default function Professional() {
      </View>}
     </View>
     <View style={[s.panel,glassPanel(false)]}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="color-palette-outline" size={25} color={sunflower?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined,color:sunflower?colors.glassText:colors.ink}]}>Apariencia</Text></View><Ionicons name="chevron-forward" size={20} color={sunflower?colors.glassMuted:colors.muted}/></Pressable></View>
-    <Button title={action.busy?"Guardando…":"Guardar cambios de JCard"} onPress={save}/>
+
    </View>
   </>}
  </Screen>;
