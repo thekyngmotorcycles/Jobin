@@ -63,4 +63,4 @@ export function businessInformationSurface(background:string){
  return {fill:dark?t.dark:t.light,ink:dark?t.darkInk:t.lightInk,border:dark?t.darkBorder:t.lightBorder,pending:dark?t.pendingDark:t.pendingLight};
 }
 
-export const avatarEditorColors = {background:"#0B0D10",preview:"#20252B",guide:"rgba(255,255,255,0.18)",accent:"#B8C8FF",text:"#FFFFFF"} as const;
+export const avatarEditorColors = {background:"#0B0D10",preview:"#20252B",guide:"rgba(20,26,38,0.30)",accent:"#B8C8FF",text:"#FFFFFF"} as const;
