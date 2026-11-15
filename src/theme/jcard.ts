@@ -64,3 +64,6 @@ export function businessInformationSurface(background:string){
 }
 
 export const avatarEditorColors = {background:"#0B0D10",preview:"#20252B",guide:"rgba(20,26,38,0.30)",accent:"#B8C8FF",text:"#FFFFFF"} as const;
+
+/** Shadow follows the rotating face instead of drawing a fixed Android elevation plate. */
+export const jcardFlipShadow={rest:"0px 8px 18px rgba(0,0,0,0.22)"} as const;
