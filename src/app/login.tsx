@@ -19,7 +19,7 @@ export default function Login(){
  const [visible,setVisible]=useState(false);
  function continueEmail(){
   setError("");
-  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim())){setError("Escribe un correo electrónico válido.");return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())){setError("Escribe un correo electrónico válido.");return;}
   setStep("password");
  }
  async function submit(){
@@ -45,7 +45,7 @@ export default function Login(){
      <View style={{gap:14}}>
       {step==="email"?<View style={{backgroundColor:palette.field,borderRadius:11,minHeight:55,flexDirection:"row",alignItems:"center",paddingHorizontal:16}}>
        <TextInput accessibilityLabel="Correo electrónico" placeholder="Correo electrónico" placeholderTextColor={palette.muted} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="emailAddress" autoComplete="email" value={email} onChangeText={setEmail} onSubmitEditing={continueEmail} returnKeyType="next" style={{flex:1,color:palette.black,fontSize:17,paddingVertical:12}}/>
-       {!!email&&<Pressable accessibilityRole="button" accessibilityLabel="Borrar correo" onPress={()=>setEmail("")} style={{padding:7}}><Ionicons name="close-circle" size={21} color="#ADADAD"/></Pressable>}
+       {!!email&&<Pressable accessibilityRole="button" accessibilityLabel="Borrar correo" onPress={()=>setEmail("")} style={{padding:7}}><Ionicons name="close-circle" size={21} color={palette.clear}/></Pressable>}
       </View>:<><Text style={{fontSize:15,color:palette.muted,textAlign:"center"}}>{email}</Text><View style={{backgroundColor:palette.field,borderRadius:11,minHeight:55,flexDirection:"row",alignItems:"center",paddingHorizontal:16}}><TextInput accessibilityLabel="Contraseña" placeholder="Contraseña" placeholderTextColor={palette.muted} secureTextEntry={!visible} textContentType="password" autoComplete="current-password" value={password} onChangeText={setPassword} onSubmitEditing={()=>void submit()} style={{flex:1,color:palette.black,fontSize:17,paddingVertical:12}}/><Pressable accessibilityLabel={visible?"Ocultar contraseña":"Mostrar contraseña"} onPress={()=>setVisible(v=>!v)} style={{padding:8}}><Ionicons name={visible?"eye-off-outline":"eye-outline"} size={22} color={palette.muted}/></Pressable></View></>}
       {!!error&&<Text accessibilityLiveRegion="polite" style={{color:palette.error,fontSize:13}}>{error}</Text>}
       {button(step==="email"?"Continuar":busy?"Entrando…":"Iniciar sesión",()=>step==="email"?continueEmail():void submit())}
