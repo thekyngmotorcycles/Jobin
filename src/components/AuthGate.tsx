@@ -9,6 +9,8 @@ const KEY = "jobin:session-start";
 const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 const AUTH_ROUTES = ["/login", "/account"];
 const USERNAME_ROUTE="/choose-username";
+let usernameCompleted: (()=>void)|null=null;
+export function completeUsernameOnboarding(){usernameCompleted?.();}
 
 export async function startJobinSession() {
  await AsyncStorage.setItem(KEY, String(Date.now()));
@@ -25,6 +27,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
  const [needsUsername,setNeedsUsername]=useState(false);
  useEffect(() => {
   let active = true;
+  usernameCompleted=()=>{if(active)setNeedsUsername(false);};
   async function checkUsername(userId:string,providers:string[]){
    if(!providers.includes("google")){if(active)setNeedsUsername(false);return;}
    const {data,error}=await supabase!.from("usernames").select("username").eq("user_id",userId).maybeSingle();
@@ -78,7 +81,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
    if (event === "SIGNED_OUT") { void AsyncStorage.removeItem(KEY); if (active) setSignedIn(false); }
    if (event === "SIGNED_IN") { if (active) setSignedIn(true); }
   });
-  return () => { active = false; subscription?.data.subscription.unsubscribe(); appSubscription.remove(); linkSubscription.remove(); };
+  return () => { active = false;usernameCompleted=null; subscription?.data.subscription.unsubscribe(); appSubscription.remove(); linkSubscription.remove(); };
  }, []);
  useEffect(() => {
   if (!ready || handlingOAuth) return;
