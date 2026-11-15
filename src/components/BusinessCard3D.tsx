@@ -55,7 +55,8 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
     [enabled]
   );
 
-  const tap=Gesture.Tap().enabled(enabled).maxDistance(12).runOnJS(true).onEnd(()=>{\n    if(interactiveTouch.current)return;
+  const tap=Gesture.Tap().enabled(enabled).maxDistance(12).runOnJS(true).onEnd(()=>{
+    if(interactiveTouch.current)return;
     const next=side==="personal"?"business":"personal";
     lift.value=withSequence(withSpring(1.04,SPRING),withSpring(1,SPRING));
     angle.value=withSpring(next==="business"?180:0,SPRING);
