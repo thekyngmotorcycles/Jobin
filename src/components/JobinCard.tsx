@@ -1,4 +1,4 @@
-import {BusinessCard3D} from "./BusinessCard3D";
+import {BusinessCard3D,CardFlipInteractionContext} from "./BusinessCard3D";
 import {jobeenTokens} from "../theme/jobeen";
 import {personalAvatarUrl} from "../lib/personal-jcard-photo";
 import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
@@ -7,9 +7,9 @@ import {readJCardAppearance} from "../lib/jcard-appearance";
 import {getPremiumBackground,JCARD_PREMIUM_TRANSPARENT,type JCardPremiumBackgroundId} from "../theme/jcard-premium-backgrounds";
 import {JCardPremiumTexture} from "./JCardPremiumTexture";
 import {BUSINESS_BADGE_NEUTRAL,BUSINESS_MEDAL_COLORS} from "../theme/business-medals";
-import { memo, useCallback, useEffect, useId, useRef, useState } from "react";
+import { memo, useCallback, useContext, useEffect, useId, useRef, useState } from "react";
 import { router } from "expo-router";
-import { Animated, Image, Linking, Modal, Pressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Animated, Image, Linking, Modal, Pressable as NativePressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Rect, Stop, Path, Circle, SvgXml, ClipPath, Image as SvgImage } from "react-native-svg";
@@ -78,6 +78,12 @@ function languageDetails(name:string,fluency:number){
  const international=level?.code??(fluency<35?"A1–A2":fluency<55?"B1":fluency<75?"B2":fluency<95?"C1":"C2");
  return "Idioma: "+name+"\nNivel: "+languageLabel(fluency)+"\nReferencia internacional (MCER): "+international+".\nEl nivel es declarado por el usuario y no está verificado mediante examen.";
 }
+/** Interactive controls take priority over the parent JCard tap gesture. */
+const Pressable:typeof NativePressable = ((props:React.ComponentProps<typeof NativePressable>)=>{
+ const markInteractive=useContext(CardFlipInteractionContext);
+ return <NativePressable {...props} onTouchStart={event=>{markInteractive?.();props.onTouchStart?.(event);}}/>;
+}) as typeof NativePressable;
+
 function CardFace({ card, theme, appearance="original", expanded = false, onEdit, onQr, onShare, onEditPhoto, contact, employerLink }: { card: CardData; theme: ThemeName; appearance?:JCardPremiumBackgroundId; expanded?: boolean; onEdit?: () => void; onQr?: () => void; onShare?: () => void; onEditPhoto?: () => void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null }) {
   const { s, fs } = useUi();
   const jobeen=jobeenTokens(theme);
@@ -295,7 +301,6 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
    {!!b?.services?.length&&<View style={{alignSelf:"stretch",paddingHorizontal:8,marginTop:4}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:14,fontWeight:"500",color:finish.secondary}}>{b.services.filter(Boolean).join(" · ")}</Text></View>}
    <View style={{flex:1,justifyContent:"center",gap:theme==="light"?3:6,paddingVertical:theme==="light"?3:7,minHeight:0,alignSelf:"stretch"}}>
     <View style={{gap:theme==="light"?0:5,alignSelf:"stretch"}}>
-     {!!card.profileUrl&&<Pressable accessibilityRole="link" accessibilityLabel="Abrir perfil profesional en la web" onPress={event=>{event.stopPropagation();void Linking.openURL(card.profileUrl).catch(()=>{});}} style={{flexDirection:"row",alignItems:"center",gap:6,minHeight:36,alignSelf:"flex-start"}}><Ionicons name="globe-outline" size={16} color={businessIconInk}/><Text style={{fontSize:11,color:businessContactInk}}>Ver perfil en la web</Text></Pressable>}
      {(visibility.business_show_email?(theme==="light"?[b?.email??b?.emailSecondary]:[b?.email,b?.emailSecondary]):[]).filter(Boolean).map((email,i)=><Pressable key={"business-email"+i} accessibilityRole="link" accessibilityLabel={"Enviar correo a "+email} onPress={event=>{event.stopPropagation();void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>{});}} style={{flexDirection:"row",alignItems:"center",gap:6,alignSelf:"flex-start",maxWidth:"100%",minHeight:40,paddingRight:10}}><View style={{width:theme==="light"?30:14,height:theme==="light"?30:14,borderRadius:15,backgroundColor:theme==="light"?jobeen.yellow:undefined,alignItems:"center",justifyContent:"center"}}><Ionicons name="mail-outline" size={14} color={businessIconInk}/></View><Text numberOfLines={1} ellipsizeMode="tail" style={{flexShrink:1,fontSize:11,color:businessContactInk}}>{email}</Text></Pressable>)}
      {visibility.business_show_phone&&!!(b?.phone||b?.phoneSecondary)&&<View style={{flexDirection:"row",alignItems:"center",gap:4,alignSelf:"stretch",minHeight:44}}><View style={{width:theme==="light"?30:14,height:theme==="light"?30:14,borderRadius:15,backgroundColor:theme==="light"?jobeen.yellow:undefined,alignItems:"center",justifyContent:"center"}}><Ionicons name="call-outline" size={14} color={businessIconInk}/></View>{[{number:b?.phone,label:b?.phoneLabel},{number:b?.phoneSecondary,label:b?.phoneSecondaryLabel}].filter(x=>!!x.number).map((item,i)=><View key={"business-phone"+i} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:3}}>{i>0&&<View style={{height:16,width:1,backgroundColor:finish.line,marginHorizontal:2}}/>}<Pressable accessibilityRole="link" style={{alignSelf:"flex-start",maxWidth:"100%",minHeight:40,justifyContent:"center",paddingHorizontal:5}} onPress={event=>{event.stopPropagation();void Linking.openURL("tel:"+item.number!.replace(/[^+\d]/g,"")).catch(()=>{});}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={{fontSize:11,color:businessContactInk}}>{item.label?item.label+" ":""}{item.number}</Text></Pressable></View>)}{theme==="light"&&!!(b?.phone||b?.phoneSecondary)&&<Pressable accessibilityRole="link" accessibilityLabel="Abrir WhatsApp del negocio" onPress={event=>{event.stopPropagation();void Linking.openURL("https://wa.me/"+(b?.phone||b?.phoneSecondary||"").replace(/\D/g,"")).catch(()=>{});}} style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}><View style={{width:30,height:30,borderRadius:15,backgroundColor:jobeen.ink,alignItems:"center",justifyContent:"center"}}><Ionicons name="logo-whatsapp" size={17} color={jobeen.surface}/></View></Pressable>}</View>}
      {!!b?.location&&<View style={{flexDirection:"row",alignItems:"center",gap:6,minHeight:theme==="light"?34:undefined}}><View style={{width:theme==="light"?30:15,height:theme==="light"?30:15,borderRadius:15,backgroundColor:theme==="light"?jobeen.yellow:undefined,alignItems:"center",justifyContent:"center"}}><Ionicons name="location-outline" size={15} color={businessIconInk}/></View><Text numberOfLines={2} style={{flex:1,fontSize:11,color:businessContactInk}}>{b.location}</Text></View>}
