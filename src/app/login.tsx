@@ -40,17 +40,16 @@ export default function Login(){
  }
  async function social(provider:"Google"|"Apple"){
   if(busy)return;
-  if(provider==="Apple"){setError("El acceso con Apple todavía no está configurado.");return;}
   setBusy(true);setError("");
   try{
    const {data,error:oauthError}=await requireSupabase().auth.signInWithOAuth({
-    provider:"google",
+    provider:provider==="Apple"?"apple":"google",
     options:{redirectTo:"jobin://",skipBrowserRedirect:true}
    });
    if(oauthError)throw oauthError;
-   if(!data.url)throw new Error("Google no devolvió la dirección de acceso.");
+   if(!data.url)throw new Error(`${provider} no devolvió la dirección de acceso.`);
    await Linking.openURL(data.url);
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo abrir el acceso con Google.");setBusy(false);}
+  }catch(e){setError(e instanceof Error?e.message:`No se pudo abrir el acceso con ${provider}.`);setBusy(false);}
  }
  const button=(label:string,onPress:()=>void,secondary=false)=> <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} disabled={busy} style={{minHeight:46,borderRadius:9,backgroundColor:secondary?palette.background:palette.black,borderWidth:secondary?1:0,borderColor:palette.border,justifyContent:"center",alignItems:"center",opacity:busy?0.65:1}}><Text style={{fontSize:15,fontWeight:"700",color:secondary?palette.black:palette.white}}>{label}</Text></Pressable>;
  return <SafeAreaView style={{flex:1,backgroundColor:palette.background}}>
