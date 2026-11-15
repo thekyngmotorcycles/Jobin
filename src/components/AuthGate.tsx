@@ -28,11 +28,16 @@ export function AuthGate({ children }: { children: ReactNode }) {
  useEffect(() => {
   let active = true;
   usernameCompleted=()=>{if(active)setNeedsUsername(false);};
-  async function checkUsername(userId:string,providers:string[],sessionSetupIncomplete:boolean){
-   if(!providers.includes("google")){if(active)setNeedsUsername(false);return;}
-   const {data,error}=await supabase!.from("usernames").select("username").eq("user_id",userId).maybeSingle();
-   if(error)throw error;
-   if(active)setNeedsUsername(!data || sessionSetupIncomplete);
+  async function checkUsername(userId:string,sessionSetupIncomplete:boolean){
+   const [{data:claimed,error:usernameError},{data:profile,error:profileError},{data:jcard,error:jcardError}]=await Promise.all([
+    supabase!.from("usernames").select("username").eq("user_id",userId).maybeSingle(),
+    supabase!.from("profiles").select("display_name").eq("id",userId).maybeSingle(),
+    supabase!.from("jcard_profiles").select("handle").eq("profile_id",userId).maybeSingle()
+   ]);
+   if(usernameError||profileError||jcardError)throw usernameError??profileError??jcardError;
+   const named=!!profile?.display_name?.trim() && profile.display_name!=="Nuevo usuario";
+   const chosen=!!claimed?.username && !!jcard?.handle && claimed.username.toLowerCase()===jcard.handle.toLowerCase();
+   if(active)setNeedsUsername(sessionSetupIncomplete||!named||!chosen);
   }
   async function check() {
    if (!supabase) { if (active) { setSignedIn(false); setReady(true); } return; }
@@ -47,7 +52,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
      if (active) setSignedIn(false);
     } else {
      if (!started) await startJobinSession();
-     await checkUsername(session.user.id,session.user.identities?.map(i=>i.provider)??[],session.user.user_metadata?.account_setup_completed!==true);
+     await checkUsername(session.user.id,session.user.user_metadata?.account_setup_completed!==true);
      if (active) setSignedIn(true);
     }
    } catch { if (active) setSignedIn(false); }
@@ -64,7 +69,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     if(error)throw error;
     if(!data.session)throw new Error("Google no devolvió una sesión válida");
     await startJobinSession();
-    await checkUsername(data.session.user.id,data.session.user.identities?.map(i=>i.provider)??[],data.session.user.user_metadata?.account_setup_completed!==true);
+    await checkUsername(data.session.user.id,data.session.user.user_metadata?.account_setup_completed!==true);
     if(active)setSignedIn(true);
    }catch(error){console.warn("Google OAuth callback failed:",error);}
    finally{if(active){setHandlingOAuth(false);setReady(true);}}
