@@ -43,6 +43,7 @@ export default function PublicJCard(){
     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/>}
     actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/>}
     trust={<ProfessionalTrustMark worker={resource.data.id}/>}
+    profileUserId={resource.data.id}
     section={section}
     onSelect={setSection}
   >
