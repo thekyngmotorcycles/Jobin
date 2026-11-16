@@ -157,13 +157,6 @@ export default function Profile() {
     const matchedSeal=uniqueSeals.find(seal=>professionKey(seal.profession)===profession.profession_code);
     return {code:profession.profession_code,name:profession.label,icon:(matchedSeal?.icon??catalog?.icon??"briefcase-outline") as JCardSeal["icon"],months:employmentMonths(matchingHistory),verified:matchedSeal?.verified??false};
   });
-  const tabIcon = (icon: keyof typeof Ionicons.glyphMap, label: string, value: Mode | "live", active: boolean) => (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected: active }}
-      onPress={() => (value === "live" ? openLive() : setMode(value))}
-      style={{ width: 54, height: 44, borderBottomWidth:active?3:0,borderBottomColor:jt.yellow,alignItems: "center", justifyContent: "center" }}>
-      <Ionicons name={icon} size={22} color={active ? jt.ink : jt.ink2} />
-    </Pressable>
-  );
 
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={[s.screen,{backgroundColor:jt.bg}]}>
