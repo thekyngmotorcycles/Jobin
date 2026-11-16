@@ -29,6 +29,7 @@ function lightImpact(){
 
 export function BusinessCard3D({front,back,height,enabled=true,initialSide="personal",side,onSideChange,shadowColor=jcardCommon.cardShadowColor}:BusinessCardProps){
   const interactiveTouch=useRef(false);
+  const lastGestureSide=useRef<"personal"|"business"|null>(null);
   const markInteractive=useCallback(()=>{interactiveTouch.current=true;},[]);
   const angle=useSharedValue(initialSide==="business"?180:0);
   const lift=useSharedValue(1);
@@ -42,6 +43,11 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
       angle.value=side==="business"?180:0;
       lift.value=1;
     }else if(!moving.value){
+      // External controls use the same lift + spring as tapping the card itself.
+      if(lastGestureSide.current!==side){
+        lift.value=withSequence(withSpring(1.04,SPRING),withSpring(1,SPRING));
+      }
+      lastGestureSide.current=null;
       angle.value=withSpring(side==="business"?180:0,SPRING);
     }
   },[enabled,side,angle,lift,moving]);
@@ -60,6 +66,7 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
     const next=side==="personal"?"business":"personal";
     lift.value=withSequence(withSpring(1.04,SPRING),withSpring(1,SPRING));
     angle.value=withSpring(next==="business"?180:0,SPRING);
+    lastGestureSide.current=next;
     onSide(next);
   });
   const pan=Gesture.Pan().enabled(enabled).activeOffsetX([-12,12]).failOffsetY([-18,18]).runOnJS(true)
@@ -81,7 +88,9 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
       angle.value=withSpring(target,{...SPRING,velocity:-event.velocityX/DRAG_DISTANCE*180});
       lift.value=withSpring(1,SPRING);
       moving.value=false;
-      runOnJS(onSide)(target===180?"business":"personal");
+      const next=target===180?"business":"personal";
+      lastGestureSide.current=next;
+      onSide(next);
     })
     .onFinalize(()=>{
       lift.value=withSpring(1,SPRING);
