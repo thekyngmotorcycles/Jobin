@@ -341,8 +341,8 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const effectiveCardWidth=measuredCardWidth||Math.min(width-32,520);
  const compactCard=effectiveCardWidth<350;
  const extraTextHeight=Math.round(Math.max(0,Math.min(fontScale,1.3)-1)*40);
- // Keep the approved compact card proportions. The previous +40/+66 responsive padding
- // stretched the card and left a large blank gap between status and languages.
+ // The light JCard is intentionally compact; keep both 3D faces at the same height.
+ // A new Android preview APK is required to test the latest UI on-device.
  const cardHeight=((previewTheme??theme)==="light"?330:400)+(compactCard?8:0)+extraTextHeight;
  useEffect(()=>{if(!canFlip)setBack(activeBusiness);},[canFlip,activeBusiness]);
  const toggle=()=>{if(canFlip)setBack(value=>!value);};
