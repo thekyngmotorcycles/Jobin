@@ -318,7 +318,8 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
  </View>;
 }
 export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,onEditPersonalPhoto,ownerId,showOwnerActions=false,initialSide="personal",employerLink}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;onEditBusinessMedia?:(slot:"banner"|"avatar")=>void;onEditPersonalPhoto?:()=>void;ownerId?:string;showOwnerActions?:boolean;initialSide?:"personal"|"business";employerLink?:{id:string;name:string;handle:string}|null}){
- const {theme}=useTheme();const {colors}=useUi();const {width}=useWindowDimensions();
+ const {theme}=useTheme();const {colors}=useUi();const {width,fontScale}=useWindowDimensions();
+ const [measuredCardWidth,setMeasuredCardWidth]=useState(0);
  const [contact,setContact]=useState<{email:string|null;phone:string|null;details?:PersonalContactDetails}>({email:null,phone:null});
  useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void Promise.all([loadPublicContact(ownerId),loadVisiblePersonalContactDetails(ownerId)]).then(([value,details])=>{if(live)setContact({...value,details});}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
  const [appearance,setAppearance]=useState<JCardPremiumBackgroundId>("original");
@@ -329,7 +330,11 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const [back,setBack]=useState(initialSide==="business"),[qrOpen,setQrOpen]=useState(false);
  const canFlip=showOwnerActions||(visibility.personal_enabled&&visibility.business_enabled);
  const activeBusiness=!visibility.personal_enabled&&visibility.business_enabled;
- const cardHeight = (previewTheme??theme)==="light"?364:450;
+ // Preserve approved dimensions on normal phones; give narrow screens and large text room.
+ const effectiveCardWidth=measuredCardWidth||Math.min(width-32,520);
+ const compactCard=effectiveCardWidth<350;
+ const extraTextHeight=Math.round(Math.max(0,Math.min(fontScale,1.6)-1)*110);
+ const cardHeight=((previewTheme??theme)==="light"?364:450)+(compactCard?40:0)+extraTextHeight;
  useEffect(()=>{if(!canFlip)setBack(activeBusiness);},[canFlip,activeBusiness]);
  const toggle=()=>{if(canFlip)setBack(value=>!value);};
  const cardTheme=previewTheme??theme;
