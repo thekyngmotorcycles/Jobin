@@ -4,7 +4,7 @@ import { useCallback,useEffect,useState } from "react";
 import { Pressable,Text,View } from "react-native";
 import {ProfileMediaGrid,UserProfileContent,type ProfileSection} from "../components/ProfileSharedSections";
 import {loadPublishedMedia,type PublishedMedia} from "../lib/safety-api";
-import {router} from "expo-router";
+import {router,Stack} from "expo-router";
 import { approvedCV,cvRequests,requestCV } from "../lib/cv-access";
 import { requireSupabase } from "../lib/supabase";
 import {identityVerified} from "../lib/identity-status";
@@ -38,7 +38,9 @@ export default function PublicJCard(){
   if(!user||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user))return Promise.reject(new Error("Enlace de JCard inválido."));
   return loadPublicCard(user);
  },[user]));
- return <Screen demo={false} title="Perfil" subtitle="">
+ return <>
+  <Stack.Screen options={{title:resource.data?.username?`@${resource.data.username.replace(/^@/,"")}`:resource.data?.name??"Perfil",headerBackTitle:"Volver"}}/>
+  <Screen demo={false} title="" subtitle="" hideHeader hideFooter>
   {resource.data?<UserProfileContent
     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/>}
     actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/>}
@@ -55,5 +57,6 @@ export default function PublicJCard(){
     {(section==="grid"||section==="videos"||section==="live")&&<ProfileMediaGrid items={media.filter(item=>item.creator_id===user&&(section==="live"?item.kind==="live":item.kind==="video")).map(item=>({id:item.id,title:item.title,onPress:()=>router.push({pathname:"/work-media/[id]",params:{id:item.id}})}))} emptyMessage={section==="live"?"Todavía no hay streams publicados.":"Todavía no hay videos publicados."}/>}
 
   </UserProfileContent>:<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>}
- </Screen>;
+ </Screen>
+ </>;
 }
