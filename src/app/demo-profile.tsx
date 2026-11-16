@@ -14,7 +14,7 @@ export default function DemoPublicProfile(){
   <Pressable accessibilityRole="button" onPress={()=>router.back()} style={{flexDirection:"row",gap:8,alignItems:"center",paddingVertical:8}}><Ionicons name="arrow-back" size={23} color={colors.ink}/><Text style={s.text}>Volver a mi perfil</Text></Pressable>
   <Text style={s.h3}>Vista de otro perfil · DEMOSTRACIÓN</Text>
   <Text style={s.muted}>Cuenta ficticia local. No corresponde a un usuario real y no genera cobros ni seguidores reales.</Text>
-  <JobinCard card={card}/>
+  <JobinCard card={card} onDemoSaveContact={()=>setNotice("Esta es una JCard de demostración. En un perfil real, Guardar contacto abre la agenda del teléfono con los datos públicos del profesional o negocio.")}/>
   <View style={{flexDirection:"row",gap:10}}>
    <Pressable accessibilityRole="button" onPress={()=>setFollowing(v=>!v)} style={{flex:1,backgroundColor:colors.ink,borderRadius:12,padding:14,alignItems:"center",flexDirection:"row",justifyContent:"center",gap:8}}><Ionicons name={following?"checkmark":"heart-outline"} size={20} color={colors.paper}/><Text style={{color:colors.paper,fontWeight:"700"}}>{following?"Siguiendo":"Seguir"}</Text></Pressable>
    <Pressable accessibilityRole="button" onPress={()=>setNotice("Vista de demostración: no se pueden enviar mensajes a un perfil ficticio.")} style={{flex:1,borderWidth:1,borderColor:jobeen.yellow,backgroundColor:jobeen.cream,borderRadius:12,padding:14,alignItems:"center",flexDirection:"row",justifyContent:"center",gap:8}}><Ionicons name="paper-plane-outline" size={20} color={jobeen.ink}/><Text style={{color:jobeen.ink,fontWeight:"700"}}>Mensaje</Text></Pressable>
