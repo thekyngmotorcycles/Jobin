@@ -4,6 +4,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {router,useLocalSearchParams} from "expo-router";
 import {Avatar,IconButton} from "../components/social-ui";
 import {PublicProfileAvatar} from "../components/PublicProfileAvatar";
+import {requireSupabase} from "../lib/supabase";
 import {useUi} from "../components/ui";
 import {visiblePosts} from "../lib/feed";
 import {browseStreams} from "../lib/streams";
@@ -37,6 +38,10 @@ export default function Search(){
  const streams=browseStreams("Popular","Todas","").filter(room=>(!intent.city||room.city.toLowerCase()===intent.city.toLowerCase())&&matchJobinTerms([room.title,room.host,room.city,room.profession].join(" "),words));
  const effectiveKind=kind;
  const displayedResults=results.filter(person=>effectiveKind==="Empresas"?person.account_type==="company":person.account_type==="personal");
+ async function openProfile(id:string){
+  try{const {data:{user}}=await requireSupabase().auth.getUser();if(user?.id===id){router.push("/(tabs)/profile");return;}}catch{}
+  router.push({pathname:"/jcard",params:{user:id}});
+ }
  async function runSearch(){
   if(!query.trim()&&!city.trim()&&!specialty.trim()&&effectiveKind!=="Personas"&&effectiveKind!=="Todo"){setError("Escribe qué profesional buscas o indica una ciudad.");return;}
   setLoading(true);setError("");setSearched(true);
@@ -68,12 +73,12 @@ export default function Search(){
     {loading&&<ActivityIndicator color={colors.ink}/>}
     {!!error&&<Text style={{color:colors.ink}}>{error}</Text>}
     {searched&&!loading&&!error&&<Text style={s.muted}>{effectiveKind==="Todo"?allAccounts.length:effectiveKind==="Personas"?people.length:displayedResults.length} resultados encontrados</Text>}
-    {effectiveKind==="Todo"&&allAccounts.map(account=><Pressable key={account.id} accessibilityRole="button" accessibilityLabel={"Ver perfil de "+account.name} onPress={()=>router.push({pathname:"/jcard",params:{user:account.id}})} style={{flexDirection:"row",alignItems:"center",paddingVertical:12,gap:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
+    {effectiveKind==="Todo"&&allAccounts.map(account=><Pressable key={account.id} accessibilityRole="button" accessibilityLabel={"Ver perfil de "+account.name} onPress={()=>void openProfile(account.id)} style={{flexDirection:"row",alignItems:"center",paddingVertical:12,gap:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
       <PublicProfileAvatar userId={account.id} name={account.name} size={54}/>
       <View style={{flex:1,gap:3}}><Text style={{color:colors.ink,fontSize:16,fontWeight:"700"}} numberOfLines={1}>{account.name}</Text><Text style={s.muted} numberOfLines={1}>@{account.handle||"usuario"} · {account.account_type==="company"?"Empresa":account.account_type==="professional"?"Profesional":"Persona"}</Text>{!!account.profession&&<Text style={s.muted} numberOfLines={1}>{account.profession}</Text>}</View>
       <Text style={{fontSize:22,color:colors.muted}}>›</Text>
     </Pressable>)}
-    {effectiveKind==="Personas"&&people.map(person=><Pressable key={person.id} accessibilityRole="button" accessibilityLabel={"Ver perfil de "+person.name} onPress={()=>router.push({pathname:"/jcard",params:{user:person.id}})} style={{flexDirection:"row",alignItems:"center",paddingVertical:12,gap:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
+    {effectiveKind==="Personas"&&people.map(person=><Pressable key={person.id} accessibilityRole="button" accessibilityLabel={"Ver perfil de "+person.name} onPress={()=>void openProfile(person.id)} style={{flexDirection:"row",alignItems:"center",paddingVertical:12,gap:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
       <PublicProfileAvatar userId={person.id} name={person.name} size={54}/><View style={{flex:1,gap:3}}><Text style={{color:colors.ink,fontSize:16,fontWeight:"700"}} numberOfLines={1}>{person.name}</Text><Text style={s.muted} numberOfLines={1}>@{person.handle||"usuario"} · Persona</Text></View><Text style={{fontSize:22,color:colors.muted}}>›</Text>
     </Pressable>)}
     {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&displayedResults.map(person=><Pressable key={person.id+":"+person.profession_code} accessibilityRole="button" accessibilityLabel={"Ver perfil de "+person.name} onPress={()=>router.push({pathname:"/jcard",params:{user:person.id}})} style={{flexDirection:"row",alignItems:"center",paddingVertical:12,gap:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
