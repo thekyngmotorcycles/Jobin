@@ -16,7 +16,7 @@ const stop=new Set(["busco","buscar","quiero","necesito","estoy","viendo","ver",
 export function interpretJobinSearch(query:string,cities:string[]=[],catalog?:ProfessionalCatalog|null,specialties?:Record<string,string[]>){
  const normalized=clean(query);
  const tokens=normalized.split(" ").filter(Boolean);
- const target:SearchTarget|null=/\b(en vivo|en directo|transmision|stream|streams|live)\b/.test(normalized)?"Streams":/\b(flash|flashes|reels|video corto|videos cortos)\b/.test(normalized)?"Flashes":/\b(empresa|empresas|negocio|negocios)\b/.test(normalized)?"Empresas":/\b(profesional|profesionales|persona|personas)\b/.test(normalized)?"Profesionales":null;
+ const target:SearchTarget|null=/\b(en vivo|en directo|transmision|stream|streams|live)\b/.test(normalized)?"Streams":/\b(flash|flashes|reels|video corto|videos cortos)\b/.test(normalized)?"Flashes":/\b(empresa|empresas|negocio|negocios)\b/.test(normalized)?"Empresas":/\b(persona|personas)\b/.test(normalized)?"Personas":/\b(profesional|profesionales)\b/.test(normalized)?"Profesionales":null;
  const city=cities.filter(c=>{const words=clean(c).split(" ");return tokens.some((_,i)=>words.every((word,j)=>tokens[i+j]&&approximate(tokens[i+j],word)));}).sort((a,b)=>b.length-a.length)[0]??"";
  let profession="";
  let professionCode="";
