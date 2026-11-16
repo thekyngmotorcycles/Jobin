@@ -2,7 +2,7 @@ import { ProfileCommunityActions } from "../components/ProfileCommunityActions";
 import { ProfessionalTrustMark } from "../components/ProfessionalTrustMark";
 import { useCallback,useEffect,useState } from "react";
 import { Pressable,Text,View } from "react-native";
-import {ProfileMediaGrid,ProfileSectionTabs,type ProfileSection} from "../components/ProfileSharedSections";
+import {ProfileMediaGrid,UserProfileContent,type ProfileSection} from "../components/ProfileSharedSections";
 import {loadPublishedMedia,type PublishedMedia} from "../lib/safety-api";
 import {router} from "expo-router";
 import { approvedCV,cvRequests,requestCV } from "../lib/cv-access";
@@ -39,11 +39,13 @@ export default function PublicJCard(){
   return loadPublicCard(user);
  },[user]));
  return <Screen demo={false} title="Perfil" subtitle="">
-  {resource.data?<View style={{gap:14}}>
-    <JobinCard card={{...resource.data,identityVerified:verifiedIdentity}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/>
-    <ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/>
-    <ProfessionalTrustMark worker={resource.data.id}/>
-    <ProfileSectionTabs section={section} onSelect={setSection}/>
+  {resource.data?<UserProfileContent
+    card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/>}
+    actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/>}
+    trust={<ProfessionalTrustMark worker={resource.data.id}/>}
+    section={section}
+    onSelect={setSection}
+  >
     {section==="cv"&&<View style={{marginVertical:4,gap:10}}>
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,borderRadius:12,borderWidth:1,borderColor:colors.line}}><Text style={{fontWeight:"700",color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text></Pressable>
       {cvOpen&&<View style={{gap:8,padding:12}}>{user!==viewer&&cvStatus!=="approved"?<><Text style={{color:colors.ink}}>El currículum es privado. El propietario debe autorizar tu solicitud.</Text><Pressable disabled={cvStatus==="pending"} onPress={()=>void requestCV(user!).then(()=>{setCvStatus("pending");setCvMessage("Solicitud enviada.");}).catch(e=>setCvMessage(String(e)))}><Text style={{fontWeight:"700",color:colors.ink}}>{cvStatus==="pending"?"Solicitud pendiente":"Solicitar CV"}</Text></Pressable></>:<>{cvRows.length?cvRows.map((row,i)=><Text key={i} style={{color:colors.ink}}>{row.role} · {row.company} ({row.from_year}–{row.to_year??"Actualidad"})</Text>):<Text style={{color:colors.muted}}>No hay experiencias registradas o disponibles.</Text>}</>}{!!cvMessage&&<Text style={{color:colors.muted}}>{cvMessage}</Text>}</View>}
@@ -51,6 +53,6 @@ export default function PublicJCard(){
     {section==="live"&&<View style={{padding:14,gap:10,borderWidth:1,borderColor:colors.line,borderRadius:14}}><Text style={{color:colors.ink,fontWeight:"700"}}>Transmisiones en vivo</Text><Text style={{color:colors.muted}}>Consulta las transmisiones públicas de este perfil.</Text></View>}
     {(section==="grid"||section==="videos"||section==="live")&&<ProfileMediaGrid items={media.filter(item=>item.creator_id===user&&(section==="live"?item.kind==="live":item.kind==="video")).map(item=>({id:item.id,title:item.title,onPress:()=>router.push({pathname:"/work-media/[id]",params:{id:item.id}})}))} emptyMessage={section==="live"?"Todavía no hay streams publicados.":"Todavía no hay videos publicados."}/>}
 
-  </View>:<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>}
+  </UserProfileContent>:<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>}
  </Screen>;
 }
