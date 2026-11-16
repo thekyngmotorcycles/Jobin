@@ -39,7 +39,7 @@ export default function PublicJCard(){
   return loadPublicCard(user);
  },[user]));
  return <>
-  <Stack.Screen options={{title:resource.data?.username?`@${resource.data.username.replace(/^@/,"")}`:resource.data?.name??"Perfil",headerBackTitle:"Volver"}}/>
+  <Stack.Screen options={{title:resource.data?.handle?`@${resource.data.handle.replace(/^@/,"")}`:resource.data?.name??"Perfil",headerBackTitle:"Volver"}}/>
   <Screen demo={false} title="" subtitle="" hideHeader hideFooter>
   {resource.data?<UserProfileContent
     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/>}
