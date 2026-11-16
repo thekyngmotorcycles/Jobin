@@ -1,3 +1,7 @@
+import {useFocusEffect} from "expo-router";
+import {useCallback} from "react";
+import {requireSupabase} from "../../lib/supabase";
+import {loadPublicCard} from "../../lib/professional-api";
 import { useEffect } from "react";
 import { useJobinNotices } from "../../state/NoticeProvider";
 import { router } from "expo-router";
@@ -28,6 +32,29 @@ export default function Messages() {
   useEffect(()=>{markInboxRead();},[]);
   const { s, colors } = useUi();const {contentBottom}=useTabClearance();
   const [threads, setThreads] = useState<Thread[]>(INITIAL);
+  const [directThreads,setDirectThreads]=useState<{id:string;name:string;text:string}[]>([]);
+  useFocusEffect(useCallback(()=>{
+   let live=true;
+   void (async()=>{
+    try{
+     const db=requireSupabase();const {data:{user}}=await db.auth.getUser();
+     if(!user)return;
+     const {data,error}=await db.from("jobeen_direct_messages" as never).select("sender_id,recipient_id,body,created_at").or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`).order("created_at",{ascending:false}).limit(100);
+     if(error)throw error;
+     const recent=new Map<string,string>();
+     for(const row of (data??[]) as {sender_id:string;recipient_id:string;body:string}[]){
+      const other=row.sender_id===user.id?row.recipient_id:row.sender_id;
+      if(!recent.has(other))recent.set(other,row.body);
+     }
+     const conversations=await Promise.all([...recent].map(async ([id,body])=>{
+      const card=await loadPublicCard(id).catch(()=>null);
+      return {id,name:card?.name??"Profesional",text:body};
+     }));
+     if(live)setDirectThreads(conversations);
+    }catch{if(live)setDirectThreads([]);}
+   })();
+   return()=>{live=false;};
+  },[]));
   function decide(id: string, status: "accepted" | "rejected") {
     setThreads(items => items.map(t => (t.id === id && t.kind === "extension" ? { ...t, status } : t)));
   }
@@ -36,6 +63,11 @@ export default function Messages() {
       <ScrollView contentContainerStyle={{ paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         <SocialHeader />
         <View style={{ paddingHorizontal: 16, gap: 4, marginTop: 8 }}>
+          {directThreads.length>0&&<Text style={[s.h3,{marginVertical:12}]}>Conversaciones</Text>}
+          {directThreads.map(thread=><Pressable key={thread.id} accessibilityRole="button" accessibilityLabel={"Abrir conversación con "+thread.name} onPress={()=>router.push({pathname:"/message",params:{user:thread.id,name:thread.name}})} style={{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:14,borderBottomWidth:1,borderBottomColor:colors.line}}>
+            <AccountAvatar accountId={thread.id} fallbackName={thread.name} size={44}/>
+            <View style={{flex:1}}><Text style={s.h3}>{thread.name}</Text><Text numberOfLines={1} style={s.muted}>{thread.text}</Text></View>
+          </Pressable>)}
           {threads.map(thread => (
             <View key={thread.id} accessibilityRole="none" style={{ flexDirection: "row", gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.line }}>
               <AccountAvatar accountId={thread.accountId} fallbackName={thread.name} size={44}/>
