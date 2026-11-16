@@ -12,7 +12,7 @@ import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness
 import { useTabClearance } from "../../theme/navigation";
 import {opacity} from "../../theme/color";
 import {useRef} from "react";
-import {ProfileMediaGrid,ProfileSectionTabs} from "../../components/ProfileSharedSections";
+import {ProfileMediaGrid,UserProfileContent} from "../../components/ProfileSharedSections";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import { ProfessionalStatus } from "../../components/ProfessionalStatus";
 import { loadCatalog,loadWorkspace } from "../../lib/professional-api";
@@ -200,15 +200,12 @@ export default function Profile() {
       </Modal>
       <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 76, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
-        {workspace.data?.card ? <View style={{gap:10}}>
-
-          <JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
-          <ProfessionalTrustMark worker={workspace.data.card.id}/>
-
-        </View> : workspace.loading ? <JCardLoadingSkeleton/> : <ProfessionalStatus loading={false} error={workspace.error} retry={workspace.reload}/>}
-
-
-        <ProfileSectionTabs section={mode} onSelect={next=>next==="live"?openLive():setMode(next)}/>
+        <UserProfileContent
+          card={workspace.data?.card ? <JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/> : workspace.loading ? <JCardLoadingSkeleton/> : <ProfessionalStatus loading={false} error={workspace.error} retry={workspace.reload}/>}
+          trust={workspace.data?.card ? <ProfessionalTrustMark worker={workspace.data.card.id}/> : null}
+          section={mode}
+          onSelect={next=>next==="live"?openLive():setMode(next)}
+        >
         {mode==="live"&&<View style={{gap:12,padding:14,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
           <Text style={s.h3}>Transmisiones en vivo</Text>
           <Text style={s.muted}>Cuando este perfil transmita, aparecerá aquí la vista previa para entrar al directo.</Text>
@@ -258,6 +255,7 @@ export default function Profile() {
         )}
 
         {mode === "grid" && <ProfileMediaGrid items={DEMO_VIDEOS.map(video=>({id:video.id,title:video.title,thumbnail:video.thumbnail}))}/>}
+        </UserProfileContent>
       </ScrollView>
 
       <BottomSheet visible={businessOpen} onClose={()=>setBusinessOpen(false)} title="Editar JCard de negocio">
