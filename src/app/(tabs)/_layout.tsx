@@ -9,6 +9,7 @@ import { useTheme } from "../../state/ThemeProvider";
 import { NavigationFade } from "../../components/NavigationFade";
 import { JobinTabIcon } from "../../components/JobinTabIcon";
 import { NAVIGATION_ROW_HEIGHT } from "../../theme/navigation";
+import { LIGHT_JOBEEN } from "../../theme/jobeen";
 const routes=[
  {name:"index",title:"Home",icon:"home",outline:"home-outline"},
  {name:"streams",title:"Live",icon:"radio",outline:"radio-outline"},
@@ -30,7 +31,7 @@ export default function TabLayout(){
   <Tabs.Screen name="create" options={{href:null}}/>
   {routes.map(route=><Tabs.Screen key={route.name} name={route.name} options={{
    title:route.title,tabBarAccessibilityLabel:route.title,tabBarButtonTestID:"tab-"+route.name,
-   tabBarIcon:({color,focused})=><View style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22,backgroundColor:focused?colors.line:colors.transparent}}><JobinTabIcon name={route.name} focused={focused} size={width<375?23:25} color={color}/>{route.name==="inbox"&&unreadInbox>0&&<View style={{position:"absolute",top:-3,right:-5}}><Ionicons name="heart" size={12} color={colors.reaction}/></View>}</View>,
+   tabBarIcon:({color,focused})=><View style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22,backgroundColor:focused?`${LIGHT_JOBEEN.yellow}66`:colors.transparent}}><JobinTabIcon name={route.name} focused={focused} size={width<375?23:25} color={color}/>{route.name==="inbox"&&unreadInbox>0&&<View style={{position:"absolute",top:-3,right:-5}}><Ionicons name="heart" size={12} color={colors.reaction}/></View>}</View>,
   }}/>)}
  </Tabs>;
  if(!desktop)return tabs;
