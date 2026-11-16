@@ -1,3 +1,4 @@
+// Native contact editor requires a fresh Android APK.
 import {Alert,Platform} from "react-native";
 import * as Contacts from "expo-contacts";
 
