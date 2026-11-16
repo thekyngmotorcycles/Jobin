@@ -3,6 +3,7 @@ import {ActivityIndicator,Pressable,ScrollView,Text,TextInput,View} from "react-
 import {SafeAreaView} from "react-native-safe-area-context";
 import {router,useLocalSearchParams} from "expo-router";
 import {Avatar,IconButton} from "../components/social-ui";
+import {PublicProfileAvatar} from "../components/PublicProfileAvatar";
 import {useUi} from "../components/ui";
 import {visiblePosts} from "../lib/feed";
 import {browseStreams} from "../lib/streams";
@@ -67,17 +68,16 @@ export default function Search(){
     {loading&&<ActivityIndicator color={colors.ink}/>}
     {!!error&&<Text style={{color:colors.ink}}>{error}</Text>}
     {searched&&!loading&&!error&&<Text style={s.muted}>{effectiveKind==="Todo"?allAccounts.length:effectiveKind==="Personas"?people.length:displayedResults.length} resultados encontrados</Text>}
-    {effectiveKind==="Todo"&&allAccounts.map(account=><Pressable key={account.id} accessibilityRole="button" onPress={()=>router.push({pathname:"/jcard",params:{user:account.id}})} style={{padding:14,borderWidth:1,borderColor:colors.line,borderRadius:16,gap:5}}><Text style={s.h3}>{account.name}</Text><Text style={s.muted}>@{account.handle||"usuario"} · {account.account_type==="company"?"Empresa":account.account_type==="professional"?"Profesional":"Persona"}</Text>{!!account.profession&&<Text style={s.text}>{account.profession}</Text>}<Text style={s.muted}>{[account.city,account.region].filter(Boolean).join(", ")||"Ubicación no especificada"}</Text><Text style={s.muted}>Ver JCard →</Text></Pressable>)}
-    {effectiveKind==="Personas"&&people.map(person=><Pressable key={person.id} accessibilityRole="button" onPress={()=>router.push({pathname:"/jcard",params:{user:person.id}})} style={{padding:14,borderWidth:1,borderColor:colors.line,borderRadius:16,gap:5}}><Text style={s.h3}>{person.name}</Text><Text style={s.muted}>@{person.handle||"usuario"} · Persona</Text><Text style={s.muted}>{[person.city,person.region].filter(Boolean).join(", ")||"Ubicación no especificada"}</Text><Text style={s.muted}>Ver JCard →</Text></Pressable>)}
-    {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&displayedResults.map(person=><Pressable key={person.id+":"+person.profession_code} accessibilityRole="button" onPress={()=>router.push({pathname:"/jcard",params:{user:person.id}})} style={{padding:14,borderWidth:1,borderColor:colors.line,borderRadius:16,gap:5}}>
-     <Text style={s.h3}>{person.name}</Text>
-     <Text style={s.text}>{person.profession}</Text>
-     <Text style={s.muted}>{[person.city,person.region].filter(Boolean).join(", ")||"Ubicación no especificada"}</Text>
-     {!!person.specialties?.length&&<Text style={s.muted} numberOfLines={2}>Especialidades: {person.specialties.join(" · ")}</Text>}
-     {person.verified&&<Text style={s.text}>✓ Profesión verificada</Text>}
-     {person.verified_seals>0&&<Text style={s.muted}>{person.verified_seals} reconocimiento(s) profesional(es) vigente(s)</Text>}
-     {person.account_type==="company"&&person.business_reviews>0&&<Text style={s.muted}>Empresa: {person.business_rating.toFixed(1)}/5 ({person.business_reviews} reseñas)</Text>}
-     <Text style={s.muted}>Ver JCard →</Text>
+    {effectiveKind==="Todo"&&allAccounts.map(account=><Pressable key={account.id} accessibilityRole="button" accessibilityLabel={"Ver perfil de "+account.name} onPress={()=>router.push({pathname:"/jcard",params:{user:account.id}})} style={{flexDirection:"row",alignItems:"center",paddingVertical:12,gap:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
+      <PublicProfileAvatar userId={account.id} name={account.name} size={54}/>
+      <View style={{flex:1,gap:3}}><Text style={{color:colors.ink,fontSize:16,fontWeight:"700"}} numberOfLines={1}>{account.name}</Text><Text style={s.muted} numberOfLines={1}>@{account.handle||"usuario"} · {account.account_type==="company"?"Empresa":account.account_type==="professional"?"Profesional":"Persona"}</Text>{!!account.profession&&<Text style={s.muted} numberOfLines={1}>{account.profession}</Text>}</View>
+      <Text style={{fontSize:22,color:colors.muted}}>›</Text>
+    </Pressable>)}
+    {effectiveKind==="Personas"&&people.map(person=><Pressable key={person.id} accessibilityRole="button" accessibilityLabel={"Ver perfil de "+person.name} onPress={()=>router.push({pathname:"/jcard",params:{user:person.id}})} style={{flexDirection:"row",alignItems:"center",paddingVertical:12,gap:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
+      <PublicProfileAvatar userId={person.id} name={person.name} size={54}/><View style={{flex:1,gap:3}}><Text style={{color:colors.ink,fontSize:16,fontWeight:"700"}} numberOfLines={1}>{person.name}</Text><Text style={s.muted} numberOfLines={1}>@{person.handle||"usuario"} · Persona</Text></View><Text style={{fontSize:22,color:colors.muted}}>›</Text>
+    </Pressable>)}
+    {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&displayedResults.map(person=><Pressable key={person.id+":"+person.profession_code} accessibilityRole="button" accessibilityLabel={"Ver perfil de "+person.name} onPress={()=>router.push({pathname:"/jcard",params:{user:person.id}})} style={{flexDirection:"row",alignItems:"center",paddingVertical:12,gap:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
+      <PublicProfileAvatar userId={person.id} name={person.name} size={54}/><View style={{flex:1,gap:3}}><Text style={{color:colors.ink,fontSize:16,fontWeight:"700"}} numberOfLines={1}>{person.name}</Text><Text style={s.muted} numberOfLines={1}>@{person.handle||"usuario"}</Text><Text style={s.muted} numberOfLines={1}>{person.profession}</Text></View><Text style={{fontSize:22,color:colors.muted}}>›</Text>
     </Pressable>)}
     {searched&&!loading&&!error&&(effectiveKind==="Todo"?allAccounts.length===0:effectiveKind==="Personas"?people.length===0:displayedResults.length===0)&&<Text style={s.text}>No encontramos perfiles que coincidan. Prueba otra ciudad o una especialidad más amplia.</Text>}
    </>:effectiveKind==="Flashes"?<>
