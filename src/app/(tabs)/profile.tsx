@@ -12,7 +12,7 @@ import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness
 import { useTabClearance } from "../../theme/navigation";
 import {opacity} from "../../theme/color";
 import {useRef} from "react";
-import { MediaThumbnail } from "../../components/MediaThumbnail";
+import {ProfileMediaGrid,ProfileSectionTabs} from "../../components/ProfileSharedSections";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import { ProfessionalStatus } from "../../components/ProfessionalStatus";
 import { loadCatalog,loadWorkspace } from "../../lib/professional-api";
@@ -215,11 +215,7 @@ export default function Profile() {
         </View> : workspace.loading ? <JCardLoadingSkeleton/> : <ProfessionalStatus loading={false} error={workspace.error} retry={workspace.reload}/>}
 
 
-        <View style={{flexDirection:"row",justifyContent:"space-around",alignItems:"center",borderBottomWidth:1,borderBottomColor:jt.line,paddingVertical:0}}>
-          {tabIcon("school-outline","Historial profesional","cv",mode==="cv")}
-          {tabIcon("play-outline","Videos","videos",mode==="videos")}
-          {tabIcon("radio-outline","Transmisiones en vivo","live",mode==="live")}
-        </View>
+        <ProfileSectionTabs section={mode} onSelect={next=>next==="live"?openLive():setMode(next)}/>
         {mode==="live"&&<View style={{gap:12,padding:14,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
           <Text style={s.h3}>Transmisiones en vivo</Text>
           <Text style={s.muted}>Cuando este perfil transmita, aparecerá aquí la vista previa para entrar al directo.</Text>
@@ -268,20 +264,7 @@ export default function Profile() {
           </View>
         )}
 
-        {mode === "grid" && (
-          <View style={{ position: "relative" }}>
-            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-              {DEMO_VIDEOS.map((video,index) => (
-                <View key={video.id} style={{ width: "33.33%", padding: 1.5 }}>
-                  <View style={{height:160,borderRadius:10,overflow:"hidden",backgroundColor:[jt.videoTile1,jt.videoTile2,jt.videoTile3][index%3]}}>
-                    <MediaThumbnail uri={video.thumbnail} label={video.title}/>
-                  </View>
-                </View>
-              ))}
-            </View>
-
-          </View>
-        )}
+        {mode === "grid" && <ProfileMediaGrid items={DEMO_VIDEOS.map(video=>({id:video.id,title:video.title,thumbnail:video.thumbnail}))}/>}
       </ScrollView>
 
       <BottomSheet visible={businessOpen} onClose={()=>setBusinessOpen(false)} title="Editar JCard de negocio">
