@@ -1,3 +1,4 @@
+import {presentJCardContact} from "../lib/jcard-save-contact";
 import {BusinessCard3D,CardFlipInteractionContext} from "./BusinessCard3D";
 import {jobeenTokens} from "../theme/jobeen";
 import {personalAvatarUrl} from "../lib/personal-jcard-photo";
@@ -84,7 +85,7 @@ const Pressable:typeof NativePressable = ((props:React.ComponentProps<typeof Nat
  return <NativePressable {...props} onTouchStart={event=>{if(!props.disabled&&typeof props.onPress==="function")markInteractive?.();props.onTouchStart?.(event);}}/>;
 }) as typeof NativePressable;
 
-function CardFace({ card, theme, appearance="original", expanded = false, onEdit, onQr, onShare, onEditPhoto, contact, employerLink }: { card: CardData; theme: ThemeName; appearance?:JCardPremiumBackgroundId; expanded?: boolean; onEdit?: () => void; onQr?: () => void; onShare?: () => void; onEditPhoto?: () => void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null }) {
+function CardFace({ card, theme, appearance="original", expanded = false, onEdit, onQr, onShare, onEditPhoto, onSaveContact, contact, employerLink }: { card: CardData; theme: ThemeName; appearance?:JCardPremiumBackgroundId; expanded?: boolean; onEdit?: () => void; onQr?: () => void; onShare?: () => void; onEditPhoto?: () => void; onSaveContact?:()=>void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null }) {
   const { s, fs } = useUi();
   const jobeen=jobeenTokens(theme);
   const { fontScale } = useWindowDimensions();
@@ -176,6 +177,9 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         
         
 
+        {onSaveContact&&<Pressable accessibilityRole="button" accessibilityLabel="Guardar contacto personal" onPress={event=>{event.stopPropagation();onSaveContact();}} style={{alignSelf:"center",flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,backgroundColor:jobeen.yellow,borderRadius:20,paddingHorizontal:10,paddingVertical:4,minHeight:28,marginTop:1}}>
+          <Ionicons name="person-add-outline" size={12} color={jobeen.ink}/><Text style={{fontSize:10,fontWeight:"700",color:jobeen.ink}}>Guardar contacto</Text>
+        </Pressable>}
         {card.status==="ACTIVE"&&employerLink&&<Pressable accessibilityRole="link" onPress={()=>router.push({pathname:"/company",params:{id:employerLink.id}})}><Text style={[lineStyle,{textDecorationLine:"underline"}]}>Trabaja en {employerLink.name} · @{employerLink.handle} ↗</Text><Text style={{fontSize:10,color:finish.secondary}}>Vínculo laboral verificado por la empresa</Text></Pressable>}
 
         </View>
@@ -253,7 +257,7 @@ function BusinessAward({label,icon,level,finish,surface,onPress,compact=false}:{
   <Text numberOfLines={1} style={{fontSize:10,color:compact?jobeenTokens("light").ink:(level===0?surface.pending:tone),letterSpacing:-1}}>{level===0?"☆☆☆":"★".repeat(level)+"☆".repeat(3-level)}</Text>
  </Pressable>;
 }
-export function BusinessFace({card,theme,appearance="original",contact,onQr,onShare,canEditMedia=false,onEditMedia,visibility=DEFAULT_JCARD_VISIBILITY}:{card:CardData;theme:ThemeName;appearance?:JCardPremiumBackgroundId;contact?:{email:string|null;phone:string|null};onQr?:()=>void;onShare?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void;visibility?:typeof DEFAULT_JCARD_VISIBILITY}){
+export function BusinessFace({card,theme,appearance="original",contact,onQr,onShare,onSaveContact,canEditMedia=false,onEditMedia,visibility=DEFAULT_JCARD_VISIBILITY}:{card:CardData;theme:ThemeName;appearance?:JCardPremiumBackgroundId;contact?:{email:string|null;phone:string|null};onQr?:()=>void;onShare?:()=>void;onSaveContact?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void;visibility?:typeof DEFAULT_JCARD_VISIBILITY}){
  const b=card.business;const jobeen=jobeenTokens(theme);const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=false;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:premium?.base??jobeen.biz,end:premium?.base??jobeen.biz,text:premium?.ink??jobeen.ink,secondary:premium?.ink??jobeen.textSoft,line:premium?.line??jobeen.bizBorder,sealFill:jobeen.surface};
  const [selectedAward,setSelectedAward]=useState<{label:string;level:number}|null>(null);
  const [showBusinessVerification,setShowBusinessVerification]=useState(false);
