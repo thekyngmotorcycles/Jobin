@@ -122,3 +122,11 @@ export async function findProfessionals(query:string,city:string,profession:stri
  if(error)throw new Error(error.message);
  return (data??[]) as ProfessionalSearchResult[];
 }
+
+/** People are personal accounts with no profession declared; they are not professionals. */
+export interface PersonSearchResult {id:string;name:string;handle:string;city:string|null;region:string|null}
+export async function findPeople(query:string,city:string):Promise<PersonSearchResult[]>{
+ const {data,error}=await requireSupabase().rpc("jobeen_find_people" as never,{p_query:query.trim(),p_city:city.trim(),p_limit:50} as never);
+ if(error)throw new Error(error.message);
+ return (data??[]) as PersonSearchResult[];
+}
