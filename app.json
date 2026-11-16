@@ -61,6 +61,12 @@
           "defaultChannel": "jobin-activity",
           "color": "#C8A95C"
         }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Permite a Jobeen seleccionar y guardar contactos desde las JCards."
+        }
       ]
     ],
     "runtimeVersion": {
