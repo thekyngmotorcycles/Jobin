@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useRef,useState} from "react";
 import {ActivityIndicator,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {router,useLocalSearchParams} from "expo-router";
@@ -16,6 +16,10 @@ export default function Search(){
  const {s,colors}=useUi();
  const catalog=useProfessionalData(loadCatalog);
  const specialtyCatalog=useProfessionalData(loadSpecialtyCatalog);
+ const filterScrollRef=useRef<ScrollView>(null);
+ const filterPositions=useRef<Partial<Record<SearchKind,{x:number;width:number}>>>({});
+ const filterViewportWidth=useRef(0);
+ const filterContentWidth=useRef(0);
  const [query,setQuery]=useState("");
  const [city,setCity]=useState("");
  const [specialty,setSpecialty]=useState("");
@@ -45,8 +49,8 @@ export default function Search(){
    <TextInput accessibilityLabel="Buscar en Jobin" placeholder="Ej. electricista en vivo en Miami" placeholderTextColor={colors.muted} value={query} onChangeText={setQuery} onSubmitEditing={()=>{if(effectiveKind==="Todo"||effectiveKind==="Profesionales"||effectiveKind==="Empresas"||effectiveKind==="Personas")void runSearch();}} returnKeyType="search" style={{flex:1,minHeight:46,borderRadius:24,backgroundColor:colors.accent,paddingHorizontal:18,color:colors.ink}}/>
    {!!query&&<IconButton icon="close" label="Borrar búsqueda" onPress={()=>{setQuery("");setResults([]);setPeople([]);setAllAccounts([]);setSearched(false);}}/>}
   </View>
-  <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" style={{flexGrow:0}} contentContainerStyle={{paddingHorizontal:16,paddingVertical:8,alignItems:"center",gap:8}}>
-   {(["Todo","Profesionales","Personas","Empresas","Flashes","Streams"] as const).map(option=><Pressable key={option} accessibilityRole="button" accessibilityState={{selected:kind===option}} onPress={()=>{setKind(option);setResults([]);setPeople([]);setAllAccounts([]);setSearched(false);setError("");}} style={{paddingHorizontal:16,paddingVertical:10,borderRadius:24,backgroundColor:kind===option?colors.ink:colors.paper,borderWidth:1,borderColor:kind===option?colors.ink:colors.line}}>
+  <ScrollView ref={filterScrollRef} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" style={{flexGrow:0}} onLayout={event=>{filterViewportWidth.current=event.nativeEvent.layout.width;}} onContentSizeChange={width=>{filterContentWidth.current=width;}} contentContainerStyle={{paddingHorizontal:16,paddingVertical:8,alignItems:"center",gap:8}}>
+   {(["Todo","Profesionales","Personas","Empresas","Flashes","Streams"] as const).map(option=><Pressable key={option} accessibilityRole="button" accessibilityState={{selected:kind===option}} onLayout={event=>{filterPositions.current[option]={x:event.nativeEvent.layout.x,width:event.nativeEvent.layout.width};}} onPress={()=>{setKind(option);setResults([]);setPeople([]);setAllAccounts([]);setSearched(false);setError("");const position=filterPositions.current[option];if(position){const viewport=filterViewportWidth.current;const maxScroll=Math.max(0,filterContentWidth.current-viewport);const centered=position.x+position.width/2-viewport/2;filterScrollRef.current?.scrollTo({x:Math.max(0,Math.min(centered,maxScroll)),animated:true});}}} style={{paddingHorizontal:16,paddingVertical:10,borderRadius:24,backgroundColor:kind===option?colors.ink:colors.paper,borderWidth:1,borderColor:kind===option?colors.ink:colors.line}}>
     <Text style={{color:kind===option?colors.paper:colors.ink,fontWeight:kind===option?"700":"500"}}>{option}</Text>
    </Pressable>)}
   </ScrollView>
