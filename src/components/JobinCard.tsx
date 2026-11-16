@@ -340,8 +340,10 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  // Preserve approved dimensions on normal phones; give narrow screens and large text room.
  const effectiveCardWidth=measuredCardWidth||Math.min(width-32,520);
  const compactCard=effectiveCardWidth<350;
- const extraTextHeight=Math.round(Math.max(0,Math.min(fontScale,1.6)-1)*110);
- const cardHeight=((previewTheme??theme)==="light"?364:450)+(compactCard?40:0)+extraTextHeight;
+ const extraTextHeight=Math.round(Math.max(0,Math.min(fontScale,1.3)-1)*40);
+ // Keep the approved compact card proportions. The previous +40/+66 responsive padding
+ // stretched the card and left a large blank gap between status and languages.
+ const cardHeight=((previewTheme??theme)==="light"?364:450)+(compactCard?12:0)+extraTextHeight;
  useEffect(()=>{if(!canFlip)setBack(activeBusiness);},[canFlip,activeBusiness]);
  const toggle=()=>{if(canFlip)setBack(value=>!value);};
  const cardTheme=previewTheme??theme;
