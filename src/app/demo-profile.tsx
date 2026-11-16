@@ -1,3 +1,4 @@
+import {jobeenTokens} from "../theme/jobeen";
 import {useState} from "react";
 import {Pressable,ScrollView,Text,View} from "react-native";
 import {router} from "expo-router";
@@ -7,7 +8,7 @@ import {mockJCard} from "../mocks/jcard";
 import {useUi} from "../components/ui";
 import {SafeAreaView} from "react-native-safe-area-context";
 export default function DemoPublicProfile(){
- const {colors,s}=useUi();const [following,setFollowing]=useState(false);const [section,setSection]=useState<"cv"|"videos"|"live">("videos");const [notice,setNotice]=useState("");
+ const {colors,s}=useUi();const jobeen=jobeenTokens("light");const [following,setFollowing]=useState(false);const [section,setSection]=useState<"cv"|"videos"|"live">("videos");const [notice,setNotice]=useState("");
  const card={...mockJCard("Sin reseñas","AVAILABLE"),name:"Alex Rivera",handle:"alex_profesional",role:"Electricista",years:7,avatar:undefined,profileUrl:"https://example.com/jobin/demo/alex_profesional",seals:[]};
  return <SafeAreaView style={{flex:1,backgroundColor:colors.paper}}><ScrollView contentContainerStyle={{padding:16,gap:14,paddingBottom:65}}>
   <Pressable accessibilityRole="button" onPress={()=>router.back()} style={{flexDirection:"row",gap:8,alignItems:"center",paddingVertical:8}}><Ionicons name="arrow-back" size={23} color={colors.ink}/><Text style={s.text}>Volver a mi perfil</Text></Pressable>
@@ -16,7 +17,7 @@ export default function DemoPublicProfile(){
   <JobinCard card={card}/>
   <View style={{flexDirection:"row",gap:10}}>
    <Pressable accessibilityRole="button" onPress={()=>setFollowing(v=>!v)} style={{flex:1,backgroundColor:colors.ink,borderRadius:12,padding:14,alignItems:"center",flexDirection:"row",justifyContent:"center",gap:8}}><Ionicons name={following?"checkmark":"heart-outline"} size={20} color={colors.paper}/><Text style={{color:colors.paper,fontWeight:"700"}}>{following?"Siguiendo":"Seguir"}</Text></Pressable>
-   <Pressable accessibilityRole="button" onPress={()=>setNotice("Vista de demostración: las suscripciones no están habilitadas.")} style={{flex:1,borderWidth:1,borderColor:colors.line,borderRadius:12,padding:14,alignItems:"center",flexDirection:"row",justifyContent:"center",gap:8}}><Ionicons name="star-outline" size={20} color={colors.ink}/><Text style={s.text}>Suscribirse</Text></Pressable>
+   <Pressable accessibilityRole="button" onPress={()=>setNotice("Vista de demostración: no se pueden enviar mensajes a un perfil ficticio.")} style={{flex:1,borderWidth:1,borderColor:jobeen.yellow,backgroundColor:jobeen.cream,borderRadius:12,padding:14,alignItems:"center",flexDirection:"row",justifyContent:"center",gap:8}}><Ionicons name="paper-plane-outline" size={20} color={jobeen.ink}/><Text style={{color:jobeen.ink,fontWeight:"700"}}>Mensaje</Text></Pressable>
   </View>
   <View style={{flexDirection:"row",justifyContent:"space-around",paddingVertical:10,borderBottomWidth:1,borderColor:colors.line}}>
    {([{key:"cv",icon:"school-outline"},{key:"videos",icon:"play-outline"},{key:"live",icon:"radio-outline"}] as const).map(item=><Pressable key={item.key} accessibilityRole="button" accessibilityLabel={item.key==="cv"?"Historial":item.key==="videos"?"Videos":"En vivo"} onPress={()=>setSection(item.key)} style={{padding:14,borderBottomWidth:section===item.key?2:0,borderColor:colors.ink}}><Ionicons name={item.icon} size={26} color={colors.ink}/></Pressable>)}
