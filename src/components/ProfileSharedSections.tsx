@@ -25,7 +25,7 @@ export function ProfileMediaGrid({items,emptyMessage}:{items:ProfileTile[];empty
   {items.map((item,index)=><Pressable key={item.id} disabled={!item.onPress} accessibilityRole={item.onPress?"button":undefined} accessibilityLabel={item.title} onPress={item.onPress} style={{width:"33.33%",padding:1.5}}>
    <View style={{height:160,borderRadius:10,overflow:"hidden",backgroundColor:[jt.videoTile1,jt.videoTile2,jt.videoTile3][index%3]}}>
     <MediaThumbnail uri={item.thumbnail??undefined} label={item.title}/>
-    {typeof item.views==="number"&&<View style={{position:"absolute",bottom:6,left:6,flexDirection:"row",alignItems:"center",gap:4,backgroundColor:"rgba(0,0,0,0.6)",paddingHorizontal:6,paddingVertical:3,borderRadius:6}}><Ionicons name="play" size={12} color="#FFFFFF"/><Text style={{fontSize:12,fontWeight:"700",color:"#FFFFFF"}}>{new Intl.NumberFormat("es",{notation:"compact",maximumFractionDigits:1}).format(item.views)}</Text></View>}
+    {typeof item.views==="number"&&<View style={{position:"absolute",bottom:6,left:6,flexDirection:"row",alignItems:"center",gap:4,backgroundColor:jt.videoViewsOverlay,paddingHorizontal:6,paddingVertical:3,borderRadius:6}}><Ionicons name="play" size={12} color={jt.videoViewsText}/><Text style={{fontSize:12,fontWeight:"700",color:jt.videoViewsText}}>{new Intl.NumberFormat("es",{notation:"compact",maximumFractionDigits:1}).format(item.views)}</Text></View>}
    </View>
   </Pressable>)}
   {!items.length&&!!emptyMessage&&<Text style={{color:jt.ink2,textAlign:"center",paddingVertical:24,width:"100%"}}>{emptyMessage}</Text>}
