@@ -130,3 +130,11 @@ export async function findPeople(query:string,city:string):Promise<PersonSearchR
  if(error)throw new Error(error.message);
  return (data??[]) as PersonSearchResult[];
 }
+
+/** Unified search for every registered, active account, regardless of profession. */
+export interface AllAccountSearchResult {id:string;name:string;handle:string;city:string|null;region:string|null;account_type:"person"|"professional"|"company";profession:string}
+export async function findAllAccounts(query:string,city:string):Promise<AllAccountSearchResult[]>{
+ const {data,error}=await requireSupabase().rpc("jobeen_find_all_accounts" as never,{p_query:query.trim(),p_city:city.trim(),p_limit:50} as never);
+ if(error)throw new Error(error.message);
+ return (data??[]) as AllAccountSearchResult[];
+}
