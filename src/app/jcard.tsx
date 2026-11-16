@@ -2,8 +2,7 @@ import { ProfileCommunityActions } from "../components/ProfileCommunityActions";
 import { ProfessionalTrustMark } from "../components/ProfessionalTrustMark";
 import { useCallback,useEffect,useState } from "react";
 import { Pressable,Text,View } from "react-native";
-import {Ionicons} from "@expo/vector-icons";
-import {PublicProfileAvatar} from "../components/PublicProfileAvatar";
+import {ProfileMediaGrid,ProfileSectionTabs,type ProfileSection} from "../components/ProfileSharedSections";
 import {loadPublishedMedia,type PublishedMedia} from "../lib/safety-api";
 import {router} from "expo-router";
 import { approvedCV,cvRequests,requestCV } from "../lib/cv-access";
@@ -20,7 +19,7 @@ export default function PublicJCard(){
  const {user,card}=useLocalSearchParams<{user?:string;card?:string}>();
  const {colors}=useUi();
  const [viewer,setViewer]=useState("");
- const [section,setSection]=useState<"videos"|"live">("videos");
+ const [section,setSection]=useState<ProfileSection>("grid");
  const [media,setMedia]=useState<PublishedMedia[]>([]);
  useEffect(()=>{let live=true;void loadPublishedMedia().then(rows=>{if(live)setMedia(rows);}).catch(()=>{if(live)setMedia([]);});return()=>{live=false;};},[user]);
  const [verifiedIdentity,setVerifiedIdentity]=useState(false);
@@ -40,36 +39,17 @@ export default function PublicJCard(){
  },[user]));
  return <Screen demo={false} title="Perfil" subtitle="">
   {resource.data?<View style={{gap:14}}>
-    <View style={{flexDirection:"row",alignItems:"center",gap:14,paddingVertical:8}}>
-      <PublicProfileAvatar userId={resource.data.id} name={resource.data.name} size={72}/>
-      <View style={{flex:1,gap:5}}><Text style={{fontSize:22,fontWeight:"700",color:colors.ink}} numberOfLines={2}>{resource.data.name}</Text>
-        {!!resource.data.handle&&<Text style={{color:colors.muted,fontSize:14}}>@{resource.data.handle}</Text>}
-        {!!resource.data.role&&<Text style={{color:colors.muted,fontSize:14}} numberOfLines={2}>{resource.data.role}</Text>}
-        {followerCount!==null&&<Text style={{color:colors.muted,fontSize:13}}>{followerCount.toLocaleString("es")} seguidores</Text>}
-      </View>
-    </View>
-    <ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/>
     <JobinCard card={{...resource.data,identityVerified:verifiedIdentity}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/>
-    <View style={{marginVertical:4,gap:10}}>
+    <ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/>
+    <ProfessionalTrustMark worker={resource.data.id}/>
+    <ProfileSectionTabs section={section} onSelect={setSection}/>
+    {section==="cv"&&<View style={{marginVertical:4,gap:10}}>
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,borderRadius:12,borderWidth:1,borderColor:colors.line}}><Text style={{fontWeight:"700",color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text></Pressable>
       {cvOpen&&<View style={{gap:8,padding:12}}>{user!==viewer&&cvStatus!=="approved"?<><Text style={{color:colors.ink}}>El currículum es privado. El propietario debe autorizar tu solicitud.</Text><Pressable disabled={cvStatus==="pending"} onPress={()=>void requestCV(user!).then(()=>{setCvStatus("pending");setCvMessage("Solicitud enviada.");}).catch(e=>setCvMessage(String(e)))}><Text style={{fontWeight:"700",color:colors.ink}}>{cvStatus==="pending"?"Solicitud pendiente":"Solicitar CV"}</Text></Pressable></>:<>{cvRows.length?cvRows.map((row,i)=><Text key={i} style={{color:colors.ink}}>{row.role} · {row.company} ({row.from_year}–{row.to_year??"Actualidad"})</Text>):<Text style={{color:colors.muted}}>No hay experiencias registradas o disponibles.</Text>}</>}{!!cvMessage&&<Text style={{color:colors.muted}}>{cvMessage}</Text>}</View>}
-    </View>
-    <ProfessionalTrustMark worker={resource.data.id}/>
-    <View style={{flexDirection:"row",borderBottomWidth:1,borderBottomColor:colors.line}}>
-      {(["videos","live"] as const).map(tab=><Pressable key={tab} accessibilityRole="tab" accessibilityState={{selected:section===tab}} onPress={()=>setSection(tab)} style={{flex:1,alignItems:"center",paddingVertical:14,borderBottomWidth:section===tab?3:0,borderBottomColor:colors.ink}}>
-        <Ionicons name={tab==="videos"?"play-outline":"radio-outline"} size={23} color={section===tab?colors.ink:colors.muted}/>
-        <Text style={{color:section===tab?colors.ink:colors.muted,fontSize:12}}>{tab==="videos"?"Videos":"Streams"}</Text>
-      </Pressable>)}
-    </View>
-    <View style={{flexDirection:"row",flexWrap:"wrap",paddingBottom:24}}>
-      {media.filter(item=>item.creator_id===user&&item.kind===(section==="videos"?"video":"live")).map(item=><Pressable key={item.id} accessibilityRole="button" accessibilityLabel={"Ver "+item.title} onPress={()=>router.push({pathname:"/work-media/[id]",params:{id:item.id}})} style={{width:"33.33%",padding:2}}>
-        <View style={{height:152,backgroundColor:colors.accent,borderRadius:9,justifyContent:"center",alignItems:"center",padding:8,gap:10}}>
-          <Ionicons name={section==="videos"?"play-circle-outline":"radio-outline"} size={28} color={colors.ink}/>
-          <Text style={{color:colors.ink,textAlign:"center",fontSize:12}} numberOfLines={3}>{item.title}</Text>
-        </View>
-      </Pressable>)}
-      {!media.some(item=>item.creator_id===user&&item.kind===(section==="videos"?"video":"live"))&&<Text style={{color:colors.muted,paddingVertical:24,textAlign:"center",width:"100%"}}>Todavía no hay {section==="videos"?"videos":"streams"} publicados.</Text>}
-    </View>
+    </View>}
+    {section==="live"&&<View style={{padding:14,gap:10,borderWidth:1,borderColor:colors.line,borderRadius:14}}><Text style={{color:colors.ink,fontWeight:"700"}}>Transmisiones en vivo</Text><Text style={{color:colors.muted}}>Consulta las transmisiones públicas de este perfil.</Text></View>}
+    {(section==="grid"||section==="videos"||section==="live")&&<ProfileMediaGrid items={media.filter(item=>item.creator_id===user&&(section==="live"?item.kind==="live":item.kind==="video")).map(item=>({id:item.id,title:item.title,onPress:()=>router.push({pathname:"/work-media/[id]",params:{id:item.id}})}))} emptyMessage={section==="live"?"Todavía no hay streams publicados.":"Todavía no hay videos publicados."}/>}
+
   </View>:<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>}
  </Screen>;
 }
