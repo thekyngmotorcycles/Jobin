@@ -9,9 +9,12 @@ export function PublicProfileAvatar({userId,name,size=52}:{userId:string;name:st
  useEffect(()=>{
   let live=true;setUri(undefined);
   if(!userId)return;
-  void requireSupabase().from("profiles").select("avatar_path").eq("id",userId).maybeSingle()
-   .then(({data,error})=>{if(live&&!error)setUri(personalAvatarUrl(data?.avatar_path));})
-   .catch(()=>{});
+  void (async()=>{
+   try{
+    const {data,error}=await requireSupabase().from("profiles").select("avatar_path").eq("id",userId).maybeSingle();
+    if(live&&!error)setUri(personalAvatarUrl(data?.avatar_path));
+   }catch{/* Keep initials fallback if the avatar cannot be loaded. */}
+  })();
   return()=>{live=false;};
  },[userId]);
  return <Avatar uri={uri} name={name} size={size}/>;
