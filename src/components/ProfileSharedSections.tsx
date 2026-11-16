@@ -1,5 +1,6 @@
 import {Ionicons} from "@expo/vector-icons";
 import {Pressable,Text,View} from "react-native";
+import type {ReactNode} from "react";
 import {MediaThumbnail} from "./MediaThumbnail";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
@@ -26,5 +27,21 @@ export function ProfileMediaGrid({items,emptyMessage}:{items:ProfileTile[];empty
    </View>
   </Pressable>)}
   {!items.length&&!!emptyMessage&&<Text style={{color:jt.ink2,textAlign:"center",paddingVertical:24,width:"100%"}}>{emptyMessage}</Text>}
+ </View>;
+}
+
+/** One shared profile structure. The route supplies only permission-dependent controls and data. */
+export function UserProfileContent({
+ card,actions,trust,section,onSelect,children
+}:{
+ card:ReactNode;actions?:ReactNode;trust?:ReactNode;
+ section:ProfileSection;onSelect:(section:ProfileSection)=>void;children?:ReactNode;
+}){
+ return <View style={{gap:14}}>
+  {card}
+  {actions}
+  {trust}
+  <ProfileSectionTabs section={section} onSelect={onSelect}/>
+  {children}
  </View>;
 }
