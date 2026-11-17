@@ -12,7 +12,7 @@ export type JShopDraft={
  photos:string[];createdAt:number;updatedAt:number;
 };
 export type JShopListing=Omit<JShopDraft,"ownerId">&{
- sellerId:string;sellerName:string;sellerHandle:string;locationLat:number|null;locationLon:number|null;photoPaths?:string[];status:"published"|"paused"|"sold";
+ sellerId:string;sellerName:string;sellerHandle:string;locationLat?:number|null;locationLon?:number|null;photoPaths?:string[];status:"published"|"paused"|"sold";
 };
 export type JShopFilters={query:string;category:(typeof JSHOP_CATEGORIES)[number];condition:"Todas"|JShopCondition;location:string;minPrice:string;maxPrice:string;order:JShopOrder};
 export const DEFAULT_JSHOP_FILTERS:JShopFilters={query:"",category:"Todo",condition:"Todas",location:"",minPrice:"",maxPrice:"",order:"recent"};
