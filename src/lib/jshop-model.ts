@@ -22,11 +22,23 @@ export function formatJShopPrice(price:number|null,currency:JShopCurrency):strin
 }
 export function parseJShopPrice(text:string):number|null{
  const value=text.trim().replace(/\s/g,"");
- if(!value)return null;
- const normalized=value.includes(",")?value.replace(/\./g,"").replace(",","."):value;
+ if(!value||!/^[0-9.,]+$/.test(value))return null;
+ const comma=value.lastIndexOf(","),dot=value.lastIndexOf(".");
+ let normalized=value;
+ if(comma>=0&&dot>=0){
+  const decimal=comma>dot?",":".";
+  const grouping=decimal===","?".":",";
+  normalized=value.split(grouping).join("").replace(decimal,".");
+ }else if(comma>=0||dot>=0){
+  const separator=comma>=0?",":".";
+  const parts=value.split(separator);
+  if(parts.length>2||parts.length===2&&parts[1].length===3&&parts[0].length<=3)normalized=parts.join("");
+  else normalized=parts.join(".");
+ }
  const amount=Number(normalized);
- return Number.isFinite(amount)&&amount>0?amount:null;
+ return Number.isFinite(amount)&&amount>0&&amount<=1000000000?Math.round(amount*100)/100:null;
 }
+
 export function filterJShopListings(items:readonly JShopListing[],filter:JShopFilters):JShopListing[]{
  const search=filter.query.trim().toLocaleLowerCase();
  const place=filter.location.trim().toLocaleLowerCase();
