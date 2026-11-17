@@ -1,0 +1,32 @@
+-- JShop true-distance searches from a chosen map point (mi). No location of the buyer is collected.
+alter table public.jshop_listings add column if not exists location_lat double precision;
+alter table public.jshop_listings add column if not exists location_lon double precision;
+alter table public.jshop_listings drop constraint if exists jshop_coordinates_pair;
+alter table public.jshop_listings add constraint jshop_coordinates_pair
+ check ((location_lat is null and location_lon is null)
+ or (location_lat between -90 and 90 and location_lon between -180 and 180));
+create index if not exists jshop_listing_location_idx on public.jshop_listings(location_lat,location_lon)
+ where status='published' and location_lat is not null and location_lon is not null;
+
+-- SECURITY INVOKER preserves jshop_listings RLS; only visible, published listings qualify.
+create or replace function public.jshop_listings_nearby(
+ p_lat double precision,p_lon double precision,p_radius_miles integer,p_limit integer default 150)
+returns setof public.jshop_listings
+language sql stable security invoker set search_path=''
+as $$
+ select l.*
+ from public.jshop_listings l
+ where p_lat between -90 and 90 and p_lon between -180 and 180
+  and p_radius_miles in (5,10,50,100)
+  and l.status='published'
+  and l.location_lat is not null and l.location_lon is not null
+  and 2*3958.7613*asin(least(1.0,sqrt(
+    power(sin(radians(l.location_lat-p_lat)/2),2)
+    + cos(radians(p_lat))*cos(radians(l.location_lat))
+    *power(sin(radians(l.location_lon-p_lon)/2),2)
+  ))) <= p_radius_miles
+ order by l.created_at desc
+ limit least(greatest(coalesce(p_limit,150),1),150)
+$$;
+revoke all on function public.jshop_listings_nearby(double precision,double precision,integer,integer) from public;
+grant execute on function public.jshop_listings_nearby(double precision,double precision,integer,integer) to anon,authenticated;
