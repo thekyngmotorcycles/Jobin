@@ -5,7 +5,10 @@ JShop's existing location selector is preserved. Its implementation now uses:
 - Web: Mapbox Light raster tiles rendered in the existing touch map.
 - Geocoding: Mapbox Geocoding API v6 globally (supports Argentina, Peru, US, etc.). City suggestions are debounced and only start after three characters.
 - Selection confirmation: Mapbox Geocoding **permanent** results before the selected location or recent locations are written to AsyncStorage.
-- Existing article filtering: text-matching `location` against the vendor's city. A true geographic radius is **not yet implemented**; that requires listing coordinates and geo-indexed queries.
+- Buyer-controlled radius: choose a place or drag the Mapbox map, then select 5, 10, 50, or 100 miles. The selection is saved by account.
+- Actual server-side radius: `public.jshop_listings_nearby` uses a Haversine calculation and existing row-level security. Searches do not depend on matching a city name.
+- Each newly published listing stores `location_lat` / `location_lon` based on the Mapbox permanent geocoding result of the seller's entered location. Seller-selected address/map pin precision can be added later.
+- Listings without coordinates cannot appear in radius searches. The unfiltered catalogue still works when no buying area is saved.
 
 ## Account and EAS credentials (required)
 
