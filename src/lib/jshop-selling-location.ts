@@ -29,10 +29,24 @@ export async function readDefaultSaleLocation(owner:string):Promise<SaleLocation
 export async function writeDefaultSaleLocation(owner:string,point:SaleLocation):Promise<void>{
  if(!owner||owner==="guest"||!validSaleLocation(point))throw Error("Ubicación de venta inválida.");
  const db=requireSupabase();
- const values={seller_id:owner,city:point.city.trim(),label:point.label.trim(),
+ const values={city:point.city.trim(),label:point.label.trim(),
   location_lat:point.lat,location_lon:point.lon,updated_at:new Date().toISOString()};
- const {error}=await db.from("jshop_seller_locations" as never).upsert(values as never,{onConflict:"seller_id"});
- if(error)throw error;
+ const {data:existing,error:readError}=await db.from("jshop_seller_locations" as never)
+  .select("seller_id").eq("seller_id",owner).maybeSingle();
+ if(readError)throw readError;
+ if(existing){
+  const {data,error}=await db.from("jshop_seller_locations" as never)
+   .update(values as never).eq("seller_id",owner).select("seller_id").maybeSingle();
+  if(error)throw error;
+  if(!data)throw Error("No se pudo actualizar tu ubicación de venta.");
+ }else{
+  const {error}=await db.from("jshop_seller_locations" as never).insert({seller_id:owner,...values} as never);
+  if(error&&error.code==="23505"){
+   // Duplicate creation from another device: update without modifying the owner.
+   const retry=await db.from("jshop_seller_locations" as never).update(values as never).eq("seller_id",owner);
+   if(retry.error)throw retry.error;
+  }else if(error)throw error;
+ }
 }
 export async function readPendingArticleLocation(owner:string,session:string):Promise<SaleLocation|null>{
  if(!owner||!session)return null;
