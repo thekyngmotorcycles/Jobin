@@ -47,7 +47,7 @@ export default function Videos() {
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
       {focused && <StatusBar translucent backgroundColor={colors.transparent} style={theme==="dark"?"light":"dark"} />}
       <View style={{ position: "absolute", top: inset.top + 4, left: 8, right: 8, zIndex: 20 }}>
-        <FeedTopBar overlay videoMode tab={tab} onTab={changeTab} plusLabel="Subir video" onPlus={() => router.navigate("/create")} onSearch={() => router.push("/search")} />
+        <FeedTopBar overlay videoMode tab={tab} onTab={changeTab} leading="live" onLeading={() => router.navigate("/(tabs)/streams")} onSearch={() => router.push("/search")} />
       </View>
       <View style={{position:"absolute",top:inset.top+70,left:0,right:0,zIndex:19}}><WorkCategoryFilters selected={category} onSelect={changeCategory} scrollY={scrollY}/></View>
       <View style={{ flex: 1 }} onLayout={e => { const next=Math.max(1,Math.round(e.nativeEvent.layout.height)); setHeight(previous=>previous===next?previous:next); }}>
