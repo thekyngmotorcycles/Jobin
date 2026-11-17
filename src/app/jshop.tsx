@@ -81,7 +81,7 @@ export default function JShop(){
    </View>
    <JShopCategories value={category} onChange={setCategory}/>
    <View style={{flexDirection:"row",gap:10}}>
-    <View style={{flex:1}}><JShopButton title="Publicar artículo" icon="add-circle-outline" onPress={()=>router.push("/jshop/publish")}/></View>
+    <View style={{flex:1}}><JShopButton title="Vender" icon="add-circle-outline" onPress={()=>router.push("/jshop/publish")}/></View>
     <View style={{flex:1}}><JShopButton title="Mis anuncios" icon="albums-outline" secondary onPress={()=>router.push("/jshop/mine")}/></View>
    </View>
    <View style={{gap:8}}>
