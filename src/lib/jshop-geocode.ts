@@ -5,7 +5,7 @@ type OsmAddress={city?:string;town?:string;village?:string;municipality?:string;
 type OsmPlace={lat:string;lon:string;display_name:string;address?:OsmAddress};
 const cache=new Map<string,JShopPlace[]>();
 let lastRequest=0;
-async function request(url:string):Promise<OsmPlace[]>{
+async function request(url:string):Promise<OsmPlace[]|OsmPlace>{
  // The public Nominatim endpoint is used only on explicit user actions, never per keystroke.
  const delay=Math.max(0,1200-(Date.now()-lastRequest));
  if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
@@ -28,7 +28,8 @@ export async function findJShopPlaces(query:string):Promise<JShopPlace[]>{
  const key=text.toLocaleLowerCase();
  if(cache.has(key))return cache.get(key)!;
  const url="https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&q="+encodeURIComponent(text);
- const rows=await request(url);
+ const received=await request(url);
+ const rows=Array.isArray(received)?received:[received];
  const matches=rows.map(normalize).filter((p):p is JShopPlace=>p!==null);
  cache.set(key,matches);
  return matches;
@@ -36,7 +37,7 @@ export async function findJShopPlaces(query:string):Promise<JShopPlace[]>{
 export async function placeAtMapCenter(lat:number,lon:number):Promise<JShopPlace>{
  const url="https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=12&addressdetails=1&lat="+encodeURIComponent(lat.toFixed(6))+"&lon="+encodeURIComponent(lon.toFixed(6));
  const data=await request(url);
- const point=normalize(data[0]);
+ const point=normalize(Array.isArray(data)?data[0]:data);
  if(!point)throw Error("No se encontró una ciudad para este punto. Prueba otro punto del mapa.");
  return {...point,lat,lon};
 }
