@@ -4,7 +4,7 @@ import {useEffect,useRef,useState} from "react";
 import {Modal,Pressable,Text,View,useWindowDimensions} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
-import {jobeenTokens} from "../theme/jobeen";
+import {jobeenTokens,LIGHT_JOBEEN} from "../theme/jobeen";
 import {JobeenCreateIcon} from "./JobeenCreateIcon";
 
 const MENU_WIDTH=250;
@@ -46,8 +46,12 @@ export function JobeenCreateMenu(){
  return <>
   <Pressable ref={trigger} accessibilityRole="button" accessibilityLabel="Crear" accessibilityHint="Abrir opciones para crear video, en vivo o Flash" accessibilityState={{expanded:visible}}
    onPress={()=>visible?setVisible(false):open()}
-   style={({pressed})=>({width:48,height:48,alignItems:"center",justifyContent:"center",borderRadius:24,backgroundColor:visible?t.cream:t.bg,opacity:pressed?0.72:1})}>
-   <JobeenCreateIcon size={28}/>
+   style={({pressed})=>({width:48,height:48,alignItems:"center",justifyContent:"center",borderRadius:17,
+    backgroundColor:LIGHT_JOBEEN.surface,borderWidth:1,borderColor:visible?LIGHT_JOBEEN.yellow:LIGHT_JOBEEN.line,
+    shadowColor:LIGHT_JOBEEN.ink,shadowOffset:{width:0,height:pressed?1:4},shadowOpacity:pressed?0.08:0.18,
+    shadowRadius:pressed?2:6,elevation:pressed?2:5,transform:[{translateY:pressed?1.5:0}],
+    opacity:pressed?0.9:1})}>
+   <JobeenCreateIcon size={33}/>
   </Pressable>
   <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={()=>setVisible(false)}>
    <View style={{flex:1}}>
