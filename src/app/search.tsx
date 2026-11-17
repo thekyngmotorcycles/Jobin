@@ -1,8 +1,11 @@
-import {useRef,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {ActivityIndicator,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {router,useLocalSearchParams} from "expo-router";
 import {Avatar,IconButton} from "../components/social-ui";
+import {Ionicons} from "@expo/vector-icons";
+import {readRecentSearches,rememberRecentSearch,clearRecentSearches} from "../lib/search-history";
+import {suggestionsForQuery} from "../lib/search-history-core";
 import {PublicProfileAvatar} from "../components/PublicProfileAvatar";
 import {requireSupabase} from "../lib/supabase";
 import {useUi} from "../components/ui";
@@ -25,7 +28,17 @@ export default function Search(){
  const [query,setQuery]=useState("");
  const [city,setCity]=useState("");
  const [specialty,setSpecialty]=useState("");
- const [kind,setKind]=useState<SearchKind>(mode==="live"?"Streams":"Todo");
+ const [kind,setKind]=useState<SearchKind>(mode==="live"?"Streams":mode==="flash"?"Flashes":"Todo");
+ const [historyOwner,setHistoryOwner]=useState("");
+ const [recent,setRecent]=useState<string[]>([]);
+ const [showRecent,setShowRecent]=useState(false);
+ useEffect(()=>{setKind(mode==="live"?"Streams":mode==="flash"?"Flashes":"Todo");},[mode]);
+ useEffect(()=>{let active=true;void(async()=>{
+  try{const {data:{user}}=await requireSupabase().auth.getUser();
+   const id=user?.id??"";const entries=await readRecentSearches(id);
+   if(active){setHistoryOwner(id);setRecent(entries);}
+  }catch{if(active){setHistoryOwner("");setRecent([]);}}
+ })();return()=>{active=false;};},[]);
  const [results,setResults]=useState<ProfessionalSearchResult[]>([]);
  const [people,setPeople]=useState<PersonSearchResult[]>([]);
  const [allAccounts,setAllAccounts]=useState<AllAccountSearchResult[]>([]);
@@ -42,22 +55,67 @@ export default function Search(){
   try{const {data:{user}}=await requireSupabase().auth.getUser();if(user?.id===id){router.push("/(tabs)/profile");return;}}catch{}
   router.push({pathname:"/jcard",params:{user:id}});
  }
- async function runSearch(){
-  if(!query.trim()&&!city.trim()&&!specialty.trim()&&effectiveKind!=="Personas"&&effectiveKind!=="Todo"){setError("Escribe qué profesional buscas o indica una ciudad.");return;}
-  setLoading(true);setError("");setSearched(true);
-  try{if(effectiveKind==="Todo"){setAllAccounts(await findAllAccounts(query,city||intent.city));setResults([]);setPeople([]);}else if(effectiveKind==="Personas"){setPeople(await findPeople(query,city||intent.city));setResults([]);}else{setResults(await findProfessionals(query,city||intent.city,intent.professionCode,specialty||intent.specialty));setPeople([]);}}
-  catch(e){setResults([]);setPeople([]);setAllAccounts([]);setError(e instanceof Error?e.message:"No se pudo buscar profesionales.");}
+ async function runSearch(nextQuery=query){
+  const term=nextQuery.trim();
+  const mediaMode=effectiveKind==="Flashes"||effectiveKind==="Streams";
+  if(!term&&!city.trim()&&!specialty.trim()&&!mediaMode&&effectiveKind!=="Personas"&&effectiveKind!=="Todo"){setError("Escribe qué profesional buscas o indica una ciudad.");return;}
+  setQuery(nextQuery);setShowRecent(false);setError("");setSearched(true);
+  if(term&&historyOwner){
+   void rememberRecentSearch(historyOwner,term).then(setRecent).catch(()=>{});
+  }
+  if(mediaMode)return;
+  const currentIntent=nextQuery===query?intent:interpretJobinSearch(nextQuery,["Miami","Miami Beach","Orlando","Fort Lauderdale","New York","Los Angeles","Chicago","Houston","Dallas","Tampa","Buenos Aires","Ciudad de México","Lima","Bogotá","Medellín","Santiago","Madrid","Barcelona"],catalog.data,specialtyCatalog.data??undefined);
+  setLoading(true);
+  try{
+   if(effectiveKind==="Todo"){setAllAccounts(await findAllAccounts(term,city||currentIntent.city));setResults([]);setPeople([]);}
+   else if(effectiveKind==="Personas"){setPeople(await findPeople(term,city||currentIntent.city));setResults([]);setAllAccounts([]);}
+   else{setResults(await findProfessionals(term,city||currentIntent.city,currentIntent.professionCode,specialty||currentIntent.specialty));setPeople([]);setAllAccounts([]);}
+  }catch(e){setResults([]);setPeople([]);setAllAccounts([]);setError(e instanceof Error?e.message:"No se pudo buscar profesionales.");}
   finally{setLoading(false);}
  }
  return <SafeAreaView style={s.screen}>
   <View style={{flexDirection:"row",alignItems:"center",padding:12,gap:6}}>
    <IconButton icon="arrow-back" label="Volver" onPress={()=>router.canGoBack()?router.back():router.replace("/")}/>
-   <TextInput accessibilityLabel="Buscar en Jobin" placeholder="Ej. electricista en vivo en Miami" placeholderTextColor={colors.muted} value={query} onChangeText={setQuery} onSubmitEditing={()=>{if(effectiveKind==="Todo"||effectiveKind==="Profesionales"||effectiveKind==="Empresas"||effectiveKind==="Personas")void runSearch();}} returnKeyType="search" style={{flex:1,minHeight:46,borderRadius:24,backgroundColor:colors.accent,paddingHorizontal:18,color:colors.ink}}/>
-   {!!query&&<IconButton icon="close" label="Borrar búsqueda" onPress={()=>{setQuery("");setResults([]);setPeople([]);setAllAccounts([]);setSearched(false);}}/>}
+   <TextInput accessibilityLabel="Buscar en Jobeen" placeholder={effectiveKind==="Flashes"?"Buscar Flashes":effectiveKind==="Streams"?"Buscar Lives":"Buscar personas, negocios o profesiones"} placeholderTextColor={colors.muted} value={query} onFocus={()=>setShowRecent(true)} onChangeText={value=>{setQuery(value);setShowRecent(true);setSearched(false);setResults([]);setPeople([]);setAllAccounts([]);}} onSubmitEditing={()=>void runSearch()} returnKeyType="search" style={{flex:1,minWidth:0,minHeight:46,borderRadius:24,backgroundColor:colors.accent,paddingHorizontal:18,color:colors.ink}}/>
+   {!!query&&<IconButton icon="close" label="Borrar búsqueda" onPress={()=>{setQuery("");setShowRecent(true);setResults([]);setPeople([]);setAllAccounts([]);setSearched(false);}}/>}
   </View>
-  <ScrollView ref={filterScrollRef} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" removeClippedSubviews={false} style={{flexGrow:0,overflow:"visible"}} onLayout={event=>{filterViewportWidth.current=event.nativeEvent.layout.width;}} onContentSizeChange={width=>{filterContentWidth.current=width;}} contentContainerStyle={{paddingHorizontal:16,paddingVertical:8,alignItems:"center",gap:8}}>
-   {(["Todo","Profesionales","Personas","Empresas","Flashes","Streams"] as const).map(option=><Pressable key={option} accessibilityRole="button" accessibilityState={{selected:kind===option}} onLayout={event=>{filterPositions.current[option]={x:event.nativeEvent.layout.x,width:event.nativeEvent.layout.width};}} onPress={()=>{setKind(option);setResults([]);setPeople([]);setAllAccounts([]);setSearched(false);setError("");const position=filterPositions.current[option];if(position){const viewport=filterViewportWidth.current;const maxScroll=Math.max(0,filterContentWidth.current-viewport);const centered=position.x+position.width/2-viewport/2;filterScrollRef.current?.scrollTo({x:Math.max(0,Math.min(centered,maxScroll)),animated:true});}}} style={{paddingHorizontal:16,paddingVertical:10,borderRadius:24,overflow:"visible",backgroundColor:kind===option?colors.ink:colors.paper,borderWidth:1,borderColor:kind===option?colors.ink:colors.line}}>
-    <Text style={{color:kind===option?colors.paper:colors.ink,fontWeight:kind===option?"700":"500",textAlignVertical:"center",includeFontPadding:true}}>{option}</Text>
+  {showRecent&&recent.length>0&&<View style={{marginHorizontal:16,marginBottom:8,padding:8,borderWidth:1,borderColor:colors.line,borderRadius:17,backgroundColor:colors.paper,gap:1}}>
+   <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:10,paddingVertical:4}}>
+    <Text style={{fontSize:12,fontWeight:"700",color:colors.muted}}>Búsquedas recientes</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel="Borrar búsquedas recientes" onPress={()=>{void clearRecentSearches(historyOwner).then(()=>setRecent([])).catch(()=>{});}} style={{minHeight:36,justifyContent:"center",paddingHorizontal:8}}>
+     <Text style={{fontSize:12,color:colors.muted}}>Borrar historial</Text>
+    </Pressable>
+   </View>
+   {suggestionsForQuery(recent,query).map(term=><Pressable key={term} accessibilityRole="button" accessibilityLabel={"Buscar de nuevo "+term} onPress={()=>void runSearch(term)}
+    style={({pressed})=>({minHeight:46,borderRadius:11,flexDirection:"row",alignItems:"center",paddingHorizontal:12,gap:11,backgroundColor:pressed?colors.accent:colors.transparent})}>
+    <Ionicons name="time-outline" size={18} color={colors.muted}/>
+    <Text numberOfLines={1} style={{color:colors.ink,fontSize:14,flex:1}}>{term}</Text>
+    <Ionicons name="arrow-up-outline" size={17} color={colors.muted}/>
+   </Pressable>)}
+  </View>}
+  <ScrollView ref={filterScrollRef} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always"
+   removeClippedSubviews={false} style={{flexGrow:0,height:62,minHeight:62}}
+   onLayout={event=>{filterViewportWidth.current=event.nativeEvent.layout.width;}}
+   onContentSizeChange={width=>{filterContentWidth.current=width;}}
+   contentContainerStyle={{paddingHorizontal:16,paddingVertical:7,alignItems:"center",gap:9}}>
+   {(["Todo","Profesionales","Personas","Empresas","Flashes","Streams"] as const).map(option=><Pressable key={option}
+    accessibilityRole="button" accessibilityState={{selected:kind===option}}
+    onLayout={event=>{filterPositions.current[option]={x:event.nativeEvent.layout.x,width:event.nativeEvent.layout.width};}}
+    onPress={()=>{
+     setKind(option);setShowRecent(false);setResults([]);setPeople([]);setAllAccounts([]);setSearched(false);setError("");
+     const position=filterPositions.current[option];
+     if(position){
+      const viewport=filterViewportWidth.current;
+      const maxScroll=Math.max(0,filterContentWidth.current-viewport);
+      const centered=position.x+position.width/2-viewport/2;
+      filterScrollRef.current?.scrollTo({x:Math.max(0,Math.min(centered,maxScroll)),animated:true});
+     }
+    }}
+    style={{height:48,minHeight:48,flexShrink:0,alignItems:"center",justifyContent:"center",paddingHorizontal:17,
+     borderRadius:24,backgroundColor:kind===option?colors.ink:colors.paper,
+     borderWidth:1,borderColor:kind===option?colors.ink:colors.line}}>
+    <Text numberOfLines={1} style={{fontSize:14,lineHeight:20,includeFontPadding:true,textAlignVertical:"center",
+     color:kind===option?colors.paper:colors.ink,fontWeight:kind===option?"700":"500"}}>{option}</Text>
    </Pressable>)}
   </ScrollView>
   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:20,gap:16}}>
