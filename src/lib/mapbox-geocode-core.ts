@@ -1,7 +1,7 @@
 import type {JShopPlace} from "./jshop-location-core";
 // Kept dependency-free so the parser can run under Node's strip-types test runner.
 const clampMapLatitude=(lat:number)=>Math.max(-85.05112878,Math.min(85.05112878,lat));
-const normalizeCityName=(input:string)=>input.trim().replace(/\\s+/g," ").slice(0,90);
+const normalizeCityName=(input:string)=>input.trim().replace(/\s+/g," ").slice(0,90);
 const normalizeMapLongitude=(lon:number)=>((lon+180)%360+360)%360-180;
 
 /** Mapbox Geocoding v6 point and administrative hierarchy. */
