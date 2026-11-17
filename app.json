@@ -67,6 +67,12 @@
         {
           "contactsPermission": "Permite a Jobeen seleccionar y guardar contactos desde las JCards."
         }
+      ],
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsVersion": "11.33.0"
+        }
       ]
     ],
     "runtimeVersion": {
