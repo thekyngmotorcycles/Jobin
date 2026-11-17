@@ -8,7 +8,7 @@ export type JShopCurrency=(typeof JSHOP_CURRENCIES)[number];
 export type JShopOrder="recent"|"price_low"|"price_high";
 export type JShopDraft={
  id:string;ownerId:string;title:string;description:string;category:JShopCategory;
- condition:JShopCondition;price:number|null;currency:JShopCurrency;location:string;
+ condition:JShopCondition;price:number|null;currency:JShopCurrency;location:string;locationLat?:number|null;locationLon?:number|null;
  photos:string[];createdAt:number;updatedAt:number;
 };
 export type JShopListing=Omit<JShopDraft,"ownerId">&{
