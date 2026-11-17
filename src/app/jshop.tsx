@@ -52,6 +52,15 @@ export default function JShop(){
   return()=>{current=false;};
  },[]));
  const listings=filterJShopListings(remoteListings,{...activeFilters,category,query});
+ async function clearSearchArea(){
+  setLoading(true);setError("");
+  try{
+   await saveJShopLocation(ownerId||"guest",null);
+   const fullCatalogue=await loadJShopListings();
+   setRemoteListings(fullCatalogue);setSearchArea(null);
+  }catch(e){setError(e instanceof Error?e.message:"No se pudo restaurar el catálogo completo.");}
+  finally{setLoading(false);}
+ }
  async function toggleFavorite(id:string){
   if(!ownerId){setError("Inicia sesión para guardar artículos.");return;}
   const saved=favorites.includes(id);
@@ -92,7 +101,7 @@ export default function JShop(){
     </View>:<JShopEmpty icon={query||category!=="Todo"||filterCount?"search-outline":"bag-handle-outline"}
       title={searchArea?"No hay artículos dentro de este radio":query||category!=="Todo"||filterCount?"No hay artículos con estos filtros":"Todavía no hay artículos publicados"}
       description={searchArea?"No encontramos anuncios geolocalizados en "+(searchArea.radiusMiles??10)+" millas alrededor de "+searchArea.city+". Probá ampliando el radio o cambiando la zona.":query||category!=="Todo"||filterCount?"Prueba otra búsqueda o quita los filtros para explorar los anuncios publicados.":"Sé el primero en publicar un artículo. Los anuncios se mostrarán aquí cuando los vendedores los publiquen."}
-      action={query||category!=="Todo"||filterCount?{title:"Limpiar filtros",onPress:()=>{setQuery("");setCategory("Todo");setActiveFilters(DEFAULT_JSHOP_FILTERS);setPending(DEFAULT_JSHOP_FILTERS);setSearchArea(null);void saveJShopLocation(ownerId||"guest",null).catch(()=>{});}} :{title:"Crear anuncio",onPress:()=>router.push("/jshop/publish")}}/>}
+      action={query||category!=="Todo"||filterCount?{title:"Limpiar filtros",onPress:()=>{setQuery("");setCategory("Todo");setActiveFilters(DEFAULT_JSHOP_FILTERS);setPending(DEFAULT_JSHOP_FILTERS);void clearSearchArea();}} :{title:"Crear anuncio",onPress:()=>router.push("/jshop/publish")}}/>}
    </View>
    {!!drafts.length&&<View style={{gap:12}}>
     <JShopTitle title="Continuar mis borradores" subtitle={drafts.length+" sin publicar"} right={<Pressable accessibilityRole="button" onPress={()=>router.push("/jshop/mine")}><Text style={{color:t.ink,fontWeight:"700"}}>Ver todos</Text></Pressable>}/>
@@ -123,7 +132,7 @@ export default function JShop(){
       <Text numberOfLines={1} style={{color:t.ink,flex:1}}>{searchArea?searchArea.city+" · "+(searchArea.radiusMiles??10)+" millas":"Todas las ubicaciones"}</Text>
       <Ionicons name="chevron-forward" color={t.ink2} size={18}/>
      </Pressable>
-     {searchArea&&<Pressable accessibilityRole="button" onPress={()=>{setSearchArea(null);void saveJShopLocation(ownerId||"guest",null).catch(()=>{});}}
+     {searchArea&&<Pressable accessibilityRole="button" onPress={()=>void clearSearchArea()}
        style={{minHeight:42,justifyContent:"center"}}>
       <Text style={{color:t.ink2,fontSize:13}}>Quitar zona de búsqueda</Text>
      </Pressable>}
