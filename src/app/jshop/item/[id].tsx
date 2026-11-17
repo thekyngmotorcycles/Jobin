@@ -2,7 +2,7 @@ import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useFocusEffect,useLocalSearchParams} from "expo-router";
 import {useCallback,useState} from "react";
 import {ActivityIndicator,Alert,Image,Pressable,Text,View} from "react-native";
-import {JShopButton,JShopEmpty,JShopPage,JShopPhoto,JShopTitle} from "../../../components/JShopUI";
+import {JShopButton,JShopEmpty,JShopIconButton,JShopPage,JShopPhoto,JShopTitle} from "../../../components/JShopUI";
 import {PublicProfileAvatar} from "../../../components/PublicProfileAvatar";
 import {deleteJShopDraft,jshopAccountId,readJShopDrafts} from "../../../lib/jshop-local";
 import {formatJShopPrice,type JShopDraft} from "../../../lib/jshop-model";
@@ -78,6 +78,14 @@ export default function JShopItemDetail(){
     <View style={{gap:9}}>
      <JShopButton title="Editar borrador" icon="create-outline" onPress={()=>router.push({pathname:"/jshop/publish",params:{draft:item.id}})}/>
      <JShopButton title={deleting?"Eliminando...":"Eliminar borrador"} secondary icon="trash-outline" disabled={deleting} onPress={requestDelete}/>
+    </View>
+    <View style={{gap:9}}>
+     <JShopButton title="Contactar vendedor" icon="chatbubble-ellipses-outline" disabled onPress={()=>{}}/>
+     <View style={{flexDirection:"row",justifyContent:"space-around",gap:12}}>
+      <JShopIconButton icon="heart-outline" label="Guardar artículo (próximamente)" disabled onPress={()=>{}}/>
+      <JShopIconButton icon="share-social-outline" label="Compartir artículo (próximamente)" disabled onPress={()=>{}}/>
+      <JShopIconButton icon="flag-outline" label="Denunciar artículo (próximamente)" disabled onPress={()=>{}}/>
+     </View>
     </View>
     <View style={{borderRadius:18,padding:14,backgroundColor:t.cream,gap:5}}>
      <Text style={{color:t.ink,fontWeight:"700"}}>Todavía no está publicado</Text>
