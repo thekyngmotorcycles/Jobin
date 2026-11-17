@@ -1,4 +1,5 @@
 import {menuChrome} from "../theme/menu-chrome";
+import {jobeenTokens} from "../theme/jobeen";
 import { JobinWordmark } from "./JobinWordmark";
 import { useCallback, useMemo, type ReactNode, type RefObject } from "react";
 import { useTheme } from "../state/ThemeProvider";
@@ -11,12 +12,12 @@ import { useApp } from "../state/AppProvider";
 const BASE_WIDTH = 390;
 const MIN_SCALE = 0.95;
 const MAX_SCALE = 1.1;
-export function useUi() { const { colors,theme } = useTheme(); const chrome=menuChrome(theme,colors); const { width } = useWindowDimensions();
+export function useUi() { const { colors,theme } = useTheme(); const chrome=menuChrome(theme,colors); const jt=jobeenTokens(theme);const premium=theme==="light"; const { width } = useWindowDimensions();
  const effectiveWidth = Math.min(width, BASE_WIDTH * MAX_SCALE);
  const k = Math.round(Math.min(MAX_SCALE, Math.max(MIN_SCALE, effectiveWidth / BASE_WIDTH)) * 20) / 20;
  const fs = useCallback((size: number) => Math.round(size * k), [k]);
  const s = useMemo(() => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.paper },
+  screen: { flex: 1, backgroundColor: premium?jt.bg:colors.paper },
   content: { padding: 20, gap: 20, width: "100%", maxWidth: 1180, alignSelf: "center" },
   header: { gap: 16, marginBottom: 4 },
   top: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 },
@@ -28,20 +29,20 @@ export function useUi() { const { colors,theme } = useTheme(); const chrome=menu
   text: { fontSize: fs(14), lineHeight: fs(22), color: colors.ink },
   muted: { fontSize: fs(12), lineHeight: fs(20), color: colors.muted },
   row: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" },
-  panel: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: 18, padding: 22, gap: 16 },
-  button: { minHeight: 46, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center", maxWidth: "100%" },
-  buttonText: { color: colors.inverse, fontWeight: "600", fontSize: fs(14), textAlign: "center", flexShrink: 1 },
-  secondary: { backgroundColor: chrome.sunflower ? chrome.surface : colors.accent, borderWidth: chrome.sunflower ? 1 : 0, borderColor: chrome.border },
-  secondaryText: { color: chrome.sunflower ? chrome.text : colors.ink },
-  chip: { borderRadius: 24, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 14, minHeight: 44, justifyContent: "center", backgroundColor: colors.card },
+  panel: { backgroundColor: premium?jt.surface:colors.card, borderWidth: 1, borderColor: premium?jt.line:colors.line, borderRadius: 20, padding: 22, gap: 16 },
+  button: { minHeight: 46, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: premium?jt.ink:colors.ink, alignItems: "center", justifyContent: "center", maxWidth: "100%" },
+  buttonText: { color: premium?jt.surface:colors.inverse, fontWeight: "700", fontSize: fs(14), textAlign: "center", flexShrink: 1 },
+  secondary: { backgroundColor: premium?jt.cream:chrome.sunflower?chrome.surface:colors.accent, borderWidth: premium||chrome.sunflower ? 1 : 0, borderColor: chrome.border },
+  secondaryText: { color: premium?jt.ink:chrome.sunflower?chrome.text:colors.ink },
+  chip: { borderRadius: 24, borderWidth: 1, borderColor: premium?jt.line:colors.line, paddingHorizontal: 14, minHeight: 44, justifyContent: "center", backgroundColor: premium?jt.surface:colors.card },
   chipSelected: { backgroundColor: colors.ink, borderColor: colors.ink },
   chipText: { fontSize: fs(12), color: colors.ink },
   tag: { fontSize: fs(10), fontWeight: "600", color: colors.ink, backgroundColor: colors.accent, alignSelf: "flex-start", paddingVertical: 7, paddingHorizontal: 12, borderRadius: 18, overflow: "hidden" },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
-  notice: { padding: 16, borderRadius: 14, backgroundColor: chrome.sunflower ? chrome.surface : colors.accent, gap: 10, borderWidth: chrome.sunflower ? 1 : 0, borderColor: chrome.border },
-  footer: { paddingVertical: 20, borderTopWidth: 1, borderTopColor: colors.line, gap: 6 },
+  notice: { padding: 16, borderRadius: 18, backgroundColor: premium?jt.cream:chrome.sunflower?chrome.surface:colors.accent, gap: 10, borderWidth: premium||chrome.sunflower ? 1 : 0, borderColor: chrome.border },
+  footer: { paddingVertical: 20, borderTopWidth: 1, borderTopColor: premium?jt.line:colors.line, gap: 6 },
   pressed: { opacity: 0.82 },
-}), [colors, fs, chrome.sunflower, chrome.surface, chrome.border]); return { s, colors, fs, k }; }
+}), [colors, fs, chrome.sunflower, chrome.surface, chrome.border, theme]); return { s, colors, fs, k }; }
 export function Button({ title, onPress, secondary = false, selected, label }: {
   title: string; onPress: () => void; secondary?: boolean; selected?: boolean; label?: string;
 }) {
