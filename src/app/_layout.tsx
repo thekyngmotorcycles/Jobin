@@ -30,6 +30,7 @@ function Navigation() {
  <Stack.Screen name="jshop/publish" options={{title:"Nuevo anuncio"}}/>
  <Stack.Screen name="jshop/mine" options={{title:"Mis anuncios"}}/>
  <Stack.Screen name="jshop/favorites" options={{title:"Guardados"}}/>
+ <Stack.Screen name="jshop/report" options={{title:"Denunciar artículo"}}/>
  <Stack.Screen name="jshop/item/[id]" options={{title:"Detalle del artículo"}}/>
  <Stack.Screen name="notifications" options={{title:"Notificaciones"}}/>
  <Stack.Screen name="search" options={{headerShown:false}}/>
