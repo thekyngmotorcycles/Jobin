@@ -65,8 +65,8 @@ export default function StoryViewer(){
     <View style={{flex:1,borderRadius:23,overflow:"hidden",backgroundColor:current.kind==="text"?t.cream:t.ink,justifyContent:"center",alignItems:"center",padding:current.kind==="text"?22:0}}>
      {current.kind==="photo"?<>
       {current.imageUrl?<Image source={{uri:current.imageUrl}} resizeMode="contain" style={{width:"100%",height:"100%"}}/>:<Text style={{color:t.bg,padding:20}}>La fotografía ya no está disponible.</Text>}
-      {!!current.body&&<View style={{position:"absolute",bottom:25,left:15,right:15,borderRadius:15,backgroundColor:"rgba(0,0,0,0.64)",padding:13}}>
-       <Text style={{fontSize:16,color:"#FFFFFF",fontWeight:"600",textAlign:"center"}}>{current.body}</Text>
+      {!!current.body&&<View style={{position:"absolute",bottom:25,left:15,right:15,borderRadius:15,backgroundColor:t.videoViewsOverlay,padding:13}}>
+       <Text style={{fontSize:16,color:t.videoViewsText,fontWeight:"600",textAlign:"center"}}>{current.body}</Text>
       </View>}
      </>:current.kind==="video"?<View style={{alignItems:"center",gap:20,padding:24}}>
       <Ionicons name="videocam-outline" size={48} color={t.bg}/>
