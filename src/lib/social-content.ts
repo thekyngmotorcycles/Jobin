@@ -132,4 +132,6 @@ export async function deleteHomePost(id:string){
  .eq("id",id).eq("author_id",owner).select("photo_paths").maybeSingle();
  if(error)throw error;
  if(!data)throw Error("No se pudo eliminar la publicación.");
+ const paths=(data as unknown as {photo_paths:string[]}).photo_paths??[];
+ if(paths.length)await db.storage.from(POSTS_BUCKET).remove(paths).catch(()=>{});
 }
