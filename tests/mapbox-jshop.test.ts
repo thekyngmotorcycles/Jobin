@@ -30,7 +30,7 @@ test("Mapbox JShop integration uses native plugin, token-gated maps and permanen
  const location=read("src/app/jshop/location.tsx");
  const api=read("src/lib/jshop-geocode.ts");
  const native=read("src/components/JShopLocationMap.native.tsx");
- const web=read("src/components/JShopLocationMap.tsx");
+ const web=read("src/components/JShopLocationTileMap.tsx");
  assert.equal(pkg.dependencies["@rnmapbox/maps"],"10.3.18");
  assert.ok(app.expo.plugins.some((p:unknown)=>Array.isArray(p)&&p[0]==="@rnmapbox/maps"));
  assert.ok(location.includes("confirmJShopPlace(place)"));
