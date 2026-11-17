@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import { IconButton } from "./social-ui";
 import { HomeSideMenu } from "./HomeSideMenu";
 import { JobinWordmark } from "./JobinWordmark";
+import {JobeenCreateMenu} from "./JobeenCreateMenu";
 import { useUi } from "./ui";
 import { FEED_POSTS } from "../lib/feed";
 import { STORIES } from "../lib/home";
@@ -34,7 +35,7 @@ export function SocialHeader() {
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 8 }}>
         <IconButton icon="menu" label="Opciones" onPress={() => setMenu(true)} />
         <JobinWordmark width={96} />
-        <IconButton icon="search-outline" label="Buscar" onPress={() => router.push("/search")} />
+        <View style={{flexDirection:"row",alignItems:"center",gap:2}}><JobeenCreateMenu/><IconButton icon="search-outline" label="Buscar" onPress={() => router.push("/search")} /></View>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 14 }}>
         {stories.map(story => (
