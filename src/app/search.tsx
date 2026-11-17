@@ -51,6 +51,14 @@ export default function Search(){
  const streams=browseStreams("Popular","Todas","").filter(room=>(!intent.city||room.city.toLowerCase()===intent.city.toLowerCase())&&matchJobinTerms([room.title,room.host,room.city,room.profession].join(" "),words));
  const effectiveKind=kind;
  const displayedResults=results.filter(person=>effectiveKind==="Empresas"?person.account_type==="company":person.account_type==="personal");
+ function centerFilter(option:SearchKind,animated:boolean){
+  const position=filterPositions.current[option],viewport=filterViewportWidth.current;
+  if(!position||!viewport)return;
+  const maxScroll=Math.max(0,filterContentWidth.current-viewport);
+  const centered=position.x+position.width/2-viewport/2;
+  filterScrollRef.current?.scrollTo({x:Math.max(0,Math.min(centered,maxScroll)),animated});
+ }
+ useEffect(()=>{const frame=requestAnimationFrame(()=>centerFilter(kind,false));return()=>cancelAnimationFrame(frame);},[kind]);
  async function openProfile(id:string){
   try{const {data:{user}}=await requireSupabase().auth.getUser();if(user?.id===id){router.push("/(tabs)/profile");return;}}catch{}
   router.push({pathname:"/jcard",params:{user:id}});
@@ -95,21 +103,15 @@ export default function Search(){
   </View>}
   <ScrollView ref={filterScrollRef} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always"
    removeClippedSubviews={false} style={{flexGrow:0,height:62,minHeight:62}}
-   onLayout={event=>{filterViewportWidth.current=event.nativeEvent.layout.width;}}
-   onContentSizeChange={width=>{filterContentWidth.current=width;}}
+   onLayout={event=>{filterViewportWidth.current=event.nativeEvent.layout.width;requestAnimationFrame(()=>centerFilter(kind,false));}}
+   onContentSizeChange={width=>{filterContentWidth.current=width;requestAnimationFrame(()=>centerFilter(kind,false));}}
    contentContainerStyle={{paddingHorizontal:16,paddingVertical:7,alignItems:"center",gap:9}}>
    {(["Todo","Profesionales","Personas","Empresas","Flashes","Streams"] as const).map(option=><Pressable key={option}
     accessibilityRole="button" accessibilityState={{selected:kind===option}}
     onLayout={event=>{filterPositions.current[option]={x:event.nativeEvent.layout.x,width:event.nativeEvent.layout.width};}}
     onPress={()=>{
      setKind(option);setShowRecent(false);setResults([]);setPeople([]);setAllAccounts([]);setSearched(false);setError("");
-     const position=filterPositions.current[option];
-     if(position){
-      const viewport=filterViewportWidth.current;
-      const maxScroll=Math.max(0,filterContentWidth.current-viewport);
-      const centered=position.x+position.width/2-viewport/2;
-      filterScrollRef.current?.scrollTo({x:Math.max(0,Math.min(centered,maxScroll)),animated:true});
-     }
+     centerFilter(option,true);
     }}
     style={{height:48,minHeight:48,flexShrink:0,alignItems:"center",justifyContent:"center",paddingHorizontal:17,
      borderRadius:24,backgroundColor:kind===option?colors.ink:colors.paper,
