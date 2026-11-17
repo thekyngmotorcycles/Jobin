@@ -23,6 +23,8 @@ test("Lives continues selecting Videos in the five-icon bottom navigation",()=>{
  const navigation=load("src/app/(tabs)/_layout.tsx");
  assert.ok(navigation.includes('route.name==="videos"&&(pathname==="/streams"||pathname.endsWith("/streams"))'));
  assert.ok(navigation.includes("backgroundColor:selected?"));
+ assert.ok(navigation.includes("borderRadius:999,overflow:\"hidden\""));
+ assert.ok(navigation.includes("tabBarActiveBackgroundColor:colors.transparent"));
 });
 test("Search remains one common route with contextual Streams preset",()=>{
  const home=load("src/components/SocialHeader.tsx");
@@ -30,7 +32,13 @@ test("Search remains one common route with contextual Streams preset",()=>{
  const lives=load("src/app/(tabs)/streams.tsx");
  const search=load("src/app/search.tsx");
  assert.ok(home.includes('router.push("/search")'));
- assert.ok(videos.includes('router.push("/search")'));
+ assert.ok(videos.includes('params:{mode:"flash"}'));
  assert.ok(lives.includes('params:{mode:"live"}'));
- assert.ok(search.includes('mode==="live"?"Streams":"Todo"'));
+ assert.ok(search.includes('mode==="live"?"Streams":mode==="flash"?"Flashes":"Todo"'));
+ assert.ok(search.includes("readRecentSearches"));
+ assert.ok(search.includes("suggestionsForQuery(recent,query)"));
+ assert.ok(search.includes("centerFilter(option,true)"));
+ assert.ok(search.includes("numberOfLines={1}"));
+ assert.ok(search.includes("height:48,minHeight:48"));
+ assert.ok(home.includes('router.push("/search")'));
 });
