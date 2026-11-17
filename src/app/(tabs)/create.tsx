@@ -1,4 +1,6 @@
 import { useTabClearance } from "../../theme/navigation";
+import {useLocalSearchParams} from "expo-router";
+import {FlashComposer} from "../../components/FlashComposer";
 import { WorkRulesFields,useWorkDraft } from "../../components/WorkRulesFields";
 import { MyWorkMedia } from "../../components/MyWorkMedia";
 import { uploadWorkVideo } from "../../lib/safety-api";
@@ -34,7 +36,7 @@ function Editor({asset}:{asset:ImagePicker.ImagePickerAsset}){
  {!!notice&&<Notice text={notice} onClose={()=>setNotice("")}/>}
  </View>;
 }
-export default function Create(){
+function CreateVideo(){
  const {contentBottom}=useTabClearance();
  const {s,colors}=useUi();const [clips,setClips]=useState<SlotClips>(emptyClips());const [asset,setAsset]=useState<ImagePicker.ImagePickerAsset|null>(null);const [notice,setNotice]=useState("");
  const chapter=chapterAt(new Date());const open=nextOpenSlot(clips[chapter.id]);const slot=open>=0?chapter.slots[open]:null;
@@ -63,4 +65,9 @@ export default function Create(){
  {asset&&<Editor key={asset.uri} asset={asset}/>}
  <MyWorkMedia/>
  </Screen>;
+}
+
+export default function Create(){
+ const {mode}=useLocalSearchParams<{mode?:string}>();
+ return mode==="flash"?<FlashComposer/>:<CreateVideo/>;
 }
