@@ -1,23 +1,27 @@
 import {Ionicons} from "@expo/vector-icons";
 import Mapbox, {type Camera as CameraType} from "@rnmapbox/maps";
-import {useEffect,useRef} from "react";
+import {useEffect,useMemo,useRef} from "react";
 import {Pressable,Text,View} from "react-native";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {mapboxAccessToken,mapboxConfigured} from "../lib/mapbox-config";
 import type {MapPoint} from "../lib/jshop-location-core";
+import {geodesicCircle,type JShopRadiusMiles} from "../lib/jshop-geo";
 import {JShopLocationMap as OriginalMap} from "./JShopLocationTileMap";
 
 if(mapboxConfigured)Mapbox.setAccessToken(mapboxAccessToken);
 
 /** Native Mapbox on the new APK. The previous tile map remains available until a public token is configured. */
-export function JShopLocationMap({center,zoom,onCenter,onZoom}:{
- center:MapPoint;zoom:number;onCenter:(center:MapPoint)=>void;onZoom:(zoom:number)=>void;
+export function JShopLocationMap({center,zoom,radiusMiles,onCenter,onZoom}:{
+ center:MapPoint;zoom:number;radiusMiles:JShopRadiusMiles;onCenter:(center:MapPoint)=>void;onZoom:(zoom:number)=>void;
 }){
  const {theme}=useTheme(),t=jobeenTokens(theme);
  const camera=useRef<CameraType>(null);
  const lastObserved=useRef({center,zoom});
  const ignoreIdleUntil=useRef(0);
+ const searchArea=useMemo(()=>({type:"Feature" as const,properties:{radiusMiles},geometry:{
+  type:"Polygon" as const,coordinates:[geodesicCircle(center,radiusMiles)]
+ }}),[center.lat,center.lon,radiusMiles]);
  useEffect(()=>{
   if(!mapboxConfigured)return;
   const previous=lastObserved.current;
@@ -28,7 +32,7 @@ export function JShopLocationMap({center,zoom,onCenter,onZoom}:{
   camera.current?.setCamera({centerCoordinate:[center.lon,center.lat],zoomLevel:zoom,animationDuration:500});
   lastObserved.current={center,zoom};
  },[center.lat,center.lon,zoom]);
- if(!mapboxConfigured)return <OriginalMap center={center} zoom={zoom} onCenter={onCenter} onZoom={onZoom}/>;
+ if(!mapboxConfigured)return <OriginalMap center={center} zoom={zoom} radiusMiles={radiusMiles} onCenter={onCenter} onZoom={onZoom}/>;
  return <View style={{width:"100%",height:246,overflow:"hidden",borderRadius:19,borderWidth:1,borderColor:t.line,backgroundColor:t.cream}}>
   <Mapbox.MapView style={{flex:1}} styleURL={Mapbox.StyleURL.Light} compassEnabled={false}
    scaleBarEnabled={false} logoEnabled attributionEnabled
@@ -44,6 +48,10 @@ export function JShopLocationMap({center,zoom,onCenter,onZoom}:{
    }}>
    <Mapbox.Camera ref={camera} defaultSettings={{centerCoordinate:[center.lon,center.lat],zoomLevel:zoom}}
     minZoomLevel={2} maxZoomLevel={18}/>
+   <Mapbox.ShapeSource id="jshop-buy-radius" shape={searchArea}>
+    <Mapbox.FillLayer id="jshop-buy-radius-fill" style={{fillColor:t.yellow,fillOpacity:0.17}}/>
+    <Mapbox.LineLayer id="jshop-buy-radius-border" style={{lineColor:t.yellow,lineWidth:2.5,lineOpacity:0.9}}/>
+   </Mapbox.ShapeSource>
   </Mapbox.MapView>
   <View pointerEvents="none" style={{position:"absolute",left:"50%",top:"50%",marginLeft:-15,marginTop:-32,alignItems:"center"}}>
    <Ionicons name="location" size={31} color={t.ink}/>
