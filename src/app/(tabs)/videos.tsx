@@ -46,7 +46,7 @@ export default function Videos() {
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
       {focused && <StatusBar translucent backgroundColor={colors.transparent} style={theme==="dark"?"light":"dark"} />}
       <View style={{ position: "absolute", top: inset.top + 4, left: 8, right: 8, zIndex: 20 }}>
-        <FeedTopBar tab={tab} onTab={changeTab} category={category} onCategory={changeCategory} leading="live" onLeading={() => router.navigate("/(tabs)/streams")} onSearch={() => router.push("/search")} />
+        <FeedTopBar tab={tab} onTab={changeTab} category={category} onCategory={changeCategory} leading="live" onLeading={() => router.navigate("/(tabs)/streams")} onSearch={() => router.push({pathname:"/search",params:{mode:"flash"}})} />
       </View>
       <View style={{ flex: 1 }} onLayout={e => { const next=Math.max(1,Math.round(e.nativeEvent.layout.height)); setHeight(previous=>previous===next?previous:next); }}>
         <FlatList key={tab + category + Math.round(height) + (post || "")} data={clips} keyExtractor={clip => clip.id}
