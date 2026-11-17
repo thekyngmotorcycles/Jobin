@@ -36,7 +36,7 @@ export function JShopLocationMap({center,zoom,onCenter,onZoom}:{
  return <View onLayout={onLayout} style={{height,width:"100%",backgroundColor:t.cream,borderRadius:19,overflow:"hidden",borderWidth:1,borderColor:t.line}}>
   <View {...pan.panHandlers} style={{position:"absolute",top:0,left:0,right:0,bottom:0,overflow:"hidden"}}>
    {rendered.map(v=><Image key={v.key}
-    source={{uri:v.url,cache:"force-cache",...(Platform.OS==="web"?{}:{headers:{"User-Agent":"Jobeen/0.2.0 (JShop location selection; https://github.com/thekyngmotorcycles/Jobin)"}})}}
+    source={{uri:v.url,cache:"default",...(Platform.OS==="web"?{}:{headers:{"User-Agent":"Jobeen/0.2.0 (JShop location selection; https://github.com/thekyngmotorcycles/Jobin)"}})}}
     accessibilityIgnoresInvertColors resizeMode="stretch"
     style={{position:"absolute",width:256,height:256,left:width/2+(v.x-tile.x)*256,top:height/2+(v.y-tile.y)*256}}/>)}
   </View>
