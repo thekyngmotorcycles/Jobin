@@ -1,11 +1,12 @@
 import {Ionicons} from "@expo/vector-icons";
-import {router,Stack,useLocalSearchParams} from "expo-router";
+import {router,Stack,useLocalSearchParams,useFocusEffect} from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import {useEffect,useState} from "react";
+import {useCallback,useEffect,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Image,Pressable,Text,TextInput,View} from "react-native";
 import {JShopButton,JShopPage,JShopTitle} from "../../components/JShopUI";
 import {jshopAccountId,readJShopDrafts,saveJShopDraft,deleteJShopDraft} from "../../lib/jshop-local";
 import {publishJShopDraft} from "../../lib/jshop-api";
+import {readDefaultSaleLocation,readPendingArticleLocation,clearPendingArticleLocation,type SaleLocation} from "../../lib/jshop-selling-location";
 import {JSHOP_CATEGORIES,JSHOP_CONDITIONS,JSHOP_CURRENCIES,parseJShopPrice,type JShopCategory,type JShopCondition,type JShopCurrency,type JShopDraft} from "../../lib/jshop-model";
 import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
@@ -21,7 +22,9 @@ export default function JShopPublish(){
  const [condition,setCondition]=useState<JShopCondition>("Usado");
  const [price,setPrice]=useState("");
  const [currency,setCurrency]=useState<JShopCurrency>("USD");
- const [location,setLocation]=useState("");
+ const session=useRef(draft??("listing-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,10))).current;
+ const [defaultPlace,setDefaultPlace]=useState<SaleLocation|null>(null);
+ const [articlePlace,setArticlePlace]=useState<SaleLocation|null>(null);
  const [photos,setPhotos]=useState<string[]>([]);
  const [busy,setBusy]=useState(false);
  const [loading,setLoading]=useState(true);
@@ -33,6 +36,9 @@ export default function JShopPublish(){
     const owner=await jshopAccountId();
     if(!live)return;
     setOwnerId(owner);
+    const defaultLocation=await readDefaultSaleLocation(owner);
+    if(!live)return;
+    setDefaultPlace(defaultLocation);
     if(draft){
      const drafts=await readJShopDrafts(owner);
      const found=drafts.find(item=>item.id===draft);
@@ -40,13 +46,41 @@ export default function JShopPublish(){
      if(!live)return;
      setExisting(found);setTitle(found.title);setDescription(found.description);setCategory(found.category);
      setCondition(found.condition);setPrice(found.price===null?"":String(found.price));
-     setCurrency(found.currency);setLocation(found.location);setPhotos(found.photos);
+     setCurrency(found.currency);setPhotos(found.photos);
+     if(typeof found.locationLat==="number"&&typeof found.locationLon==="number"){
+      setArticlePlace({city:found.location,label:found.location,lat:found.locationLat,lon:found.locationLon,zoom:11});
+     }
     }
+    const pending=await readPendingArticleLocation(owner,session);
+    if(live&&pending)setArticlePlace(pending);
    }catch(e){if(live)setError(e instanceof Error?e.message:"No se pudo abrir el editor.");}
    finally{if(live)setLoading(false);}
   })();
   return()=>{live=false;};
  },[draft]);
+ useFocusEffect(useCallback(()=>{
+  if(!ownerId)return;
+  let active=true;
+  void(async()=>{
+   try{
+    const [freshDefault,pending]=await Promise.all([
+     readDefaultSaleLocation(ownerId),readPendingArticleLocation(ownerId,session)
+    ]);
+    if(active){setDefaultPlace(freshDefault);if(pending)setArticlePlace(pending);}
+   }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudo actualizar la ubicación de venta.");}
+  })();
+  return()=>{active=false;};
+ },[ownerId,session]));
+ const selectedLocation=articlePlace??defaultPlace;
+ function openLocation(){
+  if(!defaultPlace){router.push({pathname:"/jshop/sale-location",params:{target:"default"}});return;}
+  router.push({pathname:"/jshop/sale-location",params:{target:"article",session}});
+ }
+ function useDefaultLocation(){
+  if(!defaultPlace)return;
+  setArticlePlace(null);
+  if(ownerId)void clearPendingArticleLocation(ownerId,session).catch(()=>{});
+ }
  async function pickPhotos(){
   if(photos.length>=5)return;
   try{
@@ -58,6 +92,8 @@ export default function JShopPublish(){
  async function save(publish=false){
   if(busy||!ownerId)return;
   if(draft&&!existing){setError("El borrador solicitado no está disponible.");return;}
+  if(publish&&!defaultPlace){setError("Primero configurá tu ubicación de venta en JShop.");return;}
+  if(publish&&!selectedLocation){setError("Elegí la ubicación del artículo antes de publicarlo.");return;}
   if(title.trim().length<3){setError("Escribe un título de al menos 3 caracteres.");return;}
   const amount=parseJShopPrice(price);
   if(price.trim()&&amount===null){setError("Introduce un precio válido mayor que cero o déjalo vacío.");return;}
@@ -67,15 +103,18 @@ export default function JShopPublish(){
    const item:JShopDraft={
     id:existing?.id??("draft-"+now.toString(36)+"-"+Math.random().toString(36).slice(2,9)),
     ownerId,title:title.trim().slice(0,100),description:description.trim().slice(0,2000),
-    category,condition,price:amount,currency,location:location.trim().slice(0,120),
+    category,condition,price:amount,currency,location:selectedLocation?.label.slice(0,120)??"",
+    locationLat:selectedLocation?.lat??null,locationLon:selectedLocation?.lon??null,
     photos,createdAt:existing?.createdAt??now,updatedAt:now
    };
    if(publish){
     const publishedId=await publishJShopDraft(ownerId,item);
     if(existing)await deleteJShopDraft(ownerId,existing.id).catch(()=>{});
+    await clearPendingArticleLocation(ownerId,session).catch(()=>{});
     router.replace({pathname:"/jshop/item/[id]",params:{id:publishedId}});
    }else{
     await saveJShopDraft(ownerId,item);
+    await clearPendingArticleLocation(ownerId,session).catch(()=>{});
     router.replace("/jshop/mine");
    }
   }catch(e){setError(e instanceof Error?e.message:"No se pudo completar la operación.");}
@@ -143,13 +182,30 @@ export default function JShopPublish(){
      </View>
     </View>
     {field("Precio",price,setPrice,"Ej. 250",{numeric:true})}
-    {field("Ubicación",location,setLocation,"Ciudad o zona donde se encuentra el artículo",{maxLength:120})}
+    <View style={{borderWidth:1,borderColor:defaultPlace?t.line:t.yellow,borderRadius:19,padding:14,gap:10,backgroundColor:t.surface}}>
+     <View style={{flexDirection:"row",alignItems:"center",gap:10}}>
+      <View style={{width:43,height:43,borderRadius:14,backgroundColor:t.cream,alignItems:"center",justifyContent:"center"}}>
+       <Ionicons name="location-outline" size={23} color={t.ink}/>
+      </View>
+      <View style={{flex:1,gap:3}}>
+       <Text style={{fontWeight:"800",color:t.ink,fontSize:15}}>Ubicación del artículo</Text>
+       <Text numberOfLines={2} style={{fontSize:13,color:selectedLocation?t.ink:t.ink2}}>{selectedLocation?.label??"Primero configurá tu ubicación de venta"}</Text>
+      </View>
+     </View>
+     <JShopButton title={!defaultPlace?"Configurar ubicación de venta":selectedLocation?"Cambiar para este artículo":"Elegir ubicación"}
+      secondary icon="map-outline" onPress={openLocation}/>
+     {articlePlace&&defaultPlace&&<Pressable accessibilityRole="button" onPress={useDefaultLocation}
+      style={{minHeight:40,alignItems:"center",justifyContent:"center"}}>
+      <Text style={{fontSize:13,fontWeight:"700",color:t.ink2}}>Usar mi ubicación predeterminada: {defaultPlace.city}</Text>
+     </Pressable>}
+     <Text style={{fontSize:12,lineHeight:18,color:t.ink2}}>{!defaultPlace?"Es necesaria una ubicación de venta predeterminada para publicar.":articlePlace?"Esta ubicación se guardará solo en este artículo. Tu ubicación predeterminada no cambiará.":"Se utiliza tu ubicación de venta predeterminada. Podés cambiarla únicamente para este artículo."} Una vez publicado, el anuncio conservará esta ubicación.</Text>
+    </View>
     <View style={{borderRadius:18,backgroundColor:t.cream,padding:14,gap:5}}>
      <Text style={{fontWeight:"800",fontSize:13,color:t.ink}}>Publicación de anuncios</Text>
      <Text style={{color:t.ink2,fontSize:12,lineHeight:18}}>Al publicar, el título, las fotografías, el precio y la ubicación serán visibles para otras personas. Los pagos no se gestionan en JShop; contactá al vendedor mediante Mensajes.</Text>
     </View>
     {!!error&&<Text accessibilityLiveRegion="polite" style={{color:t.ink,fontWeight:"600"}}>{error}</Text>}
-    <JShopButton title={busy?"Procesando...":"Publicar anuncio"} icon="cloud-upload-outline" disabled={busy||!ownerId||!!(draft&&!existing)} onPress={()=>Alert.alert("Publicar anuncio","El artículo y sus fotografías serán visibles públicamente en JShop. ¿Querés continuar?",[{text:"Cancelar",style:"cancel"},{text:"Publicar",onPress:()=>void save(true)}])}/>
+    <JShopButton title={busy?"Procesando...":"Publicar anuncio"} icon="cloud-upload-outline" disabled={busy||!ownerId||!defaultPlace||!selectedLocation||!!(draft&&!existing)} onPress={()=>Alert.alert("Publicar anuncio","El artículo y sus fotografías serán visibles públicamente en JShop. ¿Querés continuar?",[{text:"Cancelar",style:"cancel"},{text:"Publicar",onPress:()=>void save(true)}])}/>
     <JShopButton title="Guardar borrador" secondary icon="save-outline" disabled={busy||!ownerId||!!(draft&&!existing)} onPress={()=>void save(false)}/>
     <JShopButton title="Cancelar" secondary onPress={()=>router.back()}/>
    </>}
