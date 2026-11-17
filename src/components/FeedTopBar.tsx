@@ -56,7 +56,7 @@ export function FeedTopBar({tab,onTab,onLeading,leading,onSearch,category,onCate
        paddingHorizontal:width<350?2:5,borderRadius:11,backgroundColor:selected?(theme==="light"?jt.cream:colors.line):colors.transparent,
        borderBottomWidth:selected?2:0,borderBottomColor:theme==="light"?jt.yellow:textColor,opacity:pressed?0.75:1})}>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:selected?1:0,flexShrink:1}}>
-       <Text numberOfLines={1} adjustsFontSizeToFit minFontScale={0.8}
+       <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}
         style={{fontSize:labelSize,fontWeight:selected?"800":"500",color:selected?textColor:colors.muted,flexShrink:1}}>
         {item==="Following"?"Siguiendo":item}
        </Text>
