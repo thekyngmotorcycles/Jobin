@@ -75,7 +75,7 @@ export function JShopItemCard({item,onOpen,onFavorite,saved=false}:{
    <JShopPhoto uri={item.photos[0]}/>
    {draft?<View style={{position:"absolute",top:8,left:8,backgroundColor:t.cream,paddingVertical:5,paddingHorizontal:8,borderRadius:10}}>
     <Text style={{fontSize:11,color:t.ink,fontWeight:"700"}}>Borrador</Text>
-   </View>:onFavorite?<Pressable accessibilityRole="button" accessibilityLabel={saved?"Quitar de guardados":"Guardar favorito"} onPress={event=>{event.stopPropagation();onFavorite();}}
+   </View>:item.status!=="published"?<View style={{position:"absolute",top:8,left:8,backgroundColor:t.cream,paddingVertical:5,paddingHorizontal:8,borderRadius:10}}><Text style={{fontSize:11,color:t.ink,fontWeight:"700"}}>{item.status==="sold"?"Vendido":"Pausado"}</Text></View>:onFavorite?<Pressable accessibilityRole="button" accessibilityLabel={saved?"Quitar de guardados":"Guardar favorito"} onPress={event=>{event.stopPropagation();onFavorite();}}
      style={{position:"absolute",top:7,right:7,backgroundColor:t.surface,borderRadius:18,width:36,height:36,alignItems:"center",justifyContent:"center"}}>
      <Ionicons name={saved?"heart":"heart-outline"} size={20} color={t.ink}/>
     </Pressable>:null}
