@@ -2,7 +2,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 import {requireSupabase} from "./supabase";
 import type {JShopDraft,JShopListing} from "./jshop-model";
 import type {JShopPlace} from "./jshop-location-core";
-import {findJShopPlaces,confirmJShopPlace} from "./jshop-geocode";
+import {readDefaultSaleLocation} from "./jshop-selling-location";
 import {insideJShopRadius} from "./jshop-geo";
 
 const BUCKET="jshop-photos";
@@ -102,9 +102,13 @@ export async function publishJShopDraft(ownerId:string,draft:JShopDraft):Promise
  if(draft.title.trim().length<3||!draft.description.trim()||draft.price===null||draft.price<=0||!draft.location.trim())
   throw Error("Completa título, descripción, precio y ubicación antes de publicar.");
  if(!draft.photos.length||draft.photos.length>5)throw Error("Añade entre 1 y 5 fotografías para publicar.");
- const possiblePlaces=await findJShopPlaces(draft.location);
- if(!possiblePlaces.length)throw Error("No encontramos la ubicación del anuncio. Escribí ciudad, estado y país.");
- const locationPoint=await confirmJShopPlace(possiblePlaces[0]);
+ if(typeof draft.locationLat!=="number"||typeof draft.locationLon!=="number"
+  ||!Number.isFinite(draft.locationLat)||!Number.isFinite(draft.locationLon)
+  ||Math.abs(draft.locationLat)>90||Math.abs(draft.locationLon)>180)
+  throw Error("Elegí la ubicación del artículo en el mapa antes de publicar.");
+ const saleDefault=await readDefaultSaleLocation(ownerId);
+ if(!saleDefault)throw Error("Configurá primero tu ubicación de venta en JShop.");
+ const locationPoint={lat:draft.locationLat,lon:draft.locationLon};
  const db=client();const uploaded:string[]=[];
  try{
   for(const [i,uri] of draft.photos.entries()){
