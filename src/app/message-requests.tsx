@@ -146,7 +146,7 @@ export default function MessageRequests(){
     </View>)}
    </ScrollView>
    <Modal visible={settingsOpen} transparent animationType="slide" onRequestClose={()=>setSettingsOpen(false)}>
-    <View style={{flex:1,backgroundColor:"rgba(0,0,0,0.45)",justifyContent:"flex-end"}}>
+    <View style={{flex:1,backgroundColor:t.videoViewsOverlay,justifyContent:"flex-end"}}>
      <Pressable accessibilityRole="button" accessibilityLabel="Cerrar configuración de mensajes" onPress={()=>setSettingsOpen(false)} style={{flex:1}}/>
      <View style={{backgroundColor:t.bg,borderTopLeftRadius:24,borderTopRightRadius:24,padding:20,gap:14,paddingBottom:32}}>
       <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
