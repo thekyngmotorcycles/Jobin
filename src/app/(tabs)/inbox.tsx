@@ -84,7 +84,7 @@ export default function Messages(){
  const tabBackground=(selected:boolean)=>selected?t.cream:t.surface;
  return <SafeAreaView edges={["top","left","right"]} style={s.screen}>
   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingBottom:contentBottom,gap:10}} showsVerticalScrollIndicator={false}>
-   <SocialHeader/>
+   <SocialHeader />
    <View style={{paddingHorizontal:16,gap:14,marginTop:8}}>
     <View accessibilityRole="tablist" style={{flexDirection:"row",gap:10}}>
      {([{key:"chats",label:"Chats",icon:"chatbubble-ellipses-outline"},{key:"jshop",label:"JShop",icon:"bag-handle-outline"}] as const).map(option=>{
