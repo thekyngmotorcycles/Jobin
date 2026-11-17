@@ -8,6 +8,7 @@ import {SocialHeader} from "../../components/SocialHeader";
 import {Button,useUi} from "../../components/ui";
 import {loadPublicCard} from "../../lib/professional-api";
 import {loadJShopInbox,jshopConversationPrice,type JShopInboxThread} from "../../lib/jshop-messaging";
+import {loadIncomingRequests,loadJShopSpamIds} from "../../lib/message-requests";
 import {EXTENSION_MONTHS} from "../../lib/rules";
 import {requireSupabase} from "../../lib/supabase";
 import {useJobinNotices} from "../../state/NoticeProvider";
@@ -29,7 +30,7 @@ const EXAMPLES:Thread[]=[
 ];
 type DirectThread={id:string;name:string;text:string;createdAt:string};
 type InboxTab="chats"|"jshop";
-type ShopFilter="Todo"|"Compras"|"Ventas";
+type ShopFilter="Todo"|"Compras"|"Ventas"|"Spam";
 
 export default function Messages(){
  const {markInboxRead}=useJobinNotices();
@@ -40,6 +41,8 @@ export default function Messages(){
  const [threads,setThreads]=useState<Thread[]>(EXAMPLES);
  const [directThreads,setDirectThreads]=useState<DirectThread[]>([]);
  const [shopThreads,setShopThreads]=useState<JShopInboxThread[]>([]);
+ const [requestCounts,setRequestCounts]=useState({pending:0,spam:0});
+ const [shopSpamIds,setShopSpamIds]=useState<Set<string>>(new Set());
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
 
@@ -48,8 +51,8 @@ export default function Messages(){
   void(async()=>{
    try{
     const db=requireSupabase();const {data:{user},error:authError}=await db.auth.getUser();
-    if(authError||!user){if(active){setDirectThreads([]);setShopThreads([]);}return;}
-    const [direct,shop]=await Promise.allSettled([
+    if(authError||!user){if(active){setDirectThreads([]);setShopThreads([]);setRequestCounts({pending:0,spam:0});setShopSpamIds(new Set());}return;}
+    const [direct,shop,incoming,spamFolders]=await Promise.allSettled([
      (async()=>{
       const {data,error:readError}=await db.from("jobeen_direct_messages" as never)
        .select("sender_id,recipient_id,body,created_at").is("jshop_conversation_id",null)
@@ -66,11 +69,16 @@ export default function Messages(){
        return {id,name:card?.name??"Usuario de Jobeen",text:value.body,createdAt:value.createdAt};
       }));
      })(),
-     loadJShopInbox()
+     loadJShopInbox(),
+     loadIncomingRequests(),
+     loadJShopSpamIds()
     ]);
     if(!active)return;
     if(direct.status==="fulfilled")setDirectThreads(direct.value);else setError("No se pudieron cargar los chats personales.");
     if(shop.status==="fulfilled")setShopThreads(shop.value);else setError(prev=>[prev,"No se pudieron cargar los mensajes de JShop."].filter(Boolean).join(" "));
+    if(incoming.status==="fulfilled")setRequestCounts({pending:incoming.value.filter(r=>r.status==="pending").length,spam:incoming.value.filter(r=>r.status==="spam"||r.status==="reported").length});
+    else setError(prev=>[prev,"No se pudieron cargar las solicitudes."].filter(Boolean).join(" "));
+    if(spamFolders.status==="fulfilled")setShopSpamIds(spamFolders.value);else setError(prev=>[prev,"No se pudo cargar Spam de JShop."].filter(Boolean).join(" "));
    }catch(e){if(active){setError(e instanceof Error?e.message:"No se pudieron cargar los mensajes.");setDirectThreads([]);setShopThreads([]);}}
    finally{if(active)setLoading(false);}
   })();
@@ -80,7 +88,7 @@ export default function Messages(){
  function decide(id:string,status:"accepted"|"rejected"){
   setThreads(items=>items.map(thread=>thread.id===id&&thread.kind==="extension"?{...thread,status}:thread));
  }
- const visibleShopThreads=shopThreads.filter(thread=>shopFilter==="Todo"||thread.side===shopFilter);
+ const visibleShopThreads=shopThreads.filter(thread=>shopFilter==="Spam"?shopSpamIds.has(thread.id):!shopSpamIds.has(thread.id)&&(shopFilter==="Todo"||thread.side===shopFilter));
  const tabBackground=(selected:boolean)=>selected?t.cream:t.surface;
  return <SafeAreaView edges={["top","left","right"]} style={s.screen}>
   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingBottom:contentBottom,gap:10}} showsVerticalScrollIndicator={false}>
@@ -102,6 +110,22 @@ export default function Messages(){
     {!!error&&<Text accessibilityLiveRegion="polite" style={{fontSize:12,color:t.ink2}}>{error}</Text>}
     {loading&&<ActivityIndicator color={t.yellow}/>}
     {tab==="chats"?<View style={{gap:10}}>
+     <Pressable accessibilityRole="button" accessibilityLabel={"Abrir solicitudes de mensajes, "+(requestCounts.pending+requestCounts.spam)+" pendientes"}
+      onPress={()=>router.push("/message-requests")}
+      style={({pressed})=>({minHeight:72,flexDirection:"row",alignItems:"center",gap:12,padding:13,borderRadius:18,
+       borderWidth:1,borderColor:t.line,backgroundColor:pressed?t.cream:t.surface})}>
+      <View style={{width:42,height:42,alignItems:"center",justifyContent:"center",backgroundColor:t.cream,borderRadius:14}}>
+       <Ionicons name="mail-unread-outline" size={22} color={t.ink}/>
+      </View>
+      <View style={{flex:1,gap:3}}>
+       <Text style={{color:t.ink,fontSize:15,fontWeight:"800"}}>Solicitudes de mensajes</Text>
+       <Text style={{color:t.ink2,fontSize:12}}>{requestCounts.spam?"Incluye "+requestCounts.spam+" posible(s) spam":"Revisar contactos que no has aceptado"}</Text>
+      </View>
+      {requestCounts.pending+requestCounts.spam>0&&<View style={{borderRadius:16,backgroundColor:t.cream,paddingHorizontal:10,paddingVertical:5}}>
+       <Text style={{fontSize:12,color:t.ink,fontWeight:"800"}}>{requestCounts.pending+requestCounts.spam}</Text>
+      </View>}
+      <Ionicons name="chevron-forward" size={18} color={t.ink2}/>
+     </Pressable>
      <Text accessibilityRole="header" style={{fontSize:17,fontWeight:"800",color:t.ink}}>Mensajes personales</Text>
      {!loading&&directThreads.length===0&&<View style={{backgroundColor:t.surface,padding:18,borderWidth:1,borderColor:t.line,borderRadius:18,gap:5}}>
       <Text style={{color:t.ink,fontWeight:"700"}}>Todavía no tenés conversaciones</Text>
@@ -148,9 +172,17 @@ export default function Messages(){
        <Text style={{color:t.ink,fontSize:13,fontWeight:shopFilter===filter?"800":"500"}}>{filter}</Text>
       </Pressable>)}
      </View>
+     <Pressable accessibilityRole="button" accessibilityState={{selected:shopFilter==="Spam"}}
+      onPress={()=>setShopFilter(shopFilter==="Spam"?"Todo":"Spam")}
+      style={({pressed})=>({alignSelf:"flex-start",minHeight:39,paddingHorizontal:12,gap:7,flexDirection:"row",alignItems:"center",borderRadius:14,
+       backgroundColor:shopFilter==="Spam"?t.cream:pressed?t.cream:t.surface,borderWidth:1,borderColor:shopFilter==="Spam"?t.yellow:t.line})}>
+      <Ionicons name="shield-outline" size={18} color={t.ink}/>
+      <Text style={{fontSize:12,fontWeight:"700",color:t.ink}}>Spam de JShop</Text>
+      {shopSpamIds.size>0&&<Text style={{color:t.ink2,fontSize:12}}>{shopSpamIds.size}</Text>}
+     </Pressable>
      {!loading&&visibleShopThreads.length===0&&<View style={{borderRadius:18,backgroundColor:t.surface,borderWidth:1,borderColor:t.line,padding:20,gap:8,alignItems:"center"}}>
       <Ionicons name="chatbubbles-outline" size={31} color={t.ink2}/>
-      <Text style={{color:t.ink,fontWeight:"800",fontSize:15}}>No hay conversaciones de {shopFilter==="Todo"?"JShop":shopFilter.toLowerCase()}</Text>
+      <Text style={{color:t.ink,fontWeight:"800",fontSize:15}}>No hay conversaciones de {shopFilter==="Todo"?"JShop":shopFilter==="Spam"?"spam":shopFilter.toLowerCase()}</Text>
       <Text style={{color:t.ink2,textAlign:"center",lineHeight:20,fontSize:13}}>Al contactar a un vendedor o recibir preguntas sobre tus anuncios, verás aquí los mensajes vinculados a cada artículo.</Text>
      </View>}
      {visibleShopThreads.map(thread=><Pressable key={thread.id} accessibilityRole="button"
