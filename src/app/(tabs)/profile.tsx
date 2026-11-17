@@ -28,6 +28,7 @@ import { router,useFocusEffect,useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheet } from "../../components/social-ui";
 import { JobinWordmark } from "../../components/JobinWordmark";
+import {JobeenCreateMenu} from "../../components/JobeenCreateMenu";
 import { JobinCard } from "../../components/JobinCard";
 import { JCardLoadingSkeleton } from "../../components/JCardLoadingSkeleton";
 import type { BusinessCardData, JCardSeal } from "../../lib/jcard";
@@ -173,7 +174,8 @@ export default function Profile() {
           </Svg>
         </View>
         <JobinWordmark width={theme==="light"?112:92} style={{ alignSelf: "flex-start" }} />
-        <View style={{flexDirection:"row",alignItems:"center",gap:4}}>
+        <View style={{flexDirection:"row",alignItems:"center",gap:2}}>
+          <JobeenCreateMenu/>
           <Pressable accessibilityRole="button" accessibilityLabel="Mi red" onPress={()=>router.push("/my-network")} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="people-outline" size={23} color={colors.ink}/></Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>profileToolsOpen?closeProfileMenu():openProfileMenu()} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="ellipsis-horizontal" size={23} color={colors.ink}/></Pressable>
         </View>
