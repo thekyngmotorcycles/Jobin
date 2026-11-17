@@ -29,4 +29,5 @@ export function locationMatches(listingLocation:string,selectedLocation:string){
  const local=normalizeCityName(listingLocation).toLocaleLowerCase();
  return !selected||local.includes(selected);
 }
-export type JShopPlace={label:string;city:string;lat:number;lon:number;zoom:number};
+import type {JShopRadiusMiles} from "./jshop-geo";
+export type JShopPlace={label:string;city:string;lat:number;lon:number;zoom:number;radiusMiles?:JShopRadiusMiles};
