@@ -13,6 +13,8 @@ import { AccountAvatar } from "../../components/AccountAvatar";
 import { SocialHeader } from "../../components/SocialHeader";
 import { Button, useUi } from "../../components/ui";
 import { EXTENSION_MONTHS } from "../../lib/rules";
+import {jobeenTokens} from "../../theme/jobeen";
+import {useTheme} from "../../state/ThemeProvider";
 
 type Thread =
   | { id: string; name: string; accountId:string; kind: "text"; text: string }
@@ -30,7 +32,7 @@ const INITIAL: Thread[] = [
 export default function Messages() {
   const {markInboxRead}=useJobinNotices();
   useEffect(()=>{markInboxRead();},[]);
-  const { s, colors } = useUi();const {contentBottom}=useTabClearance();
+  const { s, colors } = useUi();const {theme}=useTheme();const jt=jobeenTokens(theme);const {contentBottom}=useTabClearance();
   const [threads, setThreads] = useState<Thread[]>(INITIAL);
   const [directThreads,setDirectThreads]=useState<{id:string;name:string;text:string}[]>([]);
   useFocusEffect(useCallback(()=>{
@@ -62,14 +64,14 @@ export default function Messages() {
     <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
       <ScrollView contentContainerStyle={{ paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         <SocialHeader />
-        <View style={{ paddingHorizontal: 16, gap: 4, marginTop: 8 }}>
+        <View style={{ paddingHorizontal: 16, gap: 8, marginTop: 8 }}>
           {directThreads.length>0&&<Text style={[s.h3,{marginVertical:12}]}>Conversaciones</Text>}
-          {directThreads.map(thread=><Pressable key={thread.id} accessibilityRole="button" accessibilityLabel={"Abrir conversación con "+thread.name} onPress={()=>router.push({pathname:"/message",params:{user:thread.id,name:thread.name}})} style={{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:14,borderBottomWidth:1,borderBottomColor:colors.line}}>
+          {directThreads.map(thread=><Pressable key={thread.id} accessibilityRole="button" accessibilityLabel={"Abrir conversación con "+thread.name} onPress={()=>router.push({pathname:"/message",params:{user:thread.id,name:thread.name}})} style={{flexDirection:"row",alignItems:"center",gap:12,padding:12,borderRadius:18,backgroundColor:theme==="light"?jt.surface:colors.card,borderWidth:1,borderColor:theme==="light"?jt.line:colors.line}}>
             <AccountAvatar accountId={thread.id} fallbackName={thread.name} size={44}/>
             <View style={{flex:1}}><Text style={s.h3}>{thread.name}</Text><Text numberOfLines={1} style={s.muted}>{thread.text}</Text></View>
           </Pressable>)}
           {threads.map(thread => (
-            <View key={thread.id} accessibilityRole="none" style={{ flexDirection: "row", gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.line }}>
+            <View key={thread.id} accessibilityRole="none" style={{ flexDirection: "row", gap: 12, padding:12, borderRadius:18, backgroundColor:theme==="light"?jt.surface:colors.card, borderWidth: 1, borderColor:theme==="light"?jt.line:colors.line }}>
               <AccountAvatar accountId={thread.accountId} fallbackName={thread.name} size={44}/>
               <View style={{ flex: 1, gap: 6 }}>
                 <Text style={s.h3}>{thread.name}</Text>
