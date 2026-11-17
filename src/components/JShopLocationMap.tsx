@@ -5,6 +5,7 @@ import type {LayoutChangeEvent} from "react-native";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {pointToTile,moveMapPoint,tileSource,type MapPoint} from "../lib/jshop-location-core";
+import {mapboxAccessToken,mapboxConfigured} from "../lib/mapbox-config";
 
 /** OTA-compatible slippy-map: real OSM tiles, drag to pan and buttons to zoom. */
 export function JShopLocationMap({center,zoom,onCenter,onZoom}:{
@@ -26,7 +27,10 @@ export function JShopLocationMap({center,zoom,onCenter,onZoom}:{
  const tile=pointToTile(center,zoom),baseX=Math.floor(tile.x),baseY=Math.floor(tile.y);
  const columns=width>470?[-2,-1,0,1,2]:[-1,0,1];
  const rendered=columns.flatMap(dx=>[-1,0,1].map(dy=>{
-  const x=baseX+dx,y=baseY+dy,url=tileSource(x,y,zoom);
+  const x=baseX+dx,y=baseY+dy,osmUrl=tileSource(x,y,zoom);
+  const n=2**zoom;
+  const mapboxUrl=y<0||y>=n?null:`https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/256/${zoom}/${((x%n)+n)%n}/${y}?access_token=${mapboxAccessToken}`;
+  const url=mapboxConfigured?mapboxUrl:osmUrl;
   return url?{key:zoom+":"+x+":"+y,url,x,y}:null;
  })).filter((v):v is {key:string;url:string;x:number;y:number}=>v!==null);
  function onLayout(e:LayoutChangeEvent){
@@ -55,9 +59,9 @@ export function JShopLocationMap({center,zoom,onCenter,onZoom}:{
    <View style={{backgroundColor:t.surface,borderRadius:7,paddingHorizontal:7,paddingVertical:3}}>
     <Text style={{fontSize:10,color:t.ink2}}>Arrastra para mover el mapa</Text>
    </View>
-   <Pressable accessibilityRole="link" accessibilityLabel="Créditos de OpenStreetMap" onPress={()=>void Linking.openURL("https://www.openstreetmap.org/copyright")}
+   <Pressable accessibilityRole="link" accessibilityLabel={mapboxConfigured?"Créditos de Mapbox":"Créditos de OpenStreetMap"} onPress={()=>void Linking.openURL(mapboxConfigured?"https://www.mapbox.com/about/maps/":"https://www.openstreetmap.org/copyright")}
     style={{backgroundColor:t.surface,borderRadius:6,paddingHorizontal:5,paddingVertical:3}}>
-    <Text style={{fontSize:9,color:t.ink2}}>© OpenStreetMap</Text>
+    <Text style={{fontSize:9,color:t.ink2}}>{mapboxConfigured?"© Mapbox · © OSM":"© OpenStreetMap"}</Text>
    </Pressable>
   </View>
  </View>;
