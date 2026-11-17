@@ -6,7 +6,7 @@ import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {mapboxAccessToken,mapboxConfigured} from "../lib/mapbox-config";
 import type {MapPoint} from "../lib/jshop-location-core";
-import {JShopLocationMap as OriginalMap} from "./JShopLocationMap";
+import {JShopLocationMap as OriginalMap} from "./JShopLocationTileMap";
 
 if(mapboxConfigured)Mapbox.setAccessToken(mapboxAccessToken);
 
