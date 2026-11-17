@@ -27,6 +27,10 @@ function Navigation() {
  return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:shellBackground},headerTintColor:colors.ink,contentStyle:{backgroundColor:shellBackground}}}>
  <Stack.Screen name="(tabs)" options={{headerShown:false}}/>
  <Stack.Screen name="jshop" options={{title:"JShop"}}/>
+ <Stack.Screen name="jshop/publish" options={{title:"Nuevo anuncio"}}/>
+ <Stack.Screen name="jshop/mine" options={{title:"Mis anuncios"}}/>
+ <Stack.Screen name="jshop/favorites" options={{title:"Guardados"}}/>
+ <Stack.Screen name="jshop/item/[id]" options={{title:"Detalle del artículo"}}/>
  <Stack.Screen name="notifications" options={{title:"Notificaciones"}}/>
  <Stack.Screen name="search" options={{headerShown:false}}/>
  <Stack.Screen name="stream/[id]" options={{headerShown:false}}/>
