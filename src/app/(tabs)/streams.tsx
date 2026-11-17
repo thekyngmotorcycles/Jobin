@@ -46,7 +46,7 @@ export default function Live(){
    </View>
   </Animated.ScrollView>
   <View style={{position:"absolute",top:inset.top+4,left:8,right:8,zIndex:20}}>
-   <FeedTopBar overlay videoMode tab={tab} onTab={setTab} plusLabel="Iniciar live" onPlus={()=>router.push("/live")} onSearch={()=>router.push({pathname:"/search",params:{mode:"live"}})}/>
+   <FeedTopBar overlay videoMode tab={tab} onTab={setTab} leading="videos" onLeading={()=>router.navigate("/(tabs)/videos")} onSearch={()=>router.push({pathname:"/search",params:{mode:"live"}})}/>
   </View>
  </View>;
 }
