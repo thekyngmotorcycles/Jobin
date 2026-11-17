@@ -22,5 +22,9 @@ test("JShop prices do not fabricate missing values",()=>{
  assert.equal(formatJShopPrice(null,"USD"),"Precio sin definir");
  assert.equal(parseJShopPrice(""),null);
  assert.equal(parseJShopPrice("13,50"),13.5);
+ assert.equal(parseJShopPrice("1.200"),1200);
+ assert.equal(parseJShopPrice("1,200"),1200);
+ assert.equal(parseJShopPrice("1.200,50"),1200.5);
+ assert.equal(parseJShopPrice("1,200.50"),1200.5);
  assert.equal(parseJShopPrice("-1"),null);
 });
