@@ -14,6 +14,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppProvider } from "../state/AppProvider";
 import { ThemeProvider, useTheme } from "../state/ThemeProvider";
+import {jobeenTokens} from "../theme/jobeen";
 function IconFontGate({children}:{children:ReactNode}){
  const [loaded,error]=useFonts(Ionicons.font);const [recovered,setRecovered]=useState(false);const [retrying,setRetrying]=useState(false);const {colors}=useTheme();
  if(loaded||recovered)return children;
@@ -22,8 +23,8 @@ function IconFontGate({children}:{children:ReactNode}){
  </View>;
 }
 function Navigation() {
- const {theme,colors}=useTheme();
- return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:colors.paper},headerTintColor:colors.ink,contentStyle:{backgroundColor:colors.paper}}}>
+ const {theme,colors}=useTheme();const jt=jobeenTokens(theme);const shellBackground=theme==="light"?jt.bg:colors.paper;
+ return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:shellBackground},headerTintColor:colors.ink,contentStyle:{backgroundColor:shellBackground}}}>
  <Stack.Screen name="(tabs)" options={{headerShown:false}}/>
  <Stack.Screen name="jshop" options={{title:"JShop"}}/>
  <Stack.Screen name="notifications" options={{title:"Notificaciones"}}/>
