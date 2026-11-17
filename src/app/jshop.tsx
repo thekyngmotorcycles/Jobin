@@ -7,7 +7,8 @@ import {BottomSheet} from "../components/social-ui";
 import {JShopButton,JShopCategories,JShopEmpty,JShopIconButton,JShopItemCard,JShopTitle} from "../components/JShopUI";
 import {readJShopDrafts,jshopAccountId} from "../lib/jshop-local";
 import {readJShopLocation,saveJShopLocation} from "../lib/jshop-location";
-import {loadJShopListings,loadJShopFavoriteIds,setJShopFavorite} from "../lib/jshop-api";
+import type {JShopPlace} from "../lib/jshop-location-core";
+import {loadJShopListings,loadJShopListingsNear,loadJShopFavoriteIds,setJShopFavorite} from "../lib/jshop-api";
 import {DEFAULT_JSHOP_FILTERS,filterJShopListings,parseJShopPrice,type JShopDraft,type JShopListing,type JShopFilters,type JShopOrder} from "../lib/jshop-model";
 import {useTabClearance} from "../theme/navigation";
 import {useTheme} from "../state/ThemeProvider";
@@ -23,6 +24,7 @@ export default function JShop(){
  const [filtersOpen,setFiltersOpen]=useState(false);
  const [drafts,setDrafts]=useState<JShopDraft[]>([]);
  const [remoteListings,setRemoteListings]=useState<JShopListing[]>([]);
+ const [searchArea,setSearchArea]=useState<JShopPlace|null>(null);
  const [ownerId,setOwnerId]=useState("");
  const [favorites,setFavorites]=useState<string[]>([]);
  const [loading,setLoading]=useState(true);
@@ -31,18 +33,18 @@ export default function JShop(){
   let current=true;setLoading(true);
   void(async()=>{
    try{
-    const listed=await loadJShopListings();
     let userId="guest";let savedDrafts:JShopDraft[]=[];let savedFavorites:string[]=[];
     try{
      userId=await jshopAccountId();
      [savedDrafts,savedFavorites]=await Promise.all([readJShopDrafts(userId),loadJShopFavoriteIds(userId)]);
     }catch{/* Public catalogue remains available without personal data. */}
     const selectedPlace=await readJShopLocation(userId);
+    const listed=selectedPlace?await loadJShopListingsNear(selectedPlace):await loadJShopListings();
     if(current){
-     setRemoteListings(listed);setOwnerId(userId==="guest"?"":userId);
+     setRemoteListings(listed);setOwnerId(userId==="guest"?"":userId);setSearchArea(selectedPlace);
      setDrafts(savedDrafts);setFavorites(savedFavorites);setError("");
-     setActiveFilters(previous=>({...previous,location:selectedPlace?.city??""}));
-     setPending(previous=>({...previous,location:selectedPlace?.city??""}));
+     setActiveFilters(previous=>({...previous,location:""}));
+     setPending(previous=>({...previous,location:""}));
     }
    }catch(e){if(current){setError(e instanceof Error?e.message:"No se pudo cargar JShop.");setRemoteListings([]);}}
    finally{if(current)setLoading(false);}
@@ -56,20 +58,19 @@ export default function JShop(){
   try{await setJShopFavorite(ownerId,id,!saved);setFavorites(current=>saved?current.filter(x=>x!==id):[...current,id]);setError("");}
   catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar el favorito.");}
  }
- const filterCount=Number(activeFilters.condition!=="Todas")+Number(!!activeFilters.location.trim())+Number(!!activeFilters.minPrice.trim())+Number(!!activeFilters.maxPrice.trim())+Number(activeFilters.order!=="recent");
+ const filterCount=Number(activeFilters.condition!=="Todas")+Number(!!searchArea)+Number(!!activeFilters.minPrice.trim())+Number(!!activeFilters.maxPrice.trim())+Number(activeFilters.order!=="recent");
  const openFilters=()=>{setPending({...activeFilters});setFiltersOpen(true);};
  const applyFilters=()=>{
   const min=parseJShopPrice(pending.minPrice),max=parseJShopPrice(pending.maxPrice);
   if((pending.minPrice.trim()&&min===null)||(pending.maxPrice.trim()&&max===null)){Alert.alert("Precio inválido","Introduce precios mayores que cero.");return;}
   if(min!==null&&max!==null&&min>max){Alert.alert("Rango inválido","El precio mínimo debe ser menor que el máximo.");return;}
   setActiveFilters(pending);setFiltersOpen(false);
-  if(!pending.location.trim())void saveJShopLocation(ownerId||"guest",null).catch(()=>{});
  };
  return <SafeAreaView edges={["top","left","right"]} style={{flex:1,backgroundColor:t.bg}}>
   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingHorizontal:16,paddingTop:18,paddingBottom:contentBottom+20,gap:18,maxWidth:980,width:"100%",alignSelf:"center"}} showsVerticalScrollIndicator={false}>
    <JShopTitle title="JShop" right={<View style={{flexDirection:"row",gap:7}}>
     <JShopIconButton icon="heart-outline" label="Mis guardados" onPress={()=>router.push("/jshop/favorites")}/>
-    <JShopIconButton icon="location-outline" label="Elegir ubicación de búsqueda" selected={!!activeFilters.location} onPress={()=>router.push("/jshop/location")}/>
+    <JShopIconButton icon="location-outline" label="Elegir ubicación de búsqueda" selected={!!searchArea} onPress={()=>router.push("/jshop/location")}/>
    </View>}/>
    <View style={{flexDirection:"row",gap:9,alignItems:"center"}}>
     <View style={{flex:1,minHeight:48,borderRadius:18,backgroundColor:t.surface,borderWidth:1,borderColor:t.line,paddingHorizontal:13,flexDirection:"row",alignItems:"center",gap:9}}>
@@ -85,13 +86,13 @@ export default function JShop(){
     <View style={{flex:1}}><JShopButton title="Mis anuncios" icon="albums-outline" secondary onPress={()=>router.push("/jshop/mine")}/></View>
    </View>
    <View style={{gap:8}}>
-    <JShopTitle title="Explorar artículos" subtitle={filterCount?"Filtros activos: "+filterCount:"Explora por categoría, precio y ubicación"}/>
+    <JShopTitle title="Explorar artículos" subtitle={searchArea?searchArea.city+" · "+(searchArea.radiusMiles??10)+" millas a la redonda":filterCount?"Filtros activos: "+filterCount:"Explora por categoría, precio y ubicación"}/>
     {listings.length>0?<View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"space-between",rowGap:12}}>
      {listings.map(item=><JShopItemCard key={item.id} item={item} onOpen={()=>router.push({pathname:"/jshop/item/[id]",params:{id:item.id}})} onFavorite={item.sellerId===ownerId?undefined:()=>void toggleFavorite(item.id)} saved={favorites.includes(item.id)}/>)}
     </View>:<JShopEmpty icon={query||category!=="Todo"||filterCount?"search-outline":"bag-handle-outline"}
-      title={query||category!=="Todo"||filterCount?"No hay artículos con estos filtros":"Todavía no hay artículos publicados"}
-      description={query||category!=="Todo"||filterCount?"Prueba otra búsqueda o quita los filtros para explorar los anuncios publicados.":"Sé el primero en publicar un artículo. Los anuncios se mostrarán aquí cuando los vendedores los publiquen."}
-      action={query||category!=="Todo"||filterCount?{title:"Limpiar filtros",onPress:()=>{setQuery("");setCategory("Todo");setActiveFilters(DEFAULT_JSHOP_FILTERS);setPending(DEFAULT_JSHOP_FILTERS);void saveJShopLocation(ownerId||"guest",null).catch(()=>{});}} :{title:"Crear anuncio",onPress:()=>router.push("/jshop/publish")}}/>}
+      title={searchArea?"No hay artículos dentro de este radio":query||category!=="Todo"||filterCount?"No hay artículos con estos filtros":"Todavía no hay artículos publicados"}
+      description={searchArea?"No encontramos anuncios geolocalizados en "+(searchArea.radiusMiles??10)+" millas alrededor de "+searchArea.city+". Probá ampliando el radio o cambiando la zona.":query||category!=="Todo"||filterCount?"Prueba otra búsqueda o quita los filtros para explorar los anuncios publicados.":"Sé el primero en publicar un artículo. Los anuncios se mostrarán aquí cuando los vendedores los publiquen."}
+      action={query||category!=="Todo"||filterCount?{title:"Limpiar filtros",onPress:()=>{setQuery("");setCategory("Todo");setActiveFilters(DEFAULT_JSHOP_FILTERS);setPending(DEFAULT_JSHOP_FILTERS);setSearchArea(null);void saveJShopLocation(ownerId||"guest",null).catch(()=>{});}} :{title:"Crear anuncio",onPress:()=>router.push("/jshop/publish")}}/>}
    </View>
    {!!drafts.length&&<View style={{gap:12}}>
     <JShopTitle title="Continuar mis borradores" subtitle={drafts.length+" sin publicar"} right={<Pressable accessibilityRole="button" onPress={()=>router.push("/jshop/mine")}><Text style={{color:t.ink,fontWeight:"700"}}>Ver todos</Text></Pressable>}/>
@@ -119,9 +120,13 @@ export default function JShop(){
      <Pressable accessibilityRole="button" accessibilityLabel="Elegir ubicación en el mapa" onPress={()=>{setFiltersOpen(false);router.push("/jshop/location");}}
       style={{minHeight:49,borderWidth:1,borderColor:t.line,borderRadius:16,backgroundColor:t.surface,paddingHorizontal:12,flexDirection:"row",alignItems:"center",gap:10}}>
       <Ionicons name="location-outline" color={t.ink} size={21}/>
-      <Text numberOfLines={1} style={{color:t.ink,flex:1}}>{pending.location||"Todas las ubicaciones"}</Text>
+      <Text numberOfLines={1} style={{color:t.ink,flex:1}}>{searchArea?searchArea.city+" · "+(searchArea.radiusMiles??10)+" millas":"Todas las ubicaciones"}</Text>
       <Ionicons name="chevron-forward" color={t.ink2} size={18}/>
      </Pressable>
+     {searchArea&&<Pressable accessibilityRole="button" onPress={()=>{setSearchArea(null);void saveJShopLocation(ownerId||"guest",null).catch(()=>{});}}
+       style={{minHeight:42,justifyContent:"center"}}>
+      <Text style={{color:t.ink2,fontSize:13}}>Quitar zona de búsqueda</Text>
+     </Pressable>}
     </View>
     <Text style={{color:t.ink,fontWeight:"700"}}>Precio</Text>
     <View style={{flexDirection:"row",gap:10}}>
