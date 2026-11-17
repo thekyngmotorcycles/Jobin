@@ -9,8 +9,8 @@ import {mapboxAccessToken,mapboxConfigured} from "../lib/mapbox-config";
 import {type JShopRadiusMiles} from "../lib/jshop-geo";
 
 /** OTA-compatible slippy-map: real OSM tiles, drag to pan and buttons to zoom. */
-export function JShopLocationMap({center,zoom,radiusMiles,onCenter,onZoom}:{
- center:MapPoint;zoom:number;radiusMiles:JShopRadiusMiles;onCenter:(position:MapPoint)=>void;onZoom:(zoom:number)=>void;
+export function JShopLocationMap({center,zoom,radiusMiles,showRadius=true,onCenter,onZoom}:{
+ center:MapPoint;zoom:number;radiusMiles:JShopRadiusMiles;showRadius?:boolean;onCenter:(position:MapPoint)=>void;onZoom:(zoom:number)=>void;
 }){
  const {theme}=useTheme();const t=jobeenTokens(theme);
  const [width,setWidth]=useState(320);
@@ -45,11 +45,11 @@ export function JShopLocationMap({center,zoom,radiusMiles,onCenter,onZoom}:{
     accessibilityIgnoresInvertColors resizeMode="stretch"
     style={{position:"absolute",width:256,height:256,left:width/2+(v.x-tile.x)*256,top:height/2+(v.y-tile.y)*256}}/>)}
   </View>
-  <View pointerEvents="none" style={{position:"absolute",left:"50%",top:"50%",
+  {showRadius&&<View pointerEvents="none" style={{position:"absolute",left:"50%",top:"50%",
    width:Math.max(2,2*radiusMiles*1609.344/(156543.0339*Math.max(0.04,Math.cos(center.lat*Math.PI/180))/2**zoom)),
    aspectRatio:1,transform:[{translateX:-Math.max(2,2*radiusMiles*1609.344/(156543.0339*Math.max(0.04,Math.cos(center.lat*Math.PI/180))/2**zoom))/2},
     {translateY:-Math.max(2,2*radiusMiles*1609.344/(156543.0339*Math.max(0.04,Math.cos(center.lat*Math.PI/180))/2**zoom))/2}],
-   borderWidth:2,borderColor:t.yellow,borderRadius:9999,backgroundColor:t.yellow+"25"}}/>
+   borderWidth:2,borderColor:t.yellow,borderRadius:9999,backgroundColor:t.yellow+"25"}}/>}
   <View pointerEvents="none" style={{position:"absolute",top:"50%",left:"50%",marginLeft:-16,marginTop:-32,alignItems:"center"}}>
    <Ionicons name="location" size={32} color={t.ink}/>
    <View style={{width:5,height:5,backgroundColor:t.yellow,borderRadius:3,marginTop:-17,marginBottom:14}}/>
