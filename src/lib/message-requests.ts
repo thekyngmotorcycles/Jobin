@@ -19,7 +19,7 @@ async function uid(){
 export async function loadIncomingRequests():Promise<MessageRequest[]>{
  const db=requireSupabase(),owner=await uid();
  const {data,error}=await db.from("jobeen_message_requests" as never).select(FIELDS)
-  .eq("recipient_id",owner).in("status",["pending","spam","reported"])
+  .eq("recipient_id",owner).in("status",["pending","spam"])
   .order("created_at",{ascending:false}).limit(100);
  if(error)throw error;
  const rows=(data??[]) as unknown as RequestRow[];
