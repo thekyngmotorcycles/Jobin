@@ -12,6 +12,7 @@ import { browseStreams,type LiveStream } from "../../lib/streams";
 import { type FeedTab } from "../../lib/feed";
 import { useApp } from "../../state/AppProvider";
 import {useTheme} from "../../state/ThemeProvider";
+import {jobeenTokens} from "../../theme/jobeen";
 
 function matchesFilter(room:LiveStream,filter:WorkFilter){
  if(filter==="Todo")return true;
@@ -21,7 +22,7 @@ function matchesFilter(room:LiveStream,filter:WorkFilter){
  return room.category==="Work"&&!/trainer|teacher|profesor|instructor|educa/i.test(room.profession);
 }
 export default function Live(){
- const {s,colors}=useUi();const {theme}=useTheme();const glass=theme==="sunflower";const inset=useSafeAreaInsets();const {contentBottom}=useTabClearance();const {city}=useApp();
+ const {s,colors}=useUi();const {theme}=useTheme();const jt=jobeenTokens(theme);const glass=theme==="sunflower";const inset=useSafeAreaInsets();const {contentBottom}=useTabClearance();const {city}=useApp();
  const [tab,setTab]=useState<FeedTab>("Local");const [filter,setFilter]=useState<WorkFilter>("Todo");
  const scrollY=useRef(new Animated.Value(0)).current;
  const rooms=browseStreams(tab==="Local"?"Nearby":"Popular",city).filter(room=>matchesFilter(room,filter));
@@ -30,7 +31,7 @@ export default function Live(){
    contentContainerStyle={{paddingTop:inset.top+78,paddingBottom:contentBottom,gap:14}} showsVerticalScrollIndicator={false}>
    <WorkCategoryFilters selected={filter} onSelect={setFilter} scrollY={scrollY}/>
    <Pressable accessibilityRole="button" accessibilityLabel="Iniciar una transmisión de tu trabajo" onPress={()=>router.push("/live")}
-    style={{marginHorizontal:16,borderRadius:16,backgroundColor:glass?colors.glassPromo:colors.accent,borderWidth:glass?1:0,borderColor:colors.glassBorder,shadowColor:colors.glassShadow,shadowOpacity:glass?.3:0,shadowRadius:15,shadowOffset:{width:0,height:6},elevation:glass?5:0,paddingHorizontal:18,paddingVertical:14,flexDirection:"row",alignItems:"center",gap:14}}>
+    style={{marginHorizontal:16,borderRadius:16,backgroundColor:glass?colors.glassPromo:theme==="light"?jt.cream:colors.accent,borderWidth:glass||theme==="light"?1:0,borderColor:theme==="light"?jt.line:colors.glassBorder,shadowColor:colors.glassShadow,shadowOpacity:glass?.3:0,shadowRadius:15,shadowOffset:{width:0,height:6},elevation:glass?5:0,paddingHorizontal:18,paddingVertical:14,flexDirection:"row",alignItems:"center",gap:14}}>
     <View style={{flex:1,gap:4}}>
      <Text style={{color:glass?colors.glassText:colors.ink,fontSize:20,fontWeight:"800"}}>Tu trabajo. En tiempo real.</Text>
      <Text style={{color:glass?colors.glassMuted:colors.muted,fontSize:12}}>Muestra lo que haces y conecta con nuevos clientes.</Text>
