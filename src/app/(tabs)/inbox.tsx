@@ -33,7 +33,7 @@ type ShopFilter="Todo"|"Compras"|"Ventas";
 
 export default function Messages(){
  const {markInboxRead}=useJobinNotices();
- useEffect(()=>{markInboxRead();},[markInboxRead]);
+ useEffect(()=>{markInboxRead();},[]);
  const {s,colors}=useUi(),{theme}=useTheme(),t=jobeenTokens(theme),{contentBottom}=useTabClearance();
  const [tab,setTab]=useState<InboxTab>("chats");
  const [shopFilter,setShopFilter]=useState<ShopFilter>("Todo");
