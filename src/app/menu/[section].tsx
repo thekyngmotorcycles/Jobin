@@ -1,6 +1,7 @@
 import {useMemo,useState} from "react";
 import {JOBIN_SETTINGS_GROUPS} from "../../lib/jobin-settings-catalog";
-import {JobinSettingsIcon} from "../../components/JobinSettingsIcon";
+import {SettingsMenuRow} from "../../components/SettingsMenuRow";
+import {menuChrome} from "../../theme/menu-chrome";
 import {Ionicons} from "@expo/vector-icons";
 import {router,useLocalSearchParams} from "expo-router";
 import {Pressable,ScrollView,Text,TextInput,View} from "react-native";
@@ -12,27 +13,22 @@ import {THEMES} from "../../theme/palettes";
 export default function MenuSection(){
  const [query,setQuery]=useState("");
  const filtered=useMemo(()=>JOBIN_SETTINGS_GROUPS.map(group=>({...group,items:group.items.filter(entry=>(entry.title+" "+entry.description).toLowerCase().includes(query.trim().toLowerCase()))})).filter(group=>group.items.length>0),[query]);
- const {section}=useLocalSearchParams<{section:string}>();const {s,colors}=useUi();const {theme,setTheme}=useTheme();
+ const {section}=useLocalSearchParams<{section:string}>();const {s,colors}=useUi();const {theme,setTheme}=useTheme();const chrome=menuChrome(theme,colors);
  const item=HOME_MENU_ITEMS.find(entry=>entry.slug===section);
- if(!item)return <SafeAreaView style={s.screen}><Text style={s.h2}>Sección no encontrada</Text></SafeAreaView>;
- return <SafeAreaView edges={["bottom"]} style={s.screen}>
+ if(!item)return <SafeAreaView style={[s.screen,{backgroundColor:chrome.surface}]}><Text style={s.h2}>Sección no encontrada</Text></SafeAreaView>;
+ return <SafeAreaView edges={["bottom"]} style={[s.screen,{backgroundColor:chrome.surface}]}>
   <ScrollView contentContainerStyle={{padding:24,gap:22,maxWidth:720,width:"100%",alignSelf:"center"}}>
    {section!=="configuracion"&&<Text style={s.muted}>{item.description}</Text>}
-   {section==="configuracion"&&<View style={{gap:24}}>
-    <View style={{flexDirection:"row",alignItems:"center",backgroundColor:colors.card,borderRadius:16,borderWidth:1,borderColor:colors.line,paddingHorizontal:14,gap:10}}>
+   {section==="configuracion"&&<View style={{gap:18}}>
+    <View style={{flexDirection:"row",alignItems:"center",backgroundColor:chrome.action,borderRadius:20,borderWidth:1,borderColor:chrome.border,paddingHorizontal:14,gap:10}}>
      <Ionicons name="search-outline" size={22} color={colors.muted}/>
      <TextInput accessibilityLabel="Buscar configuración" value={query} onChangeText={setQuery} placeholder="Buscar configuración" placeholderTextColor={colors.muted} style={{flex:1,minHeight:52,color:colors.ink,fontSize:16}}/>
     </View>
-    {filtered.map(group=><View key={group.title} style={{gap:9}}>
+    {filtered.map(group=><View key={group.title} style={{gap:10,marginBottom:8}}>
      <Text accessibilityRole="header" style={[s.h3,{fontSize:22}]}>{group.title}</Text>
      <Text style={s.muted}>{group.description}</Text>
-     {group.items.map(entry=><Pressable key={entry.id} accessibilityRole="button" accessibilityLabel={entry.title}
-      onPress={()=>{if(entry.route){router.push(entry.route as any);}else{router.push({pathname:"/settings/[item]",params:{item:entry.id}});}}}
-      style={({pressed})=>({flexDirection:"row",alignItems:"center",gap:16,paddingVertical:14,opacity:pressed?.55:1})}>
-      <JobinSettingsIcon id={entry.id} size={27} color={colors.ink}/>
-      <View style={{flex:1,gap:3}}><Text style={[s.text,{fontWeight:"600",fontSize:16}]}>{entry.title}</Text><Text style={s.muted}>{entry.description}</Text></View>
-      <Ionicons name="chevron-forward" size={18} color={colors.muted}/>
-     </Pressable>)}
+     {group.items.map(entry=><SettingsMenuRow key={entry.id} settingId={entry.id} title={entry.title} description={entry.description}
+      onPress={()=>{if(entry.route){router.push(entry.route as any);}else{router.push({pathname:"/settings/[item]",params:{item:entry.id}});}}}/>)}
     </View>)}
     {filtered.length===0&&<Text style={s.muted}>No encontramos opciones con ese nombre.</Text>}
    </View>}
