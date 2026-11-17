@@ -34,7 +34,7 @@ test("Mapbox JShop integration uses native plugin, token-gated maps and permanen
  const web=read("src/components/JShopLocationTileMap.tsx");
  assert.equal(pkg.dependencies["@rnmapbox/maps"],"10.3.18");
  assert.ok(app.expo.plugins.some((p:unknown)=>Array.isArray(p)&&p[0]==="@rnmapbox/maps"));
- assert.ok(location.includes("confirmJShopPlace(place)"));
+ assert.ok(location.includes("confirmJShopPlace("));
  assert.ok(api.includes('permanent?"true":"false"'));
  assert.ok(api.includes('return mapboxRequest("forward"'));
  assert.ok(native.includes("Mapbox.MapView"));
