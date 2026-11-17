@@ -5,11 +5,13 @@ import { FEED_TABS, type FeedTab } from "../lib/feed";
 import { useJobinNotices } from "../state/NoticeProvider";
 import { useUi } from "./ui";
 import { TopNavigationFade } from "./TopNavigationFade";
+import {useTheme} from "../state/ThemeProvider";
+import {jobeenTokens} from "../theme/jobeen";
 
 export function FeedTopBar({tab,onTab,onPlus,plusLabel,onSearch,overlay=false,videoMode=false}:{
  tab:FeedTab;onTab:(tab:FeedTab)=>void;onPlus:()=>void;plusLabel:string;onSearch:()=>void;overlay?:boolean;videoMode?:boolean;
 }){
- const {colors}=useUi();const {unreadActivity}=useJobinNotices();
+ const {colors}=useUi();const {theme}=useTheme();const jt=jobeenTokens(theme);const {unreadActivity}=useJobinNotices();
  const ink=colors.navIcon;
  const tabs=videoMode?FEED_TABS:FEED_TABS.filter(item=>item!=="Following");
  function icon(name:"add"|"notifications-outline"|"search-outline",label:string,onPress:()=>void,badge=false){
@@ -24,7 +26,7 @@ export function FeedTopBar({tab,onTab,onPlus,plusLabel,onSearch,overlay=false,vi
    {icon("add",plusLabel,onPlus)}
    {!videoMode&&icon("notifications-outline","Notificaciones",()=>router.push("/notifications"),unreadActivity>0)}
    <View style={{flex:1,flexDirection:"row",justifyContent:"center",gap:videoMode?8:12}}>
-    {tabs.map(item=><Pressable key={item} accessibilityRole="tab" accessibilityState={{selected:tab===item}} onPress={()=>onTab(item)} style={({pressed})=>({minHeight:44,justifyContent:"center",paddingHorizontal:8,borderRadius:12,backgroundColor:tab===item?colors.line:colors.transparent,borderBottomWidth:tab===item?2:0,borderBottomColor:ink,opacity:pressed?0.72:1})}>
+    {tabs.map(item=><Pressable key={item} accessibilityRole="tab" accessibilityState={{selected:tab===item}} onPress={()=>onTab(item)} style={({pressed})=>({minHeight:44,justifyContent:"center",paddingHorizontal:8,borderRadius:12,backgroundColor:tab===item?(theme==="light"?jt.cream:colors.line):colors.transparent,borderBottomWidth:tab===item?2:0,borderBottomColor:theme==="light"?jt.yellow:ink,opacity:pressed?0.72:1})}>
      <Text style={{color:tab===item?ink:colors.muted,fontSize:videoMode?14:15,fontWeight:tab===item?"800":"500"}}>{videoMode&&item==="Following"?"Siguiendo":item}</Text>
     </Pressable>)}
    </View>
