@@ -45,11 +45,12 @@ test("assistant stays clear of safe areas/navigation and snaps to the nearest ed
  assert.equal(parseAssistantPosition("bad"),null);
  assert.equal(parseAssistantPosition('{"edge":"right","fraction":2}')?.fraction,1);
 });
-test("stories and conversations share the same Refri-Air identity",()=>{
+test("real stories use public JCard avatars while demo conversations retain their identity",()=>{
  assert.equal(ACCOUNT_IDENTITIES.refri.initials,"RA");
  assert.equal(ACCOUNT_IDENTITIES.refri.name,"Refri-Air");
- const inbox=readFileSync("src/app/(tabs)/inbox.tsx","utf8"),stories=readFileSync("src/components/SocialHeader.tsx","utf8");
- assert.ok(inbox.includes("<AccountAvatar")&&stories.includes("<AccountAvatar"));
+ const inbox=readFileSync("src/app/(tabs)/inbox.tsx","utf8"),stories=readFileSync("src/components/StoryStrip.tsx","utf8"),header=readFileSync("src/components/SocialHeader.tsx","utf8");
+ assert.ok(inbox.includes("<AccountAvatar")&&stories.includes("<PublicProfileAvatar"));
+ assert.ok(header.includes("<StoryStrip")&&inbox.includes("<SocialHeader"));
  assert.ok(inbox.includes("Solicitó tu historial profesional")&&inbox.includes('title="Enviar"'));
 });
 test("runtime UI has no literal colors outside centralized theme modules",()=>{
