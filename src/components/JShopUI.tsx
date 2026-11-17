@@ -4,7 +4,7 @@ import {Image,Pressable,ScrollView,Text,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
-import {JSHOP_CATEGORIES,formatJShopPrice,type JShopCategory,type JShopDraft,type JShopListing} from "../lib/jshop-model";
+import {JSHOP_CATEGORIES,formatJShopPrice,type JShopDraft,type JShopListing} from "../lib/jshop-model";
 
 type Icon=ComponentProps<typeof Ionicons>["name"];
 export function JShopButton({title,onPress,icon,secondary=false,disabled=false,compact=false}:{
@@ -18,12 +18,12 @@ export function JShopButton({title,onPress,icon,secondary=false,disabled=false,c
   <Text style={{color:secondary?t.ink:t.bg,fontSize:14,fontWeight:"700"}} numberOfLines={1}>{title}</Text>
  </Pressable>;
 }
-export function JShopIconButton({icon,label,onPress,selected=false}:{
- icon:Icon;label:string;onPress:()=>void;selected?:boolean;
+export function JShopIconButton({icon,label,onPress,selected=false,disabled=false}:{
+ icon:Icon;label:string;onPress:()=>void;selected?:boolean;disabled?:boolean;
 }){
  const {theme}=useTheme();const t=jobeenTokens(theme);
- return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected}} onPress={onPress}
-  style={({pressed})=>({height:46,width:46,borderRadius:16,borderWidth:1,borderColor:t.line,backgroundColor:selected?t.cream:t.surface,alignItems:"center",justifyContent:"center",opacity:pressed?0.7:1})}>
+ return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected,disabled}} disabled={disabled} onPress={onPress}
+  style={({pressed})=>({height:46,width:46,borderRadius:16,borderWidth:1,borderColor:t.line,backgroundColor:selected?t.cream:t.surface,alignItems:"center",justifyContent:"center",opacity:disabled?0.42:pressed?0.7:1})}>
   <Ionicons name={icon} size={22} color={t.ink}/>
  </Pressable>;
 }
