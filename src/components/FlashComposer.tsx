@@ -106,7 +106,7 @@ export function FlashComposer(){
     </View>
     {!!savedAt&&<Text style={{color:t.ink2,fontSize:12}}>Borrador local guardado: {new Date(savedAt).toLocaleString("es")}</Text>}
     {!!notice&&<Text accessibilityLiveRegion="polite" style={{fontSize:13,color:t.ink}}>{notice}</Text>}
-    <Pressable accessibilityRole="button" accessibilityLabel="Guardar borrador Flash" disabled={busy||!userId} onPress={()=>void save()} style={({pressed})=>({minHeight:50,borderRadius:18,backgroundColor:t.ink,alignItems:"center",justifyContent:"center",opacity:busy||!userId?.4:pressed?.7:1})}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Guardar borrador Flash" disabled={busy||!userId} onPress={()=>void save()} style={({pressed})=>({minHeight:50,borderRadius:18,backgroundColor:t.ink,alignItems:"center",justifyContent:"center",opacity:busy||!userId?0.4:pressed?0.7:1})}>
      <Text style={{color:t.bg,fontWeight:"700"}}>{busy?"Guardando...":"Guardar borrador"}</Text>
     </Pressable>
     <Text style={{color:t.ink2,fontSize:12,lineHeight:18}}>Los archivos seleccionados pueden dejar de estar disponibles si el sistema elimina sus copias temporales. Los borradores no se sincronizan entre dispositivos.</Text>
