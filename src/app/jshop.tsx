@@ -63,6 +63,7 @@ export default function JShop(){
   if((pending.minPrice.trim()&&min===null)||(pending.maxPrice.trim()&&max===null)){Alert.alert("Precio inválido","Introduce precios mayores que cero.");return;}
   if(min!==null&&max!==null&&min>max){Alert.alert("Rango inválido","El precio mínimo debe ser menor que el máximo.");return;}
   setActiveFilters(pending);setFiltersOpen(false);
+  if(!pending.location.trim())void saveJShopLocation(ownerId||"guest",null).catch(()=>{});
  };
  return <SafeAreaView edges={["top","left","right"]} style={{flex:1,backgroundColor:t.bg}}>
   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingHorizontal:16,paddingTop:18,paddingBottom:contentBottom+20,gap:18,maxWidth:980,width:"100%",alignSelf:"center"}} showsVerticalScrollIndicator={false}>
@@ -132,7 +133,7 @@ export default function JShop(){
      <Ionicons name={pending.order===order.id?"radio-button-on":"radio-button-off"} size={22} color={t.ink}/><Text style={{color:t.ink}}>{order.label}</Text>
     </Pressable>)}
     <View style={{flexDirection:"row",gap:10,paddingTop:5}}>
-     <View style={{flex:1}}><JShopButton title="Limpiar" secondary onPress={()=>setPending(previous=>({...DEFAULT_JSHOP_FILTERS,location:previous.location}))}/></View>
+     <View style={{flex:1}}><JShopButton title="Limpiar" secondary onPress={()=>setPending(DEFAULT_JSHOP_FILTERS)}/></View>
      <View style={{flex:1}}><JShopButton title="Aplicar" onPress={applyFilters}/></View>
     </View>
    </View>
