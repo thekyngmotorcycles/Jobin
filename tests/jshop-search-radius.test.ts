@@ -25,11 +25,14 @@ test("JShop uses spatial Postgres RPC with saved radius",()=>{
  assert.ok(migration.includes("security invoker"));
  assert.ok(migration.includes("p_radius_miles in (5,10,50,100)"));
 });
-test("Seller listings are geocoded for radius search",()=>{
+test("Seller listings use previously confirmed article coordinates, not fresh free-text geocoding",()=>{
  const api=src("src/lib/jshop-api.ts");
- assert.ok(api.includes("await findJShopPlaces(draft.location)"));
- assert.ok(api.includes("await confirmJShopPlace(possiblePlaces[0])"));
- assert.ok(api.includes("location_lat:locationPoint.lat,location_lon:locationPoint.lon"));
+ const publish=src("src/app/jshop/publish.tsx");
+ assert.ok(api.includes('readDefaultSaleLocation(ownerId)'));
+ assert.ok(api.includes('location_lat:locationPoint.lat,location_lon:locationPoint.lon'));
+ assert.ok(!api.includes('findJShopPlaces(draft.location)'));
+ assert.ok(publish.includes("locationLat:selectedLocation?.lat"));
+ assert.ok(publish.includes("locationLon:selectedLocation?.lon"));
 });
 test("Mapbox and web fallback show buying radius",()=>{
  const native=src("src/components/JShopLocationMap.native.tsx");
