@@ -42,7 +42,7 @@ export async function loadJShopListings():Promise<JShopListing[]>{
 /** Query actual physical distance in Postgres under the listing RLS. */
 export async function loadJShopListingsNear(place:JShopPlace):Promise<JShopListing[]>{
  const radius=place.radiusMiles??10;
- const {data,error}=await client().rpc("jshop_listings_nearby" as never,
+ const {data,error}=await client().rpc("jshop_listings_within_area" as never,
   {p_lat:place.lat,p_lon:place.lon,p_radius_miles:radius,p_limit:150} as never);
  if(error)throw error;
  const rows=(data??[]) as unknown as ListingRow[];

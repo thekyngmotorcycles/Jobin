@@ -1,12 +1,12 @@
 /** Geodesic circle and actual distance filtering (not a cosmetic pixel circle). */
 export const JSHOP_RADIUS_MILES=[5,10,50,100] as const;
-export type JShopRadiusMiles=typeof JSHOP_RADIUS_MILES[number];
+export type JShopRadiusMiles=number;
 export type GeoPoint={lat:number;lon:number};
 export const EARTH_RADIUS_MI=3958.7613;
 const rad=(degrees:number)=>degrees*Math.PI/180;
 const deg=(radians:number)=>radians*180/Math.PI;
 export function isJShopRadius(value:unknown):value is JShopRadiusMiles{
- return JSHOP_RADIUS_MILES.some(r=>r===value);
+ return typeof value==="number"&&Number.isFinite(value)&&value>=0.05&&value<=4000;
 }
 export function haversineMiles(a:GeoPoint,b:GeoPoint){
  const dLat=rad(b.lat-a.lat),dLon=rad(b.lon-a.lon);
@@ -34,4 +34,12 @@ export function mapZoomForRadius(center:GeoPoint,radiusMiles:JShopRadiusMiles,ma
 }
 export function insideJShopRadius(center:GeoPoint,item:GeoPoint|null,radius:JShopRadiusMiles):boolean{
  return !!item&&Number.isFinite(item.lat)&&Number.isFinite(item.lon)&&haversineMiles(center,item)<=radius+0.001;
+}
+
+/** Geographic search radius covered by the viewport's fixed 70% diameter circle. */
+export function mapRadiusForViewport(center:GeoPoint,zoom:number,width:number,height:number):number{
+ const lat=Math.max(-80,Math.min(80,center.lat));
+ const px=Math.max(25,Math.min(Math.max(1,width),Math.max(1,height))*0.35);
+ const meters=156543.03392804097*Math.cos(rad(lat))/Math.pow(2,Math.max(2,Math.min(18,zoom)));
+ return Math.max(0.05,Math.min(4000,Math.round(px*meters/1609.344*1000)/1000));
 }

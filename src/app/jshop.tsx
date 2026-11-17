@@ -114,12 +114,12 @@ export default function JShop(){
     <Ionicons name="chevron-forward" size={17} color={t.ink2}/>
    </Pressable>}
    <View style={{gap:8}}>
-    <JShopTitle title="Explorar artículos" subtitle={searchArea?searchArea.city+" · "+(searchArea.radiusMiles??10)+" millas a la redonda":filterCount?"Filtros activos: "+filterCount:"Explora por categoría, precio y ubicación"}/>
+    <JShopTitle title="Explorar artículos" subtitle={searchArea?searchArea.city:filterCount?"Filtros activos: "+filterCount:"Explora por categoría, precio y ubicación"}/>
     {listings.length>0?<View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"space-between",rowGap:12}}>
      {listings.map(item=><JShopItemCard key={item.id} item={item} onOpen={()=>router.push({pathname:"/jshop/item/[id]",params:{id:item.id}})} onFavorite={item.sellerId===ownerId?undefined:()=>void toggleFavorite(item.id)} saved={favorites.includes(item.id)}/>)}
     </View>:<JShopEmpty icon={query||category!=="Todo"||filterCount?"search-outline":"bag-handle-outline"}
-      title={searchArea?"No hay artículos dentro de este radio":query||category!=="Todo"||filterCount?"No hay artículos con estos filtros":"Todavía no hay artículos publicados"}
-      description={searchArea?"No encontramos anuncios geolocalizados en "+(searchArea.radiusMiles??10)+" millas alrededor de "+searchArea.city+". Probá ampliando el radio o cambiando la zona.":query||category!=="Todo"||filterCount?"Prueba otra búsqueda o quita los filtros para explorar los anuncios publicados.":"Sé el primero en publicar un artículo. Los anuncios se mostrarán aquí cuando los vendedores los publiquen."}
+      title={searchArea?"No hay artículos en esta zona":query||category!=="Todo"||filterCount?"No hay artículos con estos filtros":"Todavía no hay artículos publicados"}
+      description={searchArea?"No encontramos anuncios cerca de "+searchArea.city+". Probá moviendo el mapa o cambiando la zona.":query||category!=="Todo"||filterCount?"Prueba otra búsqueda o quita los filtros para explorar los anuncios publicados.":"Sé el primero en publicar un artículo. Los anuncios se mostrarán aquí cuando los vendedores los publiquen."}
       action={query||category!=="Todo"||filterCount?{title:"Limpiar filtros",onPress:()=>{setQuery("");setCategory("Todo");setActiveFilters(DEFAULT_JSHOP_FILTERS);setPending(DEFAULT_JSHOP_FILTERS);void clearSearchArea();}} :{title:"Crear anuncio",onPress:()=>router.push("/jshop/publish")}}/>}
    </View>
    {!!drafts.length&&<View style={{gap:12}}>
@@ -148,7 +148,7 @@ export default function JShop(){
      <Pressable accessibilityRole="button" accessibilityLabel="Elegir ubicación en el mapa" onPress={()=>{setFiltersOpen(false);router.push("/jshop/location");}}
       style={{minHeight:49,borderWidth:1,borderColor:t.line,borderRadius:16,backgroundColor:t.surface,paddingHorizontal:12,flexDirection:"row",alignItems:"center",gap:10}}>
       <Ionicons name="location-outline" color={t.ink} size={21}/>
-      <Text numberOfLines={1} style={{color:t.ink,flex:1}}>{searchArea?searchArea.city+" · "+(searchArea.radiusMiles??10)+" millas":"Todas las ubicaciones"}</Text>
+      <Text numberOfLines={1} style={{color:t.ink,flex:1}}>{searchArea?searchArea.city:"Todas las ubicaciones"}</Text>
       <Ionicons name="chevron-forward" color={t.ink2} size={18}/>
      </Pressable>
      {searchArea&&<Pressable accessibilityRole="button" onPress={()=>void clearSearchArea()}
