@@ -5,13 +5,14 @@ import {ActivityIndicator,Alert,Pressable,ScrollView,Text,TextInput,View} from "
 import {SafeAreaView} from "react-native-safe-area-context";
 import {BottomSheet} from "../components/social-ui";
 import {JShopButton,JShopCategories,JShopEmpty,JShopIconButton,JShopItemCard,JShopTitle} from "../components/JShopUI";
-import {readJShopDrafts,readJShopFavorites,jshopAccountId} from "../lib/jshop-local";
-import {DEFAULT_JSHOP_FILTERS,filterJShopListings,parseJShopPrice,type JShopDraft,type JShopFilters,type JShopOrder} from "../lib/jshop-model";
+import {readJShopDrafts,jshopAccountId} from "../lib/jshop-local";
+import {loadJShopListings,loadJShopFavoriteIds,setJShopFavorite} from "../lib/jshop-api";
+import {DEFAULT_JSHOP_FILTERS,filterJShopListings,parseJShopPrice,type JShopDraft,type JShopListing,type JShopFilters,type JShopOrder} from "../lib/jshop-model";
 import {useTabClearance} from "../theme/navigation";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 
-/** Discovery is ready for listings; the public products API is not connected yet. */
+/** Live JShop catalogue and per-account drafts. */
 export default function JShop(){
  const {theme}=useTheme();const t=jobeenTokens(theme);const {contentBottom}=useTabClearance();
  const [query,setQuery]=useState("");
@@ -20,23 +21,34 @@ export default function JShop(){
  const [pending,setPending]=useState<JShopFilters>(DEFAULT_JSHOP_FILTERS);
  const [filtersOpen,setFiltersOpen]=useState(false);
  const [drafts,setDrafts]=useState<JShopDraft[]>([]);
+ const [remoteListings,setRemoteListings]=useState<JShopListing[]>([]);
+ const [ownerId,setOwnerId]=useState("");
  const [favorites,setFavorites]=useState<string[]>([]);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
  useFocusEffect(useCallback(()=>{
-  let current=true;
+  let current=true;setLoading(true);
   void(async()=>{
    try{
-    const ownerId=await jshopAccountId();
-    const [savedDrafts,savedFavorites]=await Promise.all([readJShopDrafts(ownerId),readJShopFavorites(ownerId)]);
-    if(current){setDrafts(savedDrafts);setFavorites(savedFavorites);setError("");}
-   }catch(e){if(current){setError(e instanceof Error?e.message:"No se pudo cargar Mi JShop.");setDrafts([]);setFavorites([]);}}
+    const listed=await loadJShopListings();
+    let userId="";let savedDrafts:JShopDraft[]=[];let savedFavorites:string[]=[];
+    try{
+     userId=await jshopAccountId();
+     [savedDrafts,savedFavorites]=await Promise.all([readJShopDrafts(userId),loadJShopFavoriteIds(userId)]);
+    }catch{/* Public catalogue remains available without personal data. */}
+    if(current){setRemoteListings(listed);setOwnerId(userId);setDrafts(savedDrafts);setFavorites(savedFavorites);setError("");}
+   }catch(e){if(current){setError(e instanceof Error?e.message:"No se pudo cargar JShop.");setRemoteListings([]);}}
    finally{if(current)setLoading(false);}
   })();
   return()=>{current=false;};
  },[]));
- // No fabricated listings: the Supabase marketplace schema is not enabled.
- const listings=filterJShopListings([],{...activeFilters,category,query});
+ const listings=filterJShopListings(remoteListings,{...activeFilters,category,query});
+ async function toggleFavorite(id:string){
+  if(!ownerId){setError("Inicia sesión para guardar artículos.");return;}
+  const saved=favorites.includes(id);
+  try{await setJShopFavorite(ownerId,id,!saved);setFavorites(current=>saved?current.filter(x=>x!==id):[...current,id]);setError("");}
+  catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar el favorito.");}
+ }
  const filterCount=Number(activeFilters.condition!=="Todas")+Number(!!activeFilters.location.trim())+Number(!!activeFilters.minPrice.trim())+Number(!!activeFilters.maxPrice.trim())+Number(activeFilters.order!=="recent");
  const openFilters=()=>{setPending({...activeFilters});setFiltersOpen(true);};
  const applyFilters=()=>{
@@ -67,11 +79,11 @@ export default function JShop(){
    <View style={{gap:8}}>
     <JShopTitle title="Explorar artículos" subtitle={filterCount?"Filtros activos: "+filterCount:"Explora por categoría, precio y ubicación"}/>
     {listings.length>0?<View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"space-between",rowGap:12}}>
-     {listings.map(item=><JShopItemCard key={item.id} item={item} onOpen={()=>router.push({pathname:"/jshop/item/[id]",params:{id:item.id}})}/>)}
+     {listings.map(item=><JShopItemCard key={item.id} item={item} onOpen={()=>router.push({pathname:"/jshop/item/[id]",params:{id:item.id}})} onFavorite={item.sellerId===ownerId?undefined:()=>void toggleFavorite(item.id)} saved={favorites.includes(item.id)}/>)}
     </View>:<JShopEmpty icon={query||category!=="Todo"||filterCount?"search-outline":"bag-handle-outline"}
-      title={query||category!=="Todo"||filterCount?"No hay artículos con estos filtros":"JShop está en preparación"}
-      description={query||category!=="Todo"||filterCount?"Prueba otra búsqueda o quita los filtros. Todavía no hay publicaciones públicas disponibles.":"La interfaz de compra y venta ya está disponible. Podés preparar anuncios como borradores; la publicación pública estará disponible cuando habilitemos el servicio."}
-      action={query||category!=="Todo"||filterCount?{title:"Limpiar filtros",onPress:()=>{setQuery("");setCategory("Todo");setActiveFilters(DEFAULT_JSHOP_FILTERS);}}:{title:"Preparar mi anuncio",onPress:()=>router.push("/jshop/publish")}}/>}
+      title={query||category!=="Todo"||filterCount?"No hay artículos con estos filtros":"Todavía no hay artículos publicados"}
+      description={query||category!=="Todo"||filterCount?"Prueba otra búsqueda o quita los filtros para explorar los anuncios publicados.":"Sé el primero en publicar un artículo. Los anuncios se mostrarán aquí cuando los vendedores los publiquen."}
+      action={query||category!=="Todo"||filterCount?{title:"Limpiar filtros",onPress:()=>{setQuery("");setCategory("Todo");setActiveFilters(DEFAULT_JSHOP_FILTERS);}} :{title:"Crear anuncio",onPress:()=>router.push("/jshop/publish")}}/>}
    </View>
    {!!drafts.length&&<View style={{gap:12}}>
     <JShopTitle title="Continuar mis borradores" subtitle={drafts.length+" sin publicar"} right={<Pressable accessibilityRole="button" onPress={()=>router.push("/jshop/mine")}><Text style={{color:t.ink,fontWeight:"700"}}>Ver todos</Text></Pressable>}/>
@@ -80,7 +92,7 @@ export default function JShop(){
     </View>
    </View>}
    {!!favorites.length&&<Pressable accessibilityRole="button" onPress={()=>router.push("/jshop/favorites")} style={{borderWidth:1,borderColor:t.line,borderRadius:18,padding:13,flexDirection:"row",alignItems:"center",gap:12,backgroundColor:t.surface}}>
-    <Ionicons name="heart-outline" size={21} color={t.ink}/><Text style={{flex:1,fontSize:13,color:t.ink}}>Guardados en este dispositivo: {favorites.length}</Text><Ionicons name="chevron-forward" color={t.ink2} size={18}/>
+    <Ionicons name="heart-outline" size={21} color={t.ink}/><Text style={{flex:1,fontSize:13,color:t.ink}}>Artículos guardados: {favorites.length}</Text><Ionicons name="chevron-forward" color={t.ink2} size={18}/>
    </Pressable>}
    {loading&&<ActivityIndicator color={t.yellow}/>}
    {!!error&&<Text accessibilityLiveRegion="polite" style={{fontSize:12,color:t.ink2}}>{error}</Text>}
