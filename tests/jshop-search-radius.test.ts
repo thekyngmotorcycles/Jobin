@@ -20,7 +20,7 @@ test("JShop uses spatial Postgres RPC with saved radius",()=>{
  const migration=src("supabase/migrations/20261117230500_jshop_search_radius.sql");
  assert.ok(api.includes('rpc("jshop_listings_nearby"'));
  assert.ok(api.includes("insideJShopRadius("));
- assert.ok(catalog.includes("selectedPlace?await loadJShopListingsNear(selectedPlace):await loadJShopListings()"));
+ assert.ok(catalog.includes("selectedPlace?loadJShopListingsNear(selectedPlace):loadJShopListings()"));
  assert.ok(catalog.includes('location:""'));
  assert.ok(migration.includes("security invoker"));
  assert.ok(migration.includes("p_radius_miles in (5,10,50,100)"));
