@@ -12,7 +12,7 @@ import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
 
 export default function JShopLocationPicker(){
- const {theme}=useTheme();const t=jobeenTokens(theme);const insets=useSafeAreaInsets();
+ const {theme,colors}=useTheme();const t=jobeenTokens(theme);const insets=useSafeAreaInsets();
  const [owner,setOwner]=useState("guest");
  const [chosen,setChosen]=useState<JShopPlace|null>(null);
  const [center,setCenter]=useState<MapPoint>({lat:0,lon:0});
@@ -60,7 +60,7 @@ export default function JShopLocationPicker(){
  return <>
   <Stack.Screen options={{headerShown:false,presentation:"transparentModal",animation:"slide_from_bottom"}}/>
   <KeyboardAvoidingView behavior={Platform.OS==="ios"?"padding":undefined}
-   style={{flex:1,backgroundColor:"rgba(0,0,0,0.32)",justifyContent:"flex-end"}}>
+   style={{flex:1,backgroundColor:colors.scrim,justifyContent:"flex-end"}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Cerrar selector de ubicación" onPress={()=>router.back()} style={{flex:1}}/>
    <View accessibilityViewIsModal style={{backgroundColor:t.bg,borderTopLeftRadius:27,borderTopRightRadius:27,
     maxHeight:"92%",minHeight:480,paddingBottom:Math.max(12,insets.bottom),overflow:"hidden"}}>
