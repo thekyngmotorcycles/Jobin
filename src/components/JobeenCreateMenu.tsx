@@ -6,13 +6,15 @@ import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {JobeenCreateIcon} from "./JobeenCreateIcon";
+import {JobeenFlashIcon} from "./JobeenFlashIcon";
 
-const MENU_WIDTH=250;
-const MENU_HEIGHT=176;
+const MENU_WIDTH=256;
+const MENU_HEIGHT=232;
 const actions=[
- {name:"Video",icon:"videocam-outline",route:"/create",mode:"video"},
- {name:"En vivo",icon:"radio-outline",route:"/live",mode:""},
- {name:"Flash",icon:"flash-outline",route:"/create",mode:"flash"},
+ {id:"post",name:"Publicación",icon:"create-outline",route:"/post/create"},
+ {id:"story",name:"Historia",icon:"add-circle-outline",route:"/story/create"},
+ {id:"flash",name:"Flash",icon:"flash-outline",route:"/create"},
+ {id:"live",name:"En vivo",icon:"radio-outline",route:"/live"},
 ] as const;
 
 /** Shared create entry: used only in Home and the signed-in owner's profile. */
@@ -37,14 +39,13 @@ export function JobeenCreateMenu(){
    setVisible(true);
   });
  }
- function navigate(route:(typeof actions)[number]){
+ function navigate(action:(typeof actions)[number]){
   setVisible(false);
-  if(route.mode){
-   router.push({pathname:"/create",params:{mode:route.mode}});
-  }else router.push("/live");
+  if(action.id==="flash")router.push({pathname:"/create",params:{mode:"flash"}});
+  else router.push(action.route as never);
  }
  return <>
-  <Pressable ref={trigger} accessibilityRole="button" accessibilityLabel="Crear" accessibilityHint="Abrir opciones para crear video, en vivo o Flash" accessibilityState={{expanded:visible}}
+  <Pressable ref={trigger} accessibilityRole="button" accessibilityLabel="Crear" accessibilityHint="Abrir opciones de Publicación, Historia, Flash y En vivo" accessibilityState={{expanded:visible}}
    onPress={()=>visible?setVisible(false):open()}
    style={({pressed})=>({width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22,
     opacity:pressed?0.6:1})}>
@@ -57,7 +58,7 @@ export function JobeenCreateMenu(){
     <View accessibilityViewIsModal style={{position:"absolute",top:position.top,left:position.left,width:menuWidth,borderRadius:20,overflow:"hidden",backgroundColor:t.surface,borderColor:t.line,borderWidth:1,shadowColor:t.ink,shadowOpacity:0.16,shadowRadius:16,shadowOffset:{width:0,height:7},elevation:10}}>
      {actions.map((action,index)=><Pressable key={action.name} accessibilityRole="button" accessibilityLabel={"Crear "+action.name} onPress={()=>navigate(action)}
       style={({pressed})=>({height:56,paddingHorizontal:18,flexDirection:"row",alignItems:"center",gap:14,backgroundColor:pressed?t.cream:t.surface,borderTopWidth:index?1:0,borderColor:t.line})}>
-      <Ionicons name={action.icon} size={23} color={t.ink}/>
+      {action.id==="flash"?<JobeenFlashIcon size={25}/>:<Ionicons name={action.icon} size={23} color={t.ink}/>}
       <Text style={{color:t.ink,fontWeight:"700",fontSize:16}}>{action.name}</Text>
      </Pressable>)}
     </View>
