@@ -1,10 +1,11 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack} from "expo-router";
-import {useEffect,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {ActivityIndicator,KeyboardAvoidingView,Platform,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {JShopLocationMap} from "../../components/JShopLocationMap";
-import {findJShopPlaces,placeAtMapCenter} from "../../lib/jshop-geocode";
+import {confirmJShopPlace,findJShopPlaces,placeAtMapCenter} from "../../lib/jshop-geocode";
+import {mapboxConfigured} from "../../lib/mapbox-config";
 import {readJShopLocation,readRecentJShopLocations,saveJShopLocation} from "../../lib/jshop-location";
 import {jshopAccountId} from "../../lib/jshop-local";
 import type {JShopPlace,MapPoint} from "../../lib/jshop-location-core";
@@ -23,6 +24,7 @@ export default function JShopLocationPicker(){
  const [loading,setLoading]=useState(false);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState("");
+ const suppressAuto=useRef(false);
  useEffect(()=>{let active=true;void(async()=>{
   const id=await jshopAccountId().catch(()=>"guest");
   const [saved,prior]=await Promise.all([readJShopLocation(id),readRecentJShopLocations(id)]);
@@ -30,9 +32,20 @@ export default function JShopLocationPicker(){
   setOwner(id);setRecent(prior);
   if(saved){setChosen(saved);setCenter({lat:saved.lat,lon:saved.lon});setZoom(saved.zoom);setQuery(saved.city);}
  })();return()=>{active=false;};},[]);
+ // Mapbox supports type-ahead globally (unlike the public Nominatim fallback).
+ useEffect(()=>{
+  if(suppressAuto.current){suppressAuto.current=false;return;}
+  if(!mapboxConfigured||query.trim().length<3){setMatches([]);return;}
+  let active=true;
+  const timer=setTimeout(()=>{
+   void findJShopPlaces(query).then(found=>{if(active){setMatches(found);setError("");}})
+    .catch(e=>{if(active)setError(e instanceof Error?e.message:"No se pudieron sugerir lugares.");});
+  },500);
+  return()=>{active=false;clearTimeout(timer);};
+ },[query]);
  function choose(place:JShopPlace){
   setChosen(place);setCenter({lat:place.lat,lon:place.lon});setZoom(Math.max(3,Math.min(15,place.zoom)));
-  setQuery(place.city);setMatches([]);setError("");
+  suppressAuto.current=true;setQuery(place.city);setMatches([]);setError("");
  }
  async function search(){
   if(loading||busy)return;
@@ -53,7 +66,7 @@ export default function JShopLocationPicker(){
  }
  async function apply(place:JShopPlace|null){
   if(busy)return;setBusy(true);setError("");
-  try{await saveJShopLocation(owner,place);router.back();}
+  try{const confirmed=place?await confirmJShopPlace(place):null;await saveJShopLocation(owner,confirmed);router.back();}
   catch(e){setError(e instanceof Error?e.message:"No se pudo guardar la ubicación.");}
   finally{setBusy(false);}
  }
@@ -76,7 +89,7 @@ export default function JShopLocationPicker(){
      <View style={{flexDirection:"row",gap:9,alignItems:"center"}}>
       <View style={{flex:1,minHeight:48,borderRadius:17,backgroundColor:t.surface,borderWidth:1,borderColor:t.line,paddingHorizontal:12,flexDirection:"row",gap:9,alignItems:"center"}}>
        <Ionicons name="search-outline" color={t.ink2} size={20}/>
-       <TextInput accessibilityLabel="Ciudad donde buscar artículos" value={query} onChangeText={setQuery} onSubmitEditing={()=>void search()}
+       <TextInput accessibilityLabel="Ciudad donde buscar artículos" value={query} onChangeText={value=>{setQuery(value);setMatches([]);}} onSubmitEditing={()=>void search()}
         returnKeyType="search" placeholder="Ciudad, localidad o barrio" placeholderTextColor={t.ink2}
         style={{flex:1,minHeight:44,fontSize:14,color:t.ink}}/>
       </View>
@@ -118,7 +131,7 @@ export default function JShopLocationPicker(){
       </Pressable>)}
      </View>}
      {!!error&&<Text accessibilityLiveRegion="polite" style={{fontSize:12,color:t.ink}}>{error}</Text>}
-     <Text style={{fontSize:11,lineHeight:17,color:t.ink2}}>La búsqueda de lugares utiliza OpenStreetMap. JShop filtra anuncios por la ciudad indicada por el vendedor; no calcula distancias todavía.</Text>
+     <Text style={{fontSize:11,lineHeight:17,color:t.ink2}}>{mapboxConfigured?"Mapa y búsqueda de ciudades con Mapbox. Se guardan las ubicaciones confirmadas con geocodificación permanente.":"Mapa provisional con OpenStreetMap; falta configurar la clave pública de Mapbox."} JShop filtra anuncios por la ciudad indicada por el vendedor; no calcula distancias todavía.</Text>
     </ScrollView>
     <View style={{paddingHorizontal:16,paddingTop:12,borderTopWidth:1,borderColor:t.line,gap:9}}>
      <Pressable accessibilityRole="button" accessibilityLabel={chosen?"Aplicar ubicación "+chosen.city:"Selecciona una ciudad primero"} disabled={!chosen||busy}
