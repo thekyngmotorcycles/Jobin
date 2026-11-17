@@ -4,9 +4,10 @@ import { useWindowDimensions } from "react-native";
 import { DraggableAssistant } from "../../components/DraggableAssistant";
 import { useTabClearance } from "../../theme/navigation";
 import { PublishedWorkMedia } from "../../components/PublishedWorkMedia";
-import { ScrollView, View } from "react-native";
+import { ScrollView, View,Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SocialHeader } from "../../components/SocialHeader";
+import {HomePublishedPosts} from "../../components/HomePublishedPosts";
 import { PhotoPostCard, VideoCard } from "../../components/PostCard";
 import { FEED_POSTS } from "../../lib/feed";
 import { PHOTO_POSTS, POSTERS } from "../../lib/home";
@@ -23,8 +24,10 @@ export default function Home() {
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={s.screen} onLayout={event=>{const {width,height}=event.nativeEvent.layout;setViewport(previous=>previous.width===width&&previous.height===height?previous:{width,height});}}>
       <ScrollView contentContainerStyle={{ paddingBottom: contentBottom, gap: 24 }} showsVerticalScrollIndicator={false}>
-        <SocialHeader />
+        <SocialHeader showComposer/>
+        <HomePublishedPosts/>
         <PublishedWorkMedia kind="video"/>
+        <Text style={[s.muted,{paddingHorizontal:16,fontSize:12}]}>Contenido de ejemplo</Text>
         {cards.map(card => (
           <View key={card.key}>
             {card.kind === "video" ? (
