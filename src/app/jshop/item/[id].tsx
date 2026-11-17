@@ -8,6 +8,7 @@ import {PublicProfileAvatar} from "../../../components/PublicProfileAvatar";
 import {deleteJShopDraft,jshopAccountId,readJShopDrafts} from "../../../lib/jshop-local";
 import {deleteJShopListing,loadJShopFavoriteIds,loadJShopListing,setJShopFavorite,setJShopListingStatus} from "../../../lib/jshop-api";
 import {formatJShopPrice,type JShopDraft,type JShopListing} from "../../../lib/jshop-model";
+import {startJShopConversation} from "../../../lib/jshop-messaging";
 import {useTheme} from "../../../state/ThemeProvider";
 import {jobeenTokens} from "../../../theme/jobeen";
 
@@ -65,6 +66,15 @@ export default function JShopItemDetail(){
  const requestDelete=()=>Alert.alert("Eliminar anuncio","Esta acción no se puede deshacer.",[
   {text:"Cancelar",style:"cancel"},{text:"Eliminar",style:"destructive",onPress:()=>void deleteItem()}
  ]);
+ async function contactSeller(){
+  if(!listing||owner||busy)return;
+  setBusy(true);setError("");
+  try{
+   const conversation=await startJShopConversation(listing);
+   router.push({pathname:"/message",params:{user:listing.sellerId,name:listing.sellerName,conversation:conversation.id}});
+  }catch(e){setError(e instanceof Error?e.message:"No se pudo abrir la conversación con el vendedor.");}
+  finally{setBusy(false);}
+ }
  const share=async()=>{
   if(!listing)return;
   const url=Linking.createURL("/jshop/item/"+listing.id);
@@ -127,8 +137,8 @@ export default function JShopItemDetail(){
      </>:<JShopButton title="Volver a publicar" icon="refresh-outline" disabled={busy} onPress={()=>void changeStatus("published")}/>}
      <JShopButton title="Eliminar anuncio" secondary icon="trash-outline" disabled={busy} onPress={requestDelete}/>
     </View>:listing&&<View style={{gap:10}}>
-     <JShopButton title="Contactar vendedor" icon="chatbubble-ellipses-outline" disabled={listing.status!=="published"}
-      onPress={()=>router.push({pathname:"/message",params:{user:listing.sellerId,name:listing.sellerName}})}/>
+     <JShopButton title={busy?"Abriendo chat...":"Contactar vendedor"} icon="chatbubble-ellipses-outline" disabled={listing.status!=="published"||busy}
+      onPress={()=>void contactSeller()}/>
      <View style={{flexDirection:"row",justifyContent:"space-around",gap:12}}>
       <JShopIconButton icon={saved?"heart":"heart-outline"} label={saved?"Quitar de guardados":"Guardar artículo"} selected={saved} onPress={()=>void toggleFavorite()}/>
       <JShopIconButton icon="share-social-outline" label="Compartir artículo" onPress={()=>void share()}/>
