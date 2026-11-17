@@ -1,0 +1,48 @@
+/** JShop presentation models. Public product reads/writes are not enabled yet. */
+export const JSHOP_CATEGORIES=["Todo","Herramientas","Tecnología","Vehículos","Hogar","Moda","Repuestos","Otros"] as const;
+export type JShopCategory=Exclude<(typeof JSHOP_CATEGORIES)[number],"Todo">;
+export const JSHOP_CONDITIONS=["Nuevo","Usado"] as const;
+export type JShopCondition=(typeof JSHOP_CONDITIONS)[number];
+export const JSHOP_CURRENCIES=["USD","ARS","PEN"] as const;
+export type JShopCurrency=(typeof JSHOP_CURRENCIES)[number];
+export type JShopOrder="recent"|"price_low"|"price_high";
+export type JShopDraft={
+ id:string;ownerId:string;title:string;description:string;category:JShopCategory;
+ condition:JShopCondition;price:number|null;currency:JShopCurrency;location:string;
+ photos:string[];createdAt:number;updatedAt:number;
+};
+export type JShopListing=Omit<JShopDraft,"ownerId">&{
+ sellerId:string;sellerName:string;sellerHandle:string;status:"published";
+};
+export type JShopFilters={query:string;category:(typeof JSHOP_CATEGORIES)[number];condition:"Todas"|JShopCondition;location:string;minPrice:string;maxPrice:string;order:JShopOrder};
+export const DEFAULT_JSHOP_FILTERS:JShopFilters={query:"",category:"Todo",condition:"Todas",location:"",minPrice:"",maxPrice:"",order:"recent"};
+export function formatJShopPrice(price:number|null,currency:JShopCurrency):string{
+ if(price===null||!Number.isFinite(price)||price<=0)return "Precio sin definir";
+ return currency+" "+new Intl.NumberFormat("es",{maximumFractionDigits:2}).format(price);
+}
+export function parseJShopPrice(text:string):number|null{
+ const value=text.trim().replace(/\s/g,"");
+ if(!value)return null;
+ const normalized=value.includes(",")?value.replace(/\./g,"").replace(",","."):value;
+ const amount=Number(normalized);
+ return Number.isFinite(amount)&&amount>0?amount:null;
+}
+export function filterJShopListings(items:readonly JShopListing[],filter:JShopFilters):JShopListing[]{
+ const search=filter.query.trim().toLocaleLowerCase();
+ const place=filter.location.trim().toLocaleLowerCase();
+ const min=parseJShopPrice(filter.minPrice),max=parseJShopPrice(filter.maxPrice);
+ const result=items.filter(item=>{
+  if(filter.category!=="Todo"&&filter.category!==item.category)return false;
+  if(filter.condition!=="Todas"&&filter.condition!==item.condition)return false;
+  if(place&&!item.location.toLocaleLowerCase().includes(place))return false;
+  if(search&&!(item.title+" "+item.description+" "+item.sellerName+" "+item.category).toLocaleLowerCase().includes(search))return false;
+  if(min!==null&&(item.price===null||item.price<min))return false;
+  if(max!==null&&(item.price===null||item.price>max))return false;
+  return true;
+ });
+ return result.sort((a,b)=>{
+  if(filter.order==="price_low")return (a.price??Number.MAX_SAFE_INTEGER)-(b.price??Number.MAX_SAFE_INTEGER);
+  if(filter.order==="price_high")return (b.price??-1)-(a.price??-1);
+  return b.createdAt-a.createdAt;
+ });
+}
