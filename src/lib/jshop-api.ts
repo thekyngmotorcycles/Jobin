@@ -1,12 +1,15 @@
 import * as ImageManipulator from "expo-image-manipulator";
 import {requireSupabase} from "./supabase";
 import type {JShopDraft,JShopListing} from "./jshop-model";
+import type {JShopPlace} from "./jshop-location-core";
+import {findJShopPlaces,confirmJShopPlace} from "./jshop-geocode";
+import {insideJShopRadius} from "./jshop-geo";
 
 const BUCKET="jshop-photos";
 type ListingRow={
  id:string;seller_id:string;title:string;description:string;category:JShopListing["category"];
  item_condition:JShopListing["condition"];price:number|string;currency:JShopListing["currency"];
- location:string;photo_paths:string[];status:JShopListing["status"];created_at:string;updated_at:string;
+ location:string;location_lat:number|null;location_lon:number|null;photo_paths:string[];status:JShopListing["status"];created_at:string;updated_at:string;
 };
 function client(){return requireSupabase();}
 function publicImage(path:string){return client().storage.from(BUCKET).getPublicUrl(path).data.publicUrl;}
@@ -25,16 +28,26 @@ async function hydrate(rows:ListingRow[]):Promise<JShopListing[]>{
   id:row.id,sellerId:row.seller_id,sellerName:profiles.get(row.seller_id)??"Vendedor",
   sellerHandle:names.get(row.seller_id)??"",title:row.title,description:row.description,
   category:row.category,condition:row.item_condition,price:Number(row.price),
-  currency:row.currency,location:row.location,photos:row.photo_paths.map(publicImage),
+  currency:row.currency,location:row.location,locationLat:row.location_lat,locationLon:row.location_lon,photos:row.photo_paths.map(publicImage),
   photoPaths:row.photo_paths,createdAt:Date.parse(row.created_at),updatedAt:Date.parse(row.updated_at),
   status:row.status
  }));
 }
-const selection="id,seller_id,title,description,category,item_condition,price,currency,location,photo_paths,status,created_at,updated_at";
+const selection="id,seller_id,title,description,category,item_condition,price,currency,location,location_lat,location_lon,photo_paths,status,created_at,updated_at";
 export async function loadJShopListings():Promise<JShopListing[]>{
  const {data,error}=await client().from("jshop_listings" as never).select(selection).eq("status","published").order("created_at",{ascending:false}).limit(150);
  if(error)throw error;
  return hydrate((data??[]) as unknown as ListingRow[]);
+}
+/** Query actual physical distance in Postgres under the listing RLS. */
+export async function loadJShopListingsNear(place:JShopPlace):Promise<JShopListing[]>{
+ const radius=place.radiusMiles??10;
+ const {data,error}=await client().rpc("jshop_listings_nearby" as never,
+  {p_lat:place.lat,p_lon:place.lon,p_radius_miles:radius,p_limit:150} as never);
+ if(error)throw error;
+ const rows=(data??[]) as unknown as ListingRow[];
+ return hydrate(rows.filter(row=>row.location_lat!==null&&row.location_lon!==null&&
+  insideJShopRadius({lat:place.lat,lon:place.lon},{lat:row.location_lat,lon:row.location_lon},radius)));
 }
 export async function loadMyJShopListings(ownerId:string):Promise<JShopListing[]>{
  const {data,error}=await client().from("jshop_listings" as never).select(selection).eq("seller_id",ownerId).order("created_at",{ascending:false}).limit(150);
@@ -89,6 +102,9 @@ export async function publishJShopDraft(ownerId:string,draft:JShopDraft):Promise
  if(draft.title.trim().length<3||!draft.description.trim()||draft.price===null||draft.price<=0||!draft.location.trim())
   throw Error("Completa título, descripción, precio y ubicación antes de publicar.");
  if(!draft.photos.length||draft.photos.length>5)throw Error("Añade entre 1 y 5 fotografías para publicar.");
+ const possiblePlaces=await findJShopPlaces(draft.location);
+ if(!possiblePlaces.length)throw Error("No encontramos la ubicación del anuncio. Escribí ciudad, estado y país.");
+ const locationPoint=await confirmJShopPlace(possiblePlaces[0]);
  const db=client();const uploaded:string[]=[];
  try{
   for(const [i,uri] of draft.photos.entries()){
@@ -105,7 +121,7 @@ export async function publishJShopDraft(ownerId:string,draft:JShopDraft):Promise
   const {data,error}=await db.from("jshop_listings" as never).insert({
    seller_id:ownerId,title:draft.title.trim(),description:draft.description.trim(),
    category:draft.category,item_condition:draft.condition,price:draft.price,currency:draft.currency,
-   location:draft.location.trim(),photo_paths:uploaded,status:"published"
+   location:draft.location.trim(),location_lat:locationPoint.lat,location_lon:locationPoint.lon,photo_paths:uploaded,status:"published"
   } as never).select("id").single();
   if(error)throw error;
   return (data as unknown as {id:string}).id;
