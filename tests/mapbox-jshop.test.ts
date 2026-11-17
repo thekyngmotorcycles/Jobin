@@ -15,7 +15,8 @@ test("Mapbox geocoding normalizes city and location in worldwide markets",()=>{
  assert.equal(places[0].city,"Buenos Aires");
  assert.equal(places[1].city,"Lima");
  assert.equal(places[2].city,"Miami");
- assert.deepEqual([places[0].lon,places[0].lat],[-58.3816,-34.6037]);
+ assert.ok(Math.abs(places[0].lon+58.3816)<0.000001);
+ assert.ok(Math.abs(places[0].lat+34.6037)<0.000001);
  assert.ok(LOCATION_TYPES.includes("place"));
 });
 test("Mapbox geocoding safely rejects invalid or incomplete features",()=>{
