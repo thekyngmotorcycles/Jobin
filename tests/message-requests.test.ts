@@ -18,7 +18,7 @@ test("Inbox preserves JShop separation, personal Chats and request/Spam entries"
  const requestPage=read("src/app/message-requests.tsx");
  assert.ok(inbox.includes('label:"Chats"'));
  assert.ok(inbox.includes('label:"JShop"'));
- assert.ok(inbox.includes('"Solicitudes de mensajes"'));
+ assert.ok(inbox.includes(">Solicitudes de mensajes</Text>"));
  assert.ok(inbox.includes('router.push("/message-requests")'));
  assert.ok(inbox.includes('Spam de JShop'));
  assert.ok(inbox.includes("loadJShopSpamIds"));
