@@ -1,6 +1,6 @@
 import {menuChrome} from "../theme/menu-chrome";
 import {useTheme} from "../state/ThemeProvider";
-import {JobinSettingsIcon} from "./JobinSettingsIcon";
+import {SettingsMenuRow} from "./SettingsMenuRow";
 import {JOBIN_SETTINGS_GROUPS} from "../lib/jobin-settings-catalog";
 import {Ionicons} from "@expo/vector-icons";
 import {router} from "expo-router";
@@ -49,20 +49,15 @@ export function HomeSideMenu({visible,onClose,onNavigate}:{visible:boolean;onClo
        <Text accessibilityRole="header" style={{color:chrome.text,fontWeight:"700",fontSize:22,lineHeight:30,flex:1}}>Configuración</Text>
        <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={onClose} style={{padding:8}}><Text style={{color:chrome.text,fontSize:24}}>×</Text></Pressable>
       </View>
-      <View style={{flexDirection:"row",alignItems:"center",backgroundColor:chrome.action,borderWidth:1,borderColor:chrome.border,borderRadius:14,paddingHorizontal:12,gap:10,marginBottom:14}}>
+      <View style={{flexDirection:"row",alignItems:"center",backgroundColor:chrome.action,borderWidth:1,borderColor:chrome.border,borderRadius:20,paddingHorizontal:14,gap:10,marginBottom:14}}>
        <Ionicons name="search-outline" size={21} color={chrome.muted}/>
        <TextInput accessibilityLabel="Buscar configuración" value={query} onChangeText={setQuery} placeholder="Buscar configuración" placeholderTextColor={chrome.muted} style={{flex:1,minHeight:50,color:chrome.text,fontSize:15}}/>
       </View>
       {filtered.map(group=><View key={group.title} style={{gap:9,marginBottom:15}}>
        <Text accessibilityRole="header" style={{color:chrome.text,fontWeight:"700",fontSize:18}}>{group.title}</Text>
        <Text style={{color:chrome.muted,fontSize:13,marginBottom:4}}>{group.description}</Text>
-       {group.items.map(entry=><Pressable key={entry.id} accessibilityRole="button" accessibilityLabel={entry.title}
-        onPress={()=>{onNavigate?.();onClose();if(entry.route){router.push(entry.route as any);}else{router.push({pathname:"/settings/[item]",params:{item:entry.id}});}}}
-        style={({pressed})=>({flexDirection:"row",alignItems:"center",gap:13,minHeight:68,paddingVertical:13,paddingHorizontal:14,borderRadius:14,backgroundColor:chrome.action,opacity:pressed?.78:1})}>
-        <JobinSettingsIcon id={entry.id} size={25} color={chrome.text}/>
-        <View style={{flex:1,gap:3}}><Text style={{color:chrome.text,fontSize:16,fontWeight:"600"}}>{entry.title}</Text><Text style={{color:chrome.muted,fontSize:12}}>{entry.description}</Text></View>
-        <Ionicons name="chevron-forward" size={17} color={chrome.muted}/>
-       </Pressable>)}
+       {group.items.map(entry=><SettingsMenuRow key={entry.id} settingId={entry.id} title={entry.title} description={entry.description}
+        onPress={()=>{onNavigate?.();onClose();if(entry.route){router.push(entry.route as any);}else{router.push({pathname:"/settings/[item]",params:{item:entry.id}});}}}/>)}
       </View>)}
       {filtered.length===0&&<Text style={{color:chrome.muted}}>No encontramos opciones con ese nombre.</Text>}
      </ScrollView>
