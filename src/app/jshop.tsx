@@ -6,6 +6,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {BottomSheet} from "../components/social-ui";
 import {JShopButton,JShopCategories,JShopEmpty,JShopIconButton,JShopItemCard,JShopTitle} from "../components/JShopUI";
 import {readJShopDrafts,jshopAccountId} from "../lib/jshop-local";
+import {readJShopLocation,saveJShopLocation} from "../lib/jshop-location";
 import {loadJShopListings,loadJShopFavoriteIds,setJShopFavorite} from "../lib/jshop-api";
 import {DEFAULT_JSHOP_FILTERS,filterJShopListings,parseJShopPrice,type JShopDraft,type JShopListing,type JShopFilters,type JShopOrder} from "../lib/jshop-model";
 import {useTabClearance} from "../theme/navigation";
@@ -31,12 +32,18 @@ export default function JShop(){
   void(async()=>{
    try{
     const listed=await loadJShopListings();
-    let userId="";let savedDrafts:JShopDraft[]=[];let savedFavorites:string[]=[];
+    let userId="guest";let savedDrafts:JShopDraft[]=[];let savedFavorites:string[]=[];
     try{
      userId=await jshopAccountId();
      [savedDrafts,savedFavorites]=await Promise.all([readJShopDrafts(userId),loadJShopFavoriteIds(userId)]);
     }catch{/* Public catalogue remains available without personal data. */}
-    if(current){setRemoteListings(listed);setOwnerId(userId);setDrafts(savedDrafts);setFavorites(savedFavorites);setError("");}
+    const selectedPlace=await readJShopLocation(userId);
+    if(current){
+     setRemoteListings(listed);setOwnerId(userId==="guest"?"":userId);
+     setDrafts(savedDrafts);setFavorites(savedFavorites);setError("");
+     setActiveFilters(previous=>({...previous,location:selectedPlace?.city??""}));
+     setPending(previous=>({...previous,location:selectedPlace?.city??""}));
+    }
    }catch(e){if(current){setError(e instanceof Error?e.message:"No se pudo cargar JShop.");setRemoteListings([]);}}
    finally{if(current)setLoading(false);}
   })();
@@ -59,9 +66,9 @@ export default function JShop(){
  };
  return <SafeAreaView edges={["top","left","right"]} style={{flex:1,backgroundColor:t.bg}}>
   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingHorizontal:16,paddingTop:18,paddingBottom:contentBottom+20,gap:18,maxWidth:980,width:"100%",alignSelf:"center"}} showsVerticalScrollIndicator={false}>
-   <JShopTitle title="JShop" subtitle="Artículos de personas y negocios" right={<View style={{flexDirection:"row",gap:7}}>
+   <JShopTitle title="JShop" right={<View style={{flexDirection:"row",gap:7}}>
     <JShopIconButton icon="heart-outline" label="Mis guardados" onPress={()=>router.push("/jshop/favorites")}/>
-    <JShopIconButton icon="storefront-outline" label="Mis anuncios" onPress={()=>router.push("/jshop/mine")}/>
+    <JShopIconButton icon="location-outline" label="Elegir ubicación de búsqueda" selected={!!activeFilters.location} onPress={()=>router.push("/jshop/location")}/>
    </View>}/>
    <View style={{flexDirection:"row",gap:9,alignItems:"center"}}>
     <View style={{flex:1,minHeight:48,borderRadius:18,backgroundColor:t.surface,borderWidth:1,borderColor:t.line,paddingHorizontal:13,flexDirection:"row",alignItems:"center",gap:9}}>
@@ -83,7 +90,7 @@ export default function JShop(){
     </View>:<JShopEmpty icon={query||category!=="Todo"||filterCount?"search-outline":"bag-handle-outline"}
       title={query||category!=="Todo"||filterCount?"No hay artículos con estos filtros":"Todavía no hay artículos publicados"}
       description={query||category!=="Todo"||filterCount?"Prueba otra búsqueda o quita los filtros para explorar los anuncios publicados.":"Sé el primero en publicar un artículo. Los anuncios se mostrarán aquí cuando los vendedores los publiquen."}
-      action={query||category!=="Todo"||filterCount?{title:"Limpiar filtros",onPress:()=>{setQuery("");setCategory("Todo");setActiveFilters(DEFAULT_JSHOP_FILTERS);}} :{title:"Crear anuncio",onPress:()=>router.push("/jshop/publish")}}/>}
+      action={query||category!=="Todo"||filterCount?{title:"Limpiar filtros",onPress:()=>{setQuery("");setCategory("Todo");setActiveFilters(DEFAULT_JSHOP_FILTERS);setPending(DEFAULT_JSHOP_FILTERS);void saveJShopLocation(ownerId||"guest",null).catch(()=>{});}} :{title:"Crear anuncio",onPress:()=>router.push("/jshop/publish")}}/>}
    </View>
    {!!drafts.length&&<View style={{gap:12}}>
     <JShopTitle title="Continuar mis borradores" subtitle={drafts.length+" sin publicar"} right={<Pressable accessibilityRole="button" onPress={()=>router.push("/jshop/mine")}><Text style={{color:t.ink,fontWeight:"700"}}>Ver todos</Text></Pressable>}/>
@@ -106,9 +113,15 @@ export default function JShop(){
       <Text style={{color:pending.condition===option?t.bg:t.ink,fontWeight:"700"}}>{option}</Text>
      </Pressable>)}
     </View>
-    <Text style={{color:t.ink,fontWeight:"700"}}>Ubicación</Text>
-    <TextInput accessibilityLabel="Ubicación del artículo" placeholder="Ciudad o zona" placeholderTextColor={t.ink2} value={pending.location} onChangeText={location=>setPending(x=>({...x,location}))}
-      style={{minHeight:48,borderWidth:1,borderColor:t.line,borderRadius:16,padding:12,color:t.ink,backgroundColor:t.surface}}/>
+    <View style={{gap:8}}>
+     <Text style={{color:t.ink,fontWeight:"700"}}>Ubicación de búsqueda</Text>
+     <Pressable accessibilityRole="button" accessibilityLabel="Elegir ubicación en el mapa" onPress={()=>{setFiltersOpen(false);router.push("/jshop/location");}}
+      style={{minHeight:49,borderWidth:1,borderColor:t.line,borderRadius:16,backgroundColor:t.surface,paddingHorizontal:12,flexDirection:"row",alignItems:"center",gap:10}}>
+      <Ionicons name="location-outline" color={t.ink} size={21}/>
+      <Text numberOfLines={1} style={{color:t.ink,flex:1}}>{pending.location||"Todas las ubicaciones"}</Text>
+      <Ionicons name="chevron-forward" color={t.ink2} size={18}/>
+     </Pressable>
+    </View>
     <Text style={{color:t.ink,fontWeight:"700"}}>Precio</Text>
     <View style={{flexDirection:"row",gap:10}}>
      {([{field:"minPrice",label:"Mínimo"},{field:"maxPrice",label:"Máximo"}] as const).map(input=><TextInput key={input.field} accessibilityLabel={"Precio "+input.label.toLowerCase()} keyboardType="decimal-pad" placeholder={input.label} placeholderTextColor={t.ink2} value={pending[input.field]} onChangeText={v=>setPending(x=>({...x,[input.field]:v}))}
@@ -119,7 +132,7 @@ export default function JShop(){
      <Ionicons name={pending.order===order.id?"radio-button-on":"radio-button-off"} size={22} color={t.ink}/><Text style={{color:t.ink}}>{order.label}</Text>
     </Pressable>)}
     <View style={{flexDirection:"row",gap:10,paddingTop:5}}>
-     <View style={{flex:1}}><JShopButton title="Limpiar" secondary onPress={()=>setPending(DEFAULT_JSHOP_FILTERS)}/></View>
+     <View style={{flex:1}}><JShopButton title="Limpiar" secondary onPress={()=>setPending(previous=>({...DEFAULT_JSHOP_FILTERS,location:previous.location}))}/></View>
      <View style={{flex:1}}><JShopButton title="Aplicar" onPress={applyFilters}/></View>
     </View>
    </View>
