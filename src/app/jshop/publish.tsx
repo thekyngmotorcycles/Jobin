@@ -2,9 +2,10 @@ import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useLocalSearchParams} from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import {useEffect,useState} from "react";
-import {ActivityIndicator,Image,Pressable,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Alert,Image,Pressable,Text,TextInput,View} from "react-native";
 import {JShopButton,JShopPage,JShopTitle} from "../../components/JShopUI";
-import {jshopAccountId,readJShopDrafts,saveJShopDraft} from "../../lib/jshop-local";
+import {jshopAccountId,readJShopDrafts,saveJShopDraft,deleteJShopDraft} from "../../lib/jshop-local";
+import {publishJShopDraft} from "../../lib/jshop-api";
 import {JSHOP_CATEGORIES,JSHOP_CONDITIONS,JSHOP_CURRENCIES,parseJShopPrice,type JShopCategory,type JShopCondition,type JShopCurrency,type JShopDraft} from "../../lib/jshop-model";
 import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
@@ -54,7 +55,7 @@ export default function JShopPublish(){
    setPhotos(current=>[...current,...result.assets.map(x=>x.uri)].slice(0,5));
   }catch(e){setError(e instanceof Error?e.message:"No se pudieron seleccionar las fotografías.");}
  }
- async function save(){
+ async function save(publish=false){
   if(busy||!ownerId)return;
   if(draft&&!existing){setError("El borrador solicitado no está disponible.");return;}
   if(title.trim().length<3){setError("Escribe un título de al menos 3 caracteres.");return;}
@@ -69,9 +70,15 @@ export default function JShopPublish(){
     category,condition,price:amount,currency,location:location.trim().slice(0,120),
     photos,createdAt:existing?.createdAt??now,updatedAt:now
    };
-   await saveJShopDraft(ownerId,item);
-   router.replace("/jshop/mine");
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo guardar el borrador.");}
+   if(publish){
+    const publishedId=await publishJShopDraft(ownerId,item);
+    if(existing)await deleteJShopDraft(ownerId,existing.id).catch(()=>{});
+    router.replace({pathname:"/jshop/item/[id]",params:{id:publishedId}});
+   }else{
+    await saveJShopDraft(ownerId,item);
+    router.replace("/jshop/mine");
+   }
+  }catch(e){setError(e instanceof Error?e.message:"No se pudo completar la operación.");}
   finally{setBusy(false);}
  }
  const field=(label:string,value:string,onChangeText:(value:string)=>void,placeholder:string,options?:{multiline?:boolean;numeric?:boolean;maxLength?:number})=>
@@ -84,7 +91,7 @@ export default function JShopPublish(){
  return <>
   <Stack.Screen options={{title:existing?"Editar borrador":"Nuevo anuncio"}}/>
   <JShopPage>
-   <JShopTitle title={existing?"Editar borrador":"Preparar un anuncio"} subtitle="El anuncio se guardará en este dispositivo y no será visible para otros usuarios."/>
+   <JShopTitle title={existing?"Editar borrador":"Preparar un anuncio"} subtitle="Guardá un borrador o publicá tu artículo para que otros usuarios lo encuentren."/>
    {loading?<ActivityIndicator color={t.yellow}/>:<>
     <View style={{gap:10}}>
      <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
@@ -138,11 +145,12 @@ export default function JShopPublish(){
     {field("Precio",price,setPrice,"Ej. 250",{numeric:true})}
     {field("Ubicación",location,setLocation,"Ciudad o zona donde se encuentra el artículo",{maxLength:120})}
     <View style={{borderRadius:18,backgroundColor:t.cream,padding:14,gap:5}}>
-     <Text style={{fontWeight:"800",fontSize:13,color:t.ink}}>Publicación pública próximamente</Text>
-     <Text style={{color:t.ink2,fontSize:12,lineHeight:18}}>Los borradores no se comparten ni se muestran en búsquedas. La venta y los pagos no están habilitados todavía.</Text>
+     <Text style={{fontWeight:"800",fontSize:13,color:t.ink}}>Publicación de anuncios</Text>
+     <Text style={{color:t.ink2,fontSize:12,lineHeight:18}}>Al publicar, el título, las fotografías, el precio y la ubicación serán visibles para otras personas. Los pagos no se gestionan en JShop; contactá al vendedor mediante Mensajes.</Text>
     </View>
     {!!error&&<Text accessibilityLiveRegion="polite" style={{color:t.ink,fontWeight:"600"}}>{error}</Text>}
-    <JShopButton title={busy?"Guardando...":"Guardar borrador"} icon="save-outline" disabled={busy||!ownerId||!!(draft&&!existing)} onPress={()=>void save()}/>
+    <JShopButton title={busy?"Procesando...":"Publicar anuncio"} icon="cloud-upload-outline" disabled={busy||!ownerId||!!(draft&&!existing)} onPress={()=>Alert.alert("Publicar anuncio","El artículo y sus fotografías serán visibles públicamente en JShop. ¿Querés continuar?",[{text:"Cancelar",style:"cancel"},{text:"Publicar",onPress:()=>void save(true)}])}/>
+    <JShopButton title="Guardar borrador" secondary icon="save-outline" disabled={busy||!ownerId||!!(draft&&!existing)} onPress={()=>void save(false)}/>
     <JShopButton title="Cancelar" secondary onPress={()=>router.back()}/>
    </>}
   </JShopPage>
