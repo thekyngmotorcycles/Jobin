@@ -21,7 +21,7 @@ export function ProfessionalMapExplorer({initialQuery="",onList}:{initialQuery?:
  const [city,setCity]=useState("");
  const [placeResults,setPlaceResults]=useState<JShopPlace[]>([]);
  const [center,setCenter]=useState<MapPoint>({lat:15,lon:0});
- const [candidate,setCandidate]=useState<MapPoint|null>(null);
+ const [candidate,setCandidate]=useState<{point:MapPoint;zoom:number}|null>(null);
  const [zoom,setZoom]=useState(2);
  const [hasArea,setHasArea]=useState(false);
  const [radius,setRadius]=useState(30);
@@ -146,13 +146,13 @@ export function ProfessionalMapExplorer({initialQuery="",onList}:{initialQuery?:
    </ScrollView>
   </View>
   <View style={{flex:1,minHeight:180,position:"relative"}}>
-   <ProfessionalMap center={center} zoom={zoom} profiles={profiles} onMove={setCandidate} onSelect={setSelected}/>
+   <ProfessionalMap center={center} zoom={zoom} profiles={profiles} onMove={(point,nextZoom)=>setCandidate({point,zoom:nextZoom})} onSelect={setSelected}/>
    {!hasArea&&<View pointerEvents="none" style={{position:"absolute",top:20,alignSelf:"center",maxWidth:"85%",backgroundColor:t.surface,
     borderWidth:1,borderColor:t.line,borderRadius:14,paddingHorizontal:15,paddingVertical:10}}>
     <Text style={{color:t.ink,fontSize:13,textAlign:"center"}}>Busca una ciudad o usa tu ubicación para descubrir perfiles registrados.</Text>
    </View>}
    {candidate&&hasArea&&<Pressable accessibilityRole="button" accessibilityLabel="Buscar profesionales en esta zona" onPress={()=>{
-    setCenter(candidate);setCandidate(null);setHasArea(true);
+    setCenter(candidate.point);setZoom(candidate.zoom);setCandidate(null);setHasArea(true);
    }} style={{position:"absolute",top:12,alignSelf:"center",backgroundColor:t.surface,borderRadius:22,paddingHorizontal:18,minHeight:43,
     borderWidth:1,borderColor:t.yellow,alignItems:"center",justifyContent:"center"}}>
     <Text style={{fontWeight:"800",fontSize:13,color:t.ink}}>Buscar en esta zona</Text>
