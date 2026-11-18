@@ -2,6 +2,33 @@
 create index if not exists notifications_unread_recipient on public.notifications(recipient_id,created_at desc) where read_at is null;
 
 -- Owners can see their followers, without exposing other people's relationship lists.
+-- Bootstrap follow relations for fresh CI databases; existing live relations remain untouched.
+create table if not exists public.profile_follows (
+ follower_id uuid not null references auth.users(id) on delete cascade,
+ followed_id uuid not null references auth.users(id) on delete cascade,
+ created_at timestamptz not null default now(),
+ constraint profile_follows_pkey primary key(follower_id,followed_id),
+ constraint no_self_follow check (follower_id<>followed_id)
+);
+create index if not exists profile_follows_followed_idx on public.profile_follows(followed_id);
+alter table public.profile_follows enable row level security;
+grant select,insert,delete on public.profile_follows to authenticated;
+do $setup$
+begin
+ if not exists(select 1 from pg_policies where schemaname='public' and tablename='profile_follows' and policyname='follows_read_own') then
+  create policy follows_read_own on public.profile_follows for select to authenticated
+   using(follower_id=(select auth.uid()));
+ end if;
+ if not exists(select 1 from pg_policies where schemaname='public' and tablename='profile_follows' and policyname='follows_insert_own') then
+  create policy follows_insert_own on public.profile_follows for insert to authenticated
+   with check(follower_id=(select auth.uid()) and followed_id<>(select auth.uid()) and not private.is_blocked(followed_id,(select auth.uid())));
+ end if;
+ if not exists(select 1 from pg_policies where schemaname='public' and tablename='profile_follows' and policyname='follows_delete_own') then
+  create policy follows_delete_own on public.profile_follows for delete to authenticated
+   using(follower_id=(select auth.uid()));
+ end if;
+end;
+$setup$;
 create policy "follows_read_followed_owner" on public.profile_follows
  for select to authenticated using (followed_id=(select auth.uid()));
 
