@@ -70,20 +70,27 @@ export function JShopItemCard({item,onOpen,onFavorite,saved=false}:{
  const {theme}=useTheme();const t=jobeenTokens(theme);
  const draft="ownerId" in item;
  return <Pressable accessibilityRole="button" accessibilityLabel={"Ver "+item.title} onPress={onOpen}
-  style={({pressed})=>({width:"48.5%",borderRadius:20,padding:7,backgroundColor:t.surface,borderWidth:1,borderColor:t.line,gap:7,opacity:pressed?0.8:1})}>
-  <View>
+  style={({pressed})=>({width:"100%",minHeight:128,borderRadius:18,padding:9,backgroundColor:t.surface,
+   borderWidth:1,borderColor:t.line,flexDirection:"row",alignItems:"flex-start",gap:12,opacity:pressed?0.8:1})}>
+  <View style={{width:112,flexShrink:0}}>
    <JShopPhoto uri={item.photos[0]}/>
-   {draft?<View style={{position:"absolute",top:8,left:8,backgroundColor:t.cream,paddingVertical:5,paddingHorizontal:8,borderRadius:10}}>
-    <Text style={{fontSize:11,color:t.ink,fontWeight:"700"}}>Borrador</Text>
-   </View>:item.status!=="published"?<View style={{position:"absolute",top:8,left:8,backgroundColor:t.cream,paddingVertical:5,paddingHorizontal:8,borderRadius:10}}><Text style={{fontSize:11,color:t.ink,fontWeight:"700"}}>{item.status==="sold"?"Vendido":"Pausado"}</Text></View>:onFavorite?<Pressable accessibilityRole="button" accessibilityLabel={saved?"Quitar de guardados":"Guardar favorito"} onPress={event=>{event.stopPropagation();onFavorite();}}
-     style={{position:"absolute",top:7,right:7,backgroundColor:t.surface,borderRadius:18,width:36,height:36,alignItems:"center",justifyContent:"center"}}>
-     <Ionicons name={saved?"heart":"heart-outline"} size={20} color={t.ink}/>
-    </Pressable>:null}
+   {draft?<View style={{position:"absolute",top:6,left:6,backgroundColor:t.cream,paddingVertical:4,paddingHorizontal:6,borderRadius:8}}>
+    <Text style={{fontSize:10,color:t.ink,fontWeight:"700"}}>Borrador</Text>
+   </View>:item.status!=="published"?<View style={{position:"absolute",top:6,left:6,backgroundColor:t.cream,paddingVertical:4,paddingHorizontal:6,borderRadius:8}}>
+    <Text style={{fontSize:10,color:t.ink,fontWeight:"700"}}>{item.status==="sold"?"Vendido":"Pausado"}</Text>
+   </View>:null}
   </View>
-  <Text numberOfLines={2} style={{color:t.ink,fontWeight:"700",fontSize:14,lineHeight:19}}>{item.title}</Text>
-  <Text style={{color:t.ink,fontSize:16,fontWeight:"800"}}>{formatJShopPrice(item.price,item.currency)}</Text>
-  <Text numberOfLines={1} style={{color:t.ink2,fontSize:12}}>{item.condition}{item.location?" · "+item.location:""}</Text>
-  {!draft&&<Text numberOfLines={1} style={{color:t.ink2,fontSize:12}}>{item.sellerName}</Text>}
+  <View style={{flex:1,minWidth:0,gap:6}}>
+   <Text numberOfLines={2} style={{color:t.ink,fontWeight:"700",fontSize:14,lineHeight:19}}>{item.title}</Text>
+   <Text numberOfLines={1} style={{color:t.ink,fontSize:17,fontWeight:"800"}}>{formatJShopPrice(item.price,item.currency)}</Text>
+   <Text numberOfLines={2} style={{color:t.ink2,fontSize:12}}>{item.condition}{item.location?" · "+item.location:""}</Text>
+   {!draft&&<Text numberOfLines={1} style={{color:t.ink2,fontSize:12}}>{item.sellerName}</Text>}
+  </View>
+  {!!onFavorite&&<Pressable accessibilityRole="button" accessibilityLabel={saved?"Quitar de guardados":"Guardar favorito"}
+   onPress={event=>{event.stopPropagation();onFavorite();}}
+   style={{width:38,height:38,borderRadius:19,backgroundColor:t.cream,alignItems:"center",justifyContent:"center"}}>
+   <Ionicons name={saved?"heart":"heart-outline"} size={20} color={t.ink}/>
+  </Pressable>}
  </Pressable>;
 }
 export function JShopEmpty({icon,title,description,action}:{
