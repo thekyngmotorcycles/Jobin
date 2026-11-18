@@ -28,7 +28,7 @@ test("Real Home posts have a paginated photo gallery and working social controls
 
 test("Home counters come from RLS-secured database rows, never demo counts",()=>{
  const sourceApi=source("src/lib/social-content.ts");
- const sql=source("supabase/migrations/20261118193000_jobeen_feed_engagement.sql");
+ const sql=source("supabase/migrations/20261118193123_jobeen_feed_engagement.sql");
  assert.ok(sourceApi.includes('from("jobeen_feed_engagement"'));
  assert.ok(sourceApi.includes('from("jobeen_feed_likes"'));
  assert.ok(sourceApi.includes('from("jobeen_feed_comments"'));
