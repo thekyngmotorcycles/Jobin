@@ -18,7 +18,7 @@ export function ProfileSectionTabs({section,onSelect}:{section:ProfileSection;on
   </Pressable>)}
  </View>;
 }
-export type ProfileTile={id:string;title:string;thumbnail?:string|null;views?:number|null;onPress?:()=>void;kind?:"photos"|"video"|"live"|"text";photoCount?:number};
+export type ProfileTile={id:string;title:string;thumbnail?:string|null;views?:number|null;onPress?:()=>void;kind?:"photos"|"video"|"live"|"text";photoCount?:number;onOptions?:()=>void};
 export function ProfileMediaGrid({items,emptyMessage}:{items:ProfileTile[];emptyMessage?:string}){
  const {theme}=useTheme();const jt=jobeenTokens(theme);
  return <View style={{position:"relative",flexDirection:"row",flexWrap:"wrap"}}>
@@ -40,6 +40,12 @@ export function ProfileMediaGrid({items,emptyMessage}:{items:ProfileTile[];empty
      {!!typeIcon&&<View style={{position:"absolute",right:5,top:5,alignItems:"center",justifyContent:"center",width:27,height:27,borderRadius:8,backgroundColor:jt.videoViewsOverlay}}>
        <Ionicons name={typeIcon} size={17} color={jt.videoViewsText}/>
       </View>}
+     {item.onOptions&&<Pressable accessibilityRole="button" accessibilityLabel={"Opciones de "+item.title}
+       onPress={item.onOptions} style={{position:"absolute",bottom:4,right:4,width:44,height:44,alignItems:"center",justifyContent:"center"}}>
+       <View style={{width:32,height:32,borderRadius:16,backgroundColor:jt.videoViewsOverlay,alignItems:"center",justifyContent:"center"}}>
+        <Ionicons name="ellipsis-horizontal" size={20} color={jt.videoViewsText}/>
+       </View>
+      </Pressable>}
      {typeof item.views==="number"&&<View style={{position:"absolute",bottom:6,left:6,flexDirection:"row",alignItems:"center",gap:4,backgroundColor:jt.videoViewsOverlay,paddingHorizontal:6,paddingVertical:3,borderRadius:6}}>
        <Ionicons name="play" size={12} color={jt.videoViewsText}/>
        <Text style={{fontSize:12,fontWeight:"700",color:jt.videoViewsText}}>{new Intl.NumberFormat("es",{notation:"compact",maximumFractionDigits:1}).format(item.views)}</Text>
