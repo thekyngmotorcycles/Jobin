@@ -73,6 +73,15 @@
         {
           "RNMapboxMapsVersion": "11.33.0"
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Jobeen usa la ubicación aproximada del teléfono para centrar el mapa de búsqueda de JShop. Solo se solicita cuando activas Mi ubicación actual.",
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false
+        }
       ]
     ],
     "runtimeVersion": {
