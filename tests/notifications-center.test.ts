@@ -17,7 +17,7 @@ test("Profile followers and following open a private accessible bottom sheet",()
  const counts=file("src/components/ProfileFollowCounts.tsx");
  assert.ok(counts.includes("<BottomSheet visible={sheet}"));
  assert.ok(counts.includes("viewer===userId"));
- assert.ok(counts.includes('tab==="followers"'));
+ assert.ok(counts.includes('option==="followers"'));
  assert.ok(counts.includes("loadConnections("));
  assert.ok(counts.includes("toggleFollow("));
  assert.ok(counts.includes("Buscar personas"));
