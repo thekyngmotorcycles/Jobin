@@ -14,16 +14,24 @@ test("A single Publish press starts the upload without a second confirmation",()
 
 test("Real Home posts have a paginated photo gallery and working social controls",()=>{
  const card=source("src/components/HomePublishedPosts.tsx");
- assert.ok(card.includes("<FlatList horizontal pagingEnabled"));
- assert.ok(card.includes("index+1+\" / \"+total"));
+ assert.ok(card.includes("<PhotoCarousel post="));
+ assert.ok(card.includes("<PostEngagementRow likes="));
+ assert.ok(!card.includes("toLocaleDateString"));
+ assert.ok(!card.includes("feedPhotoCounterBg"));
  assert.ok(card.includes("setHomePostLike("));
  assert.ok(card.includes("loadHomePostComments("));
  assert.ok(card.includes("addHomePostComment("));
  assert.ok(card.includes("recordHomePostShare("));
  assert.ok(card.includes("Share.sharedAction"));
- assert.ok(card.includes("formatCount(likes)"));
- assert.ok(card.includes("formatCount(commentsCount)"));
- assert.ok(card.includes("formatCount(shares)"));
+ const demo=source("src/components/PostCard.tsx");
+ assert.ok(demo.includes("export function PostEngagementRow("));
+ assert.ok(demo.includes('justifyContent: "flex-start"'));
+ assert.ok(demo.includes('gap: 20, paddingHorizontal: 16'));
+ assert.ok(demo.includes('name="heart-outline"') || demo.includes('"heart-outline"'));
+ assert.ok(demo.includes('name="chatbubble-outline"'));
+ assert.ok(demo.includes('name="arrow-redo-outline"'));
+ assert.ok(demo.includes("Share.share("));
+ assert.ok(source("src/app/(tabs)/index.tsx").includes("shares={card.post.shares}"));
 });
 
 test("Home counters come from RLS-secured database rows, never demo counts",()=>{

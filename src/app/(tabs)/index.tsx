@@ -32,7 +32,7 @@ export default function Home() {
           <View key={card.key}>
             {card.kind === "video" ? (
               <VideoCard id={card.post.postId} poster={POSTERS[card.post.postId]} author={card.post.author} handle={card.post.handle}
-                avatar={card.post.avatar} caption={card.post.caption} likes={card.post.likes} comments={card.post.comments}
+                avatar={card.post.avatar} caption={card.post.caption} likes={card.post.likes} comments={card.post.comments} shares={card.post.shares}
                 onOpen={() => router.navigate({ pathname: "/videos", params: { post: card.post.postId } })} />
             ) : (
               <PhotoPostCard post={card.post} />
