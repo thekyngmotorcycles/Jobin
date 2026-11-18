@@ -5,21 +5,24 @@ import {useCallback,useEffect,useState} from "react";
 import {ActivityIndicator,Pressable,Share,Text,TextInput,View} from "react-native";
 import {BottomSheet} from "./social-ui";
 import {PhotoCarousel,PostEngagementRow} from "./PostCard";
+import {PostCaption} from "./PostCaption";
 import {useUi} from "./ui";
 import {PublicProfileAvatar} from "./PublicProfileAvatar";
 import {addHomePostComment,currentSocialUser,loadHomePostComments,loadHomePosts,recordHomePostShare,setHomePostLike,type FeedPost,type HomePostComment} from "../lib/social-content";
-import {getHiddenPostIds} from "../lib/feed-preferences";
+import {getHiddenPostIds,getSavedPostIds,setSavedPost} from "../lib/feed-preferences";
 import {FeedPostOptions} from "./FeedPostOptions";
 import {formatCount} from "../lib/feed";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 
-export function HomePostCard({post,viewer,onHide}:{post:FeedPost;viewer:string;onHide:(id:string)=>void}){
+export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;viewer:string;onHide:(id:string)=>void;savedByViewer?:boolean}){
  const {theme}=useTheme();const t=jobeenTokens(theme);const {s,colors}=useUi();
  const [liked,setLiked]=useState(post.likedByViewer);
  const [likes,setLikes]=useState(post.likes);
  const [commentsCount,setCommentsCount]=useState(post.comments);
  const [shares,setShares]=useState(post.shares);
+ const [saved,setSaved]=useState(savedByViewer??false);
+ const [saving,setSaving]=useState(false);
  const [pending,setPending]=useState(false);
  const [error,setError]=useState("");
  const [commentsOpen,setCommentsOpen]=useState(false);
@@ -31,7 +34,19 @@ export function HomePostCard({post,viewer,onHide}:{post:FeedPost;viewer:string;o
  useEffect(()=>{
   setLiked(post.likedByViewer);setLikes(post.likes);setCommentsCount(post.comments);setShares(post.shares);
  },[post.likedByViewer,post.likes,post.comments,post.shares]);
- const media=post.kind==="photos"||post.kind==="video"||post.kind==="live";
+ useEffect(()=>{
+  if(savedByViewer!==undefined){setSaved(savedByViewer);return;}
+  let active=true;
+  if(viewer)void getSavedPostIds(viewer).then(ids=>{if(active)setSaved(ids.includes(post.id));}).catch(()=>{});
+  return()=>{active=false;};
+ },[savedByViewer,viewer,post.id]);
+ async function toggleSaved(){
+  if(saving)return;
+  setSaving(true);setError("");
+  try{await setSavedPost(viewer,post.id,!saved);setSaved(v=>!v);}
+  catch(e){setError(e instanceof Error?e.message:"No se pudo guardar la publicación.");}
+  finally{setSaving(false);}
+ }
  async function toggleLike(){
   if(pending)return;setPending(true);setError("");
   try{await setHomePostLike(post.id,!liked);setLiked(!liked);setLikes(count=>Math.max(0,count+(liked?-1:1)));}
@@ -70,7 +85,6 @@ export function HomePostCard({post,viewer,onHide}:{post:FeedPost;viewer:string;o
   finally{setSending(false);}
  }
  const profile=()=>router.push({pathname:"/jcard",params:{user:post.authorId}});
- const link=post.body.match(/https?:\/\/[^\s]+/i)?.[0];
  const authorRow=<View style={{flexDirection:"row",alignItems:"center",gap:10,paddingHorizontal:16}}>
   <Pressable accessibilityRole="button" accessibilityLabel={"Ver perfil de "+post.authorName} onPress={profile}>
    <PublicProfileAvatar userId={post.authorId} name={post.authorName} size={34}/>
@@ -86,7 +100,7 @@ export function HomePostCard({post,viewer,onHide}:{post:FeedPost;viewer:string;o
   </Pressable>
  </View>;
  return <View style={{gap:10}}>
-  {!media&&authorRow}
+  {authorRow}
   {post.kind==="photos"&&<PhotoCarousel post={{author:post.authorName,photos:post.photoUrls}}/>}
   {(post.kind==="video"||post.kind==="live")&&<Pressable accessibilityRole="button" accessibilityLabel="Ver contenido profesional"
    onPress={()=>post.mediaId&&router.push({pathname:"/work-media/[id]",params:{id:post.mediaId}})}
@@ -94,15 +108,12 @@ export function HomePostCard({post,viewer,onHide}:{post:FeedPost;viewer:string;o
    <Ionicons name={post.kind==="live"?"radio-outline":"play-circle-outline"} size={52} color={colors.ink}/>
    <Text style={[s.text,{fontWeight:"700"}]}>{post.kind==="live"?"Ver grabación de Live":"Ver video aprobado"}</Text>
   </Pressable>}
-  {media&&authorRow}
-  {!!post.body&&<Text style={[s.text,{paddingHorizontal:16}]}>{post.body}</Text>}
-  {!!link&&<Pressable accessibilityRole="link" accessibilityLabel="Abrir enlace compartido" onPress={()=>void Linking.openURL(link)}>
-   <Text numberOfLines={1} style={[s.muted,{paddingHorizontal:16,textDecorationLine:"underline"}]}>{link}</Text>
-  </Pressable>}
+  <PostCaption text={post.body}/>
   <PostEngagementRow likes={likes} comments={commentsCount} shares={shares} liked={liked}
-   likeDisabled={pending} onLike={()=>void toggleLike()} onComments={()=>void openComments()} onShare={()=>void share()}/>
+   likeDisabled={pending} onLike={()=>void toggleLike()} onComments={()=>void openComments()} onShare={()=>void share()}
+   saved={saved} onSave={()=>void toggleSaved()} saveDisabled={saving}/>
   {!!error&&!commentsOpen&&<Text accessibilityLiveRegion="polite" style={{paddingHorizontal:16,color:t.ink2,fontSize:12}}>{error}</Text>}
-  <FeedPostOptions visible={optionsOpen} onClose={()=>setOptionsOpen(false)} viewerId={viewer} postId={post.id} onHidden={()=>onHide(post.id)} onShareLink={sharePostLink}/>
+  <FeedPostOptions visible={optionsOpen} onClose={()=>setOptionsOpen(false)} viewerId={viewer} postId={post.id} onHidden={()=>onHide(post.id)} onShareLink={sharePostLink} onSaveChanged={setSaved}/>
   <BottomSheet visible={commentsOpen} onClose={()=>setCommentsOpen(false)} title={"Comentarios · "+formatCount(commentsCount)}>
    <View style={{gap:14,paddingVertical:10}}>
     {commentsLoading&&<ActivityIndicator color={t.yellow}/>}
@@ -133,6 +144,7 @@ export function HomePublishedPosts(){
  const {theme}=useTheme();const t=jobeenTokens(theme);
  const [posts,setPosts]=useState<FeedPost[]>([]);
  const [viewer,setViewer]=useState("");
+ const [savedIds,setSavedIds]=useState<string[]>([]);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
  const reload=useCallback(()=>{
@@ -140,8 +152,8 @@ export function HomePublishedPosts(){
   void(async()=>{
    try{
     const user=await currentSocialUser().catch(()=>"");
-    const [loaded,hidden]=await Promise.all([loadHomePosts(user),getHiddenPostIds(user)]);
-    if(active){setPosts(loaded.filter(post=>!hidden.includes(post.id)));setViewer(user);setError("");}
+    const [loaded,hidden,savedPosts]=await Promise.all([loadHomePosts(user),getHiddenPostIds(user),getSavedPostIds(user)]);
+    if(active){setPosts(loaded.filter(post=>!hidden.includes(post.id)));setSavedIds(savedPosts);setViewer(user);setError("");}
    }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudieron cargar las publicaciones.");}
    finally{if(active)setLoading(false);}
   })();
@@ -158,6 +170,6 @@ export function HomePublishedPosts(){
   </View>
   {loading&&<ActivityIndicator color={t.yellow}/>}
   {!!error&&<Text accessibilityLiveRegion="polite" style={{color:t.ink2,paddingHorizontal:16}}>{error}</Text>}
-  {posts.map(post=><HomePostCard key={post.id} post={post} viewer={viewer} onHide={id=>setPosts(items=>items.filter(post=>post.id!==id))}/>)}
+  {posts.map(post=><HomePostCard key={post.id} post={post} viewer={viewer} savedByViewer={savedIds.includes(post.id)} onHide={id=>setPosts(items=>items.filter(post=>post.id!==id))}/>)}
  </View>;
 }

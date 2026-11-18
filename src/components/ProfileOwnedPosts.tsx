@@ -1,46 +1,59 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import {useCallback,useState} from "react";
-import {ActivityIndicator,Alert,Image,Pressable,Text,View} from "react-native";
-import {deleteHomePost,currentSocialUser,loadHomePosts,type FeedPost} from "../lib/social-content";
+import {ActivityIndicator,Alert,Pressable,Text,View} from "react-native";
+import {deleteHomePost,currentSocialUser,loadAllProfilePosts,loadHomePosts,type FeedPost} from "../lib/social-content";
+import {loadPublishedMedia,type PublishedMedia} from "../lib/safety-api";
 import {getSavedPostIds,setSavedPost} from "../lib/feed-preferences";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {useUi} from "./ui";
+import {ProfileMediaGrid,type ProfileTile} from "./ProfileSharedSections";
 import {BottomSheet} from "./social-ui";
 
-export function ProfileOwnedPosts(){
+type Filter="all"|"videos"|"live";
+
+/** Same mixed-media grid in own and public profiles; delete is owner-only. */
+function ProfilePublicationGrid({userId,editable,filter}:{userId?:string;editable:boolean;filter:Filter}){
  const {theme}=useTheme();const t=jobeenTokens(theme);const {s}=useUi();
- const [tab,setTab]=useState<"mine"|"saved">("mine");
- const [mine,setMine]=useState<FeedPost[]>([]);
- const [saved,setSaved]=useState<FeedPost[]>([]);
+ const [savedView,setSavedView]=useState(false);
+ const [posts,setPosts]=useState<FeedPost[]>([]);
+ const [savedPosts,setSavedPosts]=useState<FeedPost[]>([]);
+ const [workMedia,setWorkMedia]=useState<PublishedMedia[]>([]);
  const [selected,setSelected]=useState<FeedPost|null>(null);
- const [loading,setLoading]=useState(true);
  const [owner,setOwner]=useState("");
+ const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
  const reload=useCallback(()=>{
   let active=true;setLoading(true);
-  void (async()=>{
+  void(async()=>{
    try{
-    const viewer=await currentSocialUser();
-    const ids=await getSavedPostIds(viewer);
-    const [owned,savedPosts]=await Promise.all([
-     loadHomePosts(viewer,viewer),
-     ids.length?loadHomePosts(viewer,undefined,undefined,ids.slice(0,80)):Promise.resolve([] as FeedPost[])
+    const viewer=await currentSocialUser().catch(()=>"");
+    const target=editable?viewer:userId??"";
+    if(!target)throw Error("No se pudo identificar el perfil.");
+    const ids=editable&&viewer?await getSavedPostIds(viewer):[];
+    const [all,media,marked]=await Promise.all([
+     loadAllProfilePosts(viewer,target),
+     loadPublishedMedia().catch(()=>[] as PublishedMedia[]),
+     editable&&ids.length?loadHomePosts(viewer,undefined,undefined,ids.slice(0,80)):Promise.resolve([] as FeedPost[])
     ]);
-    if(active){setOwner(viewer);setMine(owned);setSaved(savedPosts);setError("");}
+    if(active){
+     setOwner(target);setPosts(all);
+     setWorkMedia(media.filter(m=>m.creator_id===target));
+     setSavedPosts(marked);setError("");
+    }
    }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudieron cargar las publicaciones.");}
    finally{if(active)setLoading(false);}
   })();
   return()=>{active=false;};
- },[]);
+ },[editable,userId]);
  useFocusEffect(reload);
  function openPost(post:FeedPost){
   router.push({pathname:"/post/[id]",params:{id:post.id}});
  }
  function confirmDelete(post:FeedPost){
   setSelected(null);
-  Alert.alert("Eliminar publicación","¿Quieres eliminar esta publicación de tu perfil y de Home? Esta acción no se puede deshacer.",[
+  Alert.alert("Eliminar publicación","¿Eliminar esta publicación de tu perfil y de Home? Esta acción no se puede deshacer.",[
    {text:"Cancelar",style:"cancel"},
    {text:"Eliminar",style:"destructive",onPress:()=>void remove(post)}
   ]);
@@ -48,62 +61,67 @@ export function ProfileOwnedPosts(){
  async function remove(post:FeedPost){
   try{
    await deleteHomePost(post.id);
-   setMine(posts=>posts.filter(x=>x.id!==post.id));
-   setSaved(posts=>posts.filter(x=>x.id!==post.id));
-   await setSavedPost(owner,post.id,false);
+   setPosts(items=>items.filter(x=>x.id!==post.id));
+   setSavedPosts(items=>items.filter(x=>x.id!==post.id));
+   void setSavedPost(owner,post.id,false).catch(()=>{});
   }catch(e){Alert.alert("Eliminar publicación",e instanceof Error?e.message:"No se pudo eliminar la publicación.");}
  }
  async function unSave(post:FeedPost){
-  try{await setSavedPost(owner,post.id,false);setSaved(posts=>posts.filter(x=>x.id!==post.id));setSelected(null);}
+  try{await setSavedPost(owner,post.id,false);setSavedPosts(items=>items.filter(x=>x.id!==post.id));setSelected(null);}
   catch(e){Alert.alert("Guardados",e instanceof Error?e.message:"No se pudo quitar de guardados.");}
  }
- const items=tab==="mine"?mine:saved;
+ const showSaved=editable&&filter==="all"&&savedView;
+ const visiblePosts=(showSaved?savedPosts:posts).filter(post=>filter==="all"||post.kind===(filter==="videos"?"video":"live"));
+ const linkedIds=new Set(posts.map(post=>post.mediaId).filter(Boolean));
+ const additionalMedia=showSaved?[]:workMedia.filter(m=>
+  (filter==="all"||m.kind===(filter==="videos"?"video":"live"))&&!linkedIds.has(m.id));
+ const tiles:ProfileTile[]=[
+  ...visiblePosts.map(post=>({
+   id:post.id,title:post.body||post.kind,kind:post.kind,
+   thumbnail:post.photoUrls[0]??null,photoCount:post.photoUrls.length,
+   onPress:()=>openPost(post),
+   onOptions:editable?()=>setSelected(post):undefined
+  })),
+  ...additionalMedia.map(item=>({
+   id:"work-"+item.id,title:item.title,kind:item.kind,
+   onPress:()=>router.push({pathname:"/work-media/[id]",params:{id:item.id}})
+  }))
+ ];
+ const emptyMessage=filter==="videos"?"Todavía no hay videos publicados.":filter==="live"?"Todavía no hay transmisiones publicadas.":showSaved?"Todavía no has guardado publicaciones.":"Todavía no hay publicaciones.";
  return <View style={{gap:12}}>
-  <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:10}}>
-   <Text style={s.h3}>Publicaciones</Text>
-   <View style={{flexDirection:"row",gap:6}}>
-    {([{key:"mine",text:"Mías"},{key:"saved",text:"Guardadas"}] as const).map(option=>
-     <Pressable key={option.key} accessibilityRole="button" accessibilityLabel={option.text}
-      accessibilityState={{selected:tab===option.key}} onPress={()=>setTab(option.key)}
-      style={{paddingHorizontal:11,minHeight:40,borderRadius:15,alignItems:"center",justifyContent:"center",backgroundColor:tab===option.key?t.cream:t.surface,borderWidth:1,borderColor:t.line}}>
-      <Text style={[s.muted,{color:t.ink,fontWeight:tab===option.key?"700":"500"}]}>{option.text}</Text>
-     </Pressable>
-    )}
-   </View>
+  <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",minHeight:40,gap:8}}>
+   <Text style={s.h3}>{filter==="videos"?"Videos":filter==="live"?"Transmisiones":"Publicaciones"}</Text>
+   {editable&&filter==="all"&&<Pressable accessibilityRole="button" accessibilityLabel={savedView?"Ver mis publicaciones":"Ver publicaciones guardadas"} accessibilityState={{selected:savedView}}
+    onPress={()=>setSavedView(v=>!v)} style={{minHeight:44,paddingHorizontal:12,flexDirection:"row",gap:6,alignItems:"center",borderRadius:14,backgroundColor:savedView?t.cream:t.surface,borderWidth:1,borderColor:t.line}}>
+    <Ionicons name={savedView?"grid-outline":"bookmark-outline"} size={18} color={t.ink}/>
+    <Text style={[s.muted,{color:t.ink,fontWeight:"600"}]}>{savedView?"Mías":"Guardadas"}</Text>
+   </Pressable>}
   </View>
   {loading&&<ActivityIndicator color={t.ink}/>}
   {!!error&&<Text accessibilityLiveRegion="polite" style={s.muted}>{error}</Text>}
-  {!loading&&!error&&!items.length&&<Text style={[s.muted,{paddingVertical:14}]}>{tab==="mine"?"Todavía no tienes publicaciones.":"Todavía no has guardado publicaciones."}</Text>}
-  {!loading&&<View style={{flexDirection:"row",flexWrap:"wrap"}}>
-   {items.map((post,index)=><View key={post.id} style={{width:"33.33%",padding:2}}>
-    <Pressable accessibilityRole="button" accessibilityLabel={"Ver publicación: "+(post.body||post.kind)} onPress={()=>openPost(post)}
-     style={{height:160,borderRadius:10,backgroundColor:[t.videoTile1,t.videoTile2,t.videoTile3][index%3],overflow:"hidden",alignItems:"center",justifyContent:"center"}}>
-     {post.photoUrls[0]?<Image source={{uri:post.photoUrls[0]}} style={{height:"100%",width:"100%"}} resizeMode="cover"/>:
-      <Ionicons name={post.kind==="text"?"document-text-outline":post.kind==="live"?"radio-outline":"play-circle-outline"} size={28} color={t.ink2}/>}
-     {!post.photoUrls.length&&!!post.body&&<Text numberOfLines={3} style={[s.muted,{textAlign:"center",padding:8}]}>{post.body}</Text>}
-    </Pressable>
-    <Pressable accessibilityRole="button" accessibilityLabel={"Opciones de publicación "+(post.body||post.kind)} onPress={()=>setSelected(post)}
-     style={{position:"absolute",right:7,top:7,width:42,height:42,borderRadius:21,alignItems:"center",justifyContent:"center",backgroundColor:t.surface}}>
-     <Ionicons name="ellipsis-horizontal" size={20} color={t.ink}/>
-    </Pressable>
-   </View>)}
-  </View>}
+  {!loading&&!error&&<ProfileMediaGrid items={tiles} emptyMessage={emptyMessage}/>}
   <BottomSheet visible={!!selected} onClose={()=>setSelected(null)} title="Opciones de publicación">
    {!!selected&&<View style={{gap:5,paddingVertical:8}}>
     <Pressable accessibilityRole="button" onPress={()=>{const post=selected;setSelected(null);openPost(post);}}
      style={{minHeight:52,flexDirection:"row",alignItems:"center",gap:12,paddingHorizontal:12}}>
      <Ionicons name="eye-outline" size={22} color={t.ink}/><Text style={[s.text,{fontWeight:"600"}]}>Ver publicación</Text>
     </Pressable>
-    {tab==="mine"?
-     <Pressable accessibilityRole="button" onPress={()=>confirmDelete(selected)}
-      style={{minHeight:52,flexDirection:"row",alignItems:"center",gap:12,paddingHorizontal:12}}>
-      <Ionicons name="trash-outline" size={22} color={t.ink}/><Text style={[s.text,{fontWeight:"600"}]}>Eliminar publicación</Text>
-     </Pressable>:
+    {showSaved?
      <Pressable accessibilityRole="button" onPress={()=>void unSave(selected)}
       style={{minHeight:52,flexDirection:"row",alignItems:"center",gap:12,paddingHorizontal:12}}>
       <Ionicons name="bookmark-outline" size={22} color={t.ink}/><Text style={[s.text,{fontWeight:"600"}]}>Quitar de guardados</Text>
+     </Pressable>:
+     <Pressable accessibilityRole="button" onPress={()=>confirmDelete(selected)}
+      style={{minHeight:52,flexDirection:"row",alignItems:"center",gap:12,paddingHorizontal:12}}>
+      <Ionicons name="trash-outline" size={22} color={t.ink}/><Text style={[s.text,{fontWeight:"600"}]}>Eliminar publicación</Text>
      </Pressable>}
    </View>}
   </BottomSheet>
  </View>;
+}
+export function ProfileOwnedPosts({filter="all"}:{filter?:Filter}){
+ return <ProfilePublicationGrid filter={filter} editable/>;
+}
+export function ProfilePublicPosts({userId,filter="all"}:{userId:string;filter?:Filter}){
+ return <ProfilePublicationGrid filter={filter} userId={userId} editable={false}/>;
 }

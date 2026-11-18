@@ -36,11 +36,11 @@ export async function currentSocialUser():Promise<string>{
  if(error||!data.user)throw new Error("Inicia sesión para crear contenido.");
  return data.user.id;
 }
-export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,postIds?:string[]):Promise<FeedPost[]>{
+export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,postIds?:string[],offset=0):Promise<FeedPost[]>{
  const db=requireSupabase();
  const query=db.from("jobeen_feed_posts" as never)
   .select("id,author_id,body,kind,photo_paths,work_media_id,created_at")
-  .is("removed_at",null).order("created_at",{ascending:false}).limit(postId?1:80);
+  .is("removed_at",null).order("created_at",{ascending:false}).range(offset,offset+(postId?0:79));
  const {data,error}=await (postId?query.eq("id",postId):postIds?.length?query.in("id",postIds):authorId?query.eq("author_id",authorId):query);
  if(error)throw error;
  const rows=(data??[]) as unknown as FeedRow[];
@@ -65,6 +65,16 @@ export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,
    likedByViewer:viewerLikes.has(row.id)
   };
  });
+}
+/** Load the owner's complete feed history in pages so profiles are not limited to 80 posts. */
+export async function loadAllProfilePosts(viewerId:string,authorId:string):Promise<FeedPost[]>{
+ const all:FeedPost[]=[];
+ for(let offset=0;;offset+=80){
+  const batch=await loadHomePosts(viewerId,authorId,undefined,undefined,offset);
+  all.push(...batch);
+  if(batch.length<80)break;
+ }
+ return all;
 }
 export async function loadActiveStories():Promise<SocialStory[]>{
  const db=requireSupabase();const now=new Date().toISOString();
