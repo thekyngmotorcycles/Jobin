@@ -32,6 +32,38 @@ $setup$;
 create policy "follows_read_followed_owner" on public.profile_follows
  for select to authenticated using (followed_id=(select auth.uid()));
 
+-- The CV access table also originated in an earlier live-only migration.
+create table if not exists public.employment_access_requests(
+ id uuid primary key default gen_random_uuid(),
+ owner_id uuid not null references public.profiles(id) on delete cascade,
+ requester_id uuid not null references public.profiles(id) on delete cascade,
+ status text not null default 'pending' check(status in ('pending','approved','denied','revoked')),
+ created_at timestamptz not null default now(),
+ updated_at timestamptz not null default now(),
+ constraint employment_access_requests_check check(owner_id<>requester_id),
+ constraint employment_access_requests_owner_id_requester_id_key unique(owner_id,requester_id)
+);
+create index if not exists employment_requests_requester_idx on public.employment_access_requests(requester_id);
+alter table public.employment_access_requests enable row level security;
+grant select,insert on public.employment_access_requests to authenticated;
+grant update(status) on public.employment_access_requests to authenticated;
+do $cvsetup$
+begin
+ if not exists(select 1 from pg_policies where schemaname='public' and tablename='employment_access_requests' and policyname='employment_requests_read') then
+  create policy employment_requests_read on public.employment_access_requests for select to authenticated
+   using(owner_id=(select auth.uid()) or requester_id=(select auth.uid()));
+ end if;
+ if not exists(select 1 from pg_policies where schemaname='public' and tablename='employment_access_requests' and policyname='employment_requests_insert') then
+  create policy employment_requests_insert on public.employment_access_requests for insert to authenticated
+   with check(requester_id=(select auth.uid()) and status='pending');
+ end if;
+ if not exists(select 1 from pg_policies where schemaname='public' and tablename='employment_access_requests' and policyname='employment_requests_owner_update') then
+  create policy employment_requests_owner_update on public.employment_access_requests for update to authenticated
+   using(owner_id=(select auth.uid())) with check(owner_id=(select auth.uid()));
+ end if;
+end;
+$cvsetup$;
+
 create or replace function private.jobeen_notify_activity()
 returns trigger
 language plpgsql
