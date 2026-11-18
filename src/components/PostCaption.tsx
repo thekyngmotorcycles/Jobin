@@ -8,7 +8,7 @@ import {useUi} from "./ui";
 export function PostCaption({text}:{text:string}){
  const [expanded,setExpanded]=useState(false);
  const {s,colors}=useUi();
- const link=text.match(/https?:\\/\\/[^\\s]+/i)?.[0];
+ const link=text.match(/https?:\/\/[^\s]+/i)?.[0];
  if(!text.trim())return null;
  return <View>
   <Pressable accessibilityRole="button" accessibilityLabel={"Ver descripción completa: "+text}
