@@ -58,3 +58,17 @@ test("Map placement is opt-in with professional location obfuscation and owner R
  assert.ok(api.includes('toFixed(2)'));
  assert.ok(!api.includes("jshop_seller_locations"));
 });
+
+test("Existing dual JCards can appear as companies without converting account type",()=>{
+ const presence=source("src/lib/map-discovery.ts");
+ const settings=source("src/app/map-presence.tsx");
+ const feed=source("src/components/HomePublishedPosts.tsx");
+ const sql=source("supabase/migrations/20261118235159_jobeen_dual_card_business_map.sql");
+ assert.ok(presence.includes("allowedKinds"));
+ assert.ok(presence.includes('from("jcard_business_details"'));
+ assert.ok(settings.includes("allowedKinds.map"));
+ assert.ok(feed.includes('from("jcard_business_details"'));
+ assert.ok(sql.includes("to_regclass('public.jcard_business_details')"));
+ assert.ok(sql.includes("coalesce(nullif(btrim(b.name)"));
+ assert.ok(sql.includes("security invoker"));
+});
