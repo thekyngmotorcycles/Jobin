@@ -1,6 +1,5 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
-import * as ExpoLinking from "expo-linking";
 import * as Linking from "expo-linking";
 import {useCallback,useEffect,useState} from "react";
 import {ActivityIndicator,Pressable,Share,Text,TextInput,View} from "react-native";
@@ -51,7 +50,7 @@ export function HomePostCard({post,viewer,onHide}:{post:FeedPost;viewer:string;o
  async function sharePostLink(){
   setError("");
   try{
-   const result=await Share.share({message:ExpoLinking.createURL("post/"+post.id)});
+   const result=await Share.share({message:Linking.createURL("post/"+post.id)});
    if(result.action===Share.sharedAction){await recordHomePostShare(post.id);setShares(n=>n+1);}
   }catch(e){setError(e instanceof Error?e.message:"No se pudo compartir el enlace.");}
  }
