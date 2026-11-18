@@ -22,4 +22,13 @@ Without `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN`, JShop automatically keeps the existin
 
 Mapbox documentation: https://rnmapbox.github.io/docs/install and https://docs.mapbox.com/api/search/geocoding/
 
-The location picker does **not** request device GPS access. Moving the map and typing a city are sufficient, so no new precise-location permission is needed.
+## Buyer current location (foreground only)
+
+- The buyer location picker loads saved search coordinates (or recently used coordinates) first.
+- With no saved coordinates, it can center on the device location only if Android/iOS has already granted foreground location access.
+- The top-right navigation-pointer icon ("Usar mi ubicación actual") requests foreground permission **only when tapped** if it is not already granted. Users may refuse and still search by city or pan the map.
+- GPS does not change the seller's default location or published listing coordinates. The buying area is saved only when the user taps **Aplicar**.
+- Device position is read on demand, never tracked in the background.
+- Expo SDK 54 needs the native `expo-location` module and its foreground permissions configured, so this feature **requires a freshly built Android APK** with the new native runtime; older APKs cannot receive the GPS feature through an OTA-only update.
+- To reduce unnecessary geocoding and Mapbox 429 errors, dragging the buying map no longer reverse-geocodes on every pan; the final selected map center is resolved only on **Aplicar**.
+
