@@ -10,6 +10,8 @@ import {useUi} from "./ui";
 import {PublicProfileAvatar} from "./PublicProfileAvatar";
 import {addHomePostComment,currentSocialUser,loadHomePostComments,loadHomePosts,recordHomePostShare,setHomePostLike,type FeedPost,type HomePostComment} from "../lib/social-content";
 import {getHiddenPostIds,getSavedPostIds,setSavedPost} from "../lib/feed-preferences";
+import {requireSupabase} from "../lib/supabase";
+import type {HomeFeedFilter} from "./HomeFeedFilters";
 import {FeedPostOptions} from "./FeedPostOptions";
 import {formatCount} from "../lib/feed";
 import {useTheme} from "../state/ThemeProvider";
@@ -140,11 +142,13 @@ export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;v
  </View>;
 }
 
-export function HomePublishedPosts(){
+export function HomePublishedPosts({filter="all"}:{filter?:HomeFeedFilter}){
  const {theme}=useTheme();const t=jobeenTokens(theme);
  const [posts,setPosts]=useState<FeedPost[]>([]);
  const [viewer,setViewer]=useState("");
  const [savedIds,setSavedIds]=useState<string[]>([]);
+ const [followedIds,setFollowedIds]=useState<string[]>([]);
+ const [businessIds,setBusinessIds]=useState<string[]>([]);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
  const reload=useCallback(()=>{
@@ -153,23 +157,46 @@ export function HomePublishedPosts(){
    try{
     const user=await currentSocialUser().catch(()=>"");
     const [loaded,hidden,savedPosts]=await Promise.all([loadHomePosts(user),getHiddenPostIds(user),getSavedPostIds(user)]);
-    if(active){setPosts(loaded.filter(post=>!hidden.includes(post.id)));setSavedIds(savedPosts);setViewer(user);setError("");}
+    const authorIds=[...new Set(loaded.map(post=>post.authorId))];
+    const db=requireSupabase();
+    const [follows,businesses,businessCards]=await Promise.all([
+     user?db.from("profile_follows" as never).select("followed_id").eq("follower_id",user):Promise.resolve({data:[],error:null}),
+     authorIds.length?db.from("profiles").select("id").in("id",authorIds).eq("account_type","company"):Promise.resolve({data:[],error:null}),
+     authorIds.length?db.from("jcard_business_details" as never).select("owner_id").in("owner_id",authorIds):Promise.resolve({data:[],error:null})
+    ]);
+    if(follows.error)throw follows.error;
+    if(businesses.error)throw businesses.error;
+    if(active){
+     setPosts(loaded.filter(post=>!hidden.includes(post.id)));
+     setSavedIds(savedPosts);
+     setViewer(user);
+     setFollowedIds(((follows.data??[]) as {followed_id:string}[]).map(row=>row.followed_id));
+     setBusinessIds([...new Set([
+      ...((businesses.data??[]) as {id:string}[]).map(row=>row.id),
+      ...((businessCards.data??[]) as {owner_id:string}[]).map(row=>row.owner_id)
+     ])]);
+     setError("");
+    }
    }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudieron cargar las publicaciones.");}
    finally{if(active)setLoading(false);}
   })();
   return()=>{active=false;};
  },[]);
  useFocusEffect(reload);
- if(!posts.length&&!loading&&!error)return null;
+ const visible=posts.filter(post=>filter==="all"||(filter==="following"?followedIds.includes(post.authorId):businessIds.includes(post.authorId)));
+ if(!posts.length&&!loading&&!error&&filter==="all")return null;
  return <View style={{gap:14}}>
   <View style={{paddingHorizontal:16,flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
-   <Text style={{color:t.ink,fontSize:18,fontWeight:"800"}}>Publicaciones recientes</Text>
+   <Text style={{color:t.ink,fontSize:18,fontWeight:"800"}}>{filter==="following"?"De las cuentas que sigues":filter==="companies"?"Publicaciones de empresas":"Publicaciones recientes"}</Text>
    <Pressable accessibilityRole="button" accessibilityLabel="Actualizar publicaciones" onPress={()=>{reload();}} style={{padding:8}}>
     <Ionicons name="refresh-outline" size={20} color={t.ink}/>
    </Pressable>
   </View>
   {loading&&<ActivityIndicator color={t.yellow}/>}
   {!!error&&<Text accessibilityLiveRegion="polite" style={{color:t.ink2,paddingHorizontal:16}}>{error}</Text>}
-  {posts.map(post=><HomePostCard key={post.id} post={post} viewer={viewer} savedByViewer={savedIds.includes(post.id)} onHide={id=>setPosts(items=>items.filter(post=>post.id!==id))}/>)}
+  {!loading&&!error&&filter!=="all"&&!visible.length&&<Text style={{color:t.ink2,fontSize:13,paddingHorizontal:16}}>
+   {filter==="following"?"Aún no hay publicaciones recientes de las cuentas que sigues.":"Aún no hay publicaciones recientes de empresas."}
+  </Text>}
+  {visible.map(post=><HomePostCard key={post.id} post={post} viewer={viewer} savedByViewer={savedIds.includes(post.id)} onHide={id=>setPosts(items=>items.filter(post=>post.id!==id))}/>)}
  </View>;
 }

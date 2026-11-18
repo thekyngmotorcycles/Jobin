@@ -1,0 +1,74 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {readFileSync} from "node:fs";
+const source=(path:string)=>readFileSync(path,"utf8");
+test("Search has a real List/Map switch and Home links directly to the map",()=>{
+ const search=source("src/app/search.tsx");
+ const home=source("src/app/(tabs)/index.tsx");
+ const filters=source("src/components/HomeFeedFilters.tsx");
+ assert.ok(search.includes('viewMode==="map"'));
+ assert.ok(search.includes("<ProfessionalMapExplorer"));
+ assert.ok(search.includes('accessibilityLabel="Ver empresas y profesionales en el mapa"'));
+ assert.ok(filters.includes('params:{view:"map"}'));
+ assert.ok(filters.includes('"Para ti"'));
+ assert.ok(filters.includes('"Siguiendo"'));
+ assert.ok(filters.includes('"Empresas"'));
+ assert.ok(home.includes("<HomeFeedFilters value={filter} onChange={setFilter}/>"));
+ assert.ok(home.includes('<HomePublishedPosts filter={filter}/>'));
+ assert.ok(home.includes('filter==="all"&&cards.map'));
+});
+test("Quick publisher is optional, off initially, with per-account cloud persistence",()=>{
+ const header=source("src/components/SocialHeader.tsx");
+ const store=source("src/lib/home-preferences.ts");
+ assert.ok(header.includes("loadQuickComposerPreference"));
+ assert.ok(header.includes("saveQuickComposerPreference"));
+ assert.ok(header.includes("composerVisible&&<PostQuickComposer/>"));
+ assert.ok(header.includes("setComposerVisible(false)"));
+ assert.ok(header.includes("Mostrar publicación rápida"));
+ assert.ok(header.includes("<StoryStrip/>"));
+ assert.ok(store.includes('from("jobeen_home_preferences"'));
+ assert.ok(store.includes("quick_composer_visible"));
+});
+test("Nearby map searches are bounded and do not query Mapbox on each pan",()=>{
+ const explorer=source("src/components/ProfessionalMapExplorer.tsx");
+ const api=source("src/lib/map-discovery.ts");
+ const native=source("src/components/ProfessionalMap.native.tsx");
+ assert.ok(explorer.includes("setCandidate"));
+ assert.ok(explorer.includes("Buscar en esta zona"));
+ assert.ok(explorer.includes("findJShopPlaces(city.trim())"));
+ assert.ok(explorer.includes("Location.requestForegroundPermissionsAsync()"));
+ assert.ok(explorer.includes("discoverMapProfiles(center,radius,activeQuery,kind)"));
+ assert.ok(explorer.includes('router.push("/map-presence")'));
+ assert.ok(api.includes('rpc("jobeen_find_profiles_on_map"'));
+ assert.ok(native.includes("clusterRadius"));
+ assert.ok(native.includes('onSelect(properties.id)'));
+});
+test("Map placement is opt-in with professional location obfuscation and owner RLS",()=>{
+ const sql=source("supabase/migrations/20261118234609_jobeen_map_discovery_home_preferences.sql");
+ const settings=source("src/app/map-presence.tsx");
+ const api=source("src/lib/map-discovery.ts");
+ assert.ok(sql.includes("constraint professional_coarse_map_point"));
+ assert.ok(sql.includes("m.is_visible=true"));
+ assert.ok(sql.includes("security invoker"));
+ assert.ok(sql.includes("enable row level security"));
+ assert.ok(sql.includes("owner_id=(select auth.uid())"));
+ assert.ok(sql.includes("quick_composer_visible boolean not null default false"));
+ assert.ok(settings.includes("confirmJShopPlace"));
+ assert.ok(settings.includes("setMapPresenceVisible("));
+ assert.ok(api.includes('toFixed(2)'));
+ assert.ok(!api.includes("jshop_seller_locations"));
+});
+
+test("Existing dual JCards can appear as companies without converting account type",()=>{
+ const presence=source("src/lib/map-discovery.ts");
+ const settings=source("src/app/map-presence.tsx");
+ const feed=source("src/components/HomePublishedPosts.tsx");
+ const sql=source("supabase/migrations/20261118235159_jobeen_dual_card_business_map.sql");
+ assert.ok(presence.includes("allowedKinds"));
+ assert.ok(presence.includes('from("jcard_business_details"'));
+ assert.ok(settings.includes("allowedKinds.map"));
+ assert.ok(feed.includes('from("jcard_business_details"'));
+ assert.ok(sql.includes("to_regclass('public.jcard_business_details')"));
+ assert.ok(sql.includes("coalesce(nullif(btrim(b.name)"));
+ assert.ok(sql.includes("security invoker"));
+});

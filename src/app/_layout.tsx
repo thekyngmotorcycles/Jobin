@@ -26,6 +26,7 @@ function Navigation() {
  const {theme,colors}=useTheme();const jt=jobeenTokens(theme);const shellBackground=theme==="light"?jt.bg:colors.paper;
  return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:shellBackground},headerTintColor:colors.ink,contentStyle:{backgroundColor:shellBackground}}}>
  <Stack.Screen name="(tabs)" options={{headerShown:false}}/>
+ <Stack.Screen name="map-presence" options={{title:"Mi zona profesional"}}/>
  <Stack.Screen name="post/create" options={{title:"Nueva publicación"}}/>
  <Stack.Screen name="post/[id]" options={{title:"Publicación"}}/>
  <Stack.Screen name="story/create" options={{title:"Crear historia"}}/>
