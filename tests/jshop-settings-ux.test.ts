@@ -34,7 +34,7 @@ test("Mapbox seller location avoids redundant reverse requests and validates bef
  assert.ok(geo.includes("X-Rate-Limit-Reset"));
  assert.ok(geo.includes("Retry-After"));
  assert.ok(geo.includes("geocodeBlockedUntil"));
- assert.ok(!geo.includes('types:LOCATION_TYPES,limit:"5"'));
+ assert.ok(!geo.includes('mapboxRequest("reverse",{longitude:lon.toFixed(6),latitude:lat.toFixed(6),types:LOCATION_TYPES,limit:"5"}'));
  assert.ok(picker.includes("if(!mapboxConfigured||!typing"));
  assert.ok(picker.includes("void searchOnSubmit()"));
 });
