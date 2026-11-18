@@ -14,6 +14,7 @@ import {opacity} from "../../theme/color";
 import {useRef} from "react";
 import {UserProfileContent} from "../../components/ProfileSharedSections";
 import {ProfileOwnedPosts} from "../../components/ProfileOwnedPosts";
+import {NotificationBell} from "../../components/NotificationBell";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import { ProfessionalStatus } from "../../components/ProfessionalStatus";
 import { loadCatalog,loadWorkspace } from "../../lib/professional-api";
@@ -177,7 +178,7 @@ export default function Profile() {
         <JobinWordmark width={theme==="light"?112:92} style={{ alignSelf: "flex-start" }} />
         <View style={{flexDirection:"row",alignItems:"center",gap:2}}>
           <JobeenCreateMenu/>
-          <Pressable accessibilityRole="button" accessibilityLabel="Mi red" onPress={()=>router.push("/my-network")} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="people-outline" size={23} color={colors.ink}/></Pressable>
+          <NotificationBell/>
           <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>profileToolsOpen?closeProfileMenu():openProfileMenu()} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="ellipsis-horizontal" size={23} color={colors.ink}/></Pressable>
         </View>
       </View>
