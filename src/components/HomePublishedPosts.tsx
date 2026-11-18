@@ -7,12 +7,14 @@ import {BottomSheet} from "./social-ui";
 import {PhotoCarousel,PostEngagementRow} from "./PostCard";
 import {useUi} from "./ui";
 import {PublicProfileAvatar} from "./PublicProfileAvatar";
-import {addHomePostComment,currentSocialUser,deleteHomePost,loadHomePostComments,loadHomePosts,recordHomePostShare,setHomePostLike,type FeedPost,type HomePostComment} from "../lib/social-content";
+import {addHomePostComment,currentSocialUser,loadHomePostComments,loadHomePosts,recordHomePostShare,setHomePostLike,type FeedPost,type HomePostComment} from "../lib/social-content";
+import {getHiddenPostIds} from "../lib/feed-preferences";
+import {FeedPostOptions} from "./FeedPostOptions";
 import {formatCount} from "../lib/feed";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 
-function HomePostCard({post,viewer,onRemove}:{post:FeedPost;viewer:string;onRemove:(post:FeedPost)=>Promise<void>}){
+export function HomePostCard({post,viewer,onHide}:{post:FeedPost;viewer:string;onHide:(id:string)=>void}){
  const {theme}=useTheme();const t=jobeenTokens(theme);const {s,colors}=useUi();
  const [liked,setLiked]=useState(post.likedByViewer);
  const [likes,setLikes]=useState(post.likes);
@@ -23,6 +25,7 @@ function HomePostCard({post,viewer,onRemove}:{post:FeedPost;viewer:string;onRemo
  const [commentsOpen,setCommentsOpen]=useState(false);
  const [commentsLoading,setCommentsLoading]=useState(false);
  const [comments,setComments]=useState<HomePostComment[]>([]);
+ const [optionsOpen,setOptionsOpen]=useState(false);
  const [draft,setDraft]=useState("");
  const [sending,setSending]=useState(false);
  useEffect(()=>{
@@ -69,11 +72,11 @@ function HomePostCard({post,viewer,onRemove}:{post:FeedPost;viewer:string;onRemo
    <Text numberOfLines={1} style={s.h3}>{post.authorName}</Text>
    {!!post.authorHandle&&<Text numberOfLines={1} style={s.muted}>{"@"+post.authorHandle}</Text>}
   </Pressable>
-  {viewer===post.authorId&&<Pressable accessibilityRole="button" accessibilityLabel="Opciones de mi publicación"
-   onPress={()=>Alert.alert("Eliminar publicación","¿Quitar esta publicación del feed?",[{text:"Cancelar",style:"cancel"},{text:"Eliminar",style:"destructive",onPress:()=>void onRemove(post)}])}
+  <Pressable accessibilityRole="button" accessibilityLabel="Opciones de publicación"
+   accessibilityState={{expanded:optionsOpen}} onPress={()=>setOptionsOpen(true)}
    style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
    <Ionicons name="ellipsis-horizontal" size={20} color={colors.ink}/>
-  </Pressable>}
+  </Pressable>
  </View>;
  return <View style={{gap:10}}>
   {!media&&authorRow}
@@ -92,6 +95,7 @@ function HomePostCard({post,viewer,onRemove}:{post:FeedPost;viewer:string;onRemo
   <PostEngagementRow likes={likes} comments={commentsCount} shares={shares} liked={liked}
    likeDisabled={pending} onLike={()=>void toggleLike()} onComments={()=>void openComments()} onShare={()=>void share()}/>
   {!!error&&!commentsOpen&&<Text accessibilityLiveRegion="polite" style={{paddingHorizontal:16,color:t.ink2,fontSize:12}}>{error}</Text>}
+  <FeedPostOptions visible={optionsOpen} onClose={()=>setOptionsOpen(false)} viewerId={viewer} postId={post.id} onHidden={()=>onHide(post.id)}/>
   <BottomSheet visible={commentsOpen} onClose={()=>setCommentsOpen(false)} title={"Comentarios · "+formatCount(commentsCount)}>
    <View style={{gap:14,paddingVertical:10}}>
     {commentsLoading&&<ActivityIndicator color={t.yellow}/>}
@@ -129,18 +133,14 @@ export function HomePublishedPosts(){
   void(async()=>{
    try{
     const user=await currentSocialUser().catch(()=>"");
-    const loaded=await loadHomePosts(user);
-    if(active){setPosts(loaded);setViewer(user);setError("");}
+    const [loaded,hidden]=await Promise.all([loadHomePosts(user),getHiddenPostIds(user)]);
+    if(active){setPosts(loaded.filter(post=>!hidden.includes(post.id)));setViewer(user);setError("");}
    }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudieron cargar las publicaciones.");}
    finally{if(active)setLoading(false);}
   })();
   return()=>{active=false;};
  },[]);
  useFocusEffect(reload);
- async function remove(post:FeedPost){
-  try{await deleteHomePost(post.id);setPosts(items=>items.filter(x=>x.id!==post.id));}
-  catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar la publicación.");}
- }
  if(!posts.length&&!loading&&!error)return null;
  return <View style={{gap:14}}>
   <View style={{paddingHorizontal:16,flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
@@ -151,6 +151,6 @@ export function HomePublishedPosts(){
   </View>
   {loading&&<ActivityIndicator color={t.yellow}/>}
   {!!error&&<Text accessibilityLiveRegion="polite" style={{color:t.ink2,paddingHorizontal:16}}>{error}</Text>}
-  {posts.map(post=><HomePostCard key={post.id} post={post} viewer={viewer} onRemove={remove}/>)}
+  {posts.map(post=><HomePostCard key={post.id} post={post} viewer={viewer} onHide={id=>setPosts(items=>items.filter(post=>post.id!==id))}/>)}
  </View>;
 }
