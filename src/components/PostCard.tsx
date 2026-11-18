@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import {PostCaption} from "./PostCaption";
 import { Alert, FlatList, Image, Pressable, Share, Text, View, useWindowDimensions, type ViewToken } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Avatar } from "./social-ui";
@@ -6,30 +7,33 @@ import { useUi } from "./ui";
 import type { PhotoPost } from "../lib/home";
 import { useSocial } from "../state/SocialProvider";
 
-/** Shared Home engagement layout. Demo and published cards use the same sizes and alignment. */
-export function PostEngagementRow({ likes, comments, shares, liked, onLike, onComments, onShare, likeDisabled = false }: {
-  likes: number; comments: number; shares: number; liked: boolean;
-  onLike: () => void; onComments?: () => void; onShare: () => void; likeDisabled?: boolean;
-}) {
-  const { s, colors } = useUi();
-  const action = { minHeight: 44, minWidth: 44, flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "flex-start" as const, gap: 6 };
-  const commentContents = <>
-    <Ionicons name="chatbubble-outline" size={20} color={colors.ink} />
-    <Text style={s.muted}>{comments}</Text>
-  </>;
-  return <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-start", gap: 20, paddingHorizontal: 16 }}>
-    <Pressable accessibilityRole="button" accessibilityLabel={(liked ? "Quitar Me gusta. " : "Me gusta. ") + likes} accessibilityState={{ selected: liked, disabled: likeDisabled }}
-      disabled={likeDisabled} onPress={onLike} style={action}>
-      <Ionicons name={liked ? "heart" : "heart-outline"} size={22} color={colors.ink} />
-      <Text style={s.muted}>{likes}</Text>
-    </Pressable>
-    {onComments ? <Pressable accessibilityRole="button" accessibilityLabel={"Comentarios: " + comments} onPress={onComments} style={action}>{commentContents}</Pressable>
-      : <View accessibilityLabel={"Comentarios: " + comments} style={action}>{commentContents}</View>}
-    <Pressable accessibilityRole="button" accessibilityLabel={"Compartir publicación. Compartidos: " + shares} onPress={onShare} style={action}>
-      <Ionicons name="arrow-redo-outline" size={22} color={colors.ink} />
-      <Text style={s.muted}>{shares}</Text>
-    </Pressable>
-  </View>;
+/** Identical action strip for demo and real posts, adaptive to narrow Android screens. */
+export function PostEngagementRow({likes,comments,shares,liked,onLike,onComments,onShare,saved=false,onSave,likeDisabled=false,saveDisabled=false}:{
+ likes:number;comments:number;shares:number;liked:boolean;saved?:boolean;
+ onLike:()=>void;onComments?:()=>void;onShare:()=>void;onSave?:()=>void;
+ likeDisabled?:boolean;saveDisabled?:boolean;
+}){
+ const {s,colors}=useUi();
+ const {width}=useWindowDimensions();const compact=width<360;
+ const action={minHeight:44,minWidth:compact?38:44,flexDirection:"row" as const,alignItems:"center" as const,justifyContent:"flex-start" as const,gap:compact?3:6};
+ const countStyle=[s.muted,compact?{fontSize:11}:null];
+ const commentContents=<><Ionicons name="chatbubble-outline" size={20} color={colors.ink}/><Text style={countStyle}>{comments}</Text></>;
+ return <View style={{flexDirection:"row",alignItems:"center",justifyContent:"flex-start",gap:compact?7:20,paddingHorizontal:compact?10:16}}>
+  <Pressable accessibilityRole="button" accessibilityLabel={(liked?"Quitar Me gusta. ":"Me gusta. ")+likes}
+   accessibilityState={{selected:liked,disabled:likeDisabled}} disabled={likeDisabled} onPress={onLike} style={action}>
+   <Ionicons name={liked?"heart":"heart-outline"} size={22} color={colors.ink}/><Text style={countStyle}>{likes}</Text>
+  </Pressable>
+  {onComments?<Pressable accessibilityRole="button" accessibilityLabel={"Comentarios: "+comments} onPress={onComments} style={action}>{commentContents}</Pressable>:
+   <View accessibilityLabel={"Comentarios: "+comments} style={action}>{commentContents}</View>}
+  <Pressable accessibilityRole="button" accessibilityLabel={"Compartir publicación. Compartidos: "+shares} onPress={onShare} style={action}>
+   <Ionicons name="arrow-redo-outline" size={22} color={colors.ink}/><Text style={countStyle}>{shares}</Text>
+  </Pressable>
+  {onSave&&<Pressable accessibilityRole="button" accessibilityLabel={saved?"Quitar de guardados":"Guardar publicación"}
+   accessibilityState={{selected:saved,disabled:saveDisabled}} disabled={saveDisabled} onPress={onSave}
+   style={{marginLeft:"auto",width:44,minHeight:44,alignItems:"flex-end",justifyContent:"center"}}>
+   <Ionicons name={saved?"bookmark":"bookmark-outline"} size={24} color={colors.ink}/>
+  </Pressable>}
+ </View>;
 }
 
 export function PhotoCarousel({ post }: { post: Pick<PhotoPost, "photos" | "author"> }) {
@@ -55,7 +59,7 @@ export function VideoCard({ id, poster, author, handle, avatar, caption, likes, 
   id: string; poster: string; author: string; handle: string; avatar?: string; caption: string; likes: number; comments: number; shares?: number; onOpen: () => void;
 }) {
   const { s, colors } = useUi();
-  const { likedPosts, toggleLike, shares: demoShares, addShare } = useSocial();
+  const { likedPosts, toggleLike, shares: demoShares, addShare, savedPosts, toggleSave } = useSocial();
   const liked = likedPosts.includes(id);
   async function shareVideo() {
     try {
@@ -65,24 +69,25 @@ export function VideoCard({ id, poster, author, handle, avatar, caption, likes, 
   }
   return (
     <View style={{ gap: 10 }}>
-      <Pressable accessibilityRole="button" accessibilityLabel={"Abrir video de " + author} onPress={onOpen} style={{ alignItems: "center", justifyContent: "center" }}>
-        <Image source={{ uri: poster }} style={{ width: "100%", aspectRatio: 9 / 12, backgroundColor: colors.accent }} />
-        <Ionicons name="play-circle" size={56} color={colors.mediaPosterPlay} style={{ position: "absolute",backgroundColor:colors.mediaControl,borderRadius:28 }} />
-      </Pressable>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16 }}>
         <Avatar uri={avatar} name={author} size={34} />
         <View style={{ flex: 1 }}><Text style={s.h3}>{author}</Text><Text style={s.muted}>@{handle}</Text></View>
       </View>
-      <Text style={[s.text, { paddingHorizontal: 16 }]}>{caption}</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel={"Abrir video de " + author} onPress={onOpen} style={{ alignItems: "center", justifyContent: "center" }}>
+        <Image source={{ uri: poster }} style={{ width: "100%", aspectRatio: 9 / 12, backgroundColor: colors.accent }} />
+        <Ionicons name="play-circle" size={56} color={colors.mediaPosterPlay} style={{ position: "absolute",backgroundColor:colors.mediaControl,borderRadius:28 }} />
+      </Pressable>
+      <PostCaption text={caption}/>
       <PostEngagementRow likes={likes + (liked ? 1 : 0)} comments={comments} shares={shares + (demoShares[id] || 0)}
-        liked={liked} onLike={() => toggleLike(id)} onShare={() => void shareVideo()} />
+        liked={liked} onLike={() => toggleLike(id)} onShare={() => void shareVideo()}
+        saved={savedPosts.includes(id)} onSave={()=>toggleSave(id)} />
     </View>
   );
 }
 
 export function PhotoPostCard({ post }: { post: PhotoPost }) {
   const { s } = useUi();
-  const { likedPosts, toggleLike, shares: demoShares, addShare, comments: demoComments } = useSocial();
+  const { likedPosts, toggleLike, shares: demoShares, addShare, comments: demoComments, savedPosts, toggleSave } = useSocial();
   const liked = likedPosts.includes(post.id);
   async function sharePhoto() {
     try {
@@ -97,9 +102,10 @@ export function PhotoPostCard({ post }: { post: PhotoPost }) {
         <View style={{ flex: 1 }}><Text style={s.h3}>{post.author}</Text><Text style={s.muted}>@{post.handle}</Text></View>
       </View>
       <PhotoCarousel post={post} />
-      <Text style={[s.text, { paddingHorizontal: 16 }]}>{post.caption}</Text>
+      <PostCaption text={post.caption}/>
       <PostEngagementRow likes={post.likes + (liked ? 1 : 0)} comments={(demoComments[post.id] || []).length} shares={demoShares[post.id] || 0}
-        liked={liked} onLike={() => toggleLike(post.id)} onShare={() => void sharePhoto()} />
+        liked={liked} onLike={() => toggleLike(post.id)} onShare={() => void sharePhoto()}
+        saved={savedPosts.includes(post.id)} onSave={()=>toggleSave(post.id)} />
     </View>
   );
 }
