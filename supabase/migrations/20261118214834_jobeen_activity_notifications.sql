@@ -1,0 +1,143 @@
+-- Jobeen notification activity. Internal trigger functions never accept client-authored recipient IDs.
+create index if not exists notifications_unread_recipient on public.notifications(recipient_id,created_at desc) where read_at is null;
+
+-- Owners can see their followers, without exposing other people's relationship lists.
+-- Bootstrap follow relations for fresh CI databases; existing live relations remain untouched.
+create table if not exists public.profile_follows (
+ follower_id uuid not null references auth.users(id) on delete cascade,
+ followed_id uuid not null references auth.users(id) on delete cascade,
+ created_at timestamptz not null default now(),
+ constraint profile_follows_pkey primary key(follower_id,followed_id),
+ constraint no_self_follow check (follower_id<>followed_id)
+);
+create index if not exists profile_follows_followed_idx on public.profile_follows(followed_id);
+alter table public.profile_follows enable row level security;
+grant select,insert,delete on public.profile_follows to authenticated;
+do $setup$
+begin
+ if not exists(select 1 from pg_policies where schemaname='public' and tablename='profile_follows' and policyname='follows_read_own') then
+  create policy follows_read_own on public.profile_follows for select to authenticated
+   using(follower_id=(select auth.uid()));
+ end if;
+ if not exists(select 1 from pg_policies where schemaname='public' and tablename='profile_follows' and policyname='follows_insert_own') then
+  create policy follows_insert_own on public.profile_follows for insert to authenticated
+   with check(follower_id=(select auth.uid()) and followed_id<>(select auth.uid()) and not private.is_blocked(followed_id,(select auth.uid())));
+ end if;
+ if not exists(select 1 from pg_policies where schemaname='public' and tablename='profile_follows' and policyname='follows_delete_own') then
+  create policy follows_delete_own on public.profile_follows for delete to authenticated
+   using(follower_id=(select auth.uid()));
+ end if;
+end;
+$setup$;
+create policy "follows_read_followed_owner" on public.profile_follows
+ for select to authenticated using (followed_id=(select auth.uid()));
+
+-- The CV access table also originated in an earlier live-only migration.
+create table if not exists public.employment_access_requests(
+ id uuid primary key default gen_random_uuid(),
+ owner_id uuid not null references public.profiles(id) on delete cascade,
+ requester_id uuid not null references public.profiles(id) on delete cascade,
+ status text not null default 'pending' check(status in ('pending','approved','denied','revoked')),
+ created_at timestamptz not null default now(),
+ updated_at timestamptz not null default now(),
+ constraint employment_access_requests_check check(owner_id<>requester_id),
+ constraint employment_access_requests_owner_id_requester_id_key unique(owner_id,requester_id)
+);
+create index if not exists employment_requests_requester_idx on public.employment_access_requests(requester_id);
+alter table public.employment_access_requests enable row level security;
+grant select,insert on public.employment_access_requests to authenticated;
+grant update(status) on public.employment_access_requests to authenticated;
+do $cvsetup$
+begin
+ if not exists(select 1 from pg_policies where schemaname='public' and tablename='employment_access_requests' and policyname='employment_requests_read') then
+  create policy employment_requests_read on public.employment_access_requests for select to authenticated
+   using(owner_id=(select auth.uid()) or requester_id=(select auth.uid()));
+ end if;
+ if not exists(select 1 from pg_policies where schemaname='public' and tablename='employment_access_requests' and policyname='employment_requests_insert') then
+  create policy employment_requests_insert on public.employment_access_requests for insert to authenticated
+   with check(requester_id=(select auth.uid()) and status='pending');
+ end if;
+ if not exists(select 1 from pg_policies where schemaname='public' and tablename='employment_access_requests' and policyname='employment_requests_owner_update') then
+  create policy employment_requests_owner_update on public.employment_access_requests for update to authenticated
+   using(owner_id=(select auth.uid())) with check(owner_id=(select auth.uid()));
+ end if;
+end;
+$cvsetup$;
+
+create or replace function private.jobeen_notify_activity()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target uuid;
+  actor uuid;
+  notice_kind text;
+  details jsonb := '{}'::jsonb;
+begin
+  if tg_table_name='profile_follows' and tg_op='INSERT' then
+    target := new.followed_id;
+    actor := new.follower_id;
+    notice_kind := 'new_follower';
+    details := jsonb_build_object('actor_id',actor);
+  elsif tg_table_name='jobeen_feed_likes' and tg_op='INSERT' then
+    select author_id into target from public.jobeen_feed_posts where id=new.post_id and removed_at is null;
+    actor := new.profile_id;
+    notice_kind := 'post_like';
+    details := jsonb_build_object('actor_id',actor,'post_id',new.post_id);
+  elsif tg_table_name='jobeen_feed_comments' and tg_op='INSERT' then
+    select author_id into target from public.jobeen_feed_posts where id=new.post_id and removed_at is null;
+    actor := new.author_id;
+    notice_kind := 'post_comment';
+    details := jsonb_build_object('actor_id',actor,'post_id',new.post_id);
+  elsif tg_table_name='employment_access_requests' and tg_op='INSERT' then
+    target := new.owner_id;
+    actor := new.requester_id;
+    notice_kind := 'cv_request';
+    details := jsonb_build_object('actor_id',actor,'request_id',new.id);
+  elsif tg_table_name='employment_access_requests' and tg_op='UPDATE' then
+    if old.status is distinct from new.status and new.status in ('approved','denied','revoked') then
+      target := new.requester_id;
+      actor := new.owner_id;
+      notice_kind := 'cv_response';
+      details := jsonb_build_object('actor_id',actor,'request_id',new.id,'status',new.status);
+    end if;
+  elsif tg_table_name='jobeen_message_requests' and tg_op='INSERT' then
+    if new.status='pending' then
+      target := new.recipient_id;
+      actor := new.sender_id;
+      notice_kind := 'message_request';
+      details := jsonb_build_object('actor_id',actor,'request_id',new.id);
+    end if;
+  elsif tg_table_name='jobeen_direct_messages' and tg_op='INSERT' then
+    target := new.recipient_id;
+    actor := new.sender_id;
+    notice_kind := 'new_message';
+    details := jsonb_build_object('actor_id',actor);
+  end if;
+
+  if target is not null and actor is not null and target<>actor and notice_kind is not null then
+    insert into public.notifications(recipient_id,kind,payload)
+    values (target,notice_kind,details);
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function private.jobeen_notify_activity() from public,anon,authenticated;
+
+create trigger jobeen_notify_follow after insert on public.profile_follows
+ for each row execute function private.jobeen_notify_activity();
+create trigger jobeen_notify_feed_like after insert on public.jobeen_feed_likes
+ for each row execute function private.jobeen_notify_activity();
+create trigger jobeen_notify_feed_comment after insert on public.jobeen_feed_comments
+ for each row execute function private.jobeen_notify_activity();
+create trigger jobeen_notify_cv_request after insert on public.employment_access_requests
+ for each row execute function private.jobeen_notify_activity();
+create trigger jobeen_notify_cv_response after update of status on public.employment_access_requests
+ for each row execute function private.jobeen_notify_activity();
+create trigger jobeen_notify_message_request after insert on public.jobeen_message_requests
+ for each row execute function private.jobeen_notify_activity();
+create trigger jobeen_notify_direct_message after insert on public.jobeen_direct_messages
+ for each row execute function private.jobeen_notify_activity();

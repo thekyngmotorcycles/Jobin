@@ -1,27 +1,142 @@
-import {useCallback,useEffect,useState} from "react";
-import {Image,Pressable,Text,View} from "react-native";
-import {router,useFocusEffect} from "expo-router";
-import {Screen,useUi} from "../components/ui";
+import {Ionicons} from "@expo/vector-icons";
+import {router,Stack,useFocusEffect} from "expo-router";
+import {useCallback,useState,type ComponentProps} from "react";
+import {ActivityIndicator,Pressable,ScrollView,Text,View} from "react-native";
+import {SafeAreaView} from "react-native-safe-area-context";
 import {useJobinNotices} from "../state/NoticeProvider";
 import {cvRequests,respondCV,type CVRequest} from "../lib/cv-access";
+import {loadActivityNotifications,markActivityNotificationsRead,noticeDescription,type ActivityNotice} from "../lib/activity-notifications";
 import {requireSupabase} from "../lib/supabase";
+import {useTheme} from "../state/ThemeProvider";
+import {jobeenTokens} from "../theme/jobeen";
+
+type Tab="Todas"|"Solicitudes"|"Sistema";
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function payloadId(note:ActivityNotice,field:string){
+ const value=note.payload[field];return typeof value==="string"&&uuid.test(value)?value:"";
+}
+function dateText(date:string){
+ const d=new Date(date);
+ return Number.isNaN(d.getTime())?"":d.toLocaleDateString("es",{day:"numeric",month:"short"});
+}
 export default function Notifications(){
- const {notices,markActivityRead}=useJobinNotices();const {s,colors}=useUi();
- const [requests,setRequests]=useState<(CVRequest&{name:string;handle:string;avatar:string|null;accountType:string})[]>([]);
- const [identityNotices,setIdentityNotices]=useState<{id:string;status:string;reason:string|null;created_at:string}[]>([]);
- const [outgoing,setOutgoing]=useState<CVRequest[]>([]);const [message,setMessage]=useState("");
- const load=useCallback(async()=>{try{const db=requireSupabase();const {data:{user}}=await db.auth.getUser();if(!user)return;const {data:identityRows,error:identityError}=await (db as any).from("notifications").select("id,payload,created_at").eq("recipient_id",user.id).eq("kind","identity_verification").order("created_at",{ascending:false}).limit(20);
- if(identityError)throw identityError;
- setIdentityNotices((identityRows??[]).map((n:any)=>({id:n.id,status:n.payload?.status??"",reason:n.payload?.reason??null,created_at:n.created_at})));
- const all=await cvRequests();const rows=all.filter(r=>r.owner_id===user.id&&r.status==="pending");setOutgoing(all.filter(r=>r.requester_id===user.id&&r.status!=="pending"));const ids=rows.map(r=>r.requester_id);const {data:profiles,error}=ids.length?await db.from("profiles").select("id,display_name,avatar_path,account_type").in("id",ids):{data:[],error:null};if(error)throw error;setRequests(rows.map(r=>{const profile=(profiles??[]).find(p=>p.id===r.requester_id);return {...r,name:profile?.display_name??"Usuario de Jobin",handle:"",avatar:profile?.avatar_path??null,accountType:profile?.account_type??"personal"};}));}catch(e){setMessage(e instanceof Error?e.message:"No se pudieron cargar las solicitudes.");}},[]);
- useEffect(()=>{markActivityRead();},[]);
+ const {theme}=useTheme();const t=jobeenTokens(theme);
+ const {notices:temporary,markActivityRead}=useJobinNotices();
+ const [tab,setTab]=useState<Tab>("Todas");
+ const [items,setItems]=useState<ActivityNotice[]>([]);
+ const [legacyCV,setLegacyCV]=useState<CVRequest[]>([]);
+ const [loading,setLoading]=useState(true),[error,setError]=useState(""),[busy,setBusy]=useState("");
+ const load=useCallback(async()=>{
+  setLoading(true);setError("");
+  try{
+   const db=requireSupabase();const {data:{user}}=await db.auth.getUser();
+   if(!user){setItems([]);setLegacyCV([]);return;}
+   const [rows,requests]=await Promise.all([loadActivityNotifications(),cvRequests()]);
+   setItems(rows);
+   setLegacyCV(requests.filter(req=>req.owner_id===user.id&&req.status==="pending"&&
+    !rows.some(n=>n.kind==="cv_request"&&payloadId(n,"request_id")===req.id)));
+  }catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar las notificaciones.");}
+  finally{setLoading(false);}
+ },[]);
  useFocusEffect(useCallback(()=>{void load();},[load]));
- async function respond(id:string,approve:boolean){try{await respondCV(id,approve);setMessage(approve?"Acceso al CV autorizado.":"Solicitud rechazada.");await load();}catch(e){setMessage(String(e));}}
- return <Screen title="Notificaciones" subtitle="Actividad de tu cuenta">
- {requests.map(req=><View key={req.id} style={[s.panel,{gap:10}]}><View style={{flexDirection:"row",alignItems:"center",gap:10}}>{req.avatar?<Image source={{uri:req.avatar}} style={{width:44,height:44,borderRadius:22}}/>:<View style={{width:44,height:44,borderRadius:22,backgroundColor:colors.line,alignItems:"center",justifyContent:"center"}}><Text style={s.text}>{req.name.slice(0,1).toUpperCase()}</Text></View>}<View style={{flex:1}}><Text style={s.h3}>{req.name} solicita tu CV</Text><Text style={s.muted}>{req.accountType==="business"?"Empresa":"Cuenta personal"}</Text></View></View><View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}><Pressable accessibilityRole="button" onPress={()=>router.push({pathname:"/jcard",params:{user:req.requester_id}})} style={{padding:10,borderRadius:9,borderWidth:1,borderColor:colors.line}}><Text style={s.text}>Ver JCard</Text></Pressable><Pressable accessibilityRole="button" onPress={()=>void respond(req.id,true)} style={{padding:10,borderRadius:9,backgroundColor:colors.ink}}><Text style={{color:colors.inverse}}>Autorizar</Text></Pressable><Pressable accessibilityRole="button" onPress={()=>void respond(req.id,false)} style={{padding:10,borderRadius:9,borderWidth:1,borderColor:colors.line}}><Text style={s.text}>Rechazar</Text></Pressable></View></View>)}
- {identityNotices.map(n=><View key={n.id} style={[s.panel,{gap:8}]}><Text style={s.h3}>{n.status==="approved"?"Tu documento de identidad fue aprobado":"Tu solicitud de verificación fue rechazada"}</Text><Text style={s.muted}>{n.status==="approved"?"La insignia J aparecerá cuando tu correo esté confirmado. No requiere SMS.":n.reason??"Revisá tus datos y enviá una nueva solicitud."}</Text><Pressable onPress={()=>router.push("/verify-identity")} style={{padding:10,borderWidth:1,borderColor:colors.line,borderRadius:9}}><Text style={s.text}>Ver estado de identidad</Text></Pressable></View>)}
- {outgoing.map(req=><View key={req.id} style={[s.panel,{gap:8}]}><Text style={s.h3}>{req.status==="approved"?"Tu solicitud de CV fue autorizada":req.status==="denied"?"Tu solicitud de CV fue rechazada":"Tu acceso al CV fue revocado"}</Text><Pressable accessibilityRole="button" onPress={()=>router.push({pathname:"/jcard",params:{user:req.owner_id}})} style={{padding:10,borderRadius:9,borderWidth:1,borderColor:colors.line}}><Text style={s.text}>Ver JCard</Text></Pressable></View>)}
- {notices.length===0&&!requests.length&&!outgoing.length&&!identityNotices.length?<Text style={s.muted}>No tienes notificaciones nuevas.</Text>:notices.map(n=><View key={n.id} style={s.panel}><Text style={s.h3}>{n.title}</Text><Text style={s.muted}>{n.detail}</Text></View>)}
- {!!message&&<Text style={s.muted}>{message}</Text>}
- </Screen>;
+ async function markAll(){
+  setBusy("all");
+  try{
+   await markActivityNotificationsRead();
+   setItems(current=>current.map(n=>({...n,readAt:n.readAt??new Date().toISOString()})));
+   markActivityRead();
+  }catch(e){setError(e instanceof Error?e.message:"No se pudieron marcar como leídas.");}
+  finally{setBusy("");}
+ }
+ async function openNotice(n:ActivityNotice){
+  if(!n.readAt){
+   try{await markActivityNotificationsRead([n.id]);setItems(current=>current.map(x=>x.id===n.id?{...x,readAt:new Date().toISOString()}:x));}
+   catch(e){setError(e instanceof Error?e.message:"No se pudo marcar como leída.");}
+  }
+  const actor=payloadId(n,"actor_id");
+  const post=payloadId(n,"post_id");
+  if((n.kind==="post_like"||n.kind==="post_comment")&&post)router.push({pathname:"/post/[id]",params:{id:post}});
+  else if(n.kind==="new_follower"&&actor)router.push({pathname:"/jcard",params:{user:actor}});
+  else if(n.kind==="cv_request")router.push({pathname:"/(tabs)/profile",params:{view:"cv"}});
+  else if(n.kind==="cv_response"&&actor)router.push({pathname:"/jcard",params:{user:actor}});
+  else if(n.kind==="message_request")router.push("/message-requests");
+  else if(n.kind==="new_message"&&actor)router.push({pathname:"/message",params:{user:actor,name:n.actorName}});
+  else if(n.kind==="identity_verification")router.push("/verify-identity");
+ }
+ async function respond(id:string,approve:boolean){
+  setBusy(id);setError("");
+  try{await respondCV(id,approve);await load();}
+  catch(e){setError(e instanceof Error?e.message:"No se pudo responder la solicitud.");}
+  finally{setBusy("");}
+ }
+ const filtered=items.filter(n=>{
+  const category=noticeDescription(n).category;
+  return tab==="Todas"||tab==="Solicitudes"&&category==="requests"||tab==="Sistema"&&category==="system";
+ });
+ const unread=items.filter(n=>!n.readAt).length+temporary.filter(n=>!n.read).length;
+ return <>
+  <Stack.Screen options={{title:"Notificaciones"}}/>
+  <SafeAreaView edges={["bottom"]} style={{flex:1,backgroundColor:t.bg}}>
+   <ScrollView contentContainerStyle={{paddingHorizontal:16,paddingTop:18,paddingBottom:40,gap:16}} showsVerticalScrollIndicator={false}>
+    <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:10}}>
+     <View style={{flex:1,gap:3}}>
+      <Text accessibilityRole="header" style={{fontSize:22,fontWeight:"800",color:t.ink}}>Notificaciones</Text>
+      <Text style={{fontSize:13,color:t.ink2}}>{unread?unread+" sin leer":"Todo al día"}</Text>
+     </View>
+     <Pressable accessibilityRole="button" accessibilityLabel="Marcar todas como leídas" disabled={!unread||busy==="all"} onPress={()=>void markAll()}
+      style={{minHeight:44,alignItems:"center",justifyContent:"center",flexDirection:"row",gap:7,opacity:unread?1:0.45,paddingHorizontal:8}}>
+      <Ionicons name="checkmark-done-outline" size={22} color={t.ink}/>
+      <Text style={{fontSize:12,color:t.ink,fontWeight:"700"}}>Leer todas</Text>
+     </Pressable>
+    </View>
+    <View accessibilityRole="tablist" style={{flexDirection:"row",gap:7}}>
+     {(["Todas","Solicitudes","Sistema"] as const).map(option=><Pressable key={option} accessibilityRole="tab"
+      accessibilityState={{selected:tab===option}} onPress={()=>setTab(option)}
+      style={{flex:1,minHeight:43,borderWidth:1,borderColor:tab===option?t.yellow:t.line,
+       borderRadius:15,backgroundColor:tab===option?t.cream:t.surface,alignItems:"center",justifyContent:"center"}}>
+      <Text style={{fontSize:13,color:t.ink,fontWeight:tab===option?"800":"600"}}>{option}</Text>
+     </Pressable>)}
+    </View>
+    {loading&&<ActivityIndicator color={t.yellow}/>}
+    {!!error&&<Text accessibilityLiveRegion="polite" style={{color:t.ink,fontSize:13}}>{error}</Text>}
+    {!loading&&tab!=="Sistema"&&legacyCV.map(req=><View key={"legacy-"+req.id} style={{borderRadius:17,borderWidth:1,borderColor:t.line,backgroundColor:t.surface,padding:14,gap:12}}>
+     <Text style={{color:t.ink,fontWeight:"700",fontSize:15}}>Nueva solicitud de historial profesional</Text>
+     <Text style={{color:t.ink2,fontSize:13}}>Una cuenta quiere consultar tu CV.</Text>
+     <View style={{flexDirection:"row",gap:9}}>
+      <Pressable accessibilityRole="button" disabled={busy===req.id} onPress={()=>void respond(req.id,true)} style={{flex:1,minHeight:44,borderRadius:12,backgroundColor:t.ink,alignItems:"center",justifyContent:"center"}}><Text style={{color:t.bg,fontWeight:"700"}}>Autorizar</Text></Pressable>
+      <Pressable accessibilityRole="button" disabled={busy===req.id} onPress={()=>void respond(req.id,false)} style={{flex:1,minHeight:44,borderRadius:12,borderWidth:1,borderColor:t.line,alignItems:"center",justifyContent:"center"}}><Text style={{color:t.ink,fontWeight:"700"}}>Rechazar</Text></Pressable>
+     </View>
+    </View>)}
+    {!loading&&filtered.map(n=>{
+     const details=noticeDescription(n);
+     const icon:ComponentProps<typeof Ionicons>["name"]=n.kind==="new_follower"?"person-add-outline":
+      n.kind==="post_like"?"heart-outline":n.kind==="post_comment"?"chatbubble-outline":
+      n.kind==="message_request"||n.kind==="new_message"?"mail-unread-outline":
+      n.kind==="cv_request"||n.kind==="cv_response"?"document-text-outline":"shield-checkmark-outline";
+     return <Pressable key={n.id} accessibilityRole="button" accessibilityLabel={details.title+", "+(n.readAt?"leída":"sin leer")}
+      onPress={()=>void openNotice(n)}
+      style={({pressed})=>({minHeight:83,flexDirection:"row",alignItems:"center",gap:12,padding:12,
+       borderRadius:17,borderWidth:1,borderColor:t.line,backgroundColor:pressed?t.cream:n.readAt?t.surface:t.cream})}>
+      <View style={{width:43,height:43,borderRadius:22,backgroundColor:t.surface,alignItems:"center",justifyContent:"center"}}>
+       <Ionicons name={icon} size={21} color={t.ink}/>
+      </View>
+      <View style={{flex:1,gap:4}}>
+       <Text style={{color:t.ink,fontSize:14,fontWeight:n.readAt?"600":"800",lineHeight:20}}>{details.title}</Text>
+       <Text numberOfLines={2} style={{color:t.ink2,fontSize:12}}>{details.detail}</Text>
+       <Text style={{color:t.ink2,fontSize:11}}>{dateText(n.createdAt)}</Text>
+      </View>
+      {!n.readAt&&<View style={{width:8,height:8,borderRadius:4,backgroundColor:t.yellow}}/>}
+     </Pressable>;
+    })}
+    {!loading&&tab!=="Solicitudes"&&temporary.filter(n=>tab==="Todas"||tab==="Sistema").map(n=><View key={"local-"+n.id} style={{borderRadius:17,padding:14,backgroundColor:t.surface,borderWidth:1,borderColor:t.line,gap:5}}>
+     <Text style={{color:t.ink,fontWeight:"700"}}>{n.title}</Text><Text style={{color:t.ink2,fontSize:13}}>{n.detail}</Text>
+    </View>)}
+    {!loading&&filtered.length===0&&(tab!=="Solicitudes"||legacyCV.length===0)&&!(tab==="Todas"&&temporary.length)&&<View style={{alignItems:"center",paddingVertical:36,gap:11}}>
+     <Ionicons name="notifications-off-outline" size={34} color={t.ink2}/>
+     <Text style={{color:t.ink,fontSize:16,fontWeight:"700"}}>No hay notificaciones</Text>
+     <Text style={{color:t.ink2,fontSize:13,textAlign:"center"}}>Las novedades de tu cuenta aparecerán aquí.</Text>
+    </View>}
+   </ScrollView>
+  </SafeAreaView>
+ </>;
 }
