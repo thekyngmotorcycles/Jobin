@@ -35,7 +35,7 @@ export default function JShopFavorites(){
   <JShopPage>
    <JShopTitle title="Guardados" subtitle="Los artículos que guardás se sincronizan con tu cuenta."/>
    {loading?<ActivityIndicator color={t.yellow}/>:saved.length?
-    <View style={{flexDirection:"row",justifyContent:"space-between",flexWrap:"wrap",rowGap:12}}>
+    <View style={{gap:10}}>
      {saved.map(item=><JShopItemCard key={item.id} item={item} saved
       onOpen={()=>router.push({pathname:"/jshop/item/[id]",params:{id:item.id}})}
       onFavorite={()=>void removeFavorite(item.id)}/>)}
