@@ -32,7 +32,7 @@ export function PostEngagementRow({ likes, comments, shares, liked, onLike, onCo
   </View>;
 }
 
-export function PhotoCarousel({ post }: { post: PhotoPost }) {
+export function PhotoCarousel({ post }: { post: Pick<PhotoPost, "photos" | "author"> }) {
   const { colors } = useUi();
   const { width } = useWindowDimensions();
   const [index, setIndex] = useState(0);
