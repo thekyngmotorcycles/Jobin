@@ -36,12 +36,12 @@ export async function currentSocialUser():Promise<string>{
  if(error||!data.user)throw new Error("Inicia sesión para crear contenido.");
  return data.user.id;
 }
-export async function loadHomePosts(viewerId="",authorId?:string,postId?:string):Promise<FeedPost[]>{
+export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,postIds?:string[]):Promise<FeedPost[]>{
  const db=requireSupabase();
  const query=db.from("jobeen_feed_posts" as never)
   .select("id,author_id,body,kind,photo_paths,work_media_id,created_at")
   .is("removed_at",null).order("created_at",{ascending:false}).limit(postId?1:80);
- const {data,error}=await (postId?query.eq("id",postId):authorId?query.eq("author_id",authorId):query);
+ const {data,error}=await (postId?query.eq("id",postId):postIds?.length?query.in("id",postIds):authorId?query.eq("author_id",authorId):query);
  if(error)throw error;
  const rows=(data??[]) as unknown as FeedRow[];
  const authors=await namesFor(rows.map(r=>r.author_id));
