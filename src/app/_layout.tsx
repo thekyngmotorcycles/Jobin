@@ -35,6 +35,7 @@ function Navigation() {
  <Stack.Screen name="jshop/location" options={{headerShown:false,presentation:"transparentModal",animation:"slide_from_bottom"}}/>
  <Stack.Screen name="jshop/sale-location" options={{headerShown:false,presentation:"transparentModal",animation:"slide_from_bottom"}}/>
  <Stack.Screen name="jshop/mine" options={{title:"Mis anuncios"}}/>
+ <Stack.Screen name="jshop/settings" options={{title:"Configuración de JShop"}}/>
  <Stack.Screen name="jshop/favorites" options={{title:"Guardados"}}/>
  <Stack.Screen name="jshop/report" options={{title:"Denunciar artículo"}}/>
  <Stack.Screen name="jshop/item/[id]" options={{title:"Detalle del artículo"}}/>
