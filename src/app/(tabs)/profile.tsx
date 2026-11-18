@@ -13,6 +13,7 @@ import { useTabClearance } from "../../theme/navigation";
 import {opacity} from "../../theme/color";
 import {useRef} from "react";
 import {ProfileMediaGrid,UserProfileContent} from "../../components/ProfileSharedSections";
+import {ProfileOwnedPosts} from "../../components/ProfileOwnedPosts";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import { ProfessionalStatus } from "../../components/ProfessionalStatus";
 import { loadCatalog,loadWorkspace } from "../../lib/professional-api";
@@ -257,7 +258,11 @@ export default function Profile() {
           </View>
         )}
 
-        {mode === "grid" && <ProfileMediaGrid items={DEMO_VIDEOS.map(video=>({id:video.id,title:video.title,thumbnail:video.thumbnail}))}/>}
+        {mode === "grid" && <View style={{gap:16}}>
+          <ProfileOwnedPosts/>
+          <Text style={s.muted}>Contenido de ejemplo</Text>
+          <ProfileMediaGrid items={DEMO_VIDEOS.map(video=>({id:video.id,title:video.title,thumbnail:video.thumbnail}))}/>
+         </View>}
         </UserProfileContent>
       </ScrollView>
 

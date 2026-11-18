@@ -46,3 +46,36 @@ test("Home counters come from RLS-secured database rows, never demo counts",()=>
  for(const table of ["jobeen_feed_likes","jobeen_feed_comments","jobeen_feed_shares"])
   assert.ok(sql.includes("alter table public."+table+" enable row level security"));
 });
+
+test("Home three-dot menu has no delete action; only the profile manages deletion",()=>{
+ const home=source("src/components/HomePublishedPosts.tsx");
+ const menu=source("src/components/FeedPostOptions.tsx");
+ const profile=source("src/components/ProfileOwnedPosts.tsx");
+ const profileScreen=source("src/app/(tabs)/profile.tsx");
+ const api=source("src/lib/social-content.ts");
+ assert.ok(home.includes("FeedPostOptions"));
+ assert.ok(!home.includes("deleteHomePost"));
+ assert.ok(!menu.includes("deleteHomePost"));
+ assert.ok(!menu.includes("Eliminar publicación"));
+ assert.ok(menu.includes("Guardar publicación"));
+ assert.ok(menu.includes("Compartir enlace"));
+ assert.ok(menu.includes("Ocultar publicación"));
+ assert.ok(menu.includes("¿Por qué veo esta publicación?"));
+ assert.ok(profile.includes("deleteHomePost("));
+ assert.ok(profile.includes('Alert.alert("Eliminar publicación"'));
+ assert.ok(profileScreen.includes("<ProfileOwnedPosts/>"));
+ assert.ok(api.includes('authorId?query.eq("author_id",authorId)'));
+});
+test("Saved posts can be revisited and shared links have a detail route",()=>{
+ const prefs=source("src/lib/feed-preferences.ts");
+ const profile=source("src/components/ProfileOwnedPosts.tsx");
+ const home=source("src/components/HomePublishedPosts.tsx");
+ const route=source("src/app/post/[id].tsx");
+ assert.ok(prefs.includes("getSavedPostIds"));
+ assert.ok(prefs.includes("getHiddenPostIds"));
+ assert.ok(prefs.includes("setSavedPost"));
+ assert.ok(profile.includes("Guardadas"));
+ assert.ok(profile.includes('pathname:"/post/[id]"'));
+ assert.ok(route.includes("loadHomePosts(user,undefined,id)"));
+ assert.ok(home.includes('Linking.createURL("post/"+post.id)'));
+});
