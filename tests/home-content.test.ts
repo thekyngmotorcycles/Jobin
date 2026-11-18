@@ -13,14 +13,14 @@ test("Create menu contains exactly post, story, Flash and live actions",()=>{
  assert.ok(menu.includes("<JobeenFlashIcon"));
 });
 
-test("Home and Messages share real stories and Home alone has quick composer",()=>{
+test("Home and Messages share stories while Home offers an optional quick composer",()=>{
  const home=read("src/app/(tabs)/index.tsx");
  const inbox=read("src/app/(tabs)/inbox.tsx");
  const header=read("src/components/SocialHeader.tsx");
  const strip=read("src/components/StoryStrip.tsx");
  assert.ok(home.includes("<SocialHeader showComposer/>"));
  assert.ok(inbox.includes("<SocialHeader />"));
- assert.ok(header.includes("showComposer&&<PostQuickComposer"));
+ assert.ok(header.includes("showComposer&&composerVisible&&<PostQuickComposer"));
  assert.ok(header.includes("<StoryStrip"));
  assert.ok(strip.includes("loadActiveStories"));
  assert.ok(!strip.includes("STORIES"));
