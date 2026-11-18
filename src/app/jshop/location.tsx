@@ -53,7 +53,7 @@ export default function JShopLocationPicker(){
   finally{if(active)setInitializing(false);}
  })();return()=>{active=false;};},[]);
  /** Use device position only on explicit tap when foreground access is not yet granted. */
- async function useCurrentLocation(){
+ async function centerOnDevice(){
   if(locating||busy)return;
   manualChoice.current=true;
   const request=++gpsRequest.current;
@@ -150,7 +150,7 @@ export default function JShopLocationPicker(){
       fluid minimal onCenter={moveCenter} onZoom={setZoom} onViewport={setViewport}/>
      <Pressable accessibilityRole="button" accessibilityLabel="Usar mi ubicación actual"
       accessibilityHint="Centra el mapa en la ubicación aproximada del teléfono"
-      disabled={locating||busy||initializing} onPress={()=>void useCurrentLocation()}
+      disabled={locating||busy||initializing} onPress={()=>void centerOnDevice()}
       style={({pressed})=>({position:"absolute",top:12,right:24,width:46,height:46,borderRadius:15,
        alignItems:"center",justifyContent:"center",backgroundColor:t.surface,
        borderWidth:1,borderColor:t.line,opacity:locating||busy||initializing?0.6:pressed?0.7:1,
