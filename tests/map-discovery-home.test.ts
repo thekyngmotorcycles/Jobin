@@ -44,7 +44,7 @@ test("Nearby map searches are bounded and do not query Mapbox on each pan",()=>{
  assert.ok(native.includes('onSelect(properties.id)'));
 });
 test("Map placement is opt-in with professional location obfuscation and owner RLS",()=>{
- const sql=source("supabase/migrations/20261118231500_jobeen_map_discovery_home_preferences.sql");
+ const sql=source("supabase/migrations/20261118234609_jobeen_map_discovery_home_preferences.sql");
  const settings=source("src/app/map-presence.tsx");
  const api=source("src/lib/map-discovery.ts");
  assert.ok(sql.includes("constraint professional_coarse_map_point"));
