@@ -11,7 +11,7 @@ test("Buyer map uses navigate pointer with explicit foreground permission on tap
  assert.ok(picker.includes("Location.getForegroundPermissionsAsync()"));
  assert.ok(picker.includes("Location.hasServicesEnabledAsync()"));
  assert.ok(picker.includes("Location.getCurrentPositionAsync("));
- assert.ok(picker.includes("onPress={()=>void useCurrentLocation()}"));
+ assert.ok(picker.includes("onPress={()=>void centerOnDevice()}"));
  assert.ok(!picker.includes("Location.requestBackgroundPermissionsAsync"));
 });
 test("Previously selected buyer search takes precedence; GPS only auto-centers with existing permission",()=>{
