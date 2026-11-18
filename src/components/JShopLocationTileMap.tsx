@@ -19,7 +19,7 @@ export function JShopLocationMap({center,zoom,radiusMiles,showRadius=true,fluid=
  const width=mapSize.width,height=mapSize.height;
  const circleSize=Math.max(50,Math.min(width,height)*0.70);
  const pinch=useRef({span:0,zoom:2});
- const latest=useRef({center,zoom,onCenter});latest.current={center,zoom,onCenter};
+ const latest=useRef({center,zoom,onCenter,onZoom});latest.current={center,zoom,onCenter,onZoom};
  const start=useRef(center);
  const pan=useRef(PanResponder.create({
   onStartShouldSetPanResponder:()=>true,
