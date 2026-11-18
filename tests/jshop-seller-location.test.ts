@@ -7,9 +7,13 @@ test("JShop buyer search center and seller default are separate",()=>{
  const shop=read("src/app/jshop.tsx");
  const publish=read("src/app/jshop/publish.tsx");
  const saleApi=read("src/lib/jshop-selling-location.ts");
+ const settings=read("src/app/jshop/settings.tsx");
+ const mine=read("src/app/jshop/mine.tsx");
  assert.ok(shop.includes('router.push("/jshop/location")'));
- assert.ok(shop.includes('pathname:"/jshop/sale-location"'));
- assert.ok(shop.includes('Mi ubicación de venta'));
+ assert.ok(!shop.includes('pathname:"/jshop/sale-location"'));
+ assert.ok(mine.includes('router.push("/jshop/settings")'));
+ assert.ok(settings.includes('pathname:"/jshop/sale-location"'));
+ assert.ok(settings.includes("Mi ubicación de venta"));
  assert.ok(publish.includes('readDefaultSaleLocation(owner)'));
  assert.ok(!saleApi.includes('jobeen.jshop.location.v1.'));
  assert.ok(saleApi.includes('jshop_seller_locations'));
