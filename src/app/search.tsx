@@ -14,10 +14,13 @@ import {browseStreams} from "../lib/streams";
 import {interpretJobinSearch,matchJobinTerms} from "../lib/jobin-search";
 import {findAllAccounts,findProfessionals,findPeople,loadCatalog,loadSpecialtyCatalog,type ProfessionalSearchResult,type PersonSearchResult,type AllAccountSearchResult} from "../lib/professional-api";
 import {useProfessionalData} from "../state/useProfessionalData";
+import {ProfessionalMapExplorer} from "../components/ProfessionalMapExplorer";
 
 type SearchKind="Todo"|"Profesionales"|"Personas"|"Empresas"|"Flashes"|"Streams";
 export default function Search(){
- const {mode}=useLocalSearchParams<{mode?:string}>();
+ const {mode,view}=useLocalSearchParams<{mode?:string;view?:string}>();
+ const [viewMode,setViewMode]=useState<"list"|"map">(view==="map"?"map":"list");
+ useEffect(()=>{setViewMode(view==="map"?"map":"list");},[view]);
  const {s,colors}=useUi();
  const catalog=useProfessionalData(loadCatalog);
  const specialtyCatalog=useProfessionalData(loadSpecialtyCatalog);
@@ -81,11 +84,29 @@ export default function Search(){
   }catch(e){setResults([]);setPeople([]);setAllAccounts([]);setError(e instanceof Error?e.message:"No se pudo buscar profesionales.");}
   finally{setLoading(false);}
  }
- return <SafeAreaView style={s.screen}>
+ if(viewMode==="map")return <SafeAreaView style={s.screen}>
+   <ProfessionalMapExplorer initialQuery={query} onList={next=>{
+    setViewMode("list");setQuery(next);
+    if(next.trim())void runSearch(next);
+   }}/>
+  </SafeAreaView>;
+  return <SafeAreaView style={s.screen}>
   <View style={{flexDirection:"row",alignItems:"center",padding:12,gap:6}}>
    <IconButton icon="arrow-back" label="Volver" onPress={()=>router.canGoBack()?router.back():router.replace("/")}/>
    <TextInput accessibilityLabel="Buscar en Jobeen" placeholder={effectiveKind==="Flashes"?"Buscar Flashes":effectiveKind==="Streams"?"Buscar Lives":"Buscar personas, negocios o profesiones"} placeholderTextColor={colors.muted} value={query} onFocus={()=>setShowRecent(true)} onChangeText={value=>{setQuery(value);setShowRecent(true);setSearched(false);setResults([]);setPeople([]);setAllAccounts([]);}} onSubmitEditing={()=>void runSearch()} returnKeyType="search" style={{flex:1,minWidth:0,minHeight:46,borderRadius:24,backgroundColor:colors.accent,paddingHorizontal:18,color:colors.ink}}/>
    {!!query&&<IconButton icon="close" label="Borrar búsqueda" onPress={()=>{setQuery("");setShowRecent(true);setResults([]);setPeople([]);setAllAccounts([]);setSearched(false);}}/>}
+  </View>
+  <View style={{flexDirection:"row",gap:8,paddingHorizontal:16,paddingBottom:9}}>
+   <Pressable accessibilityRole="button" accessibilityLabel="Ver resultados en lista" accessibilityState={{selected:true}}
+    onPress={()=>setViewMode("list")} style={{flex:1,minHeight:42,backgroundColor:colors.ink,borderRadius:15,alignItems:"center",justifyContent:"center",flexDirection:"row",gap:7}}>
+    <Ionicons name="list-outline" size={19} color={colors.paper}/>
+    <Text style={{fontWeight:"800",color:colors.paper}}>Lista</Text>
+   </Pressable>
+   <Pressable accessibilityRole="button" accessibilityLabel="Ver empresas y profesionales en el mapa" onPress={()=>setViewMode("map")}
+    style={{flex:1,minHeight:42,backgroundColor:colors.accent,borderRadius:15,alignItems:"center",justifyContent:"center",flexDirection:"row",gap:7}}>
+    <Ionicons name="map-outline" size={19} color={colors.ink}/>
+    <Text style={{fontWeight:"700",color:colors.ink}}>Mapa</Text>
+   </Pressable>
   </View>
   {showRecent&&recent.length>0&&<View style={{marginHorizontal:16,marginBottom:8,padding:8,borderWidth:1,borderColor:colors.line,borderRadius:17,backgroundColor:colors.paper,gap:1}}>
    <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:10,paddingVertical:4}}>
