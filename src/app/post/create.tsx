@@ -2,7 +2,7 @@ import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useLocalSearchParams} from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import {useEffect,useState} from "react";
-import {ActivityIndicator,Alert,Image,Pressable,ScrollView,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Image,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {PublicProfileAvatar} from "../../components/PublicProfileAvatar";
 import {currentSocialUser,publishHomePost,shareApprovedMedia,type FeedPostKind} from "../../lib/social-content";
@@ -123,12 +123,18 @@ export default function PostCreate(){
     </Pressable>
     {loading&&<ActivityIndicator color={t.yellow}/>}
     {!!error&&<Text accessibilityLiveRegion="polite" style={{color:t.ink,fontSize:13}}>{error}</Text>}
-    <Pressable accessibilityRole="button" disabled={busy||!author||!eligible||!consent} onPress={()=>Alert.alert("Publicar","Tu contenido será visible en Casa y desde tu cuenta.",[{text:"Cancelar",style:"cancel"},{text:"Publicar",onPress:()=>void submit()}])}
+    <Pressable accessibilityRole="button" disabled={busy||!author||!eligible||!consent} onPress={()=>void submit()}
      style={({pressed})=>({minHeight:52,borderRadius:18,backgroundColor:t.ink,justifyContent:"center",alignItems:"center",opacity:busy||!author||!eligible||!consent?0.45:pressed?0.75:1})}>
      <Text style={{color:t.bg,fontWeight:"800"}}>{busy?"Publicando...":"Publicar"}</Text>
     </Pressable>
     <Pressable accessibilityRole="button" onPress={()=>router.back()} style={{minHeight:44,alignItems:"center",justifyContent:"center"}}><Text style={{color:t.ink2}}>Cancelar</Text></Pressable>
    </ScrollView>
+   {busy&&<View accessibilityLiveRegion="polite" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:"rgba(0,0,0,0.36)",alignItems:"center",justifyContent:"center"}}>
+    <View style={{backgroundColor:t.surface,borderRadius:20,paddingHorizontal:32,paddingVertical:23,alignItems:"center",gap:13}}>
+     <ActivityIndicator color={t.ink} size="large"/>
+     <Text style={{color:t.ink,fontSize:15,fontWeight:"700"}}>Publicando...</Text>
+    </View>
+   </View>}
   </SafeAreaView>
  </>;
 }
