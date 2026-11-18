@@ -53,7 +53,7 @@ export default function PostCreate(){
   setBusy(true);setError("");
   try{
    await publishHomePost({body,kind,photos:kind==="photos"?photos:[],mediaId:(kind==="video"||kind==="live")?mediaId:null});
-   router.replace("/(tabs)/index");
+   router.dismissTo("/(tabs)/index");
   }catch(e){setError(e instanceof Error?e.message:"No se pudo publicar.");}
   finally{setBusy(false);}
  }
@@ -129,7 +129,7 @@ export default function PostCreate(){
     </Pressable>
     <Pressable accessibilityRole="button" onPress={()=>router.back()} style={{minHeight:44,alignItems:"center",justifyContent:"center"}}><Text style={{color:t.ink2}}>Cancelar</Text></Pressable>
    </ScrollView>
-   {busy&&<View accessibilityLiveRegion="polite" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:"rgba(0,0,0,0.36)",alignItems:"center",justifyContent:"center"}}>
+   {busy&&<View accessibilityLiveRegion="polite" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:t.uploadScrim,alignItems:"center",justifyContent:"center"}}>
     <View style={{backgroundColor:t.surface,borderRadius:20,paddingHorizontal:32,paddingVertical:23,alignItems:"center",gap:13}}>
      <ActivityIndicator color={t.ink} size="large"/>
      <Text style={{color:t.ink,fontSize:15,fontWeight:"700"}}>Publicando...</Text>
