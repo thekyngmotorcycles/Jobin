@@ -1,14 +1,13 @@
 import {Ionicons} from "@expo/vector-icons";
-import * as Linking from "expo-linking";
-import {useEffect,useState} from "react";
-import {ActivityIndicator,Alert,Pressable,Share,Text,View} from "react-native";
+import {useEffect,useState,type ComponentProps} from "react";
+import {ActivityIndicator,Alert,Pressable,Text,View} from "react-native";
 import {getSavedPostIds,hidePostFromHome,setSavedPost} from "../lib/feed-preferences";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {BottomSheet} from "./social-ui";
 
-export function FeedPostOptions({visible,onClose,postId,viewerId,onHidden}:{
- visible:boolean;onClose:()=>void;postId:string;viewerId:string;onHidden:()=>void;
+export function FeedPostOptions({visible,onClose,postId,viewerId,onHidden,onShareLink}:{
+ visible:boolean;onClose:()=>void;postId:string;viewerId:string;onHidden:()=>void;onShareLink:()=>Promise<void>;
 }){
  const {theme}=useTheme();const t=jobeenTokens(theme);
  const [saved,setSaved]=useState(false);
@@ -39,7 +38,7 @@ export function FeedPostOptions({visible,onClose,postId,viewerId,onHidden}:{
   if(busy)return;
   setBusy(true);
   try{
-   await Share.share({message:Linking.createURL("post/"+postId)});
+   await onShareLink();
    onClose();
   }catch(e){fail(e);}
   finally{setBusy(false);}
@@ -48,7 +47,7 @@ export function FeedPostOptions({visible,onClose,postId,viewerId,onHidden}:{
   onClose();
   Alert.alert("¿Por qué veo esta publicación?","Home muestra publicaciones públicas relacionadas con el ámbito profesional o educativo. Las publicaciones recientes se ordenan por fecha.");
  }
- const option=(icon:React.ComponentProps<typeof Ionicons>["name"],label:string,run:()=>void)=>(
+ const option=(icon:ComponentProps<typeof Ionicons>["name"],label:string,run:()=>void)=>(
   <Pressable key={label} accessibilityRole="button" accessibilityLabel={label} disabled={busy} onPress={run}
    style={({pressed})=>({minHeight:54,flexDirection:"row",gap:14,alignItems:"center",paddingHorizontal:13,borderRadius:14,backgroundColor:pressed?t.cream:t.surface,opacity:busy?0.6:1})}>
    <Ionicons name={icon} size={22} color={t.ink}/>
@@ -60,7 +59,7 @@ export function FeedPostOptions({visible,onClose,postId,viewerId,onHidden}:{
   <View style={{gap:3,paddingVertical:8}}>
    {option(saved?"bookmark":"bookmark-outline",saved?"Quitar de guardados":"Guardar publicación",()=>void toggleSaved())}
    {option("share-social-outline","Compartir enlace",()=>void shareLink())}
-   {option("remove-circle-outline","No me interesa · Ocultar",()=>void hide())}
+   {option("remove-circle-outline","Ocultar publicación",()=>void hide())}
    {option("information-circle-outline","¿Por qué veo esta publicación?",whyVisible)}
   </View>
  </BottomSheet>;
