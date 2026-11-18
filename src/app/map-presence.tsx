@@ -13,6 +13,7 @@ import {jobeenTokens} from "../theme/jobeen";
 export default function MapPresenceSettings(){
  const {theme}=useTheme(),t=jobeenTokens(theme);
  const [kind,setKind]=useState<"company"|"professional"|null>(null);
+ const [allowedKinds,setAllowedKinds]=useState<("company"|"professional")[]>([]);
  const [presence,setPresence]=useState<MapPresence|null>(null);
  const [city,setCity]=useState(""),[service,setService]=useState("");
  const [center,setCenter]=useState<MapPoint>({lat:15,lon:-10}),[zoom,setZoom]=useState(2);
@@ -20,8 +21,8 @@ export default function MapPresenceSettings(){
  const [places,setPlaces]=useState<JShopPlace[]>([]);
  const [loading,setLoading]=useState(true),[searching,setSearching]=useState(false),[saving,setSaving]=useState(false);
  const [error,setError]=useState(""),[success,setSuccess]=useState("");
- useEffect(()=>{let active=true;void myMapPresence().then(({kind,presence})=>{
-  if(!active)return;setKind(kind);setPresence(presence);
+ useEffect(()=>{let active=true;void myMapPresence().then(({kind,presence,allowedKinds})=>{
+  if(!active)return;setKind(kind);setAllowedKinds(allowedKinds);setPresence(presence);
   if(presence){setCity(presence.city);setService(presence.service);
    setCenter({lat:presence.latitude,lon:presence.longitude});setZoom(11);setSelectedZone(true);}
  }).catch(e=>{if(active)setError(e instanceof Error?e.message:"No se pudo cargar tu zona profesional.");})
@@ -90,6 +91,15 @@ export default function MapPresenceSettings(){
       <Text style={{color:t.ink,fontSize:14,fontWeight:"700",flex:1}}>{presence.is_visible?"Visible en el mapa":"Oculto en el mapa"}</Text>
       <Ionicons name={presence.is_visible?"toggle":"toggle-outline"} size={32} color={t.ink}/>
      </Pressable>}
+     {allowedKinds.length>1&&<View style={{flexDirection:"row",gap:8}}>
+      {allowedKinds.map(option=><Pressable key={option} accessibilityRole="button"
+       accessibilityLabel={option==="company"?"Mostrar como empresa":"Mostrar como profesional"}
+       accessibilityState={{selected:kind===option}} onPress={()=>setKind(option)}
+       style={{flex:1,minHeight:44,alignItems:"center",justifyContent:"center",borderRadius:14,
+        backgroundColor:kind===option?t.ink:t.cream}}>
+       <Text style={{color:kind===option?t.surface:t.ink,fontWeight:"700"}}>{option==="company"?"Empresa":"Profesional"}</Text>
+      </Pressable>)}
+     </View>}
      <Text style={{color:t.ink,fontSize:13,fontWeight:"700"}}>Actividad profesional</Text>
      <TextInput accessibilityLabel="Servicio o profesión" value={service} onChangeText={setService}
       placeholder={kind==="company"?"Ej. Aire acondicionado comercial":"Ej. Electricista residencial"} placeholderTextColor={t.ink2}
