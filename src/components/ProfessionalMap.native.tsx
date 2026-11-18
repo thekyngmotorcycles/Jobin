@@ -1,12 +1,12 @@
 import Mapbox,{type Camera as CameraType} from "@rnmapbox/maps";
-import {useEffect,useMemo,useRef,useState} from "react";
+import {useEffect,useMemo,useRef} from "react";
 import {View} from "react-native";
 import type {DiscoveredProfile} from "../lib/map-discovery";
 import type {MapPoint} from "../lib/jshop-location-core";
 import {mapboxAccessToken,mapboxConfigured} from "../lib/mapbox-config";
 import {jobeenTokens} from "../theme/jobeen";
 import {useTheme} from "../state/ThemeProvider";
-import {ProfessionalMap as TileFallback} from "./ProfessionalMapFallback";
+import {ProfessionalMapFallback as TileFallback} from "./ProfessionalMapFallback";
 
 if(mapboxConfigured)Mapbox.setAccessToken(mapboxAccessToken);
 type Props={center:MapPoint;zoom:number;profiles:DiscoveredProfile[];onMove:(point:MapPoint)=>void;onSelect:(id:string)=>void};
