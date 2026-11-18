@@ -9,7 +9,7 @@ import {useTheme} from "../state/ThemeProvider";
 import {ProfessionalMapFallback as TileFallback} from "./ProfessionalMapFallback";
 
 if(mapboxConfigured)Mapbox.setAccessToken(mapboxAccessToken);
-type Props={center:MapPoint;zoom:number;profiles:DiscoveredProfile[];onMove:(point:MapPoint)=>void;onSelect:(id:string)=>void};
+type Props={center:MapPoint;zoom:number;profiles:DiscoveredProfile[];onMove:(point:MapPoint,zoom:number)=>void;onSelect:(id:string)=>void};
 export function ProfessionalMap({center,zoom,profiles,onMove,onSelect}:Props){
  const {theme}=useTheme(),t=jobeenTokens(theme);
  const camera=useRef<CameraType>(null);
@@ -35,7 +35,7 @@ export function ProfessionalMap({center,zoom,profiles,onMove,onSelect}:Props){
     if(!point||!Number.isFinite(point[0])||!Number.isFinite(point[1]))return;
     if(Math.abs(point[0]-previous.current.center.lon)<0.00005&&Math.abs(point[1]-previous.current.center.lat)<0.00005)return;
     previous.current={center:{lat:point[1],lon:point[0]},zoom:state.properties.zoom};
-    onMove({lat:point[1],lon:point[0]});
+    onMove({lat:point[1],lon:point[0]},state.properties.zoom);
    }}>
    <Mapbox.Camera ref={camera} defaultSettings={{centerCoordinate:[center.lon,center.lat],zoomLevel:zoom}} minZoomLevel={2} maxZoomLevel={18}/>
    <Mapbox.ShapeSource id="jobeen-discovery-pins" shape={shape} cluster clusterRadius={48}
