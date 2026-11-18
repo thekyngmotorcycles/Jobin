@@ -1,6 +1,6 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useFocusEffect} from "expo-router";
-import {useCallback,useState} from "react";
+import {useCallback,useState,type ComponentProps} from "react";
 import {ActivityIndicator,Pressable,ScrollView,Text,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useJobinNotices} from "../state/NoticeProvider";
@@ -73,7 +73,6 @@ export default function Notifications(){
   const category=noticeDescription(n).category;
   return tab==="Todas"||tab==="Solicitudes"&&category==="requests"||tab==="Sistema"&&category==="system";
  });
- const pendingIds=new Set(legacyCV.map(n=>n.id));
  const unread=items.filter(n=>!n.readAt).length+temporary.filter(n=>!n.read).length;
  return <>
   <Stack.Screen options={{title:"Notificaciones"}}/>
@@ -110,7 +109,7 @@ export default function Notifications(){
     </View>)}
     {!loading&&filtered.map(n=>{
      const details=noticeDescription(n);
-     const icon:React.ComponentProps<typeof Ionicons>["name"]=n.kind==="new_follower"?"person-add-outline":
+     const icon:ComponentProps<typeof Ionicons>["name"]=n.kind==="new_follower"?"person-add-outline":
       n.kind==="post_like"?"heart-outline":n.kind==="post_comment"?"chatbubble-outline":
       n.kind==="message_request"||n.kind==="new_message"?"mail-unread-outline":
       n.kind==="cv_request"||n.kind==="cv_response"?"document-text-outline":"shield-checkmark-outline";
