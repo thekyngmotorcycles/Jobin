@@ -25,8 +25,8 @@ test("Real Home posts have a paginated photo gallery and working social controls
  assert.ok(card.includes("Share.sharedAction"));
  const demo=source("src/components/PostCard.tsx");
  assert.ok(demo.includes("export function PostEngagementRow("));
- assert.ok(demo.includes('justifyContent: "flex-start"'));
- assert.ok(demo.includes('gap: 20, paddingHorizontal: 16'));
+ assert.ok(demo.includes('justifyContent:"flex-start"'));
+ assert.ok(demo.includes('gap:compact?7:20,paddingHorizontal:compact?10:16'));
  assert.ok(demo.includes('name="heart-outline"') || demo.includes('"heart-outline"'));
  assert.ok(demo.includes('name="chatbubble-outline"'));
  assert.ok(demo.includes('name="arrow-redo-outline"'));
@@ -63,7 +63,7 @@ test("Home three-dot menu has no delete action; only the profile manages deletio
  assert.ok(menu.includes("¿Por qué veo esta publicación?"));
  assert.ok(profile.includes("deleteHomePost("));
  assert.ok(profile.includes('Alert.alert("Eliminar publicación"'));
- assert.ok(profileScreen.includes("<ProfileOwnedPosts/>"));
+ assert.ok(profileScreen.includes('<ProfileOwnedPosts filter="all"/>'));
  assert.ok(api.includes('authorId?query.eq("author_id",authorId)'));
 });
 test("Saved posts can be revisited and shared links have a detail route",()=>{
@@ -78,4 +78,45 @@ test("Saved posts can be revisited and shared links have a detail route",()=>{
  assert.ok(profile.includes('pathname:"/post/[id]"'));
  assert.ok(route.includes("loadHomePosts(user,undefined,id)"));
  assert.ok(home.includes('Linking.createURL("post/"+post.id)'));
+});
+
+test("All Home post types use author-first structure and a single-line expandable caption",()=>{
+ const demo=source("src/components/PostCard.tsx");
+ const real=source("src/components/HomePublishedPosts.tsx");
+ const caption=source("src/components/PostCaption.tsx");
+ assert.ok(demo.indexOf('<Avatar uri={avatar}')<demo.indexOf('accessibilityLabel={"Abrir video de " + author}'));
+ assert.ok(real.indexOf('{authorRow}')<real.indexOf('post.kind==="photos"&&<PhotoCarousel'));
+ assert.ok(!real.includes('{media&&authorRow}'));
+ assert.ok(demo.includes("<PostCaption text={caption}/>"));
+ assert.ok(demo.includes("<PostCaption text={post.caption}/>"));
+ assert.ok(real.includes("<PostCaption text={post.body}/>"));
+ assert.ok(caption.includes("numberOfLines={1}"));
+ assert.ok(caption.includes("<BottomSheet visible={expanded}"));
+ assert.ok(demo.includes("onSave={()=>toggleSave(id)}"));
+ assert.ok(demo.includes("onSave={()=>toggleSave(post.id)}"));
+ assert.ok(real.includes("saved={saved} onSave={()=>void toggleSaved()}"));
+ assert.ok(demo.includes('marginLeft:"auto"'));
+});
+
+test("Professional, Todo, Videos and Live form the same four tabs in owner and visitor profiles",()=>{
+ const sections=source("src/components/ProfileSharedSections.tsx");
+ const own=source("src/app/(tabs)/profile.tsx");
+ const visitor=source("src/app/jcard.tsx");
+ const grid=source("src/components/ProfileOwnedPosts.tsx");
+ const api=source("src/lib/social-content.ts");
+ const order=['id:"cv"','id:"grid"','id:"videos"','id:"live"'].map(key=>sections.indexOf(key));
+ assert.ok(order.every((position,index)=>position>0&&(index===0||position>order[index-1])));
+ assert.ok(own.includes('useState<Mode>("grid")'));
+ assert.ok(visitor.includes('useState<ProfileSection>("grid")'));
+ assert.ok(own.includes('<ProfileOwnedPosts filter="all"/>'));
+ assert.ok(own.includes('<ProfileOwnedPosts filter="videos"/>'));
+ assert.ok(visitor.includes("<ProfilePublicPosts userId={user}"));
+ assert.ok(grid.includes("loadAllProfilePosts(viewer,target)"));
+ assert.ok(grid.includes("loadPublishedMedia()"));
+ assert.ok(grid.includes('filter==="videos"?"video":"live"'));
+ assert.ok(grid.includes("onOptions:editable?"));
+ assert.ok(api.includes("for(let offset=0;;offset+=80)"));
+ assert.ok(sections.includes('item.kind==="photos"'));
+ assert.ok(sections.includes('item.kind==="text"'));
+ assert.ok(!own.includes("DEMO_VIDEOS.map"));
 });
