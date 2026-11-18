@@ -1,5 +1,6 @@
 import {useState} from "react";
 import {Pressable,Text,View} from "react-native";
+import * as Linking from "expo-linking";
 import {BottomSheet} from "./social-ui";
 import {useUi} from "./ui";
 
@@ -7,6 +8,7 @@ import {useUi} from "./ui";
 export function PostCaption({text}:{text:string}){
  const [expanded,setExpanded]=useState(false);
  const {s,colors}=useUi();
+ const link=text.match(/https?:\\/\\/[^\\s]+/i)?.[0];
  if(!text.trim())return null;
  return <View>
   <Pressable accessibilityRole="button" accessibilityLabel={"Ver descripción completa: "+text}
@@ -16,6 +18,7 @@ export function PostCaption({text}:{text:string}){
   </Pressable>
   <BottomSheet visible={expanded} onClose={()=>setExpanded(false)} title="Descripción">
    <Text selectable style={[s.text,{color:colors.ink,paddingVertical:12}]}>{text}</Text>
+   {!!link&&<Pressable accessibilityRole="link" accessibilityLabel="Abrir enlace de la descripción" onPress={()=>void Linking.openURL(link)} style={{paddingVertical:12,minHeight:44}}><Text style={[s.text,{color:colors.ink,textDecorationLine:"underline"}]}>{link}</Text></Pressable>}
   </BottomSheet>
  </View>;
 }
