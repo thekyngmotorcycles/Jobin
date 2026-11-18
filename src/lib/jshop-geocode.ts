@@ -4,7 +4,13 @@ import {mapboxAccessToken,mapboxConfigured,mapboxGeocodingBase} from "./mapbox-c
 import {LOCATION_TYPES,mapboxPlaces,type MapboxResponse} from "./mapbox-geocode-core";
 
 /** Temporary Mapbox lookups are never cached; saved selections use permanent geocoding. */
+let geocodeBlockedUntil=0;
+function blockedMessage(seconds:number):string {
+ return "Mapbox está limitando las consultas de este token. Reintentá en aproximadamente "+Math.max(1,Math.ceil(seconds))+" s. Si continúa, revisá el límite efectivo y el uso del token en Mapbox.";
+}
+function blockedSeconds():number {return Math.max(0,Math.ceil((geocodeBlockedUntil-Date.now())/1000));}
 async function mapboxRequest(path:"forward"|"reverse",params:Record<string,string>,permanent=false):Promise<JShopPlace[]>{
+ if(geocodeBlockedUntil>Date.now())throw Error(blockedMessage(blockedSeconds()));
  const url=new URL(mapboxGeocodingBase+"/"+path);
  for(const [key,value] of Object.entries(params))url.searchParams.set(key,value);
  url.searchParams.set("access_token",mapboxAccessToken);
@@ -15,7 +21,16 @@ async function mapboxRequest(path:"forward"|"reverse",params:Record<string,strin
   if(response.status===401||response.status===403){
    throw new Error(permanent?"Mapbox requiere una cuenta habilitada para geocodificación permanente antes de guardar ubicaciones.":"La clave pública de Mapbox no está autorizada para buscar lugares.");
   }
-  if(response.status===429)throw new Error("Se alcanzó el límite de búsquedas de Mapbox. Inténtalo de nuevo.");
+  if(response.status===429){
+   const retryAfter=Number(response.headers.get("Retry-After"));
+   const resetAt=Number(response.headers.get("X-Rate-Limit-Reset"));
+   const headerWait=Number.isFinite(retryAfter)&&retryAfter>0?retryAfter:
+    Number.isFinite(resetAt)&&resetAt>0?resetAt-Date.now()/1000:60;
+   const waitSeconds=Math.max(5,Math.min(300,Math.ceil(headerWait)));
+   geocodeBlockedUntil=Date.now()+waitSeconds*1000;
+   throw new Error(blockedMessage(waitSeconds));
+  }
+  if(response.status===422)throw new Error("Mapbox rechazó la consulta geográfica. Revisá los parámetros de búsqueda.");
   throw new Error("No se pudo consultar Mapbox. Verifica tu conexión.");
  }
  const body=await response.json() as MapboxResponse;
@@ -52,7 +67,7 @@ export async function findJShopPlaces(query:string):Promise<JShopPlace[]>{
 }
 export async function placeAtMapCenter(lat:number,lon:number):Promise<JShopPlace>{
  if(mapboxConfigured){
-  const found=await mapboxRequest("reverse",{longitude:lon.toFixed(6),latitude:lat.toFixed(6),types:LOCATION_TYPES,limit:"5"});
+  const found=await mapboxRequest("reverse",{longitude:lon.toFixed(6),latitude:lat.toFixed(6),types:LOCATION_TYPES});
   if(!found.length)throw Error("Mapbox no encontró una ciudad en este punto.");
   // Restore the point actually selected on the map, not the geocoder's administrative centroid.
   return {...found[0],lat,lon};
@@ -66,7 +81,7 @@ export async function placeAtMapCenter(lat:number,lon:number):Promise<JShopPlace
 export async function confirmJShopPlace(place:JShopPlace):Promise<JShopPlace>{
  if(!mapboxConfigured)return place;
  const found=await mapboxRequest("reverse",{
-  longitude:place.lon.toFixed(6),latitude:place.lat.toFixed(6),types:LOCATION_TYPES,limit:"5"
+  longitude:place.lon.toFixed(6),latitude:place.lat.toFixed(6),types:LOCATION_TYPES
  },true);
  if(!found.length)throw Error("Mapbox no pudo confirmar esta ciudad para guardarla.");
  return {...found[0],lat:place.lat,lon:place.lon,zoom:place.zoom};
