@@ -159,9 +159,10 @@ export function HomePublishedPosts({filter="all"}:{filter?:HomeFeedFilter}){
     const [loaded,hidden,savedPosts]=await Promise.all([loadHomePosts(user),getHiddenPostIds(user),getSavedPostIds(user)]);
     const authorIds=[...new Set(loaded.map(post=>post.authorId))];
     const db=requireSupabase();
-    const [follows,businesses]=await Promise.all([
+    const [follows,businesses,businessCards]=await Promise.all([
      user?db.from("profile_follows" as never).select("followed_id").eq("follower_id",user):Promise.resolve({data:[],error:null}),
-     authorIds.length?db.from("profiles").select("id").in("id",authorIds).eq("account_type","company"):Promise.resolve({data:[],error:null})
+     authorIds.length?db.from("profiles").select("id").in("id",authorIds).eq("account_type","company"):Promise.resolve({data:[],error:null}),
+     authorIds.length?db.from("jcard_business_details" as never).select("owner_id").in("owner_id",authorIds):Promise.resolve({data:[],error:null})
     ]);
     if(follows.error)throw follows.error;
     if(businesses.error)throw businesses.error;
@@ -170,7 +171,10 @@ export function HomePublishedPosts({filter="all"}:{filter?:HomeFeedFilter}){
      setSavedIds(savedPosts);
      setViewer(user);
      setFollowedIds(((follows.data??[]) as {followed_id:string}[]).map(row=>row.followed_id));
-     setBusinessIds(((businesses.data??[]) as {id:string}[]).map(row=>row.id));
+     setBusinessIds([...new Set([
+      ...((businesses.data??[]) as {id:string}[]).map(row=>row.id),
+      ...((businessCards.data??[]) as {owner_id:string}[]).map(row=>row.owner_id)
+     ])]);
      setError("");
     }
    }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudieron cargar las publicaciones.");}
