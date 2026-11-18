@@ -18,7 +18,7 @@ function PublishedPhotos({post}:{post:FeedPost}){
   <FlatList horizontal pagingEnabled showsHorizontalScrollIndicator={false} data={post.photoUrls}
    keyExtractor={(uri,i)=>uri+"-"+i}
    onMomentumScrollEnd={e=>setIndex(Math.max(0,Math.min(total-1,Math.round(e.nativeEvent.contentOffset.x/size))))}
-   renderItem={({item,i})=><Image source={{uri:item}} accessibilityLabel={"Foto "+(i+1)+" de "+post.authorName}
+   renderItem={({item,index:i})=><Image source={{uri:item}} accessibilityLabel={"Foto "+(i+1)+" de "+post.authorName}
     resizeMode="cover" style={{width:size,aspectRatio:1.1,backgroundColor:t.cream}}/>}
   />
   {total>1&&<>
