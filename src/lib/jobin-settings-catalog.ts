@@ -6,6 +6,7 @@ export const JOBIN_SETTINGS_GROUPS:JobinSettingsGroup[]=[
   {id:"suscripciones",title:"Suscripciones",description:"Planes y beneficios de Jobin."}]},
  {title:"Privacidad y seguridad",description:"Decide qué compartes y protege tu cuenta.",items:[
   {id:"visibilidad",title:"Privacidad de la JCard",description:"Correo, teléfono e información visible.",route:"/professional"},
+  {id:"zona-profesional",title:"Mi zona profesional en el mapa",description:"Elige si muestras tu empresa o zona de servicio.",route:"/map-presence"},
   {id:"bloqueos",title:"Cuentas bloqueadas",description:"Gestiona las cuentas que has bloqueado."},
   {id:"sesiones",title:"Dispositivos y sesiones",description:"Revisa desde dónde accedes a Jobin."},
   {id:"verificacion",title:"Verificación de cuenta",description:"Estado de tus verificaciones."}]},
