@@ -81,7 +81,7 @@ export function VideoCard({ id, poster, author, handle, avatar, caption, likes, 
 }
 
 export function PhotoPostCard({ post }: { post: PhotoPost }) {
-  const { s, colors } = useUi();
+  const { s } = useUi();
   const { likedPosts, toggleLike, shares: demoShares, addShare, comments: demoComments } = useSocial();
   const liked = likedPosts.includes(post.id);
   async function sharePhoto() {
