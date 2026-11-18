@@ -41,7 +41,7 @@ export function ProfileMediaGrid({items,emptyMessage}:{items:ProfileTile[];empty
        <Ionicons name={typeIcon} size={17} color={jt.videoViewsText}/>
       </View>}
      {item.onOptions&&<Pressable accessibilityRole="button" accessibilityLabel={"Opciones de "+item.title}
-       onPress={item.onOptions} style={{position:"absolute",bottom:4,right:4,width:44,height:44,alignItems:"center",justifyContent:"center"}}>
+       onPress={event=>{event.stopPropagation();item.onOptions?.();}} style={{position:"absolute",bottom:4,right:4,width:44,height:44,alignItems:"center",justifyContent:"center"}}>
        <View style={{width:32,height:32,borderRadius:16,backgroundColor:jt.videoViewsOverlay,alignItems:"center",justifyContent:"center"}}>
         <Ionicons name="ellipsis-horizontal" size={20} color={jt.videoViewsText}/>
        </View>
