@@ -11,6 +11,7 @@ export const LIGHT_JOBEEN={
  videoTile1:"#F2EBD6",videoTile2:"#FFF4CC",videoTile3:"#EDE5CC",
  videoViewsOverlay:"rgba(0,0,0,0.6)",videoViewsText:"#FFFFFF",
  bar:"rgba(255,253,247,0.94)",silver:"#C9CCD1",
+ feedPhotoCounterBg:"rgba(0,0,0,0.64)",feedPhotoCounterText:"#FFFFFF",feedLiked:"#E64C5B",uploadScrim:"rgba(0,0,0,0.36)",
 } as const;
 
 /** Other themes retain their original colors while using identical semantic keys. */
@@ -26,6 +27,7 @@ export function jobeenTokens(theme:ThemeName){
   videoTile1:p.card,videoTile2:p.accent,videoTile3:p.card,
   videoViewsOverlay:"rgba(0,0,0,0.6)",videoViewsText:"#FFFFFF",
   bar:p.mediaControl,silver:p.muted,
+  feedPhotoCounterBg:"rgba(0,0,0,0.64)",feedPhotoCounterText:"#FFFFFF",feedLiked:p.reaction,uploadScrim:"rgba(0,0,0,0.36)",
  };
 }
 export const exportedJobeenTokens=LIGHT_JOBEEN;
