@@ -8,7 +8,6 @@ import {JShopButton,JShopCategories,JShopEmpty,JShopIconButton,JShopItemCard,JSh
 import {readJShopDrafts,jshopAccountId} from "../lib/jshop-local";
 import {readJShopLocation,saveJShopLocation} from "../lib/jshop-location";
 import type {JShopPlace} from "../lib/jshop-location-core";
-import {readDefaultSaleLocation,type SaleLocation} from "../lib/jshop-selling-location";
 import {loadJShopListings,loadJShopListingsNear,loadJShopFavoriteIds,setJShopFavorite} from "../lib/jshop-api";
 import {DEFAULT_JSHOP_FILTERS,filterJShopListings,parseJShopPrice,type JShopDraft,type JShopListing,type JShopFilters,type JShopOrder} from "../lib/jshop-model";
 import {useTabClearance} from "../theme/navigation";
@@ -26,7 +25,6 @@ export default function JShop(){
  const [drafts,setDrafts]=useState<JShopDraft[]>([]);
  const [remoteListings,setRemoteListings]=useState<JShopListing[]>([]);
  const [searchArea,setSearchArea]=useState<JShopPlace|null>(null);
- const [sellerArea,setSellerArea]=useState<SaleLocation|null>(null);
  const [ownerId,setOwnerId]=useState("");
  const [favorites,setFavorites]=useState<string[]>([]);
  const [loading,setLoading]=useState(true);
@@ -41,12 +39,9 @@ export default function JShop(){
      [savedDrafts,savedFavorites]=await Promise.all([readJShopDrafts(userId),loadJShopFavoriteIds(userId)]);
     }catch{/* Public catalogue remains available without personal data. */}
     const selectedPlace=await readJShopLocation(userId);
-    const [listed,defaultSale]=await Promise.all([
-     selectedPlace?loadJShopListingsNear(selectedPlace):loadJShopListings(),
-     userId==="guest"?Promise.resolve(null):readDefaultSaleLocation(userId)
-    ]);
+    const listed=selectedPlace?await loadJShopListingsNear(selectedPlace):await loadJShopListings();
     if(current){
-     setRemoteListings(listed);setOwnerId(userId==="guest"?"":userId);setSearchArea(selectedPlace);setSellerArea(defaultSale);
+     setRemoteListings(listed);setOwnerId(userId==="guest"?"":userId);setSearchArea(selectedPlace);
      setDrafts(savedDrafts);setFavorites(savedFavorites);setError("");
      setActiveFilters(previous=>({...previous,location:""}));
      setPending(previous=>({...previous,location:""}));
@@ -99,23 +94,9 @@ export default function JShop(){
     <View style={{flex:1}}><JShopButton title="Vender" icon="add-circle-outline" onPress={()=>router.push("/jshop/publish")}/></View>
     <View style={{flex:1}}><JShopButton title="Mis anuncios" icon="albums-outline" secondary onPress={()=>router.push("/jshop/mine")}/></View>
    </View>
-   {!!ownerId&&<Pressable accessibilityRole="button" accessibilityLabel={sellerArea?"Cambiar mi ubicación de venta":"Configurar mi ubicación de venta"}
-    onPress={()=>router.push({pathname:"/jshop/sale-location",params:{target:"default"}})}
-    style={({pressed})=>({minHeight:60,flexDirection:"row",alignItems:"center",gap:12,paddingHorizontal:13,paddingVertical:9,
-     backgroundColor:pressed?t.cream:t.surface,borderWidth:1,borderColor:sellerArea?t.line:t.yellow,borderRadius:17})}>
-    <View style={{width:36,height:36,borderRadius:12,backgroundColor:t.cream,alignItems:"center",justifyContent:"center"}}>
-     <Ionicons name="location-outline" size={21} color={t.ink}/>
-    </View>
-    <View style={{flex:1,gap:3}}>
-     <Text style={{fontSize:13,fontWeight:"800",color:t.ink}}>Mi ubicación de venta</Text>
-     <Text numberOfLines={1} style={{fontSize:12,color:t.ink2}}>{sellerArea?.label??"Configurala antes de publicar tu primer artículo"}</Text>
-    </View>
-    <Text style={{fontSize:12,fontWeight:"700",color:t.ink}}>{sellerArea?"Cambiar":"Configurar"}</Text>
-    <Ionicons name="chevron-forward" size={17} color={t.ink2}/>
-   </Pressable>}
    <View style={{gap:8}}>
     <JShopTitle title="Explorar artículos" subtitle={searchArea?searchArea.city:filterCount?"Filtros activos: "+filterCount:"Explora por categoría, precio y ubicación"}/>
-    {listings.length>0?<View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"space-between",rowGap:12}}>
+    {listings.length>0?<View style={{gap:10}}>
      {listings.map(item=><JShopItemCard key={item.id} item={item} onOpen={()=>router.push({pathname:"/jshop/item/[id]",params:{id:item.id}})} onFavorite={item.sellerId===ownerId?undefined:()=>void toggleFavorite(item.id)} saved={favorites.includes(item.id)}/>)}
     </View>:<JShopEmpty icon={query||category!=="Todo"||filterCount?"search-outline":"bag-handle-outline"}
       title={searchArea?"No hay artículos en esta zona":query||category!=="Todo"||filterCount?"No hay artículos con estos filtros":"Todavía no hay artículos publicados"}
@@ -124,7 +105,7 @@ export default function JShop(){
    </View>
    {!!drafts.length&&<View style={{gap:12}}>
     <JShopTitle title="Continuar mis borradores" subtitle={drafts.length+" sin publicar"} right={<Pressable accessibilityRole="button" onPress={()=>router.push("/jshop/mine")}><Text style={{color:t.ink,fontWeight:"700"}}>Ver todos</Text></Pressable>}/>
-    <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"space-between",rowGap:12}}>
+    <View style={{gap:10}}>
      {drafts.slice(0,4).map(item=><JShopItemCard key={item.id} item={item} onOpen={()=>router.push({pathname:"/jshop/item/[id]",params:{id:item.id}})}/>)}
     </View>
    </View>}
