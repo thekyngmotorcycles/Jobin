@@ -7,6 +7,7 @@ import {JShopButton,JShopPage,JShopTitle} from "../../components/JShopUI";
 import {jshopAccountId,readJShopDrafts,saveJShopDraft,deleteJShopDraft} from "../../lib/jshop-local";
 import {publishJShopDraft} from "../../lib/jshop-api";
 import {readDefaultSaleLocation,readPendingArticleLocation,clearPendingArticleLocation,type SaleLocation} from "../../lib/jshop-selling-location";
+import {readSellerCurrency} from "../../lib/jshop-selling-preferences";
 import {JSHOP_CATEGORIES,JSHOP_CONDITIONS,JSHOP_CURRENCIES,parseJShopPrice,type JShopCategory,type JShopCondition,type JShopCurrency,type JShopDraft} from "../../lib/jshop-model";
 import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
@@ -36,9 +37,10 @@ export default function JShopPublish(){
     const owner=await jshopAccountId();
     if(!live)return;
     setOwnerId(owner);
-    const defaultLocation=await readDefaultSaleLocation(owner);
+    const [defaultLocation,preferredCurrency]=await Promise.all([readDefaultSaleLocation(owner),readSellerCurrency(owner)]);
     if(!live)return;
     setDefaultPlace(defaultLocation);
+    if(!draft)setCurrency(preferredCurrency);
     if(draft){
      const drafts=await readJShopDrafts(owner);
      const found=drafts.find(item=>item.id===draft);
