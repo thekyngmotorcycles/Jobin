@@ -1,6 +1,6 @@
 import {Ionicons} from "@expo/vector-icons";
 import {Image,Pressable,Text,View} from "react-native";
-import type {ReactNode} from "react";
+import type {ReactNode,ComponentProps} from "react";
 import {ProfileFollowCounts} from "./ProfileFollowCounts";
 import {MediaThumbnail} from "./MediaThumbnail";
 import {useTheme} from "../state/ThemeProvider";
@@ -23,7 +23,7 @@ export function ProfileMediaGrid({items,emptyMessage}:{items:ProfileTile[];empty
  const {theme}=useTheme();const jt=jobeenTokens(theme);
  return <View style={{position:"relative",flexDirection:"row",flexWrap:"wrap"}}>
   {items.map((item,index)=>{
-   const typeIcon=item.kind==="photos"?(item.photoCount??0)>1?"copy-outline":"image-outline":
+   const typeIcon:ComponentProps<typeof Ionicons>["name"]|null=item.kind==="photos"?(item.photoCount??0)>1?"copy-outline":"image-outline":
     item.kind==="video"?"play-outline":item.kind==="live"?"radio-outline":item.kind==="text"?"document-text-outline":null;
    return <Pressable key={item.id} disabled={!item.onPress} accessibilityRole={item.onPress?"button":undefined}
      accessibilityLabel={item.title+(item.kind?" · "+item.kind:"")} onPress={item.onPress} style={{width:"33.33%",padding:1.5}}>
