@@ -47,7 +47,7 @@ export default function SaleLocationPicker(){
  })();return()=>{active=false;};},[article,session]);
 
  useEffect(()=>{
-  if(!typing||query.trim().length<3){setResults([]);return;}
+  if(!mapboxConfigured||!typing||query.trim().length<3){setResults([]);setSearching(false);return;}
   const n=++sequence.current;let alive=true;
   const timer=setTimeout(()=>{setSearching(true);void findJShopPlaces(query).then(data=>{
    if(alive&&n===sequence.current)setResults(data.slice(0,5));
@@ -55,14 +55,25 @@ export default function SaleLocationPicker(){
   return()=>{alive=false;clearTimeout(timer);};
  },[query,typing]);
 
+ async function searchOnSubmit(){
+  if(searching||!query.trim())return;
+  setSearching(true);setError("");
+  try{
+   const found=await findJShopPlaces(query);
+   if(found.length===1)choose(found[0]);
+   else if(found.length===0)setError("No se encontró la ubicación. Probá ciudad y país.");
+   else setResults(found);
+  }catch(e){setError(e instanceof Error?e.message:"No se pudo buscar esa ciudad.");}
+  finally{setSearching(false);}
+ }
  function choose(place:SaleLocation){
-  setChosen(place);setMoved(false);setTyping(false);setCenter({lat:place.lat,lon:place.lon});
+  setChosen(place);setMoved(false);setTyping(false);setSearching(false);setCenter({lat:place.lat,lon:place.lon});
   setZoom(Math.max(7,Math.min(15,place.zoom||11)));
   setQuery(place.label);setResults([]);setError("");
  }
  function move(point:MapPoint){
   if(Math.abs(point.lat-center.lat)<0.00001&&Math.abs(point.lon-center.lon)<0.00001)return;
-  setCenter(point);setChosen(null);setMoved(true);setTyping(false);
+  setCenter(point);setChosen(null);setMoved(true);setTyping(false);setSearching(false);
   setQuery("");setResults([]);setError("");
  }
  async function save(){
@@ -102,9 +113,10 @@ export default function SaleLocationPicker(){
       <Ionicons name="search-outline" size={20} color={t.ink2}/>
       <TextInput accessibilityLabel="Buscar ciudad de venta" value={query}
        placeholder="Buscar ciudad o zona" placeholderTextColor={t.ink2} autoCorrect={false}
-       onChangeText={v=>{sequence.current++;setTyping(true);setQuery(v);setChosen(null);setMoved(false);setResults([]);setError("");}}
-       returnKeyType="done" style={{flex:1,minWidth:0,color:t.ink,fontSize:14,minHeight:46}}/>
-      {searching&&<ActivityIndicator size="small" color={t.ink2}/>}
+       onChangeText={v=>{sequence.current++;setSearching(false);setTyping(true);setQuery(v);setChosen(null);setMoved(false);setResults([]);setError("");}}
+       returnKeyType="search" onSubmitEditing={()=>{if(!mapboxConfigured)void searchOnSubmit();}}
+       style={{flex:1,minWidth:0,color:t.ink,fontSize:14,minHeight:46}}/>
+      {searching?<ActivityIndicator size="small" color={t.ink2}/>:!mapboxConfigured&&<Pressable accessibilityRole="button" accessibilityLabel="Buscar ciudad" onPress={()=>void searchOnSubmit()} style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}><Ionicons name="arrow-forward" size={20} color={t.ink}/></Pressable>}
      </View>
     </View>
     <View style={{flex:1,minHeight:0,paddingHorizontal:14}}>
