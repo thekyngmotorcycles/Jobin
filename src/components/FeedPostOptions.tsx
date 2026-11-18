@@ -6,8 +6,8 @@ import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {BottomSheet} from "./social-ui";
 
-export function FeedPostOptions({visible,onClose,postId,viewerId,onHidden,onShareLink}:{
- visible:boolean;onClose:()=>void;postId:string;viewerId:string;onHidden:()=>void;onShareLink:()=>Promise<void>;
+export function FeedPostOptions({visible,onClose,postId,viewerId,onHidden,onShareLink,onSaveChanged}:{
+ visible:boolean;onClose:()=>void;postId:string;viewerId:string;onHidden:()=>void;onShareLink:()=>Promise<void>;onSaveChanged?:(saved:boolean)=>void;
 }){
  const {theme}=useTheme();const t=jobeenTokens(theme);
  const [saved,setSaved]=useState(false);
@@ -23,7 +23,7 @@ export function FeedPostOptions({visible,onClose,postId,viewerId,onHidden,onShar
  async function toggleSaved(){
   if(busy)return;
   setBusy(true);
-  try{await setSavedPost(viewerId,postId,!saved);setSaved(v=>!v);onClose();}
+  try{await setSavedPost(viewerId,postId,!saved);onSaveChanged?.(!saved);setSaved(v=>!v);onClose();}
   catch(e){fail(e);}
   finally{setBusy(false);}
  }
