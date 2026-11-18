@@ -1,6 +1,7 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack} from "expo-router";
 import {useEffect,useRef,useState} from "react";
+import * as Location from "expo-location";
 import {ActivityIndicator,KeyboardAvoidingView,Platform,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {JShopLocationMap} from "../../components/JShopLocationMap";
@@ -20,20 +21,58 @@ export default function JShopLocationPicker(){
  const [viewport,setViewport]=useState<MapSize>({width:320,height:300});
  const [moved,setMoved]=useState(false),[query,setQuery]=useState(""),[typing,setTyping]=useState(false);
  const [matches,setMatches]=useState<JShopPlace[]>([]),[searching,setSearching]=useState(false);
- const [busy,setBusy]=useState(false),[error,setError]=useState(""),[initializing,setInitializing]=useState(true);
- const input=useRef<TextInput>(null),searchSeq=useRef(0),reverseSeq=useRef(0);
+ const [busy,setBusy]=useState(false),[locating,setLocating]=useState(false),[error,setError]=useState(""),[initializing,setInitializing]=useState(true);
+ const input=useRef<TextInput>(null),searchSeq=useRef(0),manualChoice=useRef(false),gpsRequest=useRef(0);
  const radiusMiles=mapRadiusForViewport(center,zoom,viewport.width,viewport.height);
+ /** A persisted buying area always wins. GPS is automatic only after a prior OS permission. */
  useEffect(()=>{let active=true;void(async()=>{
   try{
    const id=await jshopAccountId().catch(()=>"guest");
    const [saved,recent]=await Promise.all([readJShopLocation(id),readRecentJShopLocations(id)]);
-   if(!active)return;setOwner(id);
+   if(!active)return;
+   setOwner(id);
    const place=saved??recent[0]??null;
-   if(place){setChosen(place);setCenter({lat:place.lat,lon:place.lon});
-    setZoom(place.zoom>2?place.zoom:mapZoomForRadius(place,place.radiusMiles??10,300));setQuery(place.label);}
+   if(place){
+    setChosen(place);setCenter({lat:place.lat,lon:place.lon});
+    setZoom(place.zoom>2?place.zoom:mapZoomForRadius(place,place.radiusMiles??10,300));
+    setQuery(place.label);
+   }else{
+    // Checking an existing permission does not display the system permission prompt.
+    void(async()=>{
+     try{
+      const permission=await Location.getForegroundPermissionsAsync();
+      if(!active||manualChoice.current||!permission.granted)return;
+      const position=await Location.getCurrentPositionAsync({accuracy:Location.Accuracy.Balanced});
+      if(!active||manualChoice.current)return;
+      setCenter({lat:position.coords.latitude,lon:position.coords.longitude});
+      setZoom(11);setMoved(true);setChosen(null);setTyping(false);setQuery("");
+     }catch{/* The user can still search by city or move the map manually. */}
+    })();
+   }
   }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudo abrir la ubicación.");}
   finally{if(active)setInitializing(false);}
  })();return()=>{active=false;};},[]);
+ /** Use device position only on explicit tap when foreground access is not yet granted. */
+ async function useCurrentLocation(){
+  if(locating||busy)return;
+  manualChoice.current=true;
+  const request=++gpsRequest.current;
+  setLocating(true);setError("");
+  try{
+   let permission=await Location.getForegroundPermissionsAsync();
+   if(!permission.granted)permission=await Location.requestForegroundPermissionsAsync();
+   if(!permission.granted)throw new Error("No se autorizó la ubicación. Podés elegir una ciudad manualmente o habilitarla en los ajustes del teléfono.");
+   if(!await Location.hasServicesEnabledAsync())throw new Error("Activá la ubicación del teléfono e intentá nuevamente.");
+   const position=await Location.getCurrentPositionAsync({accuracy:Location.Accuracy.Balanced});
+   if(request!==gpsRequest.current)return;
+   const {latitude,longitude}=position.coords;
+   if(!Number.isFinite(latitude)||!Number.isFinite(longitude))throw Error("No se pudo obtener la posición del dispositivo.");
+   input.current?.blur();
+   setCenter({lat:latitude,lon:longitude});setZoom(11);
+   setChosen(null);setMoved(true);setTyping(false);setMatches([]);setQuery("");setError("");
+  }catch(e){if(request===gpsRequest.current)setError(e instanceof Error?e.message:"No se pudo obtener tu ubicación. Podés buscar una ciudad manualmente.");}
+  finally{if(request===gpsRequest.current)setLocating(false);}
+ }
  useEffect(()=>{
   if(!typing||query.trim().length<(mapboxConfigured?3:2)){setMatches([]);return;}
   let active=true;const n=++searchSeq.current;
@@ -46,26 +85,14 @@ export default function JShopLocationPicker(){
   })();},420);
   return()=>{active=false;clearTimeout(timer);};
  },[query,typing]);
- useEffect(()=>{
-  if(!moved||typing)return;
-  let active=true;const n=++reverseSeq.current;
-  const timer=setTimeout(()=>{void(async()=>{
-   try{const place=await placeAtMapCenter(center.lat,center.lon);
-    if(!active||n!==reverseSeq.current)return;
-    setChosen({...place,lat:center.lat,lon:center.lon,zoom});setQuery(place.label);setError("");}
-   catch(e){if(active&&n===reverseSeq.current){setChosen(null);
-    setError(e instanceof Error?e.message:"No se pudo identificar el punto central.");}}
-  })();},480);
-  return()=>{active=false;clearTimeout(timer);};
- },[center.lat,center.lon,moved,typing]);
  function choose(place:JShopPlace){
-  reverseSeq.current++;input.current?.blur();setChosen(place);setMoved(false);setTyping(false);setMatches([]);
+  manualChoice.current=true;gpsRequest.current++;input.current?.blur();setChosen(place);setMoved(false);setTyping(false);setMatches([]);
   setCenter({lat:place.lat,lon:place.lon});setZoom(mapZoomForRadius(place,10,Math.max(200,viewport.height)));
   setQuery(place.label);setError("");
  }
  function moveCenter(point:MapPoint){
   if(Math.abs(point.lat-center.lat)<0.00004&&Math.abs(point.lon-center.lon)<0.00004)return;
-  input.current?.blur();setCenter(point);setChosen(null);setMoved(true);setTyping(false);setMatches([]);setError("");
+  manualChoice.current=true;gpsRequest.current++;input.current?.blur();setCenter(point);setChosen(null);setMoved(true);setTyping(false);setMatches([]);setError("");
  }
  async function submitSearch(){
   if(searching||busy||query.trim().length<2)return;
@@ -79,7 +106,7 @@ export default function JShopLocationPicker(){
  async function apply(){
   if(busy||typing||(!chosen&&!moved))return;
   setBusy(true);setError("");
-  try{const place=chosen??await placeAtMapCenter(center.lat,center.lon);
+  try{const place=chosen??(mapboxConfigured?{city:"",label:"",lat:center.lat,lon:center.lon,zoom}:await placeAtMapCenter(center.lat,center.lon));
    const confirmed=await confirmJShopPlace({...place,lat:center.lat,lon:center.lon,zoom});
    await saveJShopLocation(owner,{...confirmed,lat:center.lat,lon:center.lon,zoom,radiusMiles});
    router.back();}
@@ -107,7 +134,7 @@ export default function JShopLocationPicker(){
       flexDirection:"row",alignItems:"center",paddingHorizontal:12,gap:9}}>
       <Ionicons name="search-outline" size={20} color={t.ink2}/>
       <TextInput ref={input} accessibilityLabel="Buscar ubicación" value={query}
-       onChangeText={value=>{reverseSeq.current++;setTyping(true);setQuery(value);setChosen(null);
+       onChangeText={value=>{manualChoice.current=true;gpsRequest.current++;setTyping(true);setQuery(value);setChosen(null);
         setMoved(false);setMatches([]);setError("");}}
        onSubmitEditing={()=>void submitSearch()} returnKeyType="search"
        placeholder="Buscar ciudad o zona" placeholderTextColor={t.ink2}
@@ -121,6 +148,15 @@ export default function JShopLocationPicker(){
     <View style={{flex:1,minHeight:0,paddingHorizontal:12}}>
      <JShopLocationMap center={center} zoom={zoom} radiusMiles={radiusMiles}
       fluid minimal onCenter={moveCenter} onZoom={setZoom} onViewport={setViewport}/>
+     <Pressable accessibilityRole="button" accessibilityLabel="Usar mi ubicación actual"
+      accessibilityHint="Centra el mapa en la ubicación aproximada del teléfono"
+      disabled={locating||busy||initializing} onPress={()=>void useCurrentLocation()}
+      style={({pressed})=>({position:"absolute",top:12,right:24,width:46,height:46,borderRadius:15,
+       alignItems:"center",justifyContent:"center",backgroundColor:t.surface,
+       borderWidth:1,borderColor:t.line,opacity:locating||busy||initializing?0.6:pressed?0.7:1,
+       elevation:3,shadowColor:t.ink,shadowOpacity:0.12,shadowRadius:4,shadowOffset:{width:0,height:2}})}>
+      {locating?<ActivityIndicator size="small" color={t.ink}/>:<Ionicons name="navigate-outline" size={23} color={t.ink}/>}
+     </Pressable>
      {typing&&matches.length>0&&<View style={{position:"absolute",top:0,left:12,right:12,zIndex:10,
       maxHeight:230,backgroundColor:t.surface,borderWidth:1,borderColor:t.line,borderRadius:16,overflow:"hidden"}}>
       <ScrollView keyboardShouldPersistTaps="always" nestedScrollEnabled>
