@@ -69,7 +69,7 @@ export default function JShopSettings(){
   <JShopPage>
    <View style={{width:"100%",maxWidth:640,alignSelf:"center",gap:22}}>
     {section("Vender",<>
-     {row("location-outline","Ubicación de venta",loading?"Cargando...":location?.city??"Sin configurar",
+     {row("location-outline","Mi ubicación de venta",loading?"Cargando...":location?.city??"Sin configurar",
       ()=>router.push({pathname:"/jshop/sale-location",params:{target:"default"}}),loading)}
      <View style={{height:1,backgroundColor:t.line,marginLeft:49}}/>
      {row("cash-outline","Moneda predeterminada",currency+" · "+currencies[currency],
