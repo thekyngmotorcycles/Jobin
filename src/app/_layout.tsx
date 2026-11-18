@@ -27,6 +27,7 @@ function Navigation() {
  return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:shellBackground},headerTintColor:colors.ink,contentStyle:{backgroundColor:shellBackground}}}>
  <Stack.Screen name="(tabs)" options={{headerShown:false}}/>
  <Stack.Screen name="post/create" options={{title:"Nueva publicación"}}/>
+ <Stack.Screen name="post/[id]" options={{title:"Publicación"}}/>
  <Stack.Screen name="story/create" options={{title:"Crear historia"}}/>
  <Stack.Screen name="story/[id]" options={{headerShown:false}}/>
  <Stack.Screen name="message-requests" options={{title:"Solicitudes de mensajes"}}/>
