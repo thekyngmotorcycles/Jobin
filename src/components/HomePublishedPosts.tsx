@@ -1,7 +1,7 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import * as Linking from "expo-linking";
-import {useCallback,useState} from "react";
+import {useCallback,useEffect,useState} from "react";
 import {ActivityIndicator,Alert,FlatList,Image,Pressable,Share,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {BottomSheet} from "./social-ui";
 import {PublicProfileAvatar} from "./PublicProfileAvatar";
@@ -22,8 +22,8 @@ function PublishedPhotos({post}:{post:FeedPost}){
     resizeMode="cover" style={{width:size,aspectRatio:1.1,backgroundColor:t.cream}}/>}
   />
   {total>1&&<>
-   <View pointerEvents="none" style={{position:"absolute",right:14,top:13,backgroundColor:"rgba(0,0,0,0.64)",paddingHorizontal:11,paddingVertical:5,borderRadius:13}}>
-    <Text style={{color:"#FFFFFF",fontSize:12,fontWeight:"700"}}>{index+1+" / "+total}</Text>
+   <View pointerEvents="none" style={{position:"absolute",right:14,top:13,backgroundColor:t.feedPhotoCounterBg,paddingHorizontal:11,paddingVertical:5,borderRadius:13}}>
+    <Text style={{color:t.feedPhotoCounterText,fontSize:12,fontWeight:"700"}}>{index+1+" / "+total}</Text>
    </View>
    <View style={{flexDirection:"row",justifyContent:"center",gap:6,paddingVertical:9}}>
     {post.photoUrls.map((_,i)=><View key={i} style={{width:i===index?7:6,height:i===index?7:6,borderRadius:7,backgroundColor:i===index?t.ink:t.line}}/>)}
@@ -45,6 +45,9 @@ function HomePostCard({post,viewer,onRemove}:{post:FeedPost;viewer:string;onRemo
  const [comments,setComments]=useState<HomePostComment[]>([]);
  const [draft,setDraft]=useState("");
  const [sending,setSending]=useState(false);
+ useEffect(()=>{
+  setLiked(post.likedByViewer);setLikes(post.likes);setCommentsCount(post.comments);setShares(post.shares);
+ },[post.likedByViewer,post.likes,post.comments,post.shares]);
  const media=post.kind==="photos"||post.kind==="video"||post.kind==="live";
  async function toggleLike(){
   if(pending)return;setPending(true);setError("");
@@ -109,7 +112,7 @@ function HomePostCard({post,viewer,onRemove}:{post:FeedPost;viewer:string;onRemo
   <View style={{flexDirection:"row",paddingHorizontal:16,justifyContent:"space-between",alignItems:"center",borderTopWidth:1,borderColor:t.line,paddingTop:8}}>
    <Pressable accessibilityRole="button" accessibilityLabel={formatCount(likes)+" Me gusta"} accessibilityState={{selected:liked,disabled:pending}}
     onPress={()=>void toggleLike()} style={{minHeight:44,flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:7}}>
-    <Ionicons name={liked?"heart":"heart-outline"} size={22} color={liked?"#E64C5B":t.ink}/>
+    <Ionicons name={liked?"heart":"heart-outline"} size={22} color={liked?t.feedLiked:t.ink}/>
     <Text style={{color:t.ink2,fontSize:13,fontWeight:"600"}}>{formatCount(likes)}</Text>
    </Pressable>
    <Pressable accessibilityRole="button" accessibilityLabel={formatCount(commentsCount)+" comentarios"} onPress={()=>void openComments()}
