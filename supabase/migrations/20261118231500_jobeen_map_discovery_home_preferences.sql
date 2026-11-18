@@ -64,13 +64,12 @@ language sql stable security invoker
 set search_path=''
 as $$
  select m.owner_id as id,
-  coalesce(nullif(btrim(b.name),''),p.display_name) as name,
+  p.display_name as name,
   m.kind, m.city, m.service, m.latitude, m.longitude,
   (111.32 * sqrt(power(m.latitude-p_lat,2)+
    power((m.longitude-p_lon)*cos(radians(p_lat)),2)))::double precision as distance_km
  from public.jobeen_map_presence m
  join public.profiles p on p.id=m.owner_id and p.deactivated_at is null
- left join public.jcard_business_details b on b.owner_id=m.owner_id and m.kind='company'
  where m.is_visible=true
   and p_lat between -85 and 85 and p_lon between -180 and 180
   and p_radius_km between 1 and 200
@@ -79,7 +78,6 @@ as $$
   and abs((m.longitude-p_lon)*cos(radians(p_lat)))<=p_radius_km/110
   and (coalesce(btrim(p_query),'')='' or
    p.display_name ilike '%'||left(btrim(p_query),100)||'%' or
-   coalesce(b.name,'') ilike '%'||left(btrim(p_query),100)||'%' or
    m.city ilike '%'||left(btrim(p_query),100)||'%' or
    m.service ilike '%'||left(btrim(p_query),100)||'%')
  order by distance_km asc
