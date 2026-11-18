@@ -47,7 +47,6 @@ export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;v
   catch(e){setError(e instanceof Error?e.message:"No se pudo guardar la publicación.");}
   finally{setSaving(false);}
  }
- const media=post.kind==="photos"||post.kind==="video"||post.kind==="live";
  async function toggleLike(){
   if(pending)return;setPending(true);setError("");
   try{await setHomePostLike(post.id,!liked);setLiked(!liked);setLikes(count=>Math.max(0,count+(liked?-1:1)));}
