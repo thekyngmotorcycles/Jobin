@@ -22,23 +22,25 @@ export async function discoverMapProfiles(center:MapPoint,radiusKm:number,query:
  if(error)throw Error(error.message);
  return (data??[]) as unknown as DiscoveredProfile[];
 }
-export async function myMapPresence():Promise<{presence:MapPresence|null;kind:"company"|"professional"|null;profileId:string}>{
+export async function myMapPresence():Promise<{presence:MapPresence|null;kind:"company"|"professional"|null;allowedKinds:("company"|"professional")[];profileId:string}>{
  const db=requireSupabase();const {data:{user},error:authError}=await db.auth.getUser();
  if(authError)throw authError;
  if(!user)throw Error("Inicia sesión para publicar tu zona profesional.");
  const {data:profile,error}=await db.from("profiles").select("account_type").eq("id",user.id).single();
  if(error)throw error;
- let kind:"company"|"professional"|null=null;
- if(profile.account_type==="company")kind="company";
- else{
-  const {data:profession,error:professionError}=await db.from("person_professions" as never).select("id").eq("worker_id",user.id).limit(1);
-  if(professionError)throw professionError;
-  if((profession??[]).length)kind="professional";
- }
+ const [business,profession]=await Promise.all([
+  db.from("jcard_business_details" as never).select("owner_id").eq("owner_id",user.id).limit(1),
+  db.from("person_professions" as never).select("id").eq("worker_id",user.id).limit(1)
+ ]);
+ const allowedKinds:("company"|"professional")[]=[];
+ if(profile.account_type==="company"||!business.error&&(business.data??[]).length>0)allowedKinds.push("company");
+ if(!profession.error&&(profession.data??[]).length>0)allowedKinds.push("professional");
  const {data:presence,error:presenceError}=await db.from("jobeen_map_presence" as never)
   .select("owner_id,kind,city,service,latitude,longitude,is_visible").eq("owner_id",user.id).maybeSingle();
  if(presenceError)throw presenceError;
- return {kind,profileId:user.id,presence:(presence as unknown as MapPresence|null)??null};
+ const mapped=(presence as unknown as MapPresence|null)??null;
+ const kind=mapped&&allowedKinds.includes(mapped.kind)?mapped.kind:allowedKinds[0]??null;
+ return {kind,allowedKinds,profileId:user.id,presence:mapped};
 }
 export async function saveMapPresence(args:{city:string;service:string;center:MapPoint;kind:"company"|"professional"}):Promise<void>{
  const city=args.city.trim().slice(0,100),service=args.service.trim().slice(0,120);
