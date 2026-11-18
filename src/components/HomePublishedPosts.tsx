@@ -1,8 +1,9 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
+import * as ExpoLinking from "expo-linking";
 import * as Linking from "expo-linking";
 import {useCallback,useEffect,useState} from "react";
-import {ActivityIndicator,Alert,Pressable,Share,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Pressable,Share,Text,TextInput,View} from "react-native";
 import {BottomSheet} from "./social-ui";
 import {PhotoCarousel,PostEngagementRow} from "./PostCard";
 import {useUi} from "./ui";
@@ -46,6 +47,13 @@ export function HomePostCard({post,viewer,onHide}:{post:FeedPost;viewer:string;o
     setShares(n=>n+1);
    }
   }catch(e){setError(e instanceof Error?e.message:"No se pudo compartir.");}
+ }
+ async function sharePostLink(){
+  setError("");
+  try{
+   const result=await Share.share({message:ExpoLinking.createURL("post/"+post.id)});
+   if(result.action===Share.sharedAction){await recordHomePostShare(post.id);setShares(n=>n+1);}
+  }catch(e){setError(e instanceof Error?e.message:"No se pudo compartir el enlace.");}
  }
  async function openComments(){
   setCommentsOpen(true);setCommentsLoading(true);setError("");
@@ -95,7 +103,7 @@ export function HomePostCard({post,viewer,onHide}:{post:FeedPost;viewer:string;o
   <PostEngagementRow likes={likes} comments={commentsCount} shares={shares} liked={liked}
    likeDisabled={pending} onLike={()=>void toggleLike()} onComments={()=>void openComments()} onShare={()=>void share()}/>
   {!!error&&!commentsOpen&&<Text accessibilityLiveRegion="polite" style={{paddingHorizontal:16,color:t.ink2,fontSize:12}}>{error}</Text>}
-  <FeedPostOptions visible={optionsOpen} onClose={()=>setOptionsOpen(false)} viewerId={viewer} postId={post.id} onHidden={()=>onHide(post.id)}/>
+  <FeedPostOptions visible={optionsOpen} onClose={()=>setOptionsOpen(false)} viewerId={viewer} postId={post.id} onHidden={()=>onHide(post.id)} onShareLink={sharePostLink}/>
   <BottomSheet visible={commentsOpen} onClose={()=>setCommentsOpen(false)} title={"Comentarios · "+formatCount(commentsCount)}>
    <View style={{gap:14,paddingVertical:10}}>
     {commentsLoading&&<ActivityIndicator color={t.yellow}/>}
