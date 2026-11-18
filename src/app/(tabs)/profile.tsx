@@ -12,7 +12,7 @@ import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness
 import { useTabClearance } from "../../theme/navigation";
 import {opacity} from "../../theme/color";
 import {useRef} from "react";
-import {ProfileMediaGrid,UserProfileContent} from "../../components/ProfileSharedSections";
+import {UserProfileContent} from "../../components/ProfileSharedSections";
 import {ProfileOwnedPosts} from "../../components/ProfileOwnedPosts";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import { ProfessionalStatus } from "../../components/ProfessionalStatus";
@@ -21,7 +21,7 @@ import { ProfessionPicker } from "../../components/ProfessionPicker";
 import { useProfessionalData } from "../../state/useProfessionalData";
 import { useCallback,useEffect,useState } from "react";
 import {getEmployerLinks} from "../../lib/employer-links";
-import { Image, Keyboard, Modal, Share, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Keyboard, Modal, Share, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { NAVIGATION_ROW_HEIGHT } from "../../theme/navigation";
 import Svg,{Defs,LinearGradient,Rect,Stop} from "react-native-svg";
@@ -35,7 +35,7 @@ import { JCardLoadingSkeleton } from "../../components/JCardLoadingSkeleton";
 import type { BusinessCardData, JCardSeal } from "../../lib/jcard";
 import { Button, Notice, useUi } from "../../components/ui";
 import { canSendHistory } from "../../lib/rules";
-import { DEMO_PROFILE, DEMO_REQUESTING_COMPANIES, DEMO_VIDEOS, type EmploymentEntry } from "../../lib/me";
+import { DEMO_PROFILE, DEMO_REQUESTING_COMPANIES, type EmploymentEntry } from "../../lib/me";
 
 type Mode = "grid" | "cv" | "videos" | "live";
 
@@ -244,25 +244,9 @@ export default function Profile() {
           </View>
         )}
 
-        {mode === "videos" && (
-          <View style={{ gap: 14 }}>
-            {DEMO_VIDEOS.map(video => (
-              <View key={video.id} style={[s.panel, { flexDirection: "row", gap: 12, padding: 12, alignItems: "center" }]}>
-                <Image source={{ uri: video.thumbnail }} accessibilityIgnoresInvertColors style={{ width: 84, height: 112, borderRadius: 10, backgroundColor: colors.accent }} />
-                <View style={{ flex: 1, gap: 6 }}>
-                  <Text style={s.h3}>{video.title}</Text>
-                  <Text style={s.muted}>♡ {video.likes}   ▷ {video.views} vistas</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {mode === "grid" && <View style={{gap:16}}>
-          <ProfileOwnedPosts/>
-          <Text style={s.muted}>Contenido de ejemplo</Text>
-          <ProfileMediaGrid items={DEMO_VIDEOS.map(video=>({id:video.id,title:video.title,thumbnail:video.thumbnail}))}/>
-         </View>}
+        {mode==="grid"&&<ProfileOwnedPosts filter="all"/>}
+        {mode==="videos"&&<ProfileOwnedPosts filter="videos"/>}
+        {mode==="live"&&<ProfileOwnedPosts filter="live"/>}
         </UserProfileContent>
       </ScrollView>
 
