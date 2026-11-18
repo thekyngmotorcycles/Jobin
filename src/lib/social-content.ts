@@ -10,6 +10,7 @@ export type StoryKind="text"|"photo"|"video";
 export type FeedPost={
  id:string;authorId:string;authorName:string;authorHandle:string;body:string;kind:FeedPostKind;
  photoUrls:string[];mediaId:string|null;createdAt:string;
+ likes:number;comments:number;shares:number;likedByViewer:boolean;
 };
 export type SocialStory={
  id:string;authorId:string;authorName:string;authorHandle:string;kind:StoryKind;body:string;
@@ -35,7 +36,7 @@ export async function currentSocialUser():Promise<string>{
  if(error||!data.user)throw new Error("Inicia sesión para crear contenido.");
  return data.user.id;
 }
-export async function loadHomePosts():Promise<FeedPost[]>{
+export async function loadHomePosts(viewerId=""):Promise<FeedPost[]>{
  const db=requireSupabase();
  const {data,error}=await db.from("jobeen_feed_posts" as never)
   .select("id,author_id,body,kind,photo_paths,work_media_id,created_at")
@@ -43,12 +44,26 @@ export async function loadHomePosts():Promise<FeedPost[]>{
  if(error)throw error;
  const rows=(data??[]) as unknown as FeedRow[];
  const authors=await namesFor(rows.map(r=>r.author_id));
- return rows.map(row=>({
-  id:row.id,authorId:row.author_id,authorName:authors.get(row.author_id)?.name??"Profesional",
-  authorHandle:authors.get(row.author_id)?.handle??"",body:row.body,kind:row.kind,
-  photoUrls:(row.photo_paths??[]).map(path=>db.storage.from(POSTS_BUCKET).getPublicUrl(path).data.publicUrl),
-  mediaId:row.work_media_id,createdAt:row.created_at
- }));
+ const ids=rows.map(row=>row.id);
+ type CountRow={post_id:string;likes:number|string;comments:number|string;shares:number|string};
+ const [summary,liked]=ids.length?await Promise.all([
+  db.from("jobeen_feed_engagement" as never).select("post_id,likes,comments,shares").in("post_id",ids),
+  viewerId?db.from("jobeen_feed_likes" as never).select("post_id").in("post_id",ids).eq("profile_id",viewerId):Promise.resolve({data:[],error:null})
+ ]):[{data:[],error:null},{data:[],error:null}];
+ // Posts must remain visible during an additive backend migration.
+ const counts=new Map(((summary.error?[]:summary.data??[]) as unknown as CountRow[]).map(x=>[x.post_id,x]));
+ const viewerLikes=new Set(((liked.error?[]:liked.data??[]) as unknown as {post_id:string}[]).map(x=>x.post_id));
+ return rows.map(row=>{
+  const count=counts.get(row.id);
+  return {
+   id:row.id,authorId:row.author_id,authorName:authors.get(row.author_id)?.name??"Profesional",
+   authorHandle:authors.get(row.author_id)?.handle??"",body:row.body,kind:row.kind,
+   photoUrls:(row.photo_paths??[]).map(path=>db.storage.from(POSTS_BUCKET).getPublicUrl(path).data.publicUrl),
+   mediaId:row.work_media_id,createdAt:row.created_at,
+   likes:Number(count?.likes??0),comments:Number(count?.comments??0),shares:Number(count?.shares??0),
+   likedByViewer:viewerLikes.has(row.id)
+  };
+ });
 }
 export async function loadActiveStories():Promise<SocialStory[]>{
  const db=requireSupabase();const now=new Date().toISOString();
@@ -134,4 +149,56 @@ export async function deleteHomePost(id:string){
  if(!data)throw Error("No se pudo eliminar la publicación.");
  const paths=(data as unknown as {photo_paths:string[]}).photo_paths??[];
  if(paths.length)await db.storage.from(POSTS_BUCKET).remove(paths).catch(()=>{});
+}
+
+export type HomePostComment={
+ id:string;postId:string;authorId:string;authorName:string;authorHandle:string;body:string;createdAt:string;
+};
+type CommentRow={id:string;post_id:string;author_id:string;body:string;created_at:string};
+export async function loadHomePostComments(postId:string):Promise<HomePostComment[]>{
+ const db=requireSupabase();
+ const {data,error}=await db.from("jobeen_feed_comments" as never)
+  .select("id,post_id,author_id,body,created_at")
+  .eq("post_id",postId).order("created_at",{ascending:true}).limit(100);
+ if(error)throw error;
+ const rows=(data??[]) as unknown as CommentRow[];
+ const authors=await namesFor(rows.map(r=>r.author_id));
+ return rows.map(row=>({
+  id:row.id,postId:row.post_id,authorId:row.author_id,
+  authorName:authors.get(row.author_id)?.name??"Profesional",
+  authorHandle:authors.get(row.author_id)?.handle??"",
+  body:row.body,createdAt:row.created_at
+ }));
+}
+export async function addHomePostComment(postId:string,body:string):Promise<HomePostComment>{
+ const trimmed=body.trim().slice(0,500);
+ if(!trimmed)throw Error("Escribe un comentario.");
+ const db=requireSupabase(),author=await currentSocialUser();
+ const {data,error}=await db.from("jobeen_feed_comments" as never)
+  .insert({post_id:postId,author_id:author,body:trimmed} as never)
+  .select("id,post_id,author_id,body,created_at").single();
+ if(error)throw error;
+ const row=data as unknown as CommentRow;
+ const authorInfo=(await namesFor([author])).get(author);
+ return {id:row.id,postId:row.post_id,authorId:author,
+  authorName:authorInfo?.name??"Profesional",authorHandle:authorInfo?.handle??"",
+  body:row.body,createdAt:row.created_at};
+}
+export async function setHomePostLike(postId:string,liked:boolean):Promise<void>{
+ const db=requireSupabase(),viewer=await currentSocialUser();
+ if(liked){
+  const {error}=await db.from("jobeen_feed_likes" as never)
+   .insert({post_id:postId,profile_id:viewer} as never);
+  if(error&&error.code!=="23505")throw error;
+ }else{
+  const {error}=await db.from("jobeen_feed_likes" as never)
+   .delete().eq("post_id",postId).eq("profile_id",viewer);
+  if(error)throw error;
+ }
+}
+export async function recordHomePostShare(postId:string):Promise<void>{
+ const db=requireSupabase(),viewer=await currentSocialUser();
+ const {error}=await db.from("jobeen_feed_shares" as never)
+  .insert({post_id:postId,profile_id:viewer} as never);
+ if(error)throw error;
 }
