@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect,useRef,useState } from "react";
 import { useIsFocused } from "@react-navigation/native";
 import { useWindowDimensions } from "react-native";
 import { DraggableAssistant } from "../../components/DraggableAssistant";
@@ -12,11 +12,14 @@ import {HomeFeedFilters,type HomeFeedFilter} from "../../components/HomeFeedFilt
 import { PhotoPostCard, VideoCard } from "../../components/PostCard";
 import { FEED_POSTS } from "../../lib/feed";
 import { PHOTO_POSTS, POSTERS } from "../../lib/home";
-import { router } from "expo-router";
+import { router,useLocalSearchParams } from "expo-router";
 import { useUi } from "../../components/ui";
 
 export default function Home() {
   const [filter,setFilter]=useState<HomeFeedFilter>("all");
+  const {published}=useLocalSearchParams<{published?:string}>();
+  const scrollRef=useRef<ScrollView>(null);
+  useEffect(()=>{if(published){setFilter("all");scrollRef.current?.scrollTo({y:0,animated:false});}},[published]);
   const { s } = useUi();const focused=useIsFocused();const window=useWindowDimensions();const [viewport,setViewport]=useState({width:window.width,height:window.height});const {contentBottom}=useTabClearance();
   const cards = [
     ...FEED_POSTS.slice(0, 2).map(p => ({ kind: "video" as const, key: p.postId, post: p })),
@@ -25,10 +28,10 @@ export default function Home() {
   ];
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={s.screen} onLayout={event=>{const {width,height}=event.nativeEvent.layout;setViewport(previous=>previous.width===width&&previous.height===height?previous:{width,height});}}>
-      <ScrollView contentContainerStyle={{ paddingBottom: contentBottom, gap: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: contentBottom, gap: 24 }} showsVerticalScrollIndicator={false}>
         <SocialHeader showComposer/>
         <HomeFeedFilters value={filter} onChange={setFilter}/>
-        <HomePublishedPosts filter={filter}/>
+        <HomePublishedPosts filter={filter} featuredPostId={published??""}/>
         {filter==="all"&&<PublishedWorkMedia kind="video"/>}
         {filter==="all"&&<Text style={[s.muted,{paddingHorizontal:16,fontSize:12}]}>Contenido de ejemplo</Text>}
         {filter==="all"&&cards.map(card => (
