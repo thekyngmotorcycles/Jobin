@@ -170,7 +170,19 @@ export default function PostCreate(){
   if(photos.length>=5)return;
   try{
    const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:["images"],allowsMultipleSelection:true,selectionLimit:Math.max(1,5-photos.length),quality:0.8});
-   if(!result.canceled){setPhotos(current=>[...current,...result.assets.map(x=>x.uri)].slice(0,5));setError("");}
+   if(!result.canceled){
+    const fresh:PostDraftPhoto[]=result.assets.map(asset=>({
+     id:Date.now().toString(36)+"-"+Math.random().toString(36).slice(2),
+     uri:asset.uri,altText:""
+    }));
+    setPhotos(current=>[...current,...fresh].slice(0,5));setError("");
+    const tasks=fresh.map(photo=>uploadPhoto(author,photo.uri,DRAFT_PHOTO_BUCKET).then(path=>{
+     setPhotos(current=>current.map(p=>p.id===photo.id?{...p,backupPath:path}:p));
+    }).catch(()=>{
+     setError("El texto se guardará automáticamente. Algunas fotos no tienen respaldo y podrían requerir volver a seleccionarse.");
+    }));
+    pendingUploadsRef.current=tasks.map(task=>task.then(()=>{}));
+   }
   }catch(e){setError(e instanceof Error?e.message:"No se pudieron seleccionar fotos.");}
  }
  function switchKind(next:FeedPostKind){
@@ -200,15 +212,34 @@ export default function PostCreate(){
   if(audience==="private"&&!audienceFollowers&&!audienceContacts){setError("Selecciona seguidores, contactos o ambos.");return;}
   setBusy(true);setError("");
   try{
-   await publishHomePost({body,kind,photos:kind==="photos"?photos:[],mediaId:(kind==="video"||kind==="live")?mediaId:null,audience,audienceFollowers:audience==="private"&&audienceFollowers,audienceContacts:audience==="private"&&audienceContacts});
-   // Avoid the unmatched root deep link (jobin:///); use an explicit existing tab route.
-   router.replace("/(tabs)/profile");
+   await Promise.allSettled(pendingUploadsRef.current);
+   await persistSnapshot(draftSnapshotRef.current);
+   const selected=draftSnapshotRef.current.photos;
+   const publishedId=await publishHomePost({
+    body,kind,photos:kind==="photos"?selected.map(p=>p.uri):[],
+    photoDraftPaths:kind==="photos"?selected.map(p=>p.backupPath??null):[],
+    photoAltTexts:kind==="photos"?selected.map(p=>p.altText):[],
+    mentionedProfileIds,
+    mediaId:(kind==="video"||kind==="live")?mediaId:null,
+    audience,audienceFollowers:audience==="private"&&audienceFollowers,
+    audienceContacts:audience==="private"&&audienceContacts
+   });
+   autosaveEnabledRef.current=false;
+   await savingChainRef.current.catch(()=>{});
+   await deletePostDraft(author,draftSnapshotRef.current.id).catch(()=>{});
+   finishHome(publishedId);
   }catch(e){setError(e instanceof Error?e.message:"No se pudo publicar.");}
   finally{setBusy(false);}
  }
  const eligible=(kind==="text"?!!body.trim():kind==="photos"?photos.length>0:!!mediaId)&&(audience==="public"||audienceFollowers||audienceContacts);
  return <>
-  <Stack.Screen options={{title:"Crear publicación"}}/>
+  <Stack.Screen options={{title:"Crear publicación",
+   headerLeft:()=>(
+    <Pressable accessibilityRole="button" accessibilityLabel="Volver a inicio"
+     onPress={requestExit} style={{width:46,height:44,alignItems:"center",justifyContent:"center"}}>
+     <Ionicons name="arrow-back" size={24} color={t.ink}/>
+    </Pressable>
+   )}}/>
   <SafeAreaView edges={["bottom"]} style={{flex:1,backgroundColor:t.bg}}>
    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:18,paddingBottom:46,gap:17}}>
     <View style={{gap:9}}>
@@ -263,8 +294,8 @@ export default function PostCreate(){
      <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled
       accessibilityLabel="Fotografías seleccionadas, deslizar horizontalmente"
       contentContainerStyle={{flexDirection:"row",gap:9,paddingVertical:2}}>
-      {photos.map((uri,i)=><View key={uri+"-"+i} style={{width:104,height:104,borderRadius:13,overflow:"hidden"}}>
-       <Image source={{uri}} style={{width:104,height:104}} resizeMode="cover"/>
+      {photos.map((photo,i)=><View key={photo.id} style={{width:104,height:104,borderRadius:13,overflow:"hidden"}}>
+       <Image source={{uri:photo.uri}} accessibilityLabel={photo.altText||"Foto "+(i+1)} style={{width:104,height:104}} resizeMode="cover"/>
        <Pressable accessibilityRole="button" accessibilityLabel={"Quitar foto "+(i+1)}
         onPress={()=>setPhotos(current=>current.filter((_,j)=>j!==i))}
         style={{position:"absolute",top:4,right:4,width:34,height:34,alignItems:"center",
@@ -321,7 +352,7 @@ export default function PostCreate(){
      style={({pressed})=>({minHeight:52,borderRadius:18,backgroundColor:t.ink,justifyContent:"center",alignItems:"center",opacity:busy||!author||!eligible||!consent?0.45:pressed?0.75:1})}>
      <Text style={{color:t.bg,fontWeight:"800"}}>{busy?"Publicando...":"Publicar"}</Text>
     </Pressable>
-    <Pressable accessibilityRole="button" onPress={()=>router.back()} style={{minHeight:44,alignItems:"center",justifyContent:"center"}}><Text style={{color:t.ink2}}>Cancelar</Text></Pressable>
+    <Pressable accessibilityRole="button" onPress={requestExit} style={{minHeight:44,alignItems:"center",justifyContent:"center"}}><Text style={{color:t.ink2}}>Cancelar</Text></Pressable>
    </ScrollView>
    {busy&&<View accessibilityLiveRegion="polite" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:t.uploadScrim,alignItems:"center",justifyContent:"center"}}>
     <View style={{backgroundColor:t.surface,borderRadius:20,paddingHorizontal:32,paddingVertical:23,alignItems:"center",gap:13}}>
