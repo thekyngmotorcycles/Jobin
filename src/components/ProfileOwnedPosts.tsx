@@ -14,7 +14,9 @@ import {BottomSheet} from "./social-ui";
 type Filter="all"|"videos"|"live";
 
 /** Same mixed-media grid in own and public profiles; delete is owner-only. */
-function ProfilePublicationGrid({userId,editable,filter}:{userId?:string;editable:boolean;filter:Filter}){
+function ProfilePublicationGrid({userId,editable,filter,limit,heading,onSeeAll}:{
+ userId?:string;editable:boolean;filter:Filter;limit?:number;heading?:string;onSeeAll?:()=>void;
+}){
  const {theme}=useTheme();const t=jobeenTokens(theme);const {s}=useUi();
  const [savedView,setSavedView]=useState(false);
  const [posts,setPosts]=useState<FeedPost[]>([]);
@@ -70,7 +72,7 @@ function ProfilePublicationGrid({userId,editable,filter}:{userId?:string;editabl
   try{await setSavedPost(owner,post.id,false);setSavedPosts(items=>items.filter(x=>x.id!==post.id));setSelected(null);}
   catch(e){Alert.alert("Guardados",e instanceof Error?e.message:"No se pudo quitar de guardados.");}
  }
- const showSaved=editable&&filter==="all"&&savedView;
+ const showSaved=editable&&filter==="all"&&!limit&&savedView;
  const visiblePosts=(showSaved?savedPosts:posts).filter(post=>filter==="all"||post.kind===(filter==="videos"?"video":"live"));
  const linkedIds=new Set(posts.map(post=>post.mediaId).filter(Boolean));
  const additionalMedia=showSaved?[]:workMedia.filter(m=>
@@ -87,11 +89,17 @@ function ProfilePublicationGrid({userId,editable,filter}:{userId?:string;editabl
    onPress:()=>router.push({pathname:"/work-media/[id]",params:{id:item.id}})
   }))
  ];
+ const visibleTiles=limit?tiles.slice(0,limit):tiles;
  const emptyMessage=filter==="videos"?"Todavía no hay videos publicados.":filter==="live"?"Todavía no hay transmisiones publicadas.":showSaved?"Todavía no has guardado publicaciones.":"Todavía no hay publicaciones.";
  return <View style={{gap:12}}>
   <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",minHeight:40,gap:8}}>
-   <Text style={s.h3}>{filter==="videos"?"Videos":filter==="live"?"Transmisiones":"Publicaciones"}</Text>
-   {editable&&filter==="all"&&<Pressable accessibilityRole="button" accessibilityLabel={savedView?"Ver mis publicaciones":"Ver publicaciones guardadas"} accessibilityState={{selected:savedView}}
+   <Text style={s.h3}>{heading??(filter==="videos"?"Videos":filter==="live"?"Transmisiones":"Publicaciones")}</Text>
+   {!!onSeeAll&&<Pressable accessibilityRole="button" accessibilityLabel="Ver todas las publicaciones" onPress={onSeeAll}
+     style={{minHeight:44,paddingHorizontal:10,flexDirection:"row",gap:5,alignItems:"center",justifyContent:"center"}}>
+     <Text style={{color:t.ink,fontSize:13,fontWeight:"700"}}>Ver todo</Text>
+     <Ionicons name="chevron-forward" size={16} color={t.ink}/>
+    </Pressable>}
+   {editable&&filter==="all"&&!limit&&<Pressable accessibilityRole="button" accessibilityLabel={savedView?"Ver mis publicaciones":"Ver publicaciones guardadas"} accessibilityState={{selected:savedView}}
     onPress={()=>setSavedView(v=>!v)} style={{minHeight:44,paddingHorizontal:12,flexDirection:"row",gap:6,alignItems:"center",borderRadius:14,backgroundColor:savedView?t.cream:t.surface,borderWidth:1,borderColor:t.line}}>
     <Ionicons name={savedView?"grid-outline":"bookmark-outline"} size={18} color={t.ink}/>
     <Text style={[s.muted,{color:t.ink,fontWeight:"600"}]}>{savedView?"Mías":"Guardadas"}</Text>
@@ -99,7 +107,7 @@ function ProfilePublicationGrid({userId,editable,filter}:{userId?:string;editabl
   </View>
   {loading&&<ActivityIndicator color={t.ink}/>}
   {!!error&&<Text accessibilityLiveRegion="polite" style={s.muted}>{error}</Text>}
-  {!loading&&!error&&<ProfileMediaGrid items={tiles} emptyMessage={emptyMessage}/>}
+  {!loading&&!error&&<ProfileMediaGrid items={visibleTiles} emptyMessage={emptyMessage}/>}
   <BottomSheet visible={!!selected} onClose={()=>setSelected(null)} title="Opciones de publicación">
    {!!selected&&<View style={{gap:5,paddingVertical:8}}>
     <Pressable accessibilityRole="button" onPress={()=>{const post=selected;setSelected(null);openPost(post);}}
@@ -119,9 +127,10 @@ function ProfilePublicationGrid({userId,editable,filter}:{userId?:string;editabl
   </BottomSheet>
  </View>;
 }
-export function ProfileOwnedPosts({filter="all"}:{filter?:Filter}){
- return <ProfilePublicationGrid filter={filter} editable/>;
+type ProfilePostsProps={filter?:Filter;limit?:number;heading?:string;onSeeAll?:()=>void};
+export function ProfileOwnedPosts({filter="all",limit,heading,onSeeAll}:ProfilePostsProps){
+ return <ProfilePublicationGrid filter={filter} editable limit={limit} heading={heading} onSeeAll={onSeeAll}/>;
 }
-export function ProfilePublicPosts({userId,filter="all"}:{userId:string;filter?:Filter}){
- return <ProfilePublicationGrid filter={filter} userId={userId} editable={false}/>;
+export function ProfilePublicPosts({userId,filter="all",limit,heading,onSeeAll}:{userId:string}&ProfilePostsProps){
+ return <ProfilePublicationGrid filter={filter} userId={userId} editable={false} limit={limit} heading={heading} onSeeAll={onSeeAll}/>;
 }

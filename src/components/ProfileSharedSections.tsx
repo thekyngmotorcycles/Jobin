@@ -1,23 +1,50 @@
 import {Ionicons} from "@expo/vector-icons";
-import {Image,Pressable,Text,View} from "react-native";
+import {Image,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
+import {useEffect,useRef} from "react";
+import {useReducedMotion} from "react-native-reanimated";
 import type {ReactNode,ComponentProps} from "react";
 import {ProfileFollowCounts} from "./ProfileFollowCounts";
 import {MediaThumbnail} from "./MediaThumbnail";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 
-export type ProfileSection="grid"|"cv"|"videos"|"live";
-const tabs=[{id:"cv",icon:"school-outline",label:"Historial profesional"},{id:"grid",icon:"grid-outline",label:"Todo"},{id:"videos",icon:"play-outline",label:"Videos"},{id:"live",icon:"radio-outline",label:"Transmisiones en vivo"}] as const;
+export type ProfileSection="home"|"grid"|"cv"|"videos"|"live";
+const tabs=[
+ {id:"home",icon:"home-outline",label:"Inicio"},
+ {id:"grid",icon:"grid-outline",label:"Todo"},
+ {id:"videos",icon:"play-outline",label:"Videos"},
+ {id:"live",icon:"radio-outline",label:"En vivo"},
+ {id:"cv",icon:"briefcase-outline",label:"Acerca de"}
+] as const;
 
-/** Shared profile presentation; owner and visitors keep the same tab arrangement. */
-export function ProfileSectionTabs({section,onSelect}:{section:ProfileSection;onSelect:(section:ProfileSection)=>void}){
+/** Accessible horizontally scrollable tabs, pinned by the parent ScrollView. */
+export function ProfileSectionTabs({section,onSelect,pinned=false}:{section:ProfileSection;onSelect:(section:ProfileSection)=>void;pinned?:boolean}){
  const {theme}=useTheme();const jt=jobeenTokens(theme);
- return <View style={{flexDirection:"row",justifyContent:"space-around",alignItems:"center",borderBottomWidth:1,borderBottomColor:jt.line,paddingVertical:0}}>
-  {tabs.map(tab=><Pressable key={tab.id} accessibilityRole="button" accessibilityLabel={tab.label} accessibilityState={{selected:section===tab.id}} onPress={()=>onSelect(tab.id)} style={{width:54,height:44,borderBottomWidth:section===tab.id?3:0,borderBottomColor:jt.yellow,alignItems:"center",justifyContent:"center"}}>
-   <Ionicons name={tab.icon} size={22} color={section===tab.id?jt.ink:jt.ink2}/>
-  </Pressable>)}
+ const {width}=useWindowDimensions();const reducedMotion=useReducedMotion();
+ const scroller=useRef<ScrollView|null>(null);
+ const selectedIndex=Math.max(0,tabs.findIndex(tab=>tab.id===section));
+ useEffect(()=>{
+  scroller.current?.scrollTo({x:Math.max(0,selectedIndex*104-width/2+52),animated:!reducedMotion});
+ },[selectedIndex,width,reducedMotion]);
+ return <View style={{backgroundColor:jt.bg,borderBottomWidth:1,borderBottomColor:jt.line,
+  elevation:pinned?3:0,shadowColor:jt.ink,shadowOffset:{width:0,height:2},shadowOpacity:pinned?0.09:0,
+  shadowRadius:pinned?5:0,zIndex:5}}>
+  <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always"
+   ref={scroller} contentContainerStyle={{alignItems:"center",paddingHorizontal:4,gap:4}}>
+   {tabs.map(tab=>{
+    const selected=section===tab.id;
+    return <Pressable key={tab.id} accessibilityRole="tab" accessibilityLabel={tab.label}
+      accessibilityState={{selected}} onPress={()=>onSelect(tab.id)}
+      style={{minHeight:50,paddingHorizontal:11,minWidth:90,flexDirection:"row",gap:5,alignItems:"center",justifyContent:"center",
+       borderBottomWidth:selected?3:0,borderBottomColor:jt.yellow}}>
+     <Ionicons name={tab.icon} size={17} color={selected?jt.ink:jt.ink2}/>
+     <Text numberOfLines={1} style={{fontSize:13,fontWeight:selected?"700":"500",color:selected?jt.ink:jt.ink2}}>{tab.label}</Text>
+    </Pressable>;
+   })}
+  </ScrollView>
  </View>;
 }
+
 export type ProfileTile={id:string;title:string;thumbnail?:string|null;views?:number|null;onPress?:()=>void;kind?:"photos"|"video"|"live"|"text";photoCount?:number;onOptions?:()=>void};
 export function ProfileMediaGrid({items,emptyMessage}:{items:ProfileTile[];emptyMessage?:string}){
  const {theme}=useTheme();const jt=jobeenTokens(theme);
@@ -57,7 +84,19 @@ export function ProfileMediaGrid({items,emptyMessage}:{items:ProfileTile[];empty
  </View>;
 }
 
-/** One shared profile structure. The route supplies only permission-dependent controls and data. */
+/** Hero moves out of view while ProfileSectionTabs remain pinned. */
+export function ProfileIdentityHeader({card,actions,trust,profileUserId}:{
+ card:ReactNode;actions?:ReactNode;trust?:ReactNode;profileUserId?:string;
+}){
+ return <View style={{gap:14}}>
+  {card}
+  {!!profileUserId&&<ProfileFollowCounts userId={profileUserId}/>}
+  {actions}
+  {trust}
+ </View>;
+}
+
+/** Compatibility wrapper for non-sticky presentations. */
 export function UserProfileContent({
  card,actions,trust,profileUserId,section,onSelect,children
 }:{
@@ -65,10 +104,7 @@ export function UserProfileContent({
  section:ProfileSection;onSelect:(section:ProfileSection)=>void;children?:ReactNode;
 }){
  return <View style={{gap:14}}>
-  {card}
-  {!!profileUserId&&<ProfileFollowCounts userId={profileUserId}/>}
-  {actions}
-  {trust}
+  <ProfileIdentityHeader card={card} actions={actions} trust={trust} profileUserId={profileUserId}/>
   <ProfileSectionTabs section={section} onSelect={onSelect}/>
   {children}
  </View>;
