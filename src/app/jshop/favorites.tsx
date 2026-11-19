@@ -41,7 +41,7 @@ export default function JShopFavorites(){
       onFavorite={()=>void removeFavorite(item.id)}/>)}
     </View>:
     <JShopEmpty icon="heart-outline" title="Todavía no guardaste artículos"
-     description="Cuando encuentres un artículo que te interese, tocá el corazón para guardarlo."
+     description="Cuando encuentres un artículo que te interese, toca el corazón para guardarlo."
      action={{title:"Explorar JShop",onPress:()=>router.push("/(tabs)/shop")}}/>}
    {!!error&&<Text accessibilityLiveRegion="polite" style={{color:t.ink}}>{error}</Text>}
    <JShopButton title="Volver a JShop" secondary onPress={()=>router.push("/(tabs)/shop")}/>
