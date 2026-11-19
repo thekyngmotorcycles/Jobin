@@ -56,7 +56,7 @@ export default function IdentityAdmin(){
   {loading&&<ActivityIndicator color={colors.ink}/>}
   {!loading&&allowed===false&&<Text style={s.muted}>Acceso restringido. Solo revisores autorizados pueden ver documentos y decidir solicitudes.</Text>}
   {allowed===true&&<>
-   <Text style={s.muted}>Revisá la legibilidad, vigencia y correspondencia del nombre. La aprobación confirma una revisión manual, no una validación gubernamental.</Text>
+   <Text style={s.muted}>Revisa la legibilidad, vigencia y correspondencia del nombre. La aprobación confirma una revisión manual, no una validación gubernamental.</Text>
    <Pressable onPress={()=>void load()} style={{padding:10}}><Text style={s.text}>Actualizar solicitudes</Text></Pressable>
    <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{(["pending","approved","rejected","all"] as const).map(value=><Pressable key={value} onPress={()=>setFilter(value)} style={{padding:10,borderRadius:10,borderWidth:1,borderColor:colors.line,backgroundColor:filter===value?colors.line:colors.paper}}><Text style={s.text}>{value==="pending"?"Pendientes":value==="approved"?"Aprobadas":value==="rejected"?"Rechazadas":"Todas"} ({value==="all"?rows.length:rows.filter(r=>r.status===value).length})</Text></Pressable>)}</View>
    {rows.filter(row=>filter==="all"||row.status===filter).length===0&&<Text style={s.muted}>No hay solicitudes en esta categoría.</Text>}
