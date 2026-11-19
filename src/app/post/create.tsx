@@ -330,6 +330,21 @@ export default function PostCreate(){
       <Text style={{fontWeight:"700",color:t.ink}}>{kind==="video"?"Preparar video para revisión":"Solicitar Live"}</Text>
      </Pressable>
     </View>}
+
+    <View style={{flexDirection:"row",gap:7,alignItems:"center",justifyContent:"space-between"}}>
+     {([
+      {label:"Borrador",icon:"bookmark-outline",press:()=>void openDrafts()},
+      {label:"Vista previa",icon:"eye-outline",press:()=>setPreviewOpen(true)},
+      {label:"Opciones",icon:"options-outline",press:()=>setOptionsOpen(true)}
+     ] as const).map(item=><Pressable key={item.label} accessibilityRole="button"
+      accessibilityLabel={item.label} onPress={item.press}
+      style={{minHeight:46,flex:1,flexDirection:"row",alignItems:"center",
+       justifyContent:"center",gap:5,borderRadius:14,borderWidth:1,borderColor:t.line,
+       backgroundColor:t.surface,paddingHorizontal:5}}>
+      <Ionicons name={item.icon} size={17} color={t.ink}/>
+      <Text numberOfLines={1} style={{fontSize:12,fontWeight:"600",color:t.ink}}>{item.label}</Text>
+     </Pressable>)}
+    </View>
     <View style={{borderWidth:1,borderColor:t.line,borderRadius:16,backgroundColor:t.surface,paddingHorizontal:12,paddingVertical:7}}>
      <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
       <Pressable accessibilityRole="checkbox" accessibilityLabel="Acepto las normas de publicación" accessibilityState={{checked:consent}} onPress={()=>setConsent(value=>!value)}
@@ -361,6 +376,20 @@ export default function PostCreate(){
     </View>
    </View>}
   </SafeAreaView>
+  <PostComposerSheets
+   exitOpen={exitOpen} onContinue={()=>setExitOpen(false)}
+   onSaveExit={()=>void saveAndExit()} onDiscardExit={()=>void discardAndExit()}
+   previewOpen={previewOpen} onClosePreview={()=>setPreviewOpen(false)}
+   draftsOpen={draftsOpen} onCloseDrafts={()=>setDraftsOpen(false)}
+   drafts={drafts}
+   onRestore={d=>{void saveDraftNow().then(()=>{applyDraft(d);setDraftsOpen(false);}).catch(e=>setError(String(e)));}}
+   onDelete={d=>void deleteDraft(d)}
+   optionsOpen={optionsOpen} onCloseOptions={()=>setOptionsOpen(false)}
+   body={body} photos={photos} audience={audience} followers={audienceFollowers} contacts={audienceContacts}
+   onAlt={(id,value)=>setPhotos(current=>current.map(p=>p.id===id?{...p,altText:value}:p))}
+   mentionQuery={mentionQuery} onMentionQuery={setMentionQuery} mentions={mentionResults}
+   mentionSearching={mentionSearching} onMention={chooseMention}
+  />
   <Modal transparent visible={audienceMenuOpen} animationType="fade" statusBarTranslucent={false}
    onRequestClose={()=>setAudienceMenuOpen(false)}>
    <View style={{flex:1}}>
