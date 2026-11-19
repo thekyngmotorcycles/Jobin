@@ -41,7 +41,7 @@ export function FlashComposer(){
   const value=snapshotRef.current;
   if(!value.uri&&!value.title.trim())return;
   const saved=Date.now();
-  await AsyncStorage.setItem(key(userId),JSON.stringify({...value,savedAt:saved} satisfies FlashDraft));
+  await AsyncStorage.setItem(key(userId),JSON.stringify({title:value.title,videoUri:value.uri,savedAt:saved} satisfies FlashDraft));
   setSavedAt(saved);
  }
  function home(){suppressAutosave.current=true;setExitOpen(false);setExitAllowed(true);setGoHome(true);}
