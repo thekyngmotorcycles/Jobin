@@ -1,5 +1,5 @@
 import {Ionicons} from "@expo/vector-icons";
-import {Stack,useLocalSearchParams,useNavigation} from "expo-router";
+import {router,Stack,useLocalSearchParams,useNavigation} from "expo-router";
 import {StackActions,usePreventRemove} from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import {useEffect,useRef,useState} from "react";
