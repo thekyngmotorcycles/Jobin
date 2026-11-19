@@ -9,9 +9,11 @@ const root=readFileSync("src/app/_layout.tsx","utf8");
 test("After a successful post, navigate to Home and highlight the created entry",()=>{
  assert.ok(tabs.includes('{name:"index",title:"Casa"'));
  assert.ok(root.includes('<Stack.Screen name="(tabs)" options={{headerShown:false}}/>'));
- assert.ok(composer.includes('StackActions.popTo("(tabs)"'));
- assert.ok(composer.includes('screen:"index"'));
- assert.ok(composer.includes('params:destination?{published:destination}:{}'));
+ assert.ok(composer.includes('navigation.canGoBack()'));
+ assert.ok(composer.includes('navigation.goBack()'));
+ assert.ok(composer.includes('usePreventRemove(hasWork&&!editingDone'));
+ assert.ok(!composer.includes('StackActions.popTo("(tabs)"'));
+ assert.ok(!composer.includes('StackActions.popTo('));
  assert.ok(!tabs.includes('<Tabs.Screen name="inicio"'));
  assert.ok(!composer.includes('pathname:"/(tabs)/inicio"'));
  assert.ok(composer.includes("finishHome(publishedId)"));
