@@ -372,7 +372,10 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
   try {await Share.share({message:`JCard ${side==="business"?"de negocio":"personal"} de ${label}: ${link}`,title:`JCard ${side==="business"?"de negocio":"personal"} · ${label}`});} catch(error){console.warn("No se pudo abrir el menú para compartir la JCard",error);}
  };
  return <>
-  <View style={{width:"100%",maxWidth:jcardSurfaceMetrics.maxWidth,alignSelf:"center"}}>
+  <View onLayout={event=>{
+   const next=Math.round(event.nativeEvent.layout.width);
+   if(next>0)setMeasuredCardWidth(previous=>previous!==next?next:previous);
+  }} style={{width:"100%",maxWidth:jcardSurfaceMetrics.maxWidth,alignSelf:"center"}}>
    <BusinessCard3D height={cardHeight} enabled={canFlip} ghostPreview={hintVisible} initialSide={initialSide} side={back?"business":"personal"}
      onSideChange={side=>{setBack(side==="business");setHintVisible(false);}} shadowColor={jcardCommon.cardShadowColor}
      front={(showOwnerActions||visibility.personal_enabled)?<CardFace card={card} theme={cardTheme} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onEditPhoto={showOwnerActions?onEditPersonalPhoto:undefined} onQr={()=>setQrOpen(true)} onSaveContact={!showOwnerActions?(onDemoSaveContact??(ownerId?savePersonal:undefined)):undefined} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>:null}
