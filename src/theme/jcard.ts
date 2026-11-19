@@ -38,6 +38,20 @@ export const jcardLayout = {
   avatar: 64, qr: 56, qrQuietZone: 4, radius: 18, padding: 14,
   gap: 5, minimumSealWidth: 38,
 };
+/** Shared responsive measurements for real JCard faces and the loading skeleton. */
+export const jcardSurfaceMetrics={
+ maxWidth:520, horizontalScreenInset:32, compactThreshold:350,
+ lightHeight:330, darkHeight:400, compactHeightExtra:8,
+ maxFontScale:1.3, fontScaleExtra:40, radius:30,
+} as const;
+export function jcardSurfaceSize(args:{screenWidth:number;measuredWidth?:number;fontScale:number;theme:ThemeName}){
+ const m=jcardSurfaceMetrics;
+ const width=args.measuredWidth&&args.measuredWidth>0?args.measuredWidth:Math.min(Math.max(args.screenWidth-m.horizontalScreenInset,0),m.maxWidth);
+ const compact=width<m.compactThreshold;
+ const height=(args.theme==="light"?m.lightHeight:m.darkHeight)+(compact?m.compactHeightExtra:0)+
+  Math.round(Math.max(0,Math.min(args.fontScale,m.maxFontScale)-1)*m.fontScaleExtra);
+ return {width,height,compact,radius:m.radius};
+}
 export const proficiencyColors = {low:'#d84b54',middle:'#e4af42',high:'#219765'};
 export const businessCardAccents = {name:"#151B24",category:"#465B6C",contact:"#354553",icon:"#416477"};
 export const businessCardPaper = { background:"#ffffff", ink:"#111111", secondary:"#5d6165", border:"#dedede", muted:"#f5f5f5", outerBorder:"#e5e5e5" }; 

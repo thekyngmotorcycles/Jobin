@@ -2,6 +2,7 @@ import {JCARD_FLIP_GLARE} from "../theme/jobeen";
 import {jcardCommon, jcardFlipShadow} from "../theme/jcard";
 import {createContext, useCallback, useEffect, useRef, type ReactNode} from "react";
 import {Platform, StyleSheet} from "react-native";
+import Svg,{Path,Circle} from "react-native-svg";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
 import Animated, {cancelAnimation, interpolate, runOnJS, useAnimatedReaction, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSequence, withSpring, withTiming} from "react-native-reanimated";
 import {LinearGradient} from "expo-linear-gradient";
@@ -17,7 +18,7 @@ export interface BusinessCardProps {
   side: "personal" | "business";
   onSideChange: (side:"personal" | "business")=>void;
   shadowColor?: string;
-  tutorialNudge?: boolean;
+  ghostPreview?: boolean;
 }
 
 /** Child action controls mark their touches so the card flip never steals a link/button tap. */
@@ -28,10 +29,10 @@ function lightImpact(){
   if(Platform.OS!=="web")void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(()=>{});
 }
 
-export function BusinessCard3D({front,back,height,enabled=true,initialSide="personal",side,onSideChange,shadowColor=jcardCommon.cardShadowColor,tutorialNudge=false}:BusinessCardProps){
+export function BusinessCard3D({front,back,height,enabled=true,initialSide="personal",side,onSideChange,shadowColor=jcardCommon.cardShadowColor,ghostPreview=false}:BusinessCardProps){
   const interactiveTouch=useRef(false);
   const reducedMotion=useReducedMotion();
-  const hintTilt=useSharedValue(0);
+  const previewAngle=useSharedValue(0);
   const lastGestureSide=useRef<"personal"|"business"|null>(null);
   const markInteractive=useCallback(()=>{interactiveTouch.current=true;},[]);
   const angle=useSharedValue(initialSide==="business"?180:0);
@@ -55,15 +56,22 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
     }
   },[enabled,side,angle,lift,moving]);
 
-  // One-time gesture discoverability; not a real flip and never changes the card side.
+  // The short reveal uses the actual reverse face, without changing the selected
+  // side or triggering the midpoint haptics reserved for real user gestures.
   useEffect(()=>{
-    if(!enabled||!tutorialNudge||reducedMotion)return;
-    hintTilt.value=withDelay(260,withSequence(
-      withTiming(-8,{duration:240}),
-      withTiming(0,{duration:370})
+    if(!enabled||!ghostPreview||reducedMotion)return;
+    const signed=side==="personal"?96:-96;
+    previewAngle.value=withDelay(230,withSequence(
+      withTiming(signed,{duration:470}),
+      withDelay(110,withTiming(0,{duration:520}))
     ));
-    return()=>{cancelAnimation(hintTilt);hintTilt.value=0;};
-  },[enabled,tutorialNudge,reducedMotion,hintTilt]);
+    return()=>{cancelAnimation(previewAngle);previewAngle.value=0;};
+  },[enabled,ghostPreview,reducedMotion,side,previewAngle]);
+  const ghostStyle=useAnimatedStyle(()=>{
+    const p=Math.min(1,Math.abs(previewAngle.value)/96);
+    return {opacity:interpolate(p,[0,0.16,0.8,1],[0,0.25,0.7,0.42]),
+      transform:[{translateX:interpolate(p,[0,1],[20,-21])}]};
+  });
 
   // Cross the midpoint once per flip, including while dragging.
   useAnimatedReaction(
@@ -77,7 +85,7 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
   const tap=Gesture.Tap().enabled(enabled).maxDistance(12).runOnJS(true).onEnd(()=>{
     if(interactiveTouch.current)return;
     const next=side==="personal"?"business":"personal";
-    cancelAnimation(hintTilt);hintTilt.value=0;
+    cancelAnimation(previewAngle);previewAngle.value=0;
     lift.value=withSequence(withSpring(1.04,SPRING),withSpring(1,SPRING));
     angle.value=withSpring(next==="business"?180:0,SPRING);
     lastGestureSide.current=next;
@@ -87,7 +95,7 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
     .onBegin(()=>{
       if(interactiveTouch.current)return;
       cancelAnimation(angle);
-      cancelAnimation(hintTilt);hintTilt.value=0;
+      cancelAnimation(previewAngle);previewAngle.value=0;
       panStart.value=angle.value;
       moving.value=true;
       lift.value=withSpring(1.04,SPRING);
@@ -114,22 +122,23 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
   const gesture=Gesture.Exclusive(pan,tap);
 
   const outerStyle=useAnimatedStyle(()=>({
-    transform:[{perspective:1000},{rotateY:`${hintTilt.value}deg`},{scale:lift.value}],
+    transform:[{scale:lift.value}],
 
   }));
-  const frontStyle=useAnimatedStyle(()=>({
-    opacity:angle.value<90?1:0,
-    transform:[{perspective:1000},{rotateY:`${angle.value}deg`}],
-  }));
-  const backStyle=useAnimatedStyle(()=>({
-    opacity:angle.value>90?1:0,
-    transform:[{perspective:1000},{rotateY:`${angle.value+180}deg`}],
-  }));
+  const frontStyle=useAnimatedStyle(()=>{
+    const combined=angle.value+previewAngle.value;
+    return {opacity:combined<90?1:0,transform:[{perspective:1000},{rotateY:`${combined}deg`}]};
+  });
+  const backStyle=useAnimatedStyle(()=>{
+    const combined=angle.value+previewAngle.value;
+    return {opacity:combined>90?1:0,transform:[{perspective:1000},{rotateY:`${combined+180}deg`}]};
+  });
   const glareStyle=useAnimatedStyle(()=>{
-    const radians=angle.value*Math.PI/180;
+    const combined=angle.value+previewAngle.value;
+    const radians=combined*Math.PI/180;
     return {
       opacity:Math.min(0.18,Math.abs(Math.sin(radians))*0.16),
-      transform:[{translateX:interpolate(angle.value,[0,90,180],[-260,0,260])},{rotate:"-24deg"}],
+      transform:[{translateX:interpolate(Math.max(0,Math.min(180,combined)),[0,90,180],[-260,0,260])},{rotate:"-24deg"}],
     };
   });
   return <CardFlipInteractionContext.Provider value={markInteractive}><GestureDetector gesture={gesture}>
@@ -145,6 +154,14 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
           <LinearGradient colors={JCARD_FLIP_GLARE} locations={[0,0.5,1]} start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
         </Animated.View>
       </Animated.View>
+      {enabled&&ghostPreview&&!reducedMotion&&<Animated.View pointerEvents="none"
+       accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+       style={[styles.ghost,ghostStyle]}>
+       <Svg width={70} height={22} viewBox="0 0 70 22" accessible={false}>
+        <Path d="M66 10 C48 3 24 4 8 11" fill="none" stroke={jcardCommon.businessGold} strokeOpacity={0.64} strokeWidth={1.3} strokeLinecap="round"/>
+        <Circle cx={8} cy={11} r={2.5} fill={jcardCommon.businessGold} fillOpacity={0.73}/>
+       </Svg>
+      </Animated.View>}
     </Animated.View>
   </GestureDetector></CardFlipInteractionContext.Provider>;
 }
@@ -155,4 +172,5 @@ const styles=StyleSheet.create({
   reverse:{position:"absolute",top:0,left:0,right:0},
   glareMask:{borderRadius:30,overflow:"hidden"},
   glare:{position:"absolute",top:-80,bottom:-80,width:110,left:"50%"},
+  ghost:{position:"absolute",top:"44%",right:12,width:70,height:22,zIndex:4},
 });

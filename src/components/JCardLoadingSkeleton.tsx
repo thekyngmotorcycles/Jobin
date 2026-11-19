@@ -1,17 +1,59 @@
-import {View,Text} from "react-native";
-import {JobinBrandedLoader} from "./JobinBrandedLoader";
-import {jcardLayout,businessCardPaper,jcardCommon} from "../theme/jcard";
+import {useState} from "react";
+import {Text,View,useWindowDimensions,type DimensionValue} from "react-native";
+import {JCardAbstractBee} from "./JCardAbstractBee";
+import {useTheme} from "../state/ThemeProvider";
+import {jobeenTokens} from "../theme/jobeen";
+import {businessCardPaper,jcardCommon,jcardSurfaceMetrics,jcardSurfaceSize} from "../theme/jcard";
 
-/** Stable-size JCard placeholder while the authenticated workspace is fetched. */
+/** The placeholder uses exactly the real JCard's responsive outer dimensions. */
 export function JCardLoadingSkeleton(){
-
- const line=(width:string,height=13)=><View style={{width:width as any,height,borderRadius:8,backgroundColor:businessCardPaper.muted,opacity:0.5}}/>;
- return <View accessibilityLabel="Cargando JCard" accessibilityRole="progressbar" style={{height:450,borderRadius:jcardLayout.radius,borderWidth:2,borderColor:businessCardPaper.border,backgroundColor:businessCardPaper.background,overflow:"hidden",padding:20,justifyContent:"space-between"}}>
-  <View pointerEvents="none" style={{position:"absolute",top:5,bottom:5,left:5,right:5,borderWidth:1,borderRadius:jcardLayout.radius-4,borderColor:businessCardPaper.border,opacity:0.55}}/>
-  <View style={{alignItems:"center",gap:6}}><Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:22,color:businessCardPaper.ink}}>JCard</Text>{line("23%",8)}</View>
-  <View style={{flexDirection:"row",justifyContent:"space-between"}}><View style={{width:60,height:60,borderRadius:30,backgroundColor:businessCardPaper.muted,opacity:0.5}}/><View style={{width:64,height:64,borderRadius:6,backgroundColor:jcardCommon.qrPaper,borderWidth:1,borderColor:businessCardPaper.border}}/></View>
-  <View style={{gap:12}}>{line("67%",20)}{line("45%")}{line("83%")}{line("60%")}</View>
-  <View style={{flexDirection:"row",justifyContent:"space-around",borderTopWidth:1,borderTopColor:businessCardPaper.border,paddingTop:18}}>{line("28%",40)}{line("28%",40)}</View>
-  <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9}}><JobinBrandedLoader size={36}/></View>
+ const {theme}=useTheme(),t=jobeenTokens(theme);
+ const {width:screenWidth,fontScale}=useWindowDimensions();
+ const [measuredWidth,setMeasuredWidth]=useState(0);
+ const {height,radius,compact}=jcardSurfaceSize({screenWidth,measuredWidth,fontScale,theme});
+ const light=theme==="light",fill=light?businessCardPaper.background:t.ink;
+ const muted=light?businessCardPaper.border:t.silver;
+ const line=(width:DimensionValue,height=12)=><View style={{width,height,borderRadius:Math.min(8,height/2),backgroundColor:muted,opacity:light?0.42:0.26}}/>;
+ return <View accessibilityRole="progressbar" accessibilityLabel="Cargando JCard"
+  style={{width:"100%",maxWidth:jcardSurfaceMetrics.maxWidth,alignSelf:"center"}}
+  onLayout={event=>{const current=Math.round(event.nativeEvent.layout.width);if(current>0)setMeasuredWidth(old=>old!==current?current:old);}}>
+  <View style={{height,borderRadius:radius,borderWidth:1,borderColor:t.line,backgroundColor:fill,
+   paddingHorizontal:compact?14:19,paddingTop:15,paddingBottom:12,justifyContent:"space-between",
+   shadowColor:jcardCommon.cardShadowColor,shadowOffset:{width:0,height:6},shadowOpacity:0.10,shadowRadius:12,elevation:3}}>
+   <View pointerEvents="none" style={{position:"absolute",top:5,left:5,right:5,bottom:5,borderRadius:radius-5,borderWidth:1,borderColor:t.line,opacity:0.5}}/>
+   <View style={{flexDirection:"row",alignItems:"flex-start",justifyContent:"space-between",height:42}}>
+    <View style={{width:43}}/>
+    <Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:18,color:muted,opacity:0.48}}>JCard</Text>
+    <View style={{width:41,height:41,borderRadius:9,borderWidth:1,borderColor:t.line,backgroundColor:t.surface,
+     alignItems:"center",justifyContent:"center"}}>
+     <View style={{width:26,height:26,borderWidth:3,borderColor:muted,borderRadius:3,opacity:0.43}}/>
+    </View>
+   </View>
+   <View style={{flexDirection:"row",alignItems:"center",gap:13,paddingHorizontal:2,minHeight:80}}>
+    <View style={{width:compact?75:82,height:compact?75:82,borderRadius:44,borderWidth:3,borderColor:t.yellow,
+     backgroundColor:muted,opacity:0.45}}/>
+    <View style={{flex:1,gap:9}}>
+     {line("85%",19)}{line("56%",11)}{line("76%",13)}
+    </View>
+   </View>
+   <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",gap:10,paddingHorizontal:3}}>
+    <View style={{flex:1,height:35,borderRadius:18,backgroundColor:t.cream,borderWidth:1,borderColor:t.yellow,
+     paddingHorizontal:13,justifyContent:"center"}}>{line("83%",10)}</View>
+    <View style={{width:compact?91:110,height:35,borderRadius:18,backgroundColor:t.cream,
+     alignItems:"center",justifyContent:"center"}}>{line("68%",10)}</View>
+   </View>
+   <View style={{height:1,backgroundColor:t.line,opacity:0.8,marginHorizontal:4}}/>
+   <View style={{flexDirection:"row",alignItems:"center",gap:10,minHeight:43}}>
+    {line(compact?51:65,12)}
+    <View style={{height:27,width:1,backgroundColor:t.line}}/>
+    {[0,1].map(i=><View key={i} style={{flex:1,flexDirection:"row",alignItems:"center",gap:5}}>
+     <View style={{width:25,height:25,borderRadius:13,backgroundColor:t.yellow,opacity:0.72}}/>
+     <View style={{flex:1,gap:4}}>{line("86%",9)}{line("62%",7)}</View>
+    </View>)}
+   </View>
+   <View style={{alignItems:"center",height:43,justifyContent:"center"}}>
+    <JCardAbstractBee size={35} mode="loading"/>
+   </View>
+  </View>
  </View>;
 }
