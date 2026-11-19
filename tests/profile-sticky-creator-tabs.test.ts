@@ -57,3 +57,27 @@ test("Existing contact controls, JCard editor, and professional history remain r
  assert.ok(visitor.includes('section==="cv"'));
  assert.ok(visitor.includes('section==="live"'));
 });
+
+test("Creator section panels rise OVER the JCard instead of scrolling the card away",()=>{
+ for(const page of [owner,visitor]){
+  assert.ok(page.includes("Animated.ScrollView"),"Both views must use an animated parent scroller");
+  assert.ok(page.includes("new Animated.Value(0)"),"Scroll position must be tracked on the native driver");
+  assert.ok(page.includes("useNativeDriver:true"),"Do not re-render the full JCard every scroll frame");
+  assert.ok(page.includes("transform:[{translateY:profileScrollY}]"),"Keep identity layer stationary while content covers it");
+  assert.ok(page.includes("backgroundColor:jt.bg,zIndex:2"),"Opaque section body must cover the JCard beneath");
+  assert.ok(page.includes("minHeight:screenHeight"),"Short feeds must still allow the section tabs to reach the top");
+  assert.ok(page.includes("onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}"),"Pin threshold must follow the measured panel");
+ }
+ assert.ok(owner.includes("contentContainerStyle={{paddingTop:12,paddingBottom:0}}"),"No transparent horizontal gutters around the sheet");
+ assert.ok(visitor.includes('stickyHeaderIndices={resource.data?[1]:undefined}'));
+});
+
+test("Creator top bar keeps a truly translucent downward fade, not an opaque white surface",()=>{
+ assert.ok(owner.includes('id="profileTopFade"'));
+ assert.ok(owner.includes('id="profileTopShade"'));
+ assert.ok(owner.includes('stopOpacity={0.92}'));
+ assert.ok(owner.includes('stopOpacity={0}'));
+ assert.ok(owner.includes('pointerEvents="none"'));
+ assert.ok(owner.includes('<JobeenCreateMenu/>'));
+ assert.ok(owner.includes('<NotificationBell/>'));
+});
