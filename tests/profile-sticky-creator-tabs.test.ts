@@ -95,8 +95,18 @@ test("Creator tabs replace top navigation in three stages and respect the status
   assert.ok(page.includes("opacity:topHeaderOpacity"));
   assert.ok(page.includes("pointerEvents={tabsPinned?\"none\":\"auto\"}"));
  }
- assert.ok(owner.includes('top:0,left:0,right:0,zIndex:10'),"The brand row must not double-count safe area");
+ assert.ok(owner.includes("const insets=useSafeAreaInsets()"),"Use the device safe area for the brand header");
+ assert.ok(owner.includes('top:insets.top,left:0,right:0,zIndex:10'),"Do not overlap Android status-bar indicators");
  assert.ok(visitor.includes('<Stack.Screen options={{headerShown:false}}/>'),"The public native stack bar must not block sticky tabs");
  assert.ok(visitor.includes('accessibilityLabel="Volver"'),"Public profile retains a back action");
  assert.ok(visitor.includes("paddingTop:NAVIGATION_ROW_HEIGHT+20"));
+});
+
+test("Floating brand chrome starts below status bar without changing the approved JCard scroll",()=>{
+ assert.ok(owner.includes('top:insets.top,left:0,right:0,zIndex:10'));
+ assert.ok(owner.includes('height:NAVIGATION_ROW_HEIGHT'));
+ assert.ok(owner.includes('contentContainerStyle={{paddingTop:NAVIGATION_ROW_HEIGHT+12,paddingBottom:0}}'));
+ assert.ok(owner.includes("Animated.multiply(profileScrollY,0.5)"));
+ assert.ok(owner.includes("outputRange:[0,0,-NAVIGATION_ROW_HEIGHT]"));
+ assert.ok(owner.includes("stickyHeaderIndices={[1]}"));
 });
