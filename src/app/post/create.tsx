@@ -58,16 +58,114 @@ export default function PostCreate(){
  const savingChainRef=useRef<Promise<void>>(Promise.resolve());
  const pendingUploadsRef=useRef<Promise<void>[]>([]);
  const autosaveEnabledRef=useRef(true);
+
+ const snapshot:PostDraft={
+  id:draftId,updatedAt:Date.now(),body,kind,photos,mediaId,audience,
+  audienceFollowers,audienceContacts,consent,mentionedProfileIds
+ };
+ draftSnapshotRef.current=snapshot;
+ const hasWork=hasDraftContent(snapshot);
+ function persistSnapshot(value:PostDraft){
+  if(!author||!hydrated||!autosaveEnabledRef.current||!hasDraftContent(value))return savingChainRef.current;
+  savingChainRef.current=savingChainRef.current.catch(()=>{}).then(async()=>{
+   if(autosaveEnabledRef.current)await savePostDraft(author,value);
+  });
+  return savingChainRef.current;
+ }
+ function applyDraft(d:PostDraft){
+  setDraftId(d.id);setBody(d.body);setKind(d.kind);
+  setPhotos(d.photos);setMediaId(d.mediaId);setAudience(d.audience);
+  setAudienceFollowers(d.audienceFollowers);setAudienceContacts(d.audienceContacts);
+  setConsent(d.consent);setMentionedProfileIds(d.mentionedProfileIds??[]);
+  void restorePostDraftPhotoUrls(d.photos).then(setPhotos).catch(()=>{
+   setError("Algunas fotos necesitan conexión o volver a seleccionarse.");
+  });
+ }
  useEffect(()=>{let active=true;void(async()=>{
   try{
    const uid=await currentSocialUser();
    if(!active)return;
    setAuthor(uid);
+   const saved=await readPostDrafts(uid);
+   if(!active)return;
+   setDrafts(saved);
+   if(saved[0])applyDraft(saved[0]);
    const approved=await Promise.all([shareApprovedMedia("video",uid),shareApprovedMedia("live",uid)]);
    if(active)setMedia([...approved[0],...approved[1]]);
   }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudo cargar la cuenta.");}
-  finally{if(active)setLoading(false);}
+  finally{if(active){setHydrated(true);setLoading(false);}}
  })();return()=>{active=false;};},[]);
+ useEffect(()=>{
+  if(!hydrated||!author||!hasWork||!autosaveEnabledRef.current)return;
+  const timer=setTimeout(()=>{void persistSnapshot(draftSnapshotRef.current);},180);
+  return()=>clearTimeout(timer);
+ },[author,hydrated,draftId,body,kind,photos,mediaId,audience,audienceFollowers,audienceContacts,consent,mentionedProfileIds]);
+ useEffect(()=>{
+  const subscription=AppState.addEventListener("change",status=>{
+   if(status!=="active")void persistSnapshot(draftSnapshotRef.current);
+  });
+  return()=>{subscription.remove();void persistSnapshot(draftSnapshotRef.current);};
+ },[author,hydrated]);
+ useEffect(()=>{
+  if(!optionsOpen||mentionQuery.trim().length<2){setMentionResults([]);return;}
+  let active=true;const timer=setTimeout(()=>{
+   setMentionSearching(true);
+   void searchPostMentions(mentionQuery).then(list=>{if(active)setMentionResults(list);})
+    .catch(e=>{if(active)setError(e instanceof Error?e.message:"No se pudieron buscar cuentas.");})
+    .finally(()=>{if(active)setMentionSearching(false);});
+  },320);
+  return()=>{active=false;clearTimeout(timer);};
+ },[mentionQuery,optionsOpen]);
+ useEffect(()=>{
+  if(!editingDone||destination===null)return;
+  router.replace({pathname:"/(tabs)/index",params:destination?{published:destination}:{}});
+ },[editingDone,destination]);
+ usePreventRemove(!editingDone,()=>{
+  if(hasDraftContent(draftSnapshotRef.current))setExitOpen(true);
+  else finishHome("");
+ });
+ function finishHome(published:string){
+  autosaveEnabledRef.current=false;
+  setExitOpen(false);setEditingDone(true);setDestination(published);
+ }
+ function requestExit(){
+  if(hasDraftContent(draftSnapshotRef.current)){Keyboard.dismiss();setExitOpen(true);}
+  else finishHome("");
+ }
+ async function saveDraftNow(){
+  await Promise.allSettled(pendingUploadsRef.current);
+  await persistSnapshot(draftSnapshotRef.current);
+  setDrafts(await readPostDrafts(author));
+ }
+ async function saveAndExit(){
+  try{await saveDraftNow();finishHome("");}
+  catch(e){setError(e instanceof Error?e.message:"No se pudo guardar el borrador.");setExitOpen(false);}
+ }
+ async function discardAndExit(){
+  try{
+   autosaveEnabledRef.current=false;
+   await savingChainRef.current.catch(()=>{});
+   await deletePostDraft(author,draftSnapshotRef.current.id);
+   finishHome("");
+  }catch(e){autosaveEnabledRef.current=true;setError(e instanceof Error?e.message:"No se pudo descartar el borrador.");setExitOpen(false);}
+ }
+ async function openDrafts(){
+  try{
+   await saveDraftNow();
+   setDrafts(await readPostDrafts(author));
+   setDraftsOpen(true);
+  }catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar los borradores.");}
+ }
+ async function deleteDraft(d:PostDraft){
+  try{await deletePostDraft(author,d.id);setDrafts(await readPostDrafts(author));}
+  catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar el borrador.");}
+ }
+ function chooseMention(person:PostMention){
+  const token="@"+(person.handle.replace(/^@/,"")||person.name.trim().replace(/\s+/g,""));
+  setBody(current=>current+(current.trim()&&!current.endsWith(" ")?" ":"")+token+" ");
+  setMentionedProfileIds(current=>current.includes(person.id)?current:[...current,person.id]);
+  setMentionQuery("");setMentionResults([]);
+ }
  async function choosePhotos(){
   if(photos.length>=5)return;
   try{
