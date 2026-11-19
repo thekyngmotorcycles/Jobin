@@ -57,7 +57,10 @@ test("Private draft image backups are saved and published without making origina
  assert.ok(migration.includes('Jobeen draft photo owner select'));
  assert.ok(editor.includes('uploadPhoto(author,photo.uri,DRAFT_PHOTO_BUCKET)'));
  assert.ok(drafts.includes('createSignedUrls(paths,3600)'));
- assert.ok(feed.includes('db.storage.from(DRAFT_POSTS_BUCKET).download(saved)'));
+ assert.ok(feed.includes('db.storage.from(DRAFT_POSTS_BUCKET).copy(saved,path,{destinationBucket:bucket})'));
+ assert.ok(!feed.includes('await blob.arrayBuffer()'));
+ assert.ok(feed.includes('if(!saved.startsWith(owner+"/"))'));
+ assert.ok(feed.includes('if(copyError)throw copyError;'));
  assert.ok(feed.includes('photoDraftPaths'));
 });
 test("Mentioning with @ searches in the text field; accessible descriptions live on each photo",()=>{
