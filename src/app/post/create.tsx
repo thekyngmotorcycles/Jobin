@@ -124,8 +124,8 @@ export default function PostCreate(){
      <Pressable accessibilityRole="button" accessibilityState={{expanded:mediaHelpOpen}} accessibilityLabel="Información sobre publicaciones de video y Live" onPress={()=>setMediaHelpOpen(v=>!v)}
       style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:10}}>
       <View style={{flex:1,gap:3}}>
-       <Text style={{color:t.ink,fontWeight:"800",fontSize:15}}>{kind==="video"?"Video publicado":"Live pasado"}</Text>
-       <Text numberOfLines={mediaHelpOpen?undefined:1} style={{color:t.ink2,fontSize:12,lineHeight:18}}>{kind==="video"?"Elegí uno de tus videos aprobados. Los archivos nuevos pasan primero por moderación.":"Compartí la vista previa de un Live publicado. Los recortes editables se incorporarán cuando el proveedor entregue grabaciones."}</Text>
+       <Text numberOfLines={1} style={{color:t.ink,fontWeight:"800",fontSize:15}}>{kind==="video"?"Video publicado · Solo aprobados":"Live pasado · Clips aprobados"}</Text>
+       {mediaHelpOpen&&<Text style={{color:t.ink2,fontSize:12,lineHeight:18}}>{kind==="video"?"Elegí uno de tus videos aprobados. Los archivos nuevos pasan primero por moderación.":"Compartí la vista previa de un Live publicado. Los recortes editables se incorporarán cuando el proveedor entregue grabaciones."}</Text>}
       </View>
       <Ionicons name={mediaHelpOpen?"chevron-up":"chevron-down"} size={19} color={t.ink2}/>
      </Pressable>
