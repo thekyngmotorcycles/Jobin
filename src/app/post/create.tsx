@@ -1,6 +1,7 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useLocalSearchParams,useNavigation} from "expo-router";
-import {StackActions,usePreventRemove} from "@react-navigation/native";
+import {markPublishedPostForHome} from "../../lib/post-return";
+import {usePreventRemove} from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import {useEffect,useRef,useState} from "react";
 import {ActivityIndicator,AppState,Image,InteractionManager,Keyboard,Modal,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
@@ -142,30 +143,35 @@ export default function PostCreate(){
  },[mentionQuery]);
  useEffect(()=>{
   if(!editingDone||destination===null)return;
-  // Return through the native root stack to its existing (tabs) screen,
-  // selecting the real Home tab (index). Avoid a hidden Expo Router href
-  // or the URL root, which produced a blank screen / jobin:/// on Android.
-  // Queue after React has disabled usePreventRemove and the closing modal
-  // has completed its UI transition.
+  // The native post screen is pushed above the existing tab navigator.
+  // Pop only this screen. Cross-navigator popTo("(tabs)",{screen:"index"})
+  // has caused the Android activity to close on Back; do not dispatch it.
+  // Home reads the published ID after the tab regains focus.
+  if(destination)markPublishedPostForHome(destination);
   const task=InteractionManager.runAfterInteractions(()=>{
-   navigation.dispatch(StackActions.popTo("(tabs)",{
-    screen:"index",
-    params:destination?{published:destination}:{}
-   }));
+   if(navigation.canGoBack())navigation.goBack();
+   else router.replace("/videos");
   });
   return()=>task.cancel();
  },[editingDone,destination,navigation]);
- usePreventRemove(!editingDone,()=>{
-  if(hasDraftContent(draftSnapshotRef.current))setExitOpen(true);
-  else finishHome("");
+ // Only intercept removal when there is actually content to preserve.
+ // An empty composer should use the ordinary native Back behavior.
+ usePreventRemove(hasWork&&!editingDone,()=>{
+  setExitOpen(true);
  });
  function finishHome(published:string){
   autosaveEnabledRef.current=false;
   setExitOpen(false);setEditingDone(true);setDestination(published);
  }
  function requestExit(){
-  if(hasDraftContent(draftSnapshotRef.current)){Keyboard.dismiss();setExitOpen(true);}
-  else finishHome("");
+  if(hasDraftContent(draftSnapshotRef.current)){
+   Keyboard.dismiss();
+   setExitOpen(true);
+  }else if(navigation.canGoBack()){
+   navigation.goBack();
+  }else{
+   router.replace("/videos");
+  }
  }
  async function saveDraftNow(){
   await Promise.allSettled(pendingUploadsRef.current);
