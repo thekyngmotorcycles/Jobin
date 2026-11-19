@@ -105,7 +105,7 @@ export async function publishJShopDraft(ownerId:string,draft:JShopDraft):Promise
  if(typeof draft.locationLat!=="number"||typeof draft.locationLon!=="number"
   ||!Number.isFinite(draft.locationLat)||!Number.isFinite(draft.locationLon)
   ||Math.abs(draft.locationLat)>90||Math.abs(draft.locationLon)>180)
-  throw Error("Elegí la ubicación del artículo en el mapa antes de publicar.");
+  throw Error("Elige la ubicación del artículo en el mapa antes de publicar.");
  const saleDefault=await readDefaultSaleLocation(ownerId);
  if(!saleDefault)throw Error("Configurá primero tu ubicación de venta en JShop.");
  const locationPoint={lat:draft.locationLat,lon:draft.locationLon};
