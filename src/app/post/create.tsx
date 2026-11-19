@@ -58,6 +58,7 @@ export default function PostCreate(){
   // The text field is always present; tapping the selected media type again returns to text only.
   const selected=kind===next?"text":next;
   setKind(selected);setError("");setMediaId("");setMediaHelpOpen(false);
+  if(selected==="text"&&next==="photos")setPhotos([]);
   if(selected==="video"||selected==="live"){setAudience("public");setAudienceMenuOpen(false);}
  }
  function toggleAudienceMenu(){
