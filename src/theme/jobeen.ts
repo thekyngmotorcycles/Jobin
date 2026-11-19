@@ -10,7 +10,7 @@ export const LIGHT_JOBEEN={
  qrBorder:"#E6DDBF",hexFront:"#F0D77A",hexBack:"#EDCF62",
  videoTile1:"#F2EBD6",videoTile2:"#FFF4CC",videoTile3:"#EDE5CC",
  videoViewsOverlay:"rgba(0,0,0,0.6)",videoViewsText:"#FFFFFF",
- bar:"rgba(255,253,247,0.94)",silver:"#C9CCD1",
+ bar:"rgba(255,253,247,0.94)",silver:"#C9CCD1",floatingCardShadow:"#000000",
  feedPhotoCounterBg:"rgba(0,0,0,0.64)",feedPhotoCounterText:"#FFFFFF",feedLiked:"#E64C5B",uploadScrim:"rgba(0,0,0,0.36)",
 } as const;
 
@@ -26,7 +26,7 @@ export function jobeenTokens(theme:ThemeName){
   qrBorder:p.line,hexFront:p.accent,hexBack:p.accent,
   videoTile1:p.card,videoTile2:p.accent,videoTile3:p.card,
   videoViewsOverlay:"rgba(0,0,0,0.6)",videoViewsText:"#FFFFFF",
-  bar:p.mediaControl,silver:p.muted,
+  bar:p.mediaControl,silver:p.muted,floatingCardShadow:"#000000",
   feedPhotoCounterBg:"rgba(0,0,0,0.64)",feedPhotoCounterText:"#FFFFFF",feedLiked:p.reaction,uploadScrim:"rgba(0,0,0,0.36)",
  };
 }
