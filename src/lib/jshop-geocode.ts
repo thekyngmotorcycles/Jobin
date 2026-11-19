@@ -6,7 +6,7 @@ import {LOCATION_TYPES,mapboxPlaces,type MapboxResponse} from "./mapbox-geocode-
 /** Temporary Mapbox lookups are never cached; saved selections use permanent geocoding. */
 let geocodeBlockedUntil=0;
 function blockedMessage(seconds:number):string {
- return "Mapbox está limitando las consultas de este token. Reintentá en aproximadamente "+Math.max(1,Math.ceil(seconds))+" s. Si continúa, revisá el límite efectivo y el uso del token en Mapbox.";
+ return "Mapbox está limitando las consultas de este token. Reintentá en aproximadamente "+Math.max(1,Math.ceil(seconds))+" s. Si continúa, revisa el límite efectivo y el uso del token en Mapbox.";
 }
 function blockedSeconds():number {return Math.max(0,Math.ceil((geocodeBlockedUntil-Date.now())/1000));}
 async function mapboxRequest(path:"forward"|"reverse",params:Record<string,string>,permanent=false):Promise<JShopPlace[]>{
@@ -30,7 +30,7 @@ async function mapboxRequest(path:"forward"|"reverse",params:Record<string,strin
    geocodeBlockedUntil=Date.now()+waitSeconds*1000;
    throw new Error(blockedMessage(waitSeconds));
   }
-  if(response.status===422)throw new Error("Mapbox rechazó la consulta geográfica. Revisá los parámetros de búsqueda.");
+  if(response.status===422)throw new Error("Mapbox rechazó la consulta geográfica. Revisa los parámetros de búsqueda.");
   throw new Error("No se pudo consultar Mapbox. Verifica tu conexión.");
  }
  const body=await response.json() as MapboxResponse;
