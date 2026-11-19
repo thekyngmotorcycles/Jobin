@@ -302,6 +302,7 @@ export default function PostCreate(){
       Los videos y Lives aprobados solo pueden compartirse públicamente.
      </Text>}
     </View>
+    <View style={{position:"relative",zIndex:3}}>
     <TextInput accessibilityLabel="Texto de la publicación" value={body} onChangeText={setBody} multiline textAlignVertical="top" maxLength={2000}
       placeholder="Muestra tu trabajo" placeholderTextColor={t.ink2}
       onContentSizeChange={event=>{
@@ -310,6 +311,28 @@ export default function PostCreate(){
       }} scrollEnabled={composerHeight>=240}
       style={{backgroundColor:t.surface,borderWidth:1,borderColor:t.line,borderRadius:17,
        paddingHorizontal:15,paddingVertical:12,height:composerHeight,color:t.ink,fontSize:15,lineHeight:22}}/>
+     {!!mentionQuery&&mentionQuery.length>=2&&(mentionSearching||mentionResults.length>0)&&<View
+      style={{position:"absolute",top:composerHeight+5,left:0,right:0,zIndex:9,elevation:12,
+       maxHeight:215,borderRadius:14,overflow:"hidden",backgroundColor:t.surface,
+       borderWidth:1,borderColor:t.line,shadowColor:t.floatingCardShadow,
+       shadowOpacity:0.12,shadowRadius:10}}>
+      <ScrollView keyboardShouldPersistTaps="always" nestedScrollEnabled>
+       {mentionSearching&&<Text style={{fontSize:12,padding:12,color:t.ink2}}>Buscando profesionales...</Text>}
+       {mentionResults.map(person=><Pressable key={person.id} accessibilityRole="button"
+        accessibilityLabel={"Mencionar "+person.name} onPress={()=>chooseMention(person)}
+        style={{minHeight:48,paddingHorizontal:12,flexDirection:"row",alignItems:"center",gap:10}}>
+        <Ionicons name={person.company?"business-outline":"person-outline"} size={19} color={t.ink}/>
+        <View style={{flex:1}}>
+         <Text numberOfLines={1} style={{fontSize:13,fontWeight:"600",color:t.ink}}>{person.name}</Text>
+         {!!person.handle&&<Text numberOfLines={1} style={{fontSize:11,color:t.ink2}}>@{person.handle}</Text>}
+        </View>
+       </Pressable>)}
+      </ScrollView>
+     </View>}
+     {body.length>=1800&&<Text style={{fontSize:11,color:t.ink2,textAlign:"right",paddingTop:3}}>
+      {body.length} / 2000 caracteres
+     </Text>}
+    </View>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
      {kinds.map(option=><Pressable key={option.kind} accessibilityRole="button" accessibilityState={{selected:kind===option.kind}} accessibilityLabel={kind===option.kind?"Quitar "+option.label:"Añadir "+option.label} onPress={()=>switchKind(option.kind)}
       style={{flexDirection:"row",alignItems:"center",gap:7,paddingHorizontal:12,minHeight:45,borderRadius:18,borderWidth:1,borderColor:kind===option.kind?t.yellow:t.line,backgroundColor:kind===option.kind?t.cream:t.surface}}>
@@ -335,6 +358,13 @@ export default function PostCreate(){
         style={{position:"absolute",top:4,right:4,width:34,height:34,alignItems:"center",
          justifyContent:"center",borderRadius:20,backgroundColor:t.surface}}>
         <Ionicons name="close" size={19} color={t.ink}/>
+       </Pressable>
+       <Pressable accessibilityRole="button" accessibilityLabel={"Describir foto "+(i+1)}
+        onPress={()=>setAltPhotoId(photo.id)}
+        style={{position:"absolute",bottom:4,left:4,backgroundColor:t.surface,
+         borderRadius:8,minHeight:29,paddingHorizontal:6,flexDirection:"row",alignItems:"center",gap:3}}>
+        <Ionicons name={photo.altText?"checkmark-circle":"accessibility-outline"} size={14} color={t.ink}/>
+        <Text style={{color:t.ink,fontSize:10,fontWeight:"700"}}>Describir</Text>
        </Pressable>
       </View>)}
       {!photos.length&&<Pressable accessibilityRole="button" accessibilityLabel="Seleccionar fotografías"
@@ -365,19 +395,24 @@ export default function PostCreate(){
      </Pressable>
     </View>}
 
-    <View style={{flexDirection:"row",gap:7,alignItems:"center",justifyContent:"space-between"}}>
-     {([
-      {label:"Borrador",icon:"bookmark-outline",press:()=>void openDrafts()},
-      {label:"Vista previa",icon:"eye-outline",press:()=>setPreviewOpen(true)},
-      {label:"Opciones",icon:"options-outline",press:()=>setOptionsOpen(true)}
-     ] as const).map(item=><Pressable key={item.label} accessibilityRole="button"
-      accessibilityLabel={item.label} onPress={item.press}
-      style={{minHeight:46,flex:1,flexDirection:"row",alignItems:"center",
-       justifyContent:"center",gap:5,borderRadius:14,borderWidth:1,borderColor:t.line,
-       backgroundColor:t.surface,paddingHorizontal:5}}>
-      <Ionicons name={item.icon} size={17} color={t.ink}/>
-      <Text numberOfLines={1} style={{fontSize:12,fontWeight:"600",color:t.ink}}>{item.label}</Text>
-     </Pressable>)}
+    <View style={{flexDirection:"row",gap:12,alignItems:"center"}}>
+     <Pressable accessibilityRole="button" accessibilityLabel={"Borradores. Pendientes: "+draftCount}
+      onPress={()=>void openDrafts()}
+      style={{minHeight:49,flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",
+       gap:6,borderRadius:15,borderWidth:1,borderColor:t.line,backgroundColor:t.surface,paddingHorizontal:6}}>
+      <Ionicons name="albums-outline" size={18} color={t.ink}/>
+      <Text numberOfLines={1} style={{fontSize:12,fontWeight:"600",color:t.ink}}>Borradores</Text>
+      {draftCount>0&&<View style={{minWidth:19,height:19,paddingHorizontal:3,alignItems:"center",
+       justifyContent:"center",borderRadius:10,backgroundColor:t.cream}}>
+       <Text style={{fontSize:11,fontWeight:"800",color:t.ink}}>{draftCount}</Text>
+      </View>}
+     </Pressable>
+     <Pressable accessibilityRole="button" accessibilityLabel="Vista previa" onPress={()=>setPreviewOpen(true)}
+      style={{minHeight:49,flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",
+       gap:7,borderRadius:15,borderWidth:1,borderColor:t.line,backgroundColor:t.surface,paddingHorizontal:8}}>
+      <Ionicons name="eye-outline" size={19} color={t.ink}/>
+      <Text numberOfLines={1} style={{fontSize:12,fontWeight:"600",color:t.ink}}>Vista previa</Text>
+     </Pressable>
     </View>
     <View style={{borderWidth:1,borderColor:t.line,borderRadius:16,backgroundColor:t.surface,paddingHorizontal:12,paddingVertical:7}}>
      <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
@@ -416,13 +451,18 @@ export default function PostCreate(){
    previewOpen={previewOpen} onClosePreview={()=>setPreviewOpen(false)}
    draftsOpen={draftsOpen} onCloseDrafts={()=>setDraftsOpen(false)}
    drafts={drafts}
-   onRestore={d=>{void saveDraftNow().then(()=>{applyDraft(d);setDraftsOpen(false);}).catch(e=>setError(String(e)));}}
+   onRestore={d=>{
+    const current=draftSnapshotRef.current;
+    void (current.id!==d.id&&hasDraftContent(current)?saveDraftNow():Promise.resolve())
+     .then(()=>{applyDraft(d);setDraftsOpen(false);setError("");})
+     .catch(e=>setError(e instanceof Error?e.message:"No se pudo recuperar el borrador."));
+   }}
    onDelete={d=>void deleteDraft(d)}
-   optionsOpen={optionsOpen} onCloseOptions={()=>setOptionsOpen(false)}
-   body={body} kind={kind} mediaTitle={media.find(item=>item.id===mediaId)?.title??""} photos={photos} audience={audience} followers={audienceFollowers} contacts={audienceContacts}
+   body={body} kind={kind} mediaTitle={media.find(item=>item.id===mediaId)?.title??""}
+   photos={photos} audience={audience} followers={audienceFollowers} contacts={audienceContacts}
+   authorId={author} authorName={authorName} authorHandle={authorHandle}
+   altPhotoId={altPhotoId} onCloseAlt={()=>setAltPhotoId(null)}
    onAlt={(id,value)=>setPhotos(current=>current.map(p=>p.id===id?{...p,altText:value}:p))}
-   mentionQuery={mentionQuery} onMentionQuery={setMentionQuery} mentions={mentionResults}
-   mentionSearching={mentionSearching} onMention={chooseMention}
   />
   <Modal transparent visible={audienceMenuOpen} animationType="fade" statusBarTranslucent={false}
    onRequestClose={()=>setAudienceMenuOpen(false)}>
