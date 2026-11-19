@@ -385,7 +385,7 @@ export default function PostCreate(){
    onRestore={d=>{void saveDraftNow().then(()=>{applyDraft(d);setDraftsOpen(false);}).catch(e=>setError(String(e)));}}
    onDelete={d=>void deleteDraft(d)}
    optionsOpen={optionsOpen} onCloseOptions={()=>setOptionsOpen(false)}
-   body={body} photos={photos} audience={audience} followers={audienceFollowers} contacts={audienceContacts}
+   body={body} kind={kind} mediaTitle={media.find(item=>item.id===mediaId)?.title??""} photos={photos} audience={audience} followers={audienceFollowers} contacts={audienceContacts}
    onAlt={(id,value)=>setPhotos(current=>current.map(p=>p.id===id?{...p,altText:value}:p))}
    mentionQuery={mentionQuery} onMentionQuery={setMentionQuery} mentions={mentionResults}
    mentionSearching={mentionSearching} onMention={chooseMention}
