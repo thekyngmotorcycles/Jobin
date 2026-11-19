@@ -1,10 +1,10 @@
 import {Ionicons} from "@expo/vector-icons";
-import {Image,Pressable,ScrollView,Text,TextInput,View} from "react-native";
-import {BottomSheet} from "./social-ui";
+import {Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
+import {PublicProfileAvatar} from "./PublicProfileAvatar";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
-import type {PostDraft,PostDraftPhoto} from "../lib/post-drafts";
-import type {PostMention} from "../lib/post-mentions";
+import {MAX_POST_DRAFTS,type PostDraft,type PostDraftPhoto} from "../lib/post-drafts";
 import type {FeedAudience,FeedPostKind} from "../lib/social-content";
 
 type Props={
@@ -12,132 +12,171 @@ type Props={
  previewOpen:boolean;onClosePreview:()=>void;
  draftsOpen:boolean;onCloseDrafts:()=>void;drafts:PostDraft[];
  onRestore:(draft:PostDraft)=>void;onDelete:(draft:PostDraft)=>void;
- optionsOpen:boolean;onCloseOptions:()=>void;
- body:string;kind:FeedPostKind;mediaTitle:string;photos:PostDraftPhoto[];audience:FeedAudience;followers:boolean;contacts:boolean;
- onAlt:(id:string,text:string)=>void;
- mentionQuery:string;onMentionQuery:(value:string)=>void;mentions:PostMention[];
- onMention:(person:PostMention)=>void;mentionSearching:boolean;
+ body:string;kind:FeedPostKind;mediaTitle:string;photos:PostDraftPhoto[];
+ audience:FeedAudience;followers:boolean;contacts:boolean;
+ authorId:string;authorName:string;authorHandle:string;
+ altPhotoId:string|null;onCloseAlt:()=>void;onAlt:(id:string,text:string)=>void;
 };
 export function PostComposerSheets(p:Props){
  const {theme}=useTheme();const t=jobeenTokens(theme);
+ const {width:screenWidth}=useWindowDimensions();const safe=useSafeAreaInsets();
+ const cardWidth=Math.min(screenWidth-32,500);
+ const photoWidth=cardWidth-2;
+ const altPhoto=p.photos.find(x=>x.id===p.altPhotoId);
  const action=(label:string,icon:React.ComponentProps<typeof Ionicons>["name"],onPress:()=>void,primary=false)=>
   <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
-   style={{flexDirection:"row",alignItems:"center",gap:12,minHeight:50,borderRadius:15,
-    borderWidth:primary?0:1,borderColor:t.line,backgroundColor:primary?t.ink:t.cream,
-    paddingHorizontal:15,justifyContent:"center"}}>
+   style={{minHeight:52,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:10,
+    backgroundColor:primary?t.ink:t.cream,borderWidth:primary?0:1,borderColor:t.line,
+    borderRadius:16,paddingHorizontal:15}}>
    <Ionicons name={icon} size={19} color={primary?t.surface:t.ink}/>
-   <Text style={{color:primary?t.surface:t.ink,fontSize:14,fontWeight:"700"}}>{label}</Text>
+   <Text style={{fontSize:14,fontWeight:"700",color:primary?t.surface:t.ink}}>{label}</Text>
   </Pressable>;
- return <>
-  <BottomSheet visible={p.exitOpen} onClose={p.onContinue} title="¿Qué deseas hacer con tu publicación?">
-   <View style={{gap:11,paddingTop:8}}>
-    <Text style={{fontSize:13,lineHeight:20,color:t.ink2,marginBottom:5}}>
-     Puedes guardar el trabajo y continuar después o descartarlo. Ninguna opción lo publicará.
-    </Text>
-    {action("Guardar borrador","bookmark-outline",p.onSaveExit,true)}
-    {action("Descartar cambios","trash-outline",p.onDiscardExit)}
-    <Pressable accessibilityRole="button" accessibilityLabel="Continuar editando" onPress={p.onContinue}
-     style={{minHeight:44,alignItems:"center",justifyContent:"center"}}>
-     <Text style={{color:t.ink2,fontWeight:"600",fontSize:14}}>Continuar editando</Text>
-    </Pressable>
-   </View>
-  </BottomSheet>
-
-  <BottomSheet visible={p.previewOpen} onClose={p.onClosePreview} title="Vista previa">
-   <View style={{gap:13,paddingVertical:10}}>
-    <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
-     <Ionicons name={p.audience==="public"?"globe-outline":"lock-closed-outline"} size={16} color={t.ink}/>
-     <Text style={{fontSize:12,color:t.ink2}}>{p.audience==="public"?"Publicación pública":
-      "Privado · "+[p.followers?"Seguidores":"",p.contacts?"Contactos":""].filter(Boolean).join(" y ")}</Text>
-    </View>
-    <View style={{borderRadius:18,borderWidth:1,borderColor:t.line,backgroundColor:t.surface,padding:16,gap:12}}>
-     {(p.kind==="video"||p.kind==="live")&&<View style={{flexDirection:"row",alignItems:"center",gap:10,
-      borderRadius:13,backgroundColor:t.cream,padding:13}}>
-      <Ionicons name={p.kind==="live"?"radio-outline":"videocam-outline"} size={23} color={t.ink}/>
-      <View style={{flex:1,gap:3}}>
-       <Text style={{fontWeight:"700",color:t.ink,fontSize:13}}>{p.kind==="video"?"Video aprobado":"Clip de Live"}</Text>
-       <Text style={{color:t.ink2,fontSize:12}}>{p.mediaTitle||"Selecciona un contenido antes de publicar"}</Text>
-      </View>
-     </View>}
-     <Text style={{color:t.ink,fontSize:15,lineHeight:23}}>{p.body||"Sin descripción"}</Text>
-     {!!p.photos.length&&<ScrollView horizontal showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{gap:8}}>
-      {p.photos.map((photo,i)=><Image key={photo.id} source={{uri:photo.uri}}
-       accessibilityLabel={photo.altText||"Foto "+(i+1)}
-       style={{height:175,width:155,borderRadius:11,backgroundColor:t.cream}}/>)}
-     </ScrollView>}
-    </View>
-    <Text style={{color:t.ink2,fontSize:12}}>Así se mostrará tu publicación. Todavía no se ha compartido.</Text>
-    {action("Volver a editar","create-outline",p.onClosePreview,true)}
-   </View>
-  </BottomSheet>
-
-  <BottomSheet visible={p.draftsOpen} onClose={p.onCloseDrafts} title="Mis borradores">
-   <View style={{gap:10,paddingTop:8}}>
-    {!p.drafts.length&&<Text style={{color:t.ink2,fontSize:13}}>Todavía no tienes borradores guardados.</Text>}
-    {p.drafts.map(d=><View key={d.id} style={{flexDirection:"row",alignItems:"center",gap:8,
-     borderWidth:1,borderColor:t.line,borderRadius:16,padding:10,backgroundColor:t.surface}}>
-     <Pressable accessibilityRole="button" accessibilityLabel={"Continuar borrador "+(d.body||"sin texto")} onPress={()=>p.onRestore(d)}
-      style={{flex:1,gap:4,minHeight:48,justifyContent:"center"}}>
-      <Text numberOfLines={1} style={{fontSize:14,fontWeight:"700",color:t.ink}}>{d.body.trim()||"Publicación con adjuntos"}</Text>
-      <Text style={{fontSize:11,color:t.ink2}}>{new Date(d.updatedAt).toLocaleString("es")} · {d.photos.length} fotos</Text>
-     </Pressable>
-     <Pressable accessibilityRole="button" accessibilityLabel="Eliminar borrador" onPress={()=>p.onDelete(d)}
+ const backdrop=(onPress:()=>void)=><Pressable accessibilityRole="button" accessibilityLabel="Cerrar ventana"
+  onPress={onPress} style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:t.uploadScrim}}/>;
+ const floatingCard=(title:string,onClose:()=>void,children:React.ReactNode)=>(
+  <KeyboardAvoidingView style={{flex:1,alignItems:"center",justifyContent:"center",paddingHorizontal:16}}
+   behavior={Platform.OS==="ios"?"padding":undefined}>
+   {backdrop(onClose)}
+   <View accessibilityViewIsModal style={{width:cardWidth,maxHeight:"82%",borderRadius:26,overflow:"hidden",
+    backgroundColor:t.surface,shadowColor:t.floatingCardShadow,shadowOpacity:0.2,shadowRadius:25,
+    shadowOffset:{width:0,height:10},elevation:18}}>
+    <View style={{paddingHorizontal:16,paddingTop:12,paddingBottom:8,flexDirection:"row",alignItems:"center",gap:9}}>
+     <Text accessibilityRole="header" style={{flex:1,fontSize:19,fontWeight:"800",color:t.ink}}>{title}</Text>
+     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" onPress={onClose}
       style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
-      <Ionicons name="trash-outline" color={t.ink2} size={20}/>
+      <Ionicons name="close" size={22} color={t.ink}/>
      </Pressable>
-    </View>)}
+    </View>
+    {children}
    </View>
-  </BottomSheet>
+  </KeyboardAvoidingView>
+ );
+ return <>
+  <Modal transparent visible={p.exitOpen} animationType="slide" onRequestClose={p.onContinue} statusBarTranslucent={false}>
+   <View style={{flex:1,justifyContent:"flex-end"}}>
+    {backdrop(p.onContinue)}
+    <View accessibilityViewIsModal style={{maxWidth:700,width:"100%",alignSelf:"center",
+     backgroundColor:t.surface,borderTopLeftRadius:30,borderTopRightRadius:30,overflow:"hidden",
+     paddingHorizontal:20,paddingTop:12,paddingBottom:Math.max(safe.bottom,22),
+     shadowColor:t.floatingCardShadow,shadowOpacity:0.2,shadowRadius:20,elevation:20}}>
+     <View style={{width:42,height:5,backgroundColor:t.silver,borderRadius:5,alignSelf:"center",marginBottom:18}}/>
+     <Text accessibilityRole="header" style={{fontSize:21,lineHeight:28,color:t.ink,fontWeight:"800",marginBottom:8}}>
+      ¿Guardar tu publicación?
+     </Text>
+     <Text style={{fontSize:13,lineHeight:20,color:t.ink2,marginBottom:22}}>
+      Puedes continuar después o descartar los cambios. No se publicará ningún contenido.
+     </Text>
+     <View style={{gap:10}}>
+      {action("Guardar borrador","bookmark-outline",p.onSaveExit,true)}
+      {action("Descartar cambios","trash-outline",p.onDiscardExit)}
+      <Pressable accessibilityRole="button" accessibilityLabel="Continuar editando" onPress={p.onContinue}
+       style={{minHeight:46,alignItems:"center",justifyContent:"center"}}>
+       <Text style={{color:t.ink2,fontSize:14,fontWeight:"600"}}>Continuar editando</Text>
+      </Pressable>
+     </View>
+    </View>
+   </View>
+  </Modal>
 
-  <BottomSheet visible={p.optionsOpen} onClose={p.onCloseOptions} title="Opciones de publicación">
-   <View style={{gap:15,paddingTop:8}}>
-    <View style={{gap:8}}>
-     <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
-      <Ionicons name="at-outline" size={21} color={t.ink}/>
-      <Text style={{color:t.ink,fontWeight:"700",fontSize:15}}>Etiquetar profesionales y empresas</Text>
+  <Modal transparent visible={p.draftsOpen} animationType="fade" onRequestClose={p.onCloseDrafts} statusBarTranslucent={false}>
+   {floatingCard("Borradores",p.onCloseDrafts,
+    <ScrollView showsVerticalScrollIndicator contentContainerStyle={{paddingHorizontal:15,paddingBottom:18,gap:12}}>
+     <Text style={{fontSize:12,color:t.ink2}}>{p.drafts.length} de {MAX_POST_DRAFTS} borradores</Text>
+     {!p.drafts.length&&<View style={{minHeight:135,alignItems:"center",justifyContent:"center",gap:10}}>
+      <Ionicons name="albums-outline" size={36} color={t.ink2}/>
+      <Text style={{color:t.ink2,fontSize:13}}>Aún no tienes borradores guardados.</Text>
+     </View>}
+     <View style={{flexDirection:"row",flexWrap:"wrap",gap:10}}>
+      {p.drafts.map((draft,index)=><View key={draft.id} style={{width:"48%",borderRadius:16,
+       borderWidth:1,borderColor:t.line,backgroundColor:t.surface,overflow:"hidden"}}>
+       <Pressable accessibilityRole="button" accessibilityLabel={"Continuar borrador "+(index+1)}
+        onPress={()=>p.onRestore(draft)}>
+        <View style={{height:94,alignItems:"center",justifyContent:"center",backgroundColor:t.cream}}>
+         {draft.photos[0]?.uri?<Image source={{uri:draft.photos[0].uri}}
+          style={{width:"100%",height:"100%"}} resizeMode="cover"/>:
+          <Ionicons name={draft.kind==="video"||draft.kind==="live"?"videocam-outline":"document-text-outline"}
+           size={32} color={t.ink2}/>}
+        </View>
+        <View style={{padding:9,gap:4,minHeight:61}}>
+         <Text numberOfLines={1} style={{color:t.ink,fontSize:12,fontWeight:"700"}}>
+          {draft.body.trim()||"Publicación sin descripción"}</Text>
+         <Text numberOfLines={1} style={{color:t.ink2,fontSize:10}}>
+          {new Date(draft.updatedAt).toLocaleDateString("es")} · {draft.photos.length} fotos</Text>
+        </View>
+       </Pressable>
+       <Pressable accessibilityRole="button" accessibilityLabel={"Eliminar borrador "+(index+1)}
+        onPress={()=>p.onDelete(draft)}
+        style={{position:"absolute",top:3,right:3,width:38,height:38,borderRadius:20,
+         alignItems:"center",justifyContent:"center",backgroundColor:t.surface}}>
+        <Ionicons name="trash-outline" size={19} color={t.ink}/>
+       </Pressable>
+      </View>)}
      </View>
-     <TextInput accessibilityLabel="Buscar profesionales o empresas para etiquetar"
-      value={p.mentionQuery} onChangeText={p.onMentionQuery}
-      placeholder="Buscar por nombre" placeholderTextColor={t.ink2}
-      style={{borderWidth:1,borderColor:t.line,borderRadius:13,backgroundColor:t.surface,
-       paddingHorizontal:13,minHeight:45,color:t.ink,fontSize:14}}/>
-     {p.mentionSearching&&<Text style={{color:t.ink2,fontSize:12}}>Buscando cuentas...</Text>}
-     {p.mentions.map(person=><Pressable key={person.id} accessibilityRole="button"
-      accessibilityLabel={"Etiquetar "+person.name} onPress={()=>p.onMention(person)}
-      style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:9,paddingHorizontal:8}}>
-      <Ionicons name={person.company?"business-outline":"person-outline"} size={19} color={t.ink}/>
-      <View style={{flex:1}}>
-       <Text style={{color:t.ink,fontSize:13}}>{person.name}</Text>
-       {!!person.handle&&<Text style={{color:t.ink2,fontSize:11}}>@{person.handle}</Text>}
+    </ScrollView>)}
+  </Modal>
+
+  <Modal transparent visible={p.previewOpen} animationType="fade" onRequestClose={p.onClosePreview} statusBarTranslucent={false}>
+   {floatingCard("Vista previa",p.onClosePreview,
+    <ScrollView showsVerticalScrollIndicator keyboardShouldPersistTaps="handled"
+     contentContainerStyle={{paddingBottom:16,gap:12}}>
+     <View style={{flexDirection:"row",alignItems:"center",gap:9,paddingHorizontal:14,paddingTop:7}}>
+      <Ionicons name={p.audience==="public"?"globe-outline":"lock-closed-outline"} size={16} color={t.ink2}/>
+      <Text style={{fontSize:12,color:t.ink2}}>{p.audience==="public"?"Publicación pública":
+       "Privado · "+[p.followers?"Seguidores":"",p.contacts?"Contactos":""].filter(Boolean).join(" y ")}</Text>
+     </View>
+     <View style={{marginHorizontal:1,borderTopWidth:1,borderBottomWidth:1,borderColor:t.line,
+      backgroundColor:t.surface,paddingVertical:12,gap:12}}>
+      <View style={{flexDirection:"row",alignItems:"center",gap:10,paddingHorizontal:14}}>
+       <PublicProfileAvatar userId={p.authorId} name={p.authorName} size={38}/>
+       <View style={{flex:1,gap:2}}>
+        <Text numberOfLines={1} style={{color:t.ink,fontSize:14,fontWeight:"700"}}>{p.authorName}</Text>
+        <Text numberOfLines={1} style={{color:t.ink2,fontSize:11}}>{p.authorHandle?"@"+p.authorHandle:"@usuario"} · Ahora</Text>
+       </View>
+       <Ionicons name="ellipsis-horizontal" size={20} color={t.ink2}/>
       </View>
-      <Ionicons name="add-circle-outline" size={20} color={t.ink}/>
-     </Pressable>)}
-    </View>
-    {!!p.photos.length&&<View style={{gap:9,borderTopWidth:1,borderColor:t.line,paddingTop:13}}>
-     <View style={{flexDirection:"row",gap:8,alignItems:"center"}}>
-      <Ionicons name="accessibility-outline" color={t.ink} size={21}/>
-      <Text style={{color:t.ink,fontWeight:"700",fontSize:15}}>Texto alternativo</Text>
+      {p.kind==="photos"&&!!p.photos.length&&<View style={{width:photoWidth,alignSelf:"center"}}>
+       <ScrollView horizontal pagingEnabled nestedScrollEnabled showsHorizontalScrollIndicator={false}>
+        {p.photos.map((photo,i)=><Image key={photo.id} source={{uri:photo.uri}}
+         accessibilityLabel={photo.altText||"Fotografía "+(i+1)}
+         style={{width:photoWidth,height:photoWidth,backgroundColor:t.cream}} resizeMode="cover"/>)}
+       </ScrollView>
+       <Text style={{fontSize:11,textAlign:"center",color:t.ink2,paddingTop:5}}>{p.photos.length} fotografías</Text>
+      </View>}
+      {(p.kind==="video"||p.kind==="live")&&<View style={{height:170,backgroundColor:t.cream,
+       alignItems:"center",justifyContent:"center",gap:8}}>
+       <Ionicons name={p.kind==="live"?"radio-outline":"play-circle-outline"} size={44} color={t.ink}/>
+       <Text style={{color:t.ink,fontWeight:"700",fontSize:13}}>{p.mediaTitle||"Contenido sin seleccionar"}</Text>
+      </View>}
+      {!!p.body&&<Text style={{fontSize:14,lineHeight:21,color:t.ink,paddingHorizontal:14}}>{p.body}</Text>}
+      <View style={{flexDirection:"row",gap:30,alignItems:"center",paddingHorizontal:14,paddingVertical:6}}>
+       <Ionicons name="heart-outline" size={22} color={t.ink}/>
+       <Ionicons name="chatbubble-outline" size={20} color={t.ink}/>
+       <Ionicons name="arrow-redo-outline" size={22} color={t.ink}/>
+       <View style={{flex:1}}/>
+       <Ionicons name="bookmark-outline" size={22} color={t.ink}/>
+      </View>
      </View>
-     <Text style={{color:t.ink2,fontSize:12}}>Describe cada imagen para quienes usan lectores de pantalla.</Text>
-     {p.photos.map((photo,i)=><View key={photo.id} style={{flexDirection:"row",gap:10,alignItems:"center"}}>
-      <Image source={{uri:photo.uri}} style={{width:55,height:55,borderRadius:9}}/>
-      <TextInput accessibilityLabel={"Descripción accesible de fotografía "+(i+1)}
-       value={photo.altText} onChangeText={value=>p.onAlt(photo.id,value)} multiline maxLength={500}
-       placeholder={"Descripción foto "+(i+1)} placeholderTextColor={t.ink2}
-       style={{flex:1,minHeight:51,maxHeight:100,borderWidth:1,borderColor:t.line,
-        backgroundColor:t.surface,color:t.ink,borderRadius:12,padding:10,fontSize:12}}/>
-     </View>)}
-    </View>}
-    <View style={{flexDirection:"row",alignItems:"center",gap:9,paddingTop:13,borderTopWidth:1,borderColor:t.line,opacity:0.6}}>
-     <Ionicons name="calendar-outline" color={t.ink2} size={22}/>
-     <View style={{flex:1,gap:3}}>
-      <Text style={{color:t.ink,fontSize:14,fontWeight:"700"}}>Programar publicación</Text>
-      <Text style={{color:t.ink2,fontSize:12}}>Disponible cuando el servidor pueda publicar automáticamente.</Text>
-     </View>
-    </View>
-    {action("Aplicar opciones","checkmark-outline",p.onCloseOptions,true)}
-   </View>
-  </BottomSheet>
+     <Text style={{fontSize:12,color:t.ink2,paddingHorizontal:16}}>Vista de ejemplo. Tu publicación todavía no es visible para otros usuarios.</Text>
+     <View style={{paddingHorizontal:16}}>{action("Volver a editar","create-outline",p.onClosePreview,true)}</View>
+    </ScrollView>)}
+  </Modal>
+
+  <Modal transparent visible={!!p.altPhotoId} animationType="fade" onRequestClose={p.onCloseAlt} statusBarTranslucent={false}>
+   {floatingCard("Describir foto",p.onCloseAlt,
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:16,gap:12}}>
+     {!!altPhoto&&<Image source={{uri:altPhoto.uri}} resizeMode="contain"
+      style={{width:"100%",height:150,borderRadius:12,backgroundColor:t.cream}}/>}
+     <Text style={{color:t.ink2,fontSize:12,lineHeight:18}}>
+      Esta descripción opcional ayuda a las personas que usan lectores de pantalla a comprender la fotografía.
+     </Text>
+     {!!altPhoto&&<TextInput accessibilityLabel="Descripción accesible de fotografía"
+      value={altPhoto.altText} onChangeText={value=>p.onAlt(altPhoto.id,value)}
+      placeholder="Describe qué aparece en la imagen" placeholderTextColor={t.ink2}
+      maxLength={500} multiline textAlignVertical="top"
+      style={{minHeight:90,maxHeight:160,padding:12,color:t.ink,backgroundColor:t.surface,
+       borderRadius:14,borderWidth:1,borderColor:t.line,fontSize:14}}/>}
+     {action("Guardar descripción","checkmark-outline",p.onCloseAlt,true)}
+    </ScrollView>)}
+  </Modal>
  </>;
 }

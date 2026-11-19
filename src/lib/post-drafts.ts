@@ -9,6 +9,7 @@ export type PostDraft={
  mediaId:string;audience:FeedAudience;audienceFollowers:boolean;audienceContacts:boolean;
  consent:boolean;mentionedProfileIds:string[];
 };
+export const MAX_POST_DRAFTS=10;
 const key=(owner:string)=>"jobeen.post.drafts.v1."+owner;
 
 export function hasDraftContent(draft:PostDraft){
@@ -30,13 +31,15 @@ export async function readPostDrafts(owner:string):Promise<PostDraft[]>{
   if(!Array.isArray(data))return [];
   return data.filter((v):v is PostDraft=>Boolean(v&&typeof v==="object"&&
    typeof (v as PostDraft).id==="string"&&typeof (v as PostDraft).body==="string"&&
-   Array.isArray((v as PostDraft).photos))).sort((a,b)=>b.updatedAt-a.updatedAt).slice(0,30);
+   Array.isArray((v as PostDraft).photos))).sort((a,b)=>b.updatedAt-a.updatedAt);
  }catch{return [];}
 }
 export async function savePostDraft(owner:string,draft:PostDraft){
  if(!owner||!hasDraftContent(draft))return;
  const previous=await readPostDrafts(owner);
- const next=[{...draft,updatedAt:Date.now()},...previous.filter(x=>x.id!==draft.id)].slice(0,30);
+ if(!previous.some(x=>x.id===draft.id)&&previous.length>=MAX_POST_DRAFTS)
+  throw Error("Has alcanzado el límite de "+MAX_POST_DRAFTS+" borradores. Elimina uno de los anteriores para guardar otro.");
+ const next=[{...draft,updatedAt:Date.now()},...previous.filter(x=>x.id!==draft.id)];
  await AsyncStorage.setItem(key(owner),JSON.stringify(next));
 }
 export async function deletePostDraft(owner:string,id:string,removePhotos=true){
