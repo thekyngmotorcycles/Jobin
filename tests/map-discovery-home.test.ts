@@ -22,7 +22,8 @@ test("Quick publisher is optional, off initially, with per-account cloud persist
  const store=source("src/lib/home-preferences.ts");
  assert.ok(header.includes("loadQuickComposerPreference"));
  assert.ok(header.includes("saveQuickComposerPreference"));
- assert.ok(header.includes("composerVisible&&<PostQuickComposer/>"));
+ assert.ok(header.includes("<PostQuickComposer/>"));
+ assert.ok(header.includes("height:Math.max(0,composerHeight)*reveal.value"));
  assert.ok(header.includes("setComposerVisible(false)"));
  assert.ok(header.includes("Mostrar publicación rápida"));
  assert.ok(header.includes("<StoryStrip/>"));

@@ -20,7 +20,10 @@ test("Home and Messages share stories while Home offers an optional quick compos
  const strip=read("src/components/StoryStrip.tsx");
  assert.ok(home.includes("<SocialHeader showComposer/>"));
  assert.ok(inbox.includes("<SocialHeader />"));
- assert.ok(header.includes("showComposer&&composerVisible&&<PostQuickComposer"));
+ assert.ok(header.includes("showComposer&&<>"));
+ assert.ok(header.includes("<PostQuickComposer/>"));
+ assert.ok(header.includes("pointerEvents={composerVisible?"));
+ assert.ok(header.includes("<StoryStrip/>"));
  assert.ok(header.includes("<StoryStrip"));
  assert.ok(strip.includes("loadActiveStories"));
  assert.ok(!strip.includes("STORIES"));
