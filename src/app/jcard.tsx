@@ -1,7 +1,10 @@
 import { ProfileCommunityActions } from "../components/ProfileCommunityActions";
 import { ProfessionalTrustMark } from "../components/ProfessionalTrustMark";
 import {useCallback,useEffect,useRef,useState} from "react";
-import {Pressable,ScrollView,Text,View} from "react-native";
+import {Animated,Pressable,ScrollView,Text,View,useWindowDimensions,type NativeScrollEvent,type NativeSyntheticEvent} from "react-native";
+import {SafeAreaView} from "react-native-safe-area-context";
+import {useTheme} from "../state/ThemeProvider";
+import {jobeenTokens} from "../theme/jobeen";
 import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../components/ProfileSharedSections";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfilePublicPosts} from "../components/ProfileOwnedPosts";
@@ -12,16 +15,19 @@ import {identityVerified} from "../lib/identity-status";
 import { useLocalSearchParams } from "expo-router";
 
 import { JobinCard } from "../components/JobinCard";
-import { Screen,useUi } from "../components/ui";
+import {useUi} from "../components/ui";
 import {JCardLoadState} from "../components/JCardConnectionState";
 import { loadPublicCard } from "../lib/professional-api";
 import { useProfessionalData } from "../state/useProfessionalData";
 export default function PublicJCard(){
  const {user,card}=useLocalSearchParams<{user?:string;card?:string}>();
- const {colors}=useUi();
+ const {colors,s}=useUi();
+ const {theme}=useTheme();const jt=jobeenTokens(theme);
+ const {height:screenHeight}=useWindowDimensions();
  const [viewer,setViewer]=useState("");
  const [section,setSection]=useState<ProfileSection>("home");
  const profileScroll=useRef<ScrollView|null>(null);
+ const profileScrollY=useRef(new Animated.Value(0)).current;
  const [tabOffset,setTabOffset]=useState(0);
  const [tabsPinned,setTabsPinned]=useState(false);
  const reducedMotion=useReducedMotion();
@@ -47,24 +53,30 @@ export default function PublicJCard(){
  },[user]));
  return <>
   <Stack.Screen options={{title:resource.data?.handle?`@${resource.data.handle.replace(/^@/,"")}`:resource.data?.name??"Perfil",headerBackTitle:"Volver"}}/>
-  <Screen demo={false} title="" subtitle="" hideHeader hideFooter
-   scrollRef={profileScroll} stickyHeaderIndices={resource.data?[1]:undefined}
-   onScroll={event=>{
-    const pinned=tabOffset>0&&event.nativeEvent.contentOffset.y>=tabOffset-2;
-    setTabsPinned(previous=>previous===pinned?previous:pinned);
-   }}>
-   <View style={{gap:14}}>
+  <SafeAreaView edges={["top","left","right"]} style={s.screen}>
+   <Animated.ScrollView ref={profileScroll} stickyHeaderIndices={resource.data?[1]:undefined}
+    scrollEventThrottle={16} showsVerticalScrollIndicator={false}
+    contentContainerStyle={{paddingTop:20,paddingBottom:0,width:"100%",maxWidth:1180,alignSelf:"center"}}
+    onScroll={Animated.event([{nativeEvent:{contentOffset:{y:profileScrollY}}}],{
+     useNativeDriver:true,
+     listener:(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
+      const pinned=tabOffset>0&&event.nativeEvent.contentOffset.y>=tabOffset-2;
+      setTabsPinned(previous=>previous===pinned?previous:pinned);
+     }
+    })}>
+   <Animated.View style={{gap:14,paddingHorizontal:20,paddingBottom:20,zIndex:0,transform:[{translateY:profileScrollY}]}}>
     {resource.data?<ProfileIdentityHeader
      card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/>}
      actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/>}
      trust={<ProfessionalTrustMark worker={resource.data.id}/>}
      profileUserId={resource.data.id}
     />:<JCardLoadState loading={resource.loading} error={resource.error} retry={resource.reload}/>}
-   </View>
-   {!!resource.data&&<View onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}>
+   </Animated.View>
+   {!!resource.data&&<View onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}
+    style={{zIndex:3,backgroundColor:jt.bg,borderTopLeftRadius:18,borderTopRightRadius:18}}>
     <ProfileSectionTabs section={section} onSelect={selectSection} pinned={tabsPinned}/>
    </View>}
-   {!!resource.data&&<View style={{gap:14}}>
+   {!!resource.data&&<View style={{gap:14,paddingHorizontal:20,paddingTop:20,paddingBottom:40,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
     {section==="home"&&<ProfilePublicPosts userId={resource.data.id} filter="all" limit={6} heading="Trabajo reciente" onSeeAll={()=>selectSection("grid")}/>}
     {section==="cv"&&<View style={{marginVertical:4,gap:10}}>
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,minHeight:48,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
@@ -91,6 +103,7 @@ export default function PublicJCard(){
     {(section==="grid"||section==="videos"||section==="live")&&
      <ProfilePublicPosts userId={resource.data.id} filter={section==="grid"?"all":section==="videos"?"videos":"live"}/>}
    </View>}
-  </Screen>
+   </Animated.ScrollView>
+  </SafeAreaView>
  </>;
 }
