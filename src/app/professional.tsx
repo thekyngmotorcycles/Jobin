@@ -2,7 +2,8 @@ import {consumePersonalPhotoChange} from "../lib/personal-jcard-photo";
 import {appearanceOwner} from "../lib/jcard-appearance";
 import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {router,useFocusEffect} from "expo-router";
+import {router,Stack,useFocusEffect,useNavigation} from "expo-router";
+import {usePreventRemove} from "@react-navigation/native";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Button, Chips, Notice, Screen, useUi } from "../components/ui";
 import { ProfessionPicker } from "../components/ProfessionPicker";
@@ -27,6 +28,7 @@ export default function Professional() {
  const workspace=useProfessionalData(loadWorkspace,true);
  useFocusEffect(useCallback(()=>{if(consumePersonalPhotoChange())void workspace.reload();},[workspace.reload]));const catalog=useProfessionalData(loadCatalog);
  const action=useProfessionalAction(workspace.reload);
+ const navigation=useNavigation();
  const specialtyCatalog=useProfessionalData(loadSpecialtyCatalog);
  const [specialties,setSpecialties]=useState<string[]>([]);
  type Section="identity"|"languages"|"professions"|"privacy";
@@ -57,11 +59,14 @@ export default function Professional() {
  function addProfession(){setProfessionSaveError("");setSpecialties([]);setProfession("");setTraining("graduado");setInstitution(null);setFormMode("add");setEditingProfession(null);setEditedPrimary(false);setProfessionFormOpen(true);}
  useEffect(()=>{if(!section)return;const t=setTimeout(()=>scrollRef.current?.scrollTo({y:Math.max(0,(positions.current[section]??0)-18),animated:true}),160);return()=>clearTimeout(t);},[section]);
  const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
- useEffect(()=>{let live=true;void (async()=>{try{const owner=await appearanceOwner();if(owner){const v=await readJCardVisibility(owner);if(live)setVisibility(v);}}catch{}})();return()=>{live=false;};},[]);
+ const [savedVisibility,setSavedVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
+ useEffect(()=>{let live=true;void (async()=>{try{const owner=await appearanceOwner();if(owner){const v=await readJCardVisibility(owner);if(live){setVisibility(v);setSavedVisibility(v);}}}catch{}})();return()=>{live=false;};},[]);
  const [showEmail,setShowEmail]=useState(false);const [showPhone,setShowPhone]=useState(false);
- useEffect(()=>{let live=true;void loadContactPreferences().then(p=>{if(live){setShowEmail(p.show_email);setShowPhone(p.show_phone);}}).catch(()=>{});return()=>{live=false;};},[]);
+ const [savedContactPreferences,setSavedContactPreferences]=useState({show_email:false,show_phone:false});
+ useEffect(()=>{let live=true;void loadContactPreferences().then(p=>{if(live){setShowEmail(p.show_email);setShowPhone(p.show_phone);setSavedContactPreferences({show_email:p.show_email,show_phone:p.show_phone});}}).catch(()=>{});return()=>{live=false;};},[]);
  const [personalContacts,setPersonalContacts]=useState({email_primary:"",email_secondary:"",phone_primary:"",phone_secondary:""});
- useEffect(()=>{let live=true;void loadPersonalContactDetails().then(c=>{if(live)setPersonalContacts(c);}).catch(()=>{});return()=>{live=false;};},[]);
+ const [savedPersonalContacts,setSavedPersonalContacts]=useState({email_primary:"",email_secondary:"",phone_primary:"",phone_secondary:""});
+ useEffect(()=>{let live=true;void loadPersonalContactDetails().then(c=>{if(live){setPersonalContacts(c);setSavedPersonalContacts(c);}}).catch(()=>{});return()=>{live=false;};},[]);
  function changePhoto(){router.push("/personal-avatar-editor");}
  const [name,setName]=useState("");const [handle,setHandle]=useState("");const [city,setCity]=useState("");const [region,setRegion]=useState("");
  const [availability,setAvailability]=useState<JCardStatus>("AVAILABLE");
@@ -78,22 +83,82 @@ export default function Professional() {
  const sectionRow=(id:Section,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}>
   <Ionicons name={icon} size={25} color={sunflower&&section!==id?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined,color:sunflower&&section!==id?colors.glassText:colors.ink}]}>{title}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={sunflower&&section!==id?colors.glassMuted:colors.muted}/>
  </Pressable>;
- const saveSection=(target:"identity"|"languages"|"privacy")=>void action.run(async()=>{
-  if(target==="privacy"){await saveContactPreferences({show_email:showEmail,show_phone:showPhone});await saveJCardVisibility(visibility);return;}
-  const fresh=await loadWorkspace();if(!fresh)throw new Error("No se pudieron cargar los datos actuales.");
-  const legalName=target==="identity"?name.trim().replace(/\\s+/g," "):fresh.card.name;
-  if(target==="identity"){
-   if(!/^[\\p{L}\\p{M}]+(?:[ \\u0027\\u2019-][\\p{L}\\p{M}]+)*$/u.test(legalName)||Array.from(legalName).length>30)throw new Error("El nombre debe tener entre 1 y 30 caracteres.");
-   for(const key of ["email_primary","email_secondary"] as const){const v=personalContacts[key].trim();if(v&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v))throw new Error("Revisa el correo electrónico.");}
-   await savePersonalContactDetails(personalContacts);
-  }
-  const nextLanguages=target==="languages"?languages:fresh.card.languages;
-  if(nextLanguages.some(l=>!canonicalLanguage(l.name)||!Number.isInteger(Number(l.fluency))||Number(l.fluency)<0||Number(l.fluency)>100))throw new Error("Completa el idioma y selecciona un nivel válido.");
-  if(new Set(nextLanguages.map(l=>canonicalLanguage(l.name))).size!==nextLanguages.length)throw new Error("No puedes agregar el mismo idioma dos veces.");
-  await professionalMutation("jobin_save_jcard",{legal_name:legalName,handle:target==="identity"?handle:fresh.card.handle,city:target==="identity"?city:(fresh.profile.city??""),region:target==="identity"?region:(fresh.profile.region??""),availability:target==="identity"?availability:fresh.card.status,languages:nextLanguages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))});
- },"").then(ok=>{if(ok){setSection(null);void workspace.reload();}});
+ type SaveTarget="identity"|"languages"|"privacy";
+ const identityDirty=!!w&&(name!==w.card.name||handle!==w.card.handle||city!==(w.profile.city??"")||
+  region!==(w.profile.region??"")||availability!==w.card.status||
+  JSON.stringify(personalContacts)!==JSON.stringify(savedPersonalContacts));
+ const languageDirty=!!w&&JSON.stringify(languages)!==JSON.stringify(w.card.languages.map(l=>({name:l.name,fluency:String(l.fluency)})));
+ const privacyDirty=showEmail!==savedContactPreferences.show_email||showPhone!==savedContactPreferences.show_phone||
+  JSON.stringify(visibility)!==JSON.stringify(savedVisibility);
+ const hasUnsavedChanges=identityDirty||languageDirty||privacyDirty;
+ const pendingTargets:SaveTarget[]=[
+  ...(identityDirty?["identity" as const]:[]),
+  ...(languageDirty?["languages" as const]:[]),
+  ...(privacyDirty?["privacy" as const]:[])
+ ];
+ const saveSections=(targets:SaveTarget[])=>{
+  if(action.busy||!targets.length)return;
+  const saveIdentity=targets.includes("identity");
+  const saveLanguages=targets.includes("languages");
+  const savePrivacy=targets.includes("privacy");
+  void action.run(async()=>{
+   if(saveIdentity||saveLanguages){
+    const fresh=await loadWorkspace();if(!fresh)throw new Error("No se pudieron cargar los datos actuales.");
+    const legalName=saveIdentity?name.trim().replace(/\s+/g," "):fresh.card.name;
+    if(saveIdentity){
+     if(!/^[\p{L}\p{M}]+(?:[ \u0027\u2019-][\p{L}\p{M}]+)*$/u.test(legalName)||Array.from(legalName).length>30)
+      throw new Error("El nombre debe tener entre 1 y 30 caracteres.");
+     for(const key of ["email_primary","email_secondary"] as const){
+      const v=personalContacts[key].trim();
+      if(v&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))throw new Error("Revisa el correo electrónico.");
+     }
+    }
+    const nextLanguages=saveLanguages?languages:fresh.card.languages;
+    if(nextLanguages.some(l=>!canonicalLanguage(l.name)||!Number.isInteger(Number(l.fluency))||Number(l.fluency)<0||Number(l.fluency)>100))
+     throw new Error("Completa el idioma y selecciona un nivel válido.");
+    if(new Set(nextLanguages.map(l=>canonicalLanguage(l.name))).size!==nextLanguages.length)
+     throw new Error("No puedes agregar el mismo idioma dos veces.");
+    await professionalMutation("jobin_save_jcard",{
+     legal_name:legalName,handle:saveIdentity?handle:fresh.card.handle,
+     city:saveIdentity?city:(fresh.profile.city??""),
+     region:saveIdentity?region:(fresh.profile.region??""),
+     availability:saveIdentity?availability:fresh.card.status,
+     languages:nextLanguages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))
+    });
+    if(saveIdentity)await savePersonalContactDetails(personalContacts);
+   }
+   if(savePrivacy){
+    await saveContactPreferences({show_email:showEmail,show_phone:showPhone});
+    await saveJCardVisibility(visibility);
+   }
+  },"").then(ok=>{
+   if(!ok)return;
+   if(saveIdentity)setSavedPersonalContacts({...personalContacts});
+   if(savePrivacy){
+    setSavedContactPreferences({show_email:showEmail,show_phone:showPhone});
+    setSavedVisibility({...visibility});
+   }
+   setSection(null);
+  });
+ };
+ const saveSection=(target:SaveTarget)=>saveSections(Array.from(new Set([...pendingTargets,target])));
+ usePreventRemove(hasUnsavedChanges||professionFormOpen,({data})=>{
+  Alert.alert("Cambios sin guardar","Si salís ahora, perderás los cambios que todavía no guardaste.",[
+   {text:"Seguir editando",style:"cancel"},
+   {text:"Descartar",style:"destructive",onPress:()=>navigation.dispatch(data.action)}
+  ]);
+ });
 
- return <Screen demo={false} hideHeader hideFooter scrollRef={scrollRef} title="Editar mi JCard" subtitle="">
+ return <>
+  <Stack.Screen options={{headerRight:hasUnsavedChanges?()=>(
+   <Pressable accessibilityRole="button" accessibilityLabel="Guardar cambios de JCard"
+    accessibilityState={{disabled:action.busy}} disabled={action.busy}
+    onPress={()=>saveSections(pendingTargets)}
+    style={{minWidth:72,minHeight:44,justifyContent:"center",alignItems:"center"}}>
+    <Text style={{fontSize:15,fontWeight:"700",color:colors.ink}}>{action.busy?"Guardando…":"Guardar"}</Text>
+   </Pressable>
+  ):undefined}}/>
+  <Screen demo={false} hideHeader hideFooter scrollRef={scrollRef} title="Editar mi JCard" subtitle="">
   {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
    {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
    <View style={{gap:6,paddingTop:0,paddingBottom:8}}>
@@ -108,6 +173,7 @@ export default function Professional() {
       {(["email_primary","email_secondary","phone_primary","phone_secondary"] as const).map(key=><View key={key} style={{gap:5}}><Text style={s.muted}>{{email_primary:"Correo electrónico principal (opcional)",email_secondary:"Correo electrónico secundario (opcional)",phone_primary:"Teléfono principal (opcional)",phone_secondary:"Teléfono secundario (opcional)"}[key]}</Text><TextInput accessibilityLabel={key} value={personalContacts[key]} onChangeText={value=>setPersonalContacts(p=>({...p,[key]:value}))} keyboardType={key.startsWith("email")?"email-address":"phone-pad"} autoCapitalize="none" maxLength={key.startsWith("email")?254:40} style={input}/></View>)}
       <Text style={s.muted}>Disponibilidad profesional</Text><Chips values={["AVAILABLE","ACTIVE"] as const} value={availability} onChange={setAvailability} getLabel={v=>v==="AVAILABLE"?"Disponible para trabajar":"Trabajando actualmente"} label="Disponibilidad profesional"/>
       <View style={{gap:8,padding:12,borderWidth:1,borderColor:colors.line,borderRadius:12}}><Text style={s.muted}>{availability==="ACTIVE"?"Para mostrar una empresa en tu JCard, envíale una solicitud. Solo aparecerá después de que la empresa la apruebe.":"Puedes administrar o finalizar vínculos laborales anteriores. El nombre de la empresa solo se muestra mientras indiques que estás trabajando."}</Text><Button secondary title="Gestionar vínculos laborales" onPress={()=>router.push("/employer-links")}/></View>
+      <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("identity")}/>
      </View>}
     </View>
     <View onLayout={e=>{positions.current.languages=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="languages")]}>
@@ -126,6 +192,7 @@ export default function Professional() {
        <Button secondary title="Quitar idioma" onPress={()=>setLanguages(items=>items.filter((_,i)=>i!==index))}/>
       </View>)}
       <Button secondary title="+ Agregar idioma" onPress={()=>setLanguages(items=>[...items,{name:"",fluency:"45"}])}/>
+      <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("languages")}/>
      </View>}
     </View>
     {w.card.accountType==="personal"&&<View onLayout={e=>{positions.current.professions=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="professions")]}>
@@ -167,11 +234,13 @@ export default function Professional() {
       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showEmail}} onPress={()=>setShowEmail(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={showEmail?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar correo en mi JCard</Text></Pressable>
       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showPhone}} onPress={()=>setShowPhone(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={showPhone?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar teléfono en mi JCard</Text></Pressable>
        <Pressable accessibilityRole="checkbox" accessibilityState={{checked:visibility.personal_enabled}} onPress={()=>{if(visibility.personal_enabled&&!visibility.business_enabled){Alert.alert("Al menos una JCard activa","Debes conservar activa la JCard personal o la de negocio.");return;}setVisibility(v=>({...v,personal_enabled:!v.personal_enabled}));}} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={visibility.personal_enabled?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar mi JCard personal en el perfil</Text></Pressable>
+      <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("privacy")}/>
      </View>}
     </View>
     <View style={[s.panel,glassPanel(false)]}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="color-palette-outline" size={25} color={sunflower?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined,color:sunflower?colors.glassText:colors.ink}]}>Apariencia</Text></View><Ionicons name="chevron-forward" size={20} color={sunflower?colors.glassMuted:colors.muted}/></Pressable></View>
 
    </View>
   </>}
- </Screen>;
+  </Screen>
+ </>;
 }
