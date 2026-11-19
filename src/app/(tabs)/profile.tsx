@@ -113,10 +113,6 @@ export default function Profile() {
   useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void readBusinessExcellence(id).then(data=>{if(live)setBusinessExcellence(data);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
   const p = DEMO_PROFILE;
 
-  function openLive() {
-    selectSection("live");
-  }
-
   function send(company: string) {
     if (!canSendHistory("company", p.isOwner, DEMO_REQUESTING_COMPANIES.includes(company))) {
       setNotice("Solo puedes enviar tu historial a empresas que lo hayan solicitado para contratarte.");
