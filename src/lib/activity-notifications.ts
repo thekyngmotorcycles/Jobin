@@ -51,22 +51,32 @@ export async function countPendingProfileAlerts():Promise<number>{
  const {data:{user},error:authError}=await db.auth.getUser();
  if(authError)throw authError;
  if(!user)return 0;
- const [unread,pending,unreadCv]=await Promise.all([
+ const [unread,pending,unreadCv,pendingContacts,unreadContacts]=await Promise.all([
   db.from("notifications" as never)
    .select("id",{head:true,count:"exact"}).eq("recipient_id",user.id).is("read_at",null),
   db.from("employment_access_requests" as never)
    .select("id").eq("owner_id",user.id).eq("status","pending"),
   db.from("notifications" as never)
-   .select("payload").eq("recipient_id",user.id).eq("kind","cv_request").is("read_at",null)
+   .select("payload").eq("recipient_id",user.id).eq("kind","cv_request").is("read_at",null),
+  db.from("jobeen_contact_requests" as never)
+   .select("id").eq("recipient_id",user.id).eq("status","pending"),
+  db.from("notifications" as never)
+   .select("payload").eq("recipient_id",user.id).eq("kind","contact_request").is("read_at",null)
  ]);
  if(unread.error)throw unread.error;
  if(pending.error)throw pending.error;
  if(unreadCv.error)throw unreadCv.error;
+ if(pendingContacts.error)throw pendingContacts.error;
+ if(unreadContacts.error)throw unreadContacts.error;
  const alreadyCounted=new Set(((unreadCv.data??[]) as unknown as {payload:Record<string,unknown>|null}[])
   .map(n=>n.payload?.request_id).filter((id):id is string=>typeof id==="string"));
  const pendingUncounted=((pending.data??[]) as unknown as {id:string}[])
   .filter(request=>!alreadyCounted.has(request.id)).length;
- return (unread.count??0)+pendingUncounted;
+ const alreadyCountedContacts=new Set(((unreadContacts.data??[]) as unknown as {payload:Record<string,unknown>|null}[])
+  .map(n=>n.payload?.request_id).filter((id):id is string=>typeof id==="string"));
+ const pendingUncountedContacts=((pendingContacts.data??[]) as unknown as {id:string}[])
+  .filter(request=>!alreadyCountedContacts.has(request.id)).length;
+ return (unread.count??0)+pendingUncounted+pendingUncountedContacts;
 }
 export async function markActivityNotificationsRead(ids?:string[]):Promise<void>{
  const db=requireSupabase();const {data:{user}}=await db.auth.getUser();
@@ -82,6 +92,8 @@ export function noticeDescription(notice:ActivityNotice):{title:string;detail:st
  const {kind,actorName,payload}=notice;
  const status=value(payload,"status");
  switch(kind){
+  case "contact_request":return {title:actorName+" quiere conectar contigo",detail:"Aceptar o rechazar la invitación profesional",category:"requests"};
+  case "contact_accepted":return {title:actorName+" aceptó tu invitación de contacto",detail:"Ver contacto profesional",category:"activity"};
   case "new_follower":return {title:actorName+" comenzó a seguirte",detail:"Ver perfil",category:"activity"};
   case "post_like":return {title:actorName+" indicó que le gusta tu publicación",detail:"Ver publicación",category:"activity"};
   case "post_comment":return {title:actorName+" comentó tu publicación",detail:"Ver comentario",category:"activity"};
