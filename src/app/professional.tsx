@@ -4,7 +4,7 @@ import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "
 import { useCallback, useEffect, useRef, useState } from "react";
 import {router,Stack,useFocusEffect,useNavigation} from "expo-router";
 import {usePreventRemove} from "@react-navigation/native";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Button, Chips, Notice, Screen, useUi } from "../components/ui";
 import { ProfessionPicker } from "../components/ProfessionPicker";
 import { SpecialtyPicker } from "../components/SpecialtyPicker";
@@ -17,18 +17,24 @@ import {LanguagePicker} from "../components/LanguagePicker";
 import {canonicalLanguage} from "../lib/languages";
 import {Ionicons} from "@expo/vector-icons";
 import {useTheme} from "../state/ThemeProvider";
+import {jobeenTokens} from "../theme/jobeen";
 import {ProfessionGlyph} from "../components/ProfessionGlyph";
 import type { JCardStatus } from "../lib/jcard";
 
 export default function Professional() {
  const {s,colors}=useUi();
  const {theme}=useTheme();
+ const jt=jobeenTokens(theme);
  const sunflower=theme==="sunflower";
  const glassPanel=(expanded:boolean)=>sunflower&&!expanded?{backgroundColor:colors.glassPanel,borderColor:colors.glassBorder,shadowColor:colors.glassShadow,shadowOpacity:0.27,shadowRadius:16,shadowOffset:{width:0,height:7},elevation:6}:undefined;
  const workspace=useProfessionalData(loadWorkspace,true);
  useFocusEffect(useCallback(()=>{if(consumePersonalPhotoChange())void workspace.reload();},[workspace.reload]));const catalog=useProfessionalData(loadCatalog);
  const action=useProfessionalAction(workspace.reload);
  const navigation=useNavigation();
+ const [unsavedDialogOpen,setUnsavedDialogOpen]=useState(false);
+ const pendingExitRef=useRef<null|(()=>void)>(null);
+ const keepEditing=()=>{pendingExitRef.current=null;setUnsavedDialogOpen(false);};
+ const discardChanges=()=>{const exit=pendingExitRef.current;pendingExitRef.current=null;setUnsavedDialogOpen(false);exit?.();};
  const specialtyCatalog=useProfessionalData(loadSpecialtyCatalog);
  const [specialties,setSpecialties]=useState<string[]>([]);
  type Section="identity"|"languages"|"professions"|"privacy";
@@ -143,10 +149,8 @@ export default function Professional() {
  };
  const saveSection=(target:SaveTarget)=>saveSections(Array.from(new Set([...pendingTargets,target])));
  usePreventRemove(hasUnsavedChanges||professionFormOpen,({data})=>{
-  Alert.alert("Cambios sin guardar","Si salís ahora, perderás los cambios que todavía no guardaste.",[
-   {text:"Seguir editando",style:"cancel"},
-   {text:"Descartar",style:"destructive",onPress:()=>navigation.dispatch(data.action)}
-  ]);
+  pendingExitRef.current=()=>navigation.dispatch(data.action);
+  setUnsavedDialogOpen(true);
  });
 
  return <>
@@ -242,5 +246,37 @@ export default function Professional() {
    </View>
   </>}
   </Screen>
+  <Modal visible={unsavedDialogOpen} transparent animationType="fade" onRequestClose={keepEditing} statusBarTranslucent={false}>
+   <View style={{flex:1,alignItems:"center",justifyContent:"center",paddingHorizontal:20}}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Seguir editando JCard"
+     onPress={keepEditing}
+     style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:colors.scrim}}/>
+    <View accessibilityViewIsModal style={{width:"100%",maxWidth:400,borderRadius:26,
+     borderWidth:1,borderColor:jt.line,backgroundColor:jt.surface,
+     paddingHorizontal:24,paddingTop:25,paddingBottom:24,
+     shadowColor:jt.floatingCardShadow,shadowOpacity:0.18,shadowRadius:20,
+     shadowOffset:{width:0,height:10},elevation:12}}>
+     <View style={{width:42,height:4,borderRadius:4,backgroundColor:jt.yellow,marginBottom:21}}/>
+     <Text accessibilityRole="header" style={{fontSize:22,lineHeight:28,fontWeight:"700",color:jt.ink,marginBottom:10}}>
+      Cambios sin guardar
+     </Text>
+     <Text style={{fontSize:14,lineHeight:21,color:jt.ink2,marginBottom:25}}>
+      Los cambios de tu JCard todavía no se guardaron. ¿Querés seguir editando?
+     </Text>
+     <View style={{gap:10}}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Seguir editando"
+       onPress={keepEditing} style={{minHeight:50,borderRadius:15,backgroundColor:jt.ink,
+        alignItems:"center",justifyContent:"center",paddingHorizontal:14}}>
+       <Text style={{fontSize:15,fontWeight:"700",color:jt.surface}}>Seguir editando</Text>
+      </Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Descartar cambios sin guardar"
+       onPress={discardChanges} style={{minHeight:50,borderRadius:15,borderWidth:1,borderColor:jt.bizBorder,
+        backgroundColor:jt.cream,alignItems:"center",justifyContent:"center",paddingHorizontal:14}}>
+       <Text style={{fontSize:15,fontWeight:"600",color:jt.ink}}>Descartar cambios</Text>
+      </Pressable>
+     </View>
+    </View>
+   </View>
+  </Modal>
  </>;
 }

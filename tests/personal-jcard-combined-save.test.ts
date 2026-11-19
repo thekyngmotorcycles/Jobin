@@ -32,9 +32,16 @@ test("Header Save appears when editable personal data changes and saves all dirt
 
 test("Leaving the JCard with unsaved changes asks before discarding",()=>{
  assert.ok(editor.includes("usePreventRemove(hasUnsavedChanges||professionFormOpen"));
- assert.ok(editor.includes("Alert.alert(\"Cambios sin guardar\""));
- assert.ok(editor.includes('text:"Seguir editando"'));
- assert.ok(editor.includes('text:"Descartar"'));
- assert.ok(editor.includes("navigation.dispatch(data.action)"));
+ assert.ok(editor.includes('<Modal visible={unsavedDialogOpen}'));
+ assert.ok(editor.includes('accessibilityViewIsModal'));
+ assert.ok(editor.includes('animationType="fade"'));
+ assert.ok(editor.includes('statusBarTranslucent={false}'));
+ assert.ok(editor.includes('accessibilityLabel="Seguir editando"'));
+ assert.ok(editor.includes('accessibilityLabel="Descartar cambios sin guardar"'));
+ assert.ok(editor.includes("pendingExitRef.current=()=>navigation.dispatch(data.action)"));
+ assert.ok(editor.includes("onPress={keepEditing}"));
+ assert.ok(editor.includes("onPress={discardChanges}"));
+ assert.ok(editor.includes("onRequestClose={keepEditing}"));
+ assert.ok(!editor.includes('Alert.alert("Cambios sin guardar"'),"Avoid native system alert styling");
  assert.ok(editor.includes("Guard ar cambios")===false);
 });
