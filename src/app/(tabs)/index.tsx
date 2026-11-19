@@ -13,14 +13,25 @@ import { PhotoPostCard, VideoCard } from "../../components/PostCard";
 import { FEED_POSTS } from "../../lib/feed";
 import { PHOTO_POSTS, POSTERS } from "../../lib/home";
 import { router,useLocalSearchParams } from "expo-router";
+import {takePublishedPostForHome} from "../../lib/post-return";
 import { useUi } from "../../components/ui";
 
 export default function Home() {
   const [filter,setFilter]=useState<HomeFeedFilter>("all");
   const {published}=useLocalSearchParams<{published?:string}>();
+  const [newlyPublished,setNewlyPublished]=useState("");
   const scrollRef=useRef<ScrollView>(null);
   useEffect(()=>{if(published){setFilter("all");scrollRef.current?.scrollTo({y:0,animated:false});}},[published]);
   const { s } = useUi();const focused=useIsFocused();const window=useWindowDimensions();const [viewport,setViewport]=useState({width:window.width,height:window.height});const {contentBottom}=useTabClearance();
+  useEffect(()=>{
+    if(!focused)return;
+    const latest=takePublishedPostForHome();
+    if(latest){
+      setFilter("all");
+      setNewlyPublished(latest);
+      scrollRef.current?.scrollTo({y:0,animated:false});
+    }
+  },[focused]);
   const cards = [
     ...FEED_POSTS.slice(0, 2).map(p => ({ kind: "video" as const, key: p.postId, post: p })),
     ...PHOTO_POSTS.map(p => ({ kind: "photo" as const, key: p.id, post: p })),
@@ -31,7 +42,7 @@ export default function Home() {
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: contentBottom, gap: 24 }} showsVerticalScrollIndicator={false}>
         <SocialHeader showComposer/>
         <HomeFeedFilters value={filter} onChange={setFilter}/>
-        <HomePublishedPosts filter={filter} featuredPostId={published??""}/>
+        <HomePublishedPosts filter={filter} featuredPostId={newlyPublished||(published??"")}/>
         {filter==="all"&&<PublishedWorkMedia kind="video"/>}
         {filter==="all"&&<Text style={[s.muted,{paddingHorizontal:16,fontSize:12}]}>Contenido de ejemplo</Text>}
         {filter==="all"&&cards.map(card => (
