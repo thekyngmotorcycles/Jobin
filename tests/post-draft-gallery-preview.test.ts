@@ -16,18 +16,20 @@ test("New post starts empty and existing drafts are restored only by explicit se
  assert.ok(editor.includes("applyDraft(d);setDraftsOpen(false)"));
 });
 
-test("Exit and publish return to the real root Home tab, not a hidden alias or a root URL",()=>{
- assert.ok(editor.includes('StackActions.popTo("(tabs)"'));
- assert.ok(editor.includes('screen:"index"'));
- assert.ok(editor.includes('params:destination?{published:destination}:{}'));
+test("Native Back returns to the existing tabs and never dispatches a cross-stack popTo",()=>{
+ assert.ok(editor.includes('navigation.canGoBack()'));
+ assert.ok(editor.includes('navigation.goBack()'));
  assert.ok(editor.includes('InteractionManager.runAfterInteractions'));
+ assert.ok(editor.includes('usePreventRemove(hasWork&&!editingDone'));
+ assert.ok(!editor.includes('StackActions.popTo('));
+ assert.ok(!editor.includes('pathname:"/(tabs)/inicio"'));
+ assert.ok(!editor.includes('router.replace({pathname:"/(tabs)/index"'));
  assert.ok(root.includes('<Stack.Screen name="(tabs)" options={{headerShown:false}}/>'));
  assert.ok(tabs.includes('{name:"index",title:"Casa"'));
  assert.ok(!tabs.includes('<Tabs.Screen name="inicio"'));
- assert.ok(!editor.includes('pathname:"/(tabs)/inicio"'));
- assert.ok(!editor.includes('router.replace({pathname:"/(tabs)/index"'));
  assert.ok(editor.includes('finishHome(publishedId)'));
- assert.ok(home.includes('featuredPostId={published??""}'));
+ assert.ok(home.includes('takePublishedPostForHome()'));
+ assert.ok(home.includes('featuredPostId={newlyPublished||(published??"")}'));
 });
 
 test("The two balanced secondary controls don't compete with Publish",()=>{
