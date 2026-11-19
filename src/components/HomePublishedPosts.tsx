@@ -110,7 +110,7 @@ export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;v
    <Ionicons name={post.kind==="live"?"radio-outline":"play-circle-outline"} size={52} color={colors.ink}/>
    <Text style={[s.text,{fontWeight:"700"}]}>{post.kind==="live"?"Ver grabación de Live":"Ver video aprobado"}</Text>
   </Pressable>}
-  <PostCaption text={post.body}/>
+  <PostCaption text={post.body} mentions={post.mentions}/>
   <PostEngagementRow likes={likes} comments={commentsCount} shares={shares} liked={liked}
    likeDisabled={pending} onLike={()=>void toggleLike()} onComments={()=>void openComments()} onShare={()=>void share()}
    saved={saved} onSave={()=>void toggleSaved()} saveDisabled={saving}/>
