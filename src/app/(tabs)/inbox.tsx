@@ -128,7 +128,7 @@ export default function Messages(){
      </Pressable>
      <Text accessibilityRole="header" style={{fontSize:17,fontWeight:"800",color:t.ink}}>Mensajes personales</Text>
      {!loading&&directThreads.length===0&&<View style={{backgroundColor:t.surface,padding:18,borderWidth:1,borderColor:t.line,borderRadius:18,gap:5}}>
-      <Text style={{color:t.ink,fontWeight:"700"}}>Todavía no tenés conversaciones</Text>
+      <Text style={{color:t.ink,fontWeight:"700"}}>Todavía no tienes conversaciones</Text>
       <Text style={{color:t.ink2,fontSize:13}}>Los mensajes profesionales que recibas aparecerán aquí.</Text>
      </View>}
      {directThreads.map(thread=><Pressable key={thread.id} accessibilityRole="button"
