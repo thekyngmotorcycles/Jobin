@@ -132,7 +132,7 @@ export function SocialHeader({showComposer=false}:{showComposer?:boolean}){
      position:"absolute",top:COMPOSER_TOP_GAP,left:14,right:14,
      backgroundColor:t.surface,borderRadius:CARD_RADIUS,
      borderWidth:StyleSheet.hairlineWidth,borderColor:t.line,
-     shadowColor:"#000000",shadowOffset:{width:0,height:5},shadowRadius:18
+     shadowColor:t.floatingCardShadow,shadowOffset:{width:0,height:5},shadowRadius:18
     },shadowStyle]}/>
     <Animated.View
      pointerEvents={composerVisible?"auto":"none"}
