@@ -3,7 +3,7 @@ import test from "node:test";
 import {readFileSync} from "node:fs";
 const source=(path:string)=>readFileSync(path,"utf8");
 test("Professional contact invitations are mutual, owner-only and independent of follows",()=>{
- const sql=source("supabase/migrations/20261119030000_jobeen_professional_contacts.sql");
+ const sql=source("supabase/migrations/20261119020421_jobeen_professional_contacts.sql");
  assert.ok(sql.includes("jobeen_contacts_pair_unique"));
  assert.ok(sql.includes("least(requester_id,recipient_id),greatest(requester_id,recipient_id)"));
  assert.ok(sql.includes("enable row level security"));
@@ -45,7 +45,7 @@ test("Compact profile counts show Followers + Contacts with the third Following 
 test("Incoming contacts are actionable and count toward notification badge",()=>{
  const screen=source("src/app/notifications.tsx");
  const lib=source("src/lib/activity-notifications.ts");
- const sql=source("supabase/migrations/20261119030000_jobeen_professional_contacts.sql");
+ const sql=source("supabase/migrations/20261119020421_jobeen_professional_contacts.sql");
  assert.ok(screen.includes("replyContactRequest(id,approve)"));
  assert.ok(screen.includes('n.kind==="contact_request"'));
  assert.ok(screen.includes("pendingWithoutNotice"));
