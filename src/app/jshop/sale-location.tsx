@@ -61,7 +61,7 @@ export default function SaleLocationPicker(){
   try{
    const found=await findJShopPlaces(query);
    if(found.length===1)choose(found[0]);
-   else if(found.length===0)setError("No se encontró la ubicación. Probá ciudad y país.");
+   else if(found.length===0)setError("No se encontró la ubicación. Prueba ciudad y país.");
    else setResults(found);
   }catch(e){setError(e instanceof Error?e.message:"No se pudo buscar esa ciudad.");}
   finally{setSearching(false);}
@@ -136,10 +136,10 @@ export default function SaleLocationPicker(){
     </View>
     <View style={{paddingHorizontal:16,paddingTop:10,gap:6}}>
      <Text numberOfLines={1} style={{color:t.ink,fontWeight:"800",fontSize:14}}>
-      {chosen?.label??(moved?"Zona marcada en el mapa":"Elegí una ciudad o mové el mapa")}
+      {chosen?.label??(moved?"Zona marcada en el mapa":"Elige una ciudad o mové el mapa")}
      </Text>
      <Text style={{fontSize:11,lineHeight:16,color:t.ink2}} numberOfLines={2}>
-      Elegí una zona aproximada: los compradores podrán ver la ubicación del anuncio.
+      Elige una zona aproximada: los compradores podrán ver la ubicación del anuncio.
      </Text>
      {!!error&&<Text accessibilityLiveRegion="polite" style={{color:t.ink,fontSize:12,lineHeight:17}}>{error}</Text>}
     </View>
