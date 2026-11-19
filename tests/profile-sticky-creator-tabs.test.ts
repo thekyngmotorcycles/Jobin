@@ -63,12 +63,14 @@ test("Creator section panels rise OVER the JCard instead of scrolling the card a
   assert.ok(page.includes("Animated.ScrollView"),"Both views must use an animated parent scroller");
   assert.ok(page.includes("new Animated.Value(0)"),"Scroll position must be tracked on the native driver");
   assert.ok(page.includes("useNativeDriver:true"),"Do not re-render the full JCard every scroll frame");
-  assert.ok(page.includes("transform:[{translateY:profileScrollY}]"),"Keep identity layer stationary while content covers it");
+  assert.ok(page.includes("Animated.multiply(profileScrollY,0.5)"),"Identity hero must move at half the main sheet speed");
+  assert.ok(page.includes("transform:[{translateY:heroParallax}]"),"Use native-driven parallax rather than freezing the JCard");
   assert.ok(page.includes("backgroundColor:jt.bg,zIndex:2"),"Opaque section body must cover the JCard beneath");
   assert.ok(page.includes("minHeight:screenHeight"),"Short feeds must still allow the section tabs to reach the top");
   assert.ok(page.includes("onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}"),"Pin threshold must follow the measured panel");
  }
- assert.ok(owner.includes("contentContainerStyle={{paddingTop:12,paddingBottom:0}}"),"No transparent horizontal gutters around the sheet");
+ assert.ok(owner.includes("contentContainerStyle={{paddingTop:NAVIGATION_ROW_HEIGHT+12,paddingBottom:0}}"),"The profile must scroll behind its top chrome with no blank gutters");
+ assert.ok(owner.includes("style={{flex:1}}"),"Scroll content must start at the top safe area, not below a static header");
  assert.ok(visitor.includes('stickyHeaderIndices={resource.data?[1]:undefined}'));
 });
 
@@ -80,4 +82,21 @@ test("Creator top bar keeps a truly translucent downward fade, not an opaque whi
  assert.ok(owner.includes('pointerEvents="none"'));
  assert.ok(owner.includes('<JobeenCreateMenu/>'));
  assert.ok(owner.includes('<NotificationBell/>'));
+});
+
+test("Creator tabs replace top navigation in three stages and respect the status bar",()=>{
+ for(const page of [owner,visitor]){
+  assert.ok(page.includes("retreatStart=Math.max(1,tabOffset-NAVIGATION_ROW_HEIGHT)"));
+  assert.ok(page.includes("retreatEnd=Math.max(retreatStart+1,tabOffset)"));
+  assert.ok(page.includes("topHeaderOffset=profileScrollY.interpolate("));
+  assert.ok(page.includes("topHeaderOpacity=profileScrollY.interpolate("));
+  assert.ok(page.includes("outputRange:[0,0,-NAVIGATION_ROW_HEIGHT]"));
+  assert.ok(page.includes("transform:[{translateY:topHeaderOffset}]"));
+  assert.ok(page.includes("opacity:topHeaderOpacity"));
+  assert.ok(page.includes("pointerEvents={tabsPinned?\"none\":\"auto\"}"));
+ }
+ assert.ok(owner.includes('top:0,left:0,right:0,zIndex:10'),"The brand row must not double-count safe area");
+ assert.ok(visitor.includes('<Stack.Screen options={{headerShown:false}}/>'),"The public native stack bar must not block sticky tabs");
+ assert.ok(visitor.includes('accessibilityLabel="Volver"'),"Public profile retains a back action");
+ assert.ok(visitor.includes("paddingTop:NAVIGATION_ROW_HEIGHT+20"));
 });
