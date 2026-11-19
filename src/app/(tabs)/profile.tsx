@@ -16,7 +16,7 @@ import {UserProfileContent} from "../../components/ProfileSharedSections";
 import {ProfileOwnedPosts} from "../../components/ProfileOwnedPosts";
 import {NotificationBell} from "../../components/NotificationBell";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
-import { ProfessionalStatus } from "../../components/ProfessionalStatus";
+import {JCardLoadState,JCardOfflineNotice,isJCardConnectivityError} from "../../components/JCardConnectionState";
 import { loadCatalog,loadWorkspace } from "../../lib/professional-api";
 import { ProfessionPicker } from "../../components/ProfessionPicker";
 import { useProfessionalData } from "../../state/useProfessionalData";
@@ -32,7 +32,7 @@ import { BottomSheet } from "../../components/social-ui";
 import { JobinWordmark } from "../../components/JobinWordmark";
 import {JobeenCreateMenu} from "../../components/JobeenCreateMenu";
 import { JobinCard } from "../../components/JobinCard";
-import { JCardLoadingSkeleton } from "../../components/JCardLoadingSkeleton";
+
 import type { BusinessCardData, JCardSeal } from "../../lib/jcard";
 import { Button, Notice, useUi } from "../../components/ui";
 import { canSendHistory } from "../../lib/rules";
@@ -205,7 +205,11 @@ export default function Profile() {
       <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 76, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         <UserProfileContent
-          card={workspace.data?.card ? <JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/> : workspace.loading ? <JCardLoadingSkeleton/> : <ProfessionalStatus loading={false} error={workspace.error} retry={workspace.reload}/>}
+          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
+            {!!workspace.error&&isJCardConnectivityError(workspace.error)&&<View style={{marginTop:12}}>
+              <JCardOfflineNotice retry={workspace.reload} cached/>
+            </View>}
+           </> : <JCardLoadState loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>} 
           trust={workspace.data?.card ? <ProfessionalTrustMark worker={workspace.data.card.id}/> : null}
           profileUserId={workspace.data?.card?.id}
           section={mode}
