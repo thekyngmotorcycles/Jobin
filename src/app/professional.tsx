@@ -2,7 +2,8 @@ import {consumePersonalPhotoChange} from "../lib/personal-jcard-photo";
 import {appearanceOwner} from "../lib/jcard-appearance";
 import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {router,useFocusEffect} from "expo-router";
+import {router,Stack,useFocusEffect,useNavigation} from "expo-router";
+import {usePreventRemove} from "@react-navigation/native";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Button, Chips, Notice, Screen, useUi } from "../components/ui";
 import { ProfessionPicker } from "../components/ProfessionPicker";
@@ -27,6 +28,7 @@ export default function Professional() {
  const workspace=useProfessionalData(loadWorkspace,true);
  useFocusEffect(useCallback(()=>{if(consumePersonalPhotoChange())void workspace.reload();},[workspace.reload]));const catalog=useProfessionalData(loadCatalog);
  const action=useProfessionalAction(workspace.reload);
+ const navigation=useNavigation();
  const specialtyCatalog=useProfessionalData(loadSpecialtyCatalog);
  const [specialties,setSpecialties]=useState<string[]>([]);
  type Section="identity"|"languages"|"professions"|"privacy";
@@ -57,11 +59,14 @@ export default function Professional() {
  function addProfession(){setProfessionSaveError("");setSpecialties([]);setProfession("");setTraining("graduado");setInstitution(null);setFormMode("add");setEditingProfession(null);setEditedPrimary(false);setProfessionFormOpen(true);}
  useEffect(()=>{if(!section)return;const t=setTimeout(()=>scrollRef.current?.scrollTo({y:Math.max(0,(positions.current[section]??0)-18),animated:true}),160);return()=>clearTimeout(t);},[section]);
  const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
- useEffect(()=>{let live=true;void (async()=>{try{const owner=await appearanceOwner();if(owner){const v=await readJCardVisibility(owner);if(live)setVisibility(v);}}catch{}})();return()=>{live=false;};},[]);
+ const [savedVisibility,setSavedVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
+ useEffect(()=>{let live=true;void (async()=>{try{const owner=await appearanceOwner();if(owner){const v=await readJCardVisibility(owner);if(live){setVisibility(v);setSavedVisibility(v);}}}catch{}})();return()=>{live=false;};},[]);
  const [showEmail,setShowEmail]=useState(false);const [showPhone,setShowPhone]=useState(false);
- useEffect(()=>{let live=true;void loadContactPreferences().then(p=>{if(live){setShowEmail(p.show_email);setShowPhone(p.show_phone);}}).catch(()=>{});return()=>{live=false;};},[]);
+ const [savedContactPreferences,setSavedContactPreferences]=useState({show_email:false,show_phone:false});
+ useEffect(()=>{let live=true;void loadContactPreferences().then(p=>{if(live){setShowEmail(p.show_email);setShowPhone(p.show_phone);setSavedContactPreferences({show_email:p.show_email,show_phone:p.show_phone});}}).catch(()=>{});return()=>{live=false;};},[]);
  const [personalContacts,setPersonalContacts]=useState({email_primary:"",email_secondary:"",phone_primary:"",phone_secondary:""});
- useEffect(()=>{let live=true;void loadPersonalContactDetails().then(c=>{if(live)setPersonalContacts(c);}).catch(()=>{});return()=>{live=false;};},[]);
+ const [savedPersonalContacts,setSavedPersonalContacts]=useState({email_primary:"",email_secondary:"",phone_primary:"",phone_secondary:""});
+ useEffect(()=>{let live=true;void loadPersonalContactDetails().then(c=>{if(live){setPersonalContacts(c);setSavedPersonalContacts(c);}}).catch(()=>{});return()=>{live=false;};},[]);
  function changePhoto(){router.push("/personal-avatar-editor");}
  const [name,setName]=useState("");const [handle,setHandle]=useState("");const [city,setCity]=useState("");const [region,setRegion]=useState("");
  const [availability,setAvailability]=useState<JCardStatus>("AVAILABLE");
@@ -78,20 +83,70 @@ export default function Professional() {
  const sectionRow=(id:Section,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}>
   <Ionicons name={icon} size={25} color={sunflower&&section!==id?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined,color:sunflower&&section!==id?colors.glassText:colors.ink}]}>{title}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={sunflower&&section!==id?colors.glassMuted:colors.muted}/>
  </Pressable>;
- const saveSection=(target:"identity"|"languages"|"privacy")=>void action.run(async()=>{
-  if(target==="privacy"){await saveContactPreferences({show_email:showEmail,show_phone:showPhone});await saveJCardVisibility(visibility);return;}
-  const fresh=await loadWorkspace();if(!fresh)throw new Error("No se pudieron cargar los datos actuales.");
-  const legalName=target==="identity"?name.trim().replace(/\\s+/g," "):fresh.card.name;
-  if(target==="identity"){
-   if(!/^[\\p{L}\\p{M}]+(?:[ \\u0027\\u2019-][\\p{L}\\p{M}]+)*$/u.test(legalName)||Array.from(legalName).length>30)throw new Error("El nombre debe tener entre 1 y 30 caracteres.");
-   for(const key of ["email_primary","email_secondary"] as const){const v=personalContacts[key].trim();if(v&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v))throw new Error("Revisa el correo electrónico.");}
-   await savePersonalContactDetails(personalContacts);
-  }
-  const nextLanguages=target==="languages"?languages:fresh.card.languages;
-  if(nextLanguages.some(l=>!canonicalLanguage(l.name)||!Number.isInteger(Number(l.fluency))||Number(l.fluency)<0||Number(l.fluency)>100))throw new Error("Completa el idioma y selecciona un nivel válido.");
-  if(new Set(nextLanguages.map(l=>canonicalLanguage(l.name))).size!==nextLanguages.length)throw new Error("No puedes agregar el mismo idioma dos veces.");
-  await professionalMutation("jobin_save_jcard",{legal_name:legalName,handle:target==="identity"?handle:fresh.card.handle,city:target==="identity"?city:(fresh.profile.city??""),region:target==="identity"?region:(fresh.profile.region??""),availability:target==="identity"?availability:fresh.card.status,languages:nextLanguages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))});
- },"").then(ok=>{if(ok){setSection(null);void workspace.reload();}});
+ type SaveTarget="identity"|"languages"|"privacy";
+ const identityDirty=!!w&&(name!==w.card.name||handle!==w.card.handle||city!==(w.profile.city??"")||
+  region!==(w.profile.region??"")||availability!==w.card.status||
+  JSON.stringify(personalContacts)!==JSON.stringify(savedPersonalContacts));
+ const languageDirty=!!w&&JSON.stringify(languages)!==JSON.stringify(w.card.languages.map(l=>({name:l.name,fluency:String(l.fluency)})));
+ const privacyDirty=showEmail!==savedContactPreferences.show_email||showPhone!==savedContactPreferences.show_phone||
+  JSON.stringify(visibility)!==JSON.stringify(savedVisibility);
+ const hasUnsavedChanges=identityDirty||languageDirty||privacyDirty;
+ const pendingTargets:SaveTarget[]=[
+  ...(identityDirty?["identity" as const]:[]),
+  ...(languageDirty?["languages" as const]:[]),
+  ...(privacyDirty?["privacy" as const]:[])
+ ];
+ const saveSections=(targets:SaveTarget[])=>{
+  if(action.busy||!targets.length)return;
+  const saveIdentity=targets.includes("identity");
+  const saveLanguages=targets.includes("languages");
+  const savePrivacy=targets.includes("privacy");
+  void action.run(async()=>{
+   if(saveIdentity||saveLanguages){
+    const fresh=await loadWorkspace();if(!fresh)throw new Error("No se pudieron cargar los datos actuales.");
+    const legalName=saveIdentity?name.trim().replace(/\s+/g," "):fresh.card.name;
+    if(saveIdentity){
+     if(!/^[\p{L}\p{M}]+(?:[ \u0027\u2019-][\p{L}\p{M}]+)*$/u.test(legalName)||Array.from(legalName).length>30)
+      throw new Error("El nombre debe tener entre 1 y 30 caracteres.");
+     for(const key of ["email_primary","email_secondary"] as const){
+      const v=personalContacts[key].trim();
+      if(v&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))throw new Error("Revisa el correo electrónico.");
+     }
+    }
+    const nextLanguages=saveLanguages?languages:fresh.card.languages;
+    if(nextLanguages.some(l=>!canonicalLanguage(l.name)||!Number.isInteger(Number(l.fluency))||Number(l.fluency)<0||Number(l.fluency)>100))
+     throw new Error("Completa el idioma y selecciona un nivel válido.");
+    if(new Set(nextLanguages.map(l=>canonicalLanguage(l.name))).size!==nextLanguages.length)
+     throw new Error("No puedes agregar el mismo idioma dos veces.");
+    await professionalMutation("jobin_save_jcard",{
+     legal_name:legalName,handle:saveIdentity?handle:fresh.card.handle,
+     city:saveIdentity?city:(fresh.profile.city??""),
+     region:saveIdentity?region:(fresh.profile.region??""),
+     availability:saveIdentity?availability:fresh.card.status,
+     languages:nextLanguages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))
+    });
+    if(saveIdentity)await savePersonalContactDetails(personalContacts);
+   }
+   if(savePrivacy){
+    await saveContactPreferences({show_email:showEmail,show_phone:showPhone});
+    await saveJCardVisibility(visibility);
+   }
+  },"").then(ok=>{
+   if(!ok)return;
+   if(saveIdentity)setSavedPersonalContacts({...personalContacts});
+   if(savePrivacy){
+    setSavedContactPreferences({show_email:showEmail,show_phone:showPhone});
+    setSavedVisibility({...visibility});
+   }
+   setSection(null);
+  });
+ };
+ usePreventRemove(hasUnsavedChanges||professionFormOpen,({data})=>{
+  Alert.alert("Cambios sin guardar","Si salís ahora, perderás los cambios que todavía no guardaste.",[
+   {text:"Seguir editando",style:"cancel"},
+   {text:"Descartar",style:"destructive",onPress:()=>navigation.dispatch(data.action)}
+  ]);
+ });
 
  return <Screen demo={false} hideHeader hideFooter scrollRef={scrollRef} title="Editar mi JCard" subtitle="">
   {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
