@@ -10,6 +10,7 @@ import {currentSocialUser,publishHomePost,shareApprovedMedia,uploadPhoto,type Fe
 import {PostComposerSheets} from "../../components/PostComposerSheets";
 import {DRAFT_PHOTO_BUCKET,emptyPostDraft,hasDraftContent,readPostDrafts,savePostDraft,deletePostDraft,restorePostDraftPhotoUrls,type PostDraft,type PostDraftPhoto} from "../../lib/post-drafts";
 import {searchPostMentions,type PostMention} from "../../lib/post-mentions";
+import {requireSupabase} from "../../lib/supabase";
 import type {PublishedMedia} from "../../lib/safety-api";
 import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
@@ -26,6 +27,8 @@ export default function PostCreate(){
  const {width:windowWidth,height:windowHeight}=useWindowDimensions();
  const [kind,setKind]=useState<FeedPostKind>(requested==="photo"?"photos":requested==="video"?"video":requested==="live"?"live":"text");
  const [author,setAuthor]=useState("");
+ const [authorName,setAuthorName]=useState("Tu perfil");
+ const [authorHandle,setAuthorHandle]=useState("");
  const [body,setBody]=useState("");
  const [composerHeight,setComposerHeight]=useState(56);
  const [mediaHelpOpen,setMediaHelpOpen]=useState(false);
@@ -43,10 +46,11 @@ export default function PostCreate(){
  const [busy,setBusy]=useState(false);const [loading,setLoading]=useState(true);const [error,setError]=useState("");
  const [draftId,setDraftId]=useState(()=>emptyPostDraft().id);
  const [drafts,setDrafts]=useState<PostDraft[]>([]);
+ const [draftCount,setDraftCount]=useState(0);
  const [hydrated,setHydrated]=useState(false);
  const [draftsOpen,setDraftsOpen]=useState(false);
  const [previewOpen,setPreviewOpen]=useState(false);
- const [optionsOpen,setOptionsOpen]=useState(false);
+ const [altPhotoId,setAltPhotoId]=useState<string|null>(null);
  const [exitOpen,setExitOpen]=useState(false);
  const [editingDone,setEditingDone]=useState(false);
  const [destination,setDestination]=useState<string|null>(null);
@@ -68,7 +72,11 @@ export default function PostCreate(){
  function persistSnapshot(value:PostDraft){
   if(!author||!hydrated||!autosaveEnabledRef.current||!hasDraftContent(value))return savingChainRef.current;
   savingChainRef.current=savingChainRef.current.catch(()=>{}).then(async()=>{
-   if(autosaveEnabledRef.current)await savePostDraft(author,value);
+   if(autosaveEnabledRef.current){
+    await savePostDraft(author,value);
+    const saved=await readPostDrafts(author);
+    setDraftCount(count=>count===saved.length?count:saved.length);
+   }
   });
   return savingChainRef.current;
  }
@@ -89,7 +97,16 @@ export default function PostCreate(){
    const saved=await readPostDrafts(uid);
    if(!active)return;
    setDrafts(saved);
-   // New publication is always blank. Existing drafts open only from Borradores.
+   setDraftCount(saved.length);
+   // New publication always starts empty; drafts are opened explicitly from Borradores.
+   void Promise.all([
+    requireSupabase().from("profiles").select("display_name").eq("id",uid).maybeSingle(),
+    requireSupabase().from("jcard_profiles").select("handle").eq("profile_id",uid).maybeSingle()
+   ]).then(([person,card])=>{
+    if(!active)return;
+    if(person.data?.display_name)setAuthorName(person.data.display_name);
+    if(card.data?.handle)setAuthorHandle(card.data.handle.replace(/^@/,""));
+   }).catch(()=>{});
    const approved=await Promise.all([shareApprovedMedia("video",uid),shareApprovedMedia("live",uid)]);
    if(active)setMedia([...approved[0],...approved[1]]);
   }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudo cargar la cuenta.");}
@@ -97,17 +114,23 @@ export default function PostCreate(){
  })();return()=>{active=false;};},[]);
  useEffect(()=>{
   if(!hydrated||!author||!hasWork||!autosaveEnabledRef.current)return;
-  const timer=setTimeout(()=>{void persistSnapshot(draftSnapshotRef.current);},180);
+  const timer=setTimeout(()=>{
+   void persistSnapshot(draftSnapshotRef.current).catch(e=>setError(e instanceof Error?e.message:"No se pudo guardar el borrador."));
+  },180);
   return()=>clearTimeout(timer);
  },[author,hydrated,draftId,body,kind,photos,mediaId,audience,audienceFollowers,audienceContacts,consent,mentionedProfileIds]);
  useEffect(()=>{
   const subscription=AppState.addEventListener("change",status=>{
-   if(status!=="active")void persistSnapshot(draftSnapshotRef.current);
+   if(status!=="active")void persistSnapshot(draftSnapshotRef.current).catch(()=>{});
   });
-  return()=>{subscription.remove();void persistSnapshot(draftSnapshotRef.current);};
+  return()=>{subscription.remove();void persistSnapshot(draftSnapshotRef.current).catch(()=>{});};
  },[author,hydrated]);
  useEffect(()=>{
-  if(!optionsOpen||mentionQuery.trim().length<2){setMentionResults([]);return;}
+  const match=body.match(/(?:^|\s)@([\p{L}\p{N}_.]{1,40})$/u);
+  setMentionQuery(match?.[1]??"");
+ },[body]);
+ useEffect(()=>{
+  if(mentionQuery.trim().length<2){setMentionResults([]);return;}
   let active=true;const timer=setTimeout(()=>{
    setMentionSearching(true);
    void searchPostMentions(mentionQuery).then(list=>{if(active)setMentionResults(list);})
@@ -115,7 +138,7 @@ export default function PostCreate(){
     .finally(()=>{if(active)setMentionSearching(false);});
   },320);
   return()=>{active=false;clearTimeout(timer);};
- },[mentionQuery,optionsOpen]);
+ },[mentionQuery]);
  useEffect(()=>{
   if(!editingDone||destination===null)return;
   router.replace({pathname:"/(tabs)/inicio",params:destination?{published:destination}:{}});
@@ -135,7 +158,7 @@ export default function PostCreate(){
  async function saveDraftNow(){
   await Promise.allSettled(pendingUploadsRef.current);
   await persistSnapshot(draftSnapshotRef.current);
-  setDrafts(await readPostDrafts(author));
+  const saved=await readPostDrafts(author);setDrafts(saved);setDraftCount(saved.length);
  }
  async function saveAndExit(){
   try{await saveDraftNow();finishHome("");}
@@ -151,18 +174,29 @@ export default function PostCreate(){
  }
  async function openDrafts(){
   try{
-   await saveDraftNow();
-   setDrafts(await readPostDrafts(author));
-   setDraftsOpen(true);
+   if(hasDraftContent(draftSnapshotRef.current)){
+    await saveDraftNow().catch(e=>setError(e instanceof Error?e.message:"No se pudo guardar el borrador actual."));
+   }
+   const saved=await readPostDrafts(author);
+   setDrafts(saved);setDraftCount(saved.length);setDraftsOpen(true);
   }catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar los borradores.");}
  }
  async function deleteDraft(d:PostDraft){
-  try{await deletePostDraft(author,d.id);setDrafts(await readPostDrafts(author));}
-  catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar el borrador.");}
+  try{
+   await savingChainRef.current.catch(()=>{});
+   await deletePostDraft(author,d.id);
+   if(d.id===draftSnapshotRef.current.id){
+    setDraftId(emptyPostDraft().id);setBody("");setKind("text");setPhotos([]);setMediaId("");
+    setAudience("public");setAudienceFollowers(true);setAudienceContacts(false);
+    setConsent(false);setMentionedProfileIds([]);
+   }
+   const saved=await readPostDrafts(author);
+   setDrafts(saved);setDraftCount(saved.length);
+  }catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar el borrador.");}
  }
  function chooseMention(person:PostMention){
   const token="@"+(person.handle.replace(/^@/,"")||person.name.trim().replace(/\s+/g,""));
-  setBody(current=>current+(current.trim()&&!current.endsWith(" ")?" ":"")+token+" ");
+  setBody(current=>current.replace(/@([\p{L}\p{N}_.]*)$/u,token+" "));
   setMentionedProfileIds(current=>current.includes(person.id)?current:[...current,person.id]);
   setMentionQuery("");setMentionResults([]);
  }
