@@ -5,7 +5,8 @@ import {readFileSync} from "node:fs";
 const editor=readFileSync("src/app/post/create.tsx","utf8");
 const sheets=readFileSync("src/components/PostComposerSheets.tsx","utf8");
 const store=readFileSync("src/lib/post-drafts.ts","utf8");
-const home=readFileSync("src/app/(tabs)/inicio.tsx","utf8");
+const home=readFileSync("src/app/(tabs)/index.tsx","utf8");
+const root=readFileSync("src/app/_layout.tsx","utf8");
 const tabs=readFileSync("src/app/(tabs)/_layout.tsx","utf8");
 
 test("New post starts empty and existing drafts are restored only by explicit selection",()=>{
@@ -15,13 +16,18 @@ test("New post starts empty and existing drafts are restored only by explicit se
  assert.ok(editor.includes("applyDraft(d);setDraftsOpen(false)"));
 });
 
-test("Exiting and publishing return via explicit /inicio tab alias instead of unmatched root URL",()=>{
- assert.ok(editor.includes('pathname:"/(tabs)/inicio"'));
- assert.ok(home.includes('export {default} from "./index"'));
- assert.ok(tabs.includes('<Tabs.Screen name="inicio" options={{href:null}}/>'));
- assert.ok(tabs.includes('pathname==="/inicio"'));
+test("Exit and publish return to the real root Home tab, not a hidden alias or a root URL",()=>{
+ assert.ok(editor.includes('StackActions.popTo("(tabs)"'));
+ assert.ok(editor.includes('screen:"index"'));
+ assert.ok(editor.includes('params:destination?{published:destination}:{}'));
+ assert.ok(editor.includes('InteractionManager.runAfterInteractions'));
+ assert.ok(root.includes('<Stack.Screen name="(tabs)" options={{headerShown:false}}/>'));
+ assert.ok(tabs.includes('{name:"index",title:"Casa"'));
+ assert.ok(!tabs.includes('<Tabs.Screen name="inicio"'));
+ assert.ok(!editor.includes('pathname:"/(tabs)/inicio"'));
  assert.ok(!editor.includes('router.replace({pathname:"/(tabs)/index"'));
  assert.ok(editor.includes('finishHome(publishedId)'));
+ assert.ok(home.includes('featuredPostId={published??""}'));
 });
 
 test("The two balanced secondary controls don't compete with Publish",()=>{

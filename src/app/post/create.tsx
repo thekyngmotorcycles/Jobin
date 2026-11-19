@@ -1,9 +1,9 @@
 import {Ionicons} from "@expo/vector-icons";
-import {router,Stack,useLocalSearchParams} from "expo-router";
-import {usePreventRemove} from "@react-navigation/native";
+import {router,Stack,useLocalSearchParams,useNavigation} from "expo-router";
+import {StackActions,usePreventRemove} from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import {useEffect,useRef,useState} from "react";
-import {ActivityIndicator,AppState,Image,Keyboard,Modal,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
+import {ActivityIndicator,AppState,Image,InteractionManager,Keyboard,Modal,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {PublicProfileAvatar} from "../../components/PublicProfileAvatar";
 import {currentSocialUser,publishHomePost,shareApprovedMedia,uploadPhoto,type FeedPostKind,type FeedAudience} from "../../lib/social-content";
@@ -23,6 +23,7 @@ const kinds=[
 
 export default function PostCreate(){
  const {kind:requested}=useLocalSearchParams<{kind?:string}>();
+ const navigation=useNavigation();
  const {theme}=useTheme();const t=jobeenTokens(theme);
  const {width:windowWidth,height:windowHeight}=useWindowDimensions();
  const [kind,setKind]=useState<FeedPostKind>(requested==="photo"?"photos":requested==="video"?"video":requested==="live"?"live":"text");
@@ -141,8 +142,19 @@ export default function PostCreate(){
  },[mentionQuery]);
  useEffect(()=>{
   if(!editingDone||destination===null)return;
-  router.replace({pathname:"/(tabs)/inicio",params:destination?{published:destination}:{}});
- },[editingDone,destination]);
+  // Return through the native root stack to its existing (tabs) screen,
+  // selecting the real Home tab (index). Avoid a hidden Expo Router href
+  // or the URL root, which produced a blank screen / jobin:/// on Android.
+  // Queue after React has disabled usePreventRemove and the closing modal
+  // has completed its UI transition.
+  const task=InteractionManager.runAfterInteractions(()=>{
+   navigation.dispatch(StackActions.popTo("(tabs)",{
+    screen:"index",
+    params:destination?{published:destination}:{}
+   }));
+  });
+  return()=>task.cancel();
+ },[editingDone,destination,navigation]);
  usePreventRemove(!editingDone,()=>{
   if(hasDraftContent(draftSnapshotRef.current))setExitOpen(true);
   else finishHome("");

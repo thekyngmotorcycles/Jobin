@@ -4,13 +4,16 @@ import {readFileSync} from "node:fs";
 
 const composer=readFileSync("src/app/post/create.tsx","utf8");
 const tabs=readFileSync("src/app/(tabs)/_layout.tsx","utf8");
-const alias=readFileSync("src/app/(tabs)/inicio.tsx","utf8");
+const root=readFileSync("src/app/_layout.tsx","utf8");
 
 test("After a successful post, navigate to Home and highlight the created entry",()=>{
  assert.ok(tabs.includes('{name:"index",title:"Casa"'));
- assert.ok(tabs.includes('<Tabs.Screen name="inicio" options={{href:null}}/>'));
- assert.ok(alias.includes('export {default} from "./index"'));
- assert.ok(composer.includes('pathname:"/(tabs)/inicio"'));
+ assert.ok(root.includes('<Stack.Screen name="(tabs)" options={{headerShown:false}}/>'));
+ assert.ok(composer.includes('StackActions.popTo("(tabs)"'));
+ assert.ok(composer.includes('screen:"index"'));
+ assert.ok(composer.includes('params:destination?{published:destination}:{}'));
+ assert.ok(!tabs.includes('<Tabs.Screen name="inicio"'));
+ assert.ok(!composer.includes('pathname:"/(tabs)/inicio"'));
  assert.ok(composer.includes("finishHome(publishedId)"));
  assert.ok(!composer.includes('router.dismissTo("/(tabs)/index")'));
  assert.ok(composer.includes('const publishedId=await publishHomePost({'));

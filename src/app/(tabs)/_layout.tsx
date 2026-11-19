@@ -30,11 +30,10 @@ export default function TabLayout(){
   tabBarIconStyle:{height:48,width:48,alignItems:"center",justifyContent:"center"},
  }}>
   <Tabs.Screen name="create" options={{href:null}}/>
-  <Tabs.Screen name="inicio" options={{href:null}}/>
   <Tabs.Screen name="streams" options={{href:null}}/>
   {routes.map(route=><Tabs.Screen key={route.name} name={route.name} options={{
    title:route.title,tabBarAccessibilityLabel:route.title,tabBarButtonTestID:"tab-"+route.name,
-   tabBarIcon:({color,focused})=>{const selected=focused||(route.name==="index"&&(pathname==="/inicio"||pathname.endsWith("/inicio")))||(route.name==="videos"&&(pathname==="/streams"||pathname.endsWith("/streams")));return <View style={{width:48,height:48,alignItems:"center",justifyContent:"center"}}><View pointerEvents="none" style={{position:"absolute",width:48,height:48,borderRadius:999,overflow:"hidden",backgroundColor:selected?`${LIGHT_JOBEEN.yellow}66`:colors.transparent}}/><JobinTabIcon name={route.name} focused={selected} size={route.name==="videos"?(width<375?28:30):(width<375?23:25)} color={selected?colors.ink:color}/>{route.name==="inbox"&&unreadInbox>0&&<View style={{position:"absolute",top:-3,right:-4}}><Ionicons name="heart" size={12} color={colors.reaction}/></View>}</View>},
+   tabBarIcon:({color,focused})=>{const selected=focused||(route.name==="videos"&&(pathname==="/streams"||pathname.endsWith("/streams")));return <View style={{width:48,height:48,alignItems:"center",justifyContent:"center"}}><View pointerEvents="none" style={{position:"absolute",width:48,height:48,borderRadius:999,overflow:"hidden",backgroundColor:selected?`${LIGHT_JOBEEN.yellow}66`:colors.transparent}}/><JobinTabIcon name={route.name} focused={selected} size={route.name==="videos"?(width<375?28:30):(width<375?23:25)} color={selected?colors.ink:color}/>{route.name==="inbox"&&unreadInbox>0&&<View style={{position:"absolute",top:-3,right:-4}}><Ionicons name="heart" size={12} color={colors.reaction}/></View>}</View>},
   }}/>)}
  </Tabs>;
  if(!desktop)return tabs;
