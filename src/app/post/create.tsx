@@ -188,17 +188,22 @@ export default function PostCreate(){
   }catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar los borradores.");}
  }
  async function deleteDraft(d:PostDraft){
+  // A queued background save must not recreate a draft the user explicitly deletes.
+  autosaveEnabledRef.current=false;
   try{
    await savingChainRef.current.catch(()=>{});
    await deletePostDraft(author,d.id);
    if(d.id===draftSnapshotRef.current.id){
-    setDraftId(emptyPostDraft().id);setBody("");setKind("text");setPhotos([]);setMediaId("");
+    const empty=emptyPostDraft();
+    draftSnapshotRef.current=empty;
+    setDraftId(empty.id);setBody("");setKind("text");setPhotos([]);setMediaId("");
     setAudience("public");setAudienceFollowers(true);setAudienceContacts(false);
     setConsent(false);setMentionedProfileIds([]);
    }
    const saved=await readPostDrafts(author);
    setDrafts(saved);setDraftCount(saved.length);
   }catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar el borrador.");}
+  finally{autosaveEnabledRef.current=true;}
  }
  function chooseMention(person:PostMention){
   const token="@"+(person.handle.replace(/^@/,"")||person.name.trim().replace(/\s+/g,""));
