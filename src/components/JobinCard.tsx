@@ -27,7 +27,7 @@ import {loadPublicContact,loadVisiblePersonalContactDetails,type PersonalContact
 import { experienceLabel } from "../lib/employment";
 import {ProfessionGlyph} from "./ProfessionGlyph";
 import { LanguageRing, languageLabel, LANGUAGE_LEVELS } from "./LanguageRing";
-import { businessCardAccents, businessCardPaper, businessInformationSurface, jcardCommon, jcardFloating, jcardReviewGlass, jcardLayout, jcardTokens } from "../theme/jcard";
+import { businessCardAccents, businessCardPaper, businessInformationSurface, jcardCommon, jcardFloating, jcardReviewGlass, jcardLayout, jcardTokens, jcardSurfaceSize, jcardSurfaceMetrics } from "../theme/jcard";
 import {businessCategoryArt} from "../lib/business-category-art";
 import {categoryGlyph} from "../lib/category-icons";
 
@@ -369,12 +369,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
   transform:[{translateX:interpolate(handProgress.value,[0,1],[10,0])}]
  }));
  // Preserve approved dimensions on normal phones; give narrow screens and large text room.
- const effectiveCardWidth=measuredCardWidth||Math.min(width-32,520);
- const compactCard=effectiveCardWidth<350;
- const extraTextHeight=Math.round(Math.max(0,Math.min(fontScale,1.3)-1)*40);
- // The light JCard is intentionally compact; keep both 3D faces at the same height.
- // A new Android preview APK is required to test the latest UI on-device.
- const cardHeight=((previewTheme??theme)==="light"?330:400)+(compactCard?8:0)+extraTextHeight;
+ const {height:cardHeight}=jcardSurfaceSize({screenWidth:width,measuredWidth:measuredCardWidth,fontScale,theme:previewTheme??theme});
  useEffect(()=>{if(!canFlip)setBack(activeBusiness);},[canFlip,activeBusiness]);
  const toggle=()=>{if(canFlip)setBack(value=>!value);};
  const cardTheme=previewTheme??theme;
@@ -388,7 +383,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
   try {await Share.share({message:`JCard ${side==="business"?"de negocio":"personal"} de ${label}: ${link}`,title:`JCard ${side==="business"?"de negocio":"personal"} · ${label}`});} catch(error){console.warn("No se pudo abrir el menú para compartir la JCard",error);}
  };
  return <>
-  <View style={{width:"100%",maxWidth:520,alignSelf:"center"}}>
+  <View style={{width:"100%",maxWidth:jcardSurfaceMetrics.maxWidth,alignSelf:"center"}}>
    <View style={{position:"relative",paddingBottom:14}}>
    <BusinessCard3D height={cardHeight} enabled={canFlip} tutorialNudge={hintVisible} initialSide={initialSide} side={back?"business":"personal"}
      onSideChange={side=>{setBack(side==="business");setHintVisible(false);}} shadowColor={jcardCommon.cardShadowColor}
