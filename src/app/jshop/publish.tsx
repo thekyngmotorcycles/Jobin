@@ -95,7 +95,7 @@ export default function JShopPublish(){
   if(busy||!ownerId)return;
   if(draft&&!existing){setError("El borrador solicitado no está disponible.");return;}
   if(publish&&!defaultPlace){setError("Primero configurá tu ubicación de venta en JShop.");return;}
-  if(publish&&!selectedLocation){setError("Elegí la ubicación del artículo antes de publicarlo.");return;}
+  if(publish&&!selectedLocation){setError("Elige la ubicación del artículo antes de publicarlo.");return;}
   if(title.trim().length<3){setError("Escribe un título de al menos 3 caracteres.");return;}
   const amount=parseJShopPrice(price);
   if(price.trim()&&amount===null){setError("Introduce un precio válido mayor que cero o déjalo vacío.");return;}
@@ -132,7 +132,7 @@ export default function JShopPublish(){
  return <>
   <Stack.Screen options={{title:existing?"Editar borrador":"Nuevo anuncio"}}/>
   <JShopPage>
-   <JShopTitle title={existing?"Editar borrador":"Preparar un anuncio"} subtitle="Guardá un borrador o publicá tu artículo para que otros usuarios lo encuentren."/>
+   <JShopTitle title={existing?"Editar borrador":"Preparar un anuncio"} subtitle="Guarda un borrador o publica tu artículo para que otros usuarios lo encuentren."/>
    {loading?<ActivityIndicator color={t.yellow}/>:<>
     <View style={{gap:10}}>
      <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
@@ -200,14 +200,14 @@ export default function JShopPublish(){
       style={{minHeight:40,alignItems:"center",justifyContent:"center"}}>
       <Text style={{fontSize:13,fontWeight:"700",color:t.ink2}}>Usar mi ubicación predeterminada: {defaultPlace.city}</Text>
      </Pressable>}
-     <Text style={{fontSize:12,lineHeight:18,color:t.ink2}}>{!defaultPlace?"Es necesaria una ubicación de venta predeterminada para publicar.":articlePlace?"Esta ubicación se guardará solo en este artículo. Tu ubicación predeterminada no cambiará.":"Se utiliza tu ubicación de venta predeterminada. Podés cambiarla únicamente para este artículo."} Una vez publicado, el anuncio conservará esta ubicación.</Text>
+     <Text style={{fontSize:12,lineHeight:18,color:t.ink2}}>{!defaultPlace?"Es necesaria una ubicación de venta predeterminada para publicar.":articlePlace?"Esta ubicación se guardará solo en este artículo. Tu ubicación predeterminada no cambiará.":"Se utiliza tu ubicación de venta predeterminada. Puedes cambiarla únicamente para este artículo."} Una vez publicado, el anuncio conservará esta ubicación.</Text>
     </View>
     <View style={{borderRadius:18,backgroundColor:t.cream,padding:14,gap:5}}>
      <Text style={{fontWeight:"800",fontSize:13,color:t.ink}}>Publicación de anuncios</Text>
      <Text style={{color:t.ink2,fontSize:12,lineHeight:18}}>Al publicar, el título, las fotografías, el precio y la ubicación serán visibles para otras personas. Los pagos no se gestionan en JShop; contactá al vendedor mediante Mensajes.</Text>
     </View>
     {!!error&&<Text accessibilityLiveRegion="polite" style={{color:t.ink,fontWeight:"600"}}>{error}</Text>}
-    <JShopButton title={busy?"Procesando...":"Publicar anuncio"} icon="cloud-upload-outline" disabled={busy||!ownerId||!defaultPlace||!selectedLocation||!!(draft&&!existing)} onPress={()=>Alert.alert("Publicar anuncio","El artículo y sus fotografías serán visibles públicamente en JShop. ¿Querés continuar?",[{text:"Cancelar",style:"cancel"},{text:"Publicar",onPress:()=>void save(true)}])}/>
+    <JShopButton title={busy?"Procesando...":"Publicar anuncio"} icon="cloud-upload-outline" disabled={busy||!ownerId||!defaultPlace||!selectedLocation||!!(draft&&!existing)} onPress={()=>Alert.alert("Publicar anuncio","El artículo y sus fotografías serán visibles públicamente en JShop. ¿Quieres continuar?",[{text:"Cancelar",style:"cancel"},{text:"Publicar",onPress:()=>void save(true)}])}/>
     <JShopButton title="Guardar borrador" secondary icon="save-outline" disabled={busy||!ownerId||!!(draft&&!existing)} onPress={()=>void save(false)}/>
     <JShopButton title="Cancelar" secondary onPress={()=>router.back()}/>
    </>}
