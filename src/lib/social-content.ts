@@ -64,7 +64,7 @@ export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,
  if(privatePaths.length){
   const {data:links,error:linkError}=await db.storage.from(PRIVATE_POSTS_BUCKET).createSignedUrls(privatePaths,300);
   if(linkError)throw linkError;
-  for(const link of links??[])if(link.signedUrl)signedUrls.set(link.path,link.signedUrl);
+  for(const link of links??[])if(link.signedUrl&&link.path)signedUrls.set(link.path,link.signedUrl);
  }
  return rows.map(row=>{
   const count=counts.get(row.id);
