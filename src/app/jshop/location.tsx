@@ -61,7 +61,7 @@ export default function JShopLocationPicker(){
   try{
    let permission=await Location.getForegroundPermissionsAsync();
    if(!permission.granted)permission=await Location.requestForegroundPermissionsAsync();
-   if(!permission.granted)throw new Error("No se autorizó la ubicación. Podés elegir una ciudad manualmente o habilitarla en los ajustes del teléfono.");
+   if(!permission.granted)throw new Error("No se autorizó la ubicación. Puedes elegir una ciudad manualmente o habilitarla en los ajustes del teléfono.");
    if(!await Location.hasServicesEnabledAsync())throw new Error("Activá la ubicación del teléfono e intentá nuevamente.");
    const position=await Location.getCurrentPositionAsync({accuracy:Location.Accuracy.Balanced});
    if(request!==gpsRequest.current)return;
@@ -70,7 +70,7 @@ export default function JShopLocationPicker(){
    input.current?.blur();
    setCenter({lat:latitude,lon:longitude});setZoom(11);
    setChosen(null);setMoved(true);setTyping(false);setMatches([]);setQuery("");setError("");
-  }catch(e){if(request===gpsRequest.current)setError(e instanceof Error?e.message:"No se pudo obtener tu ubicación. Podés buscar una ciudad manualmente.");}
+  }catch(e){if(request===gpsRequest.current)setError(e instanceof Error?e.message:"No se pudo obtener tu ubicación. Puedes buscar una ciudad manualmente.");}
   finally{if(request===gpsRequest.current)setLocating(false);}
  }
  useEffect(()=>{
@@ -99,7 +99,7 @@ export default function JShopLocationPicker(){
   setSearching(true);setError("");
   try{const found=await findJShopPlaces(query);
    if(found.length)choose(found[0]);
-   else setError("No encontramos esa ubicación. Probá ciudad, estado y país.");}
+   else setError("No encontramos esa ubicación. Prueba ciudad, estado y país.");}
   catch(e){setError(e instanceof Error?e.message:"No se pudo buscar la ubicación.");}
   finally{setSearching(false);}
  }
