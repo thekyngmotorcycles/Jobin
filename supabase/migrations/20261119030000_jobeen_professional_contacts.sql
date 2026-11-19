@@ -29,7 +29,7 @@ create policy jobeen_contacts_invite on public.jobeen_contact_requests
  for insert to authenticated with check(
   requester_id=(select auth.uid()) and recipient_id<>(select auth.uid())
   and status='pending' and responded_at is null
-  and not private.is_blocked(requester_id,(select auth.uid()))
+  and not private.is_blocked(requester_id,recipient_id)
   and exists(select 1 from public.profiles p where p.id=recipient_id and p.deactivated_at is null)
  );
 create policy jobeen_contacts_reply on public.jobeen_contact_requests
