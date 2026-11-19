@@ -1,8 +1,8 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useLocalSearchParams} from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import {useEffect,useState} from "react";
-import {ActivityIndicator,Image,Pressable,ScrollView,Text,TextInput,View} from "react-native";
+import {useEffect,useRef,useState} from "react";
+import {ActivityIndicator,Image,Keyboard,Modal,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {PublicProfileAvatar} from "../../components/PublicProfileAvatar";
 import {currentSocialUser,publishHomePost,shareApprovedMedia,type FeedPostKind,type FeedAudience} from "../../lib/social-content";
@@ -11,7 +11,6 @@ import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
 
 const kinds=[
- {kind:"text",label:"Texto",icon:"create-outline"},
  {kind:"photos",label:"Foto",icon:"image-outline"},
  {kind:"video",label:"Video",icon:"videocam-outline"},
  {kind:"live",label:"Clip de Live",icon:"radio-outline"},
@@ -20,6 +19,7 @@ const kinds=[
 export default function PostCreate(){
  const {kind:requested}=useLocalSearchParams<{kind?:string}>();
  const {theme}=useTheme();const t=jobeenTokens(theme);
+ const {width:windowWidth,height:windowHeight}=useWindowDimensions();
  const [kind,setKind]=useState<FeedPostKind>(requested==="photo"?"photos":requested==="video"?"video":requested==="live"?"live":"text");
  const [author,setAuthor]=useState("");
  const [body,setBody]=useState("");
@@ -32,6 +32,8 @@ export default function PostCreate(){
  const [consent,setConsent]=useState(false);
  const [audience,setAudience]=useState<FeedAudience>("public");
  const [audienceMenuOpen,setAudienceMenuOpen]=useState(false);
+ const privateButtonRef=useRef<View>(null);
+ const [audienceAnchor,setAudienceAnchor]=useState({top:130,left:16});
  const [audienceFollowers,setAudienceFollowers]=useState(true);
  const [audienceContacts,setAudienceContacts]=useState(false);
  const [busy,setBusy]=useState(false);const [loading,setLoading]=useState(true);const [error,setError]=useState("");
@@ -53,8 +55,25 @@ export default function PostCreate(){
   }catch(e){setError(e instanceof Error?e.message:"No se pudieron seleccionar fotos.");}
  }
  function switchKind(next:FeedPostKind){
-  setKind(next);setError("");setMediaId("");setMediaHelpOpen(false);
-  if(next==="video"||next==="live"){setAudience("public");setAudienceMenuOpen(false);}
+  // The text field is always present; tapping the selected media type again returns to text only.
+  const selected=kind===next?"text":next;
+  setKind(selected);setError("");setMediaId("");setMediaHelpOpen(false);
+  if(selected==="text"&&next==="photos")setPhotos([]);
+  if(selected==="video"||selected==="live"){setAudience("public");setAudienceMenuOpen(false);}
+ }
+ function toggleAudienceMenu(){
+  if(audienceMenuOpen){setAudienceMenuOpen(false);return;}
+  Keyboard.dismiss();
+  const cardWidth=Math.min(270,windowWidth-28);
+  const openAt=(x:number,y:number,w:number,h:number)=>{
+   const left=Math.max(14,Math.min(x+w-cardWidth,windowWidth-cardWidth-14));
+   const below=y+h+8;
+   const top=below+238>windowHeight?Math.max(12,y-243):below;
+   setAudienceAnchor({left,top});
+   setAudienceMenuOpen(true);
+  };
+  if(privateButtonRef.current)privateButtonRef.current.measureInWindow(openAt);
+  else openAt(windowWidth-120,100,100,36);
  }
  async function submit(){
   if(busy)return;
@@ -76,47 +95,25 @@ export default function PostCreate(){
     <View style={{gap:9}}>
      <View style={{flexDirection:"row",alignItems:"center",gap:12}}>
       {!!author?<PublicProfileAvatar userId={author} name="Mi perfil" size={48}/>:<Ionicons name="person-circle-outline" size={45} color={t.ink}/>}
-      <View style={{flex:1,flexDirection:"row",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-       <Pressable accessibilityRole="button" accessibilityState={{selected:audience==="public"}} accessibilityLabel="Publicación pública"
+      <View style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:7,flexWrap:"wrap"}}>
+       <Pressable accessibilityRole="button" accessibilityState={{selected:audience==="public"}} accessibilityLabel="Publicación pública" hitSlop={{top:4,bottom:4}}
         onPress={()=>{setAudience("public");setAudienceMenuOpen(false);setError("");}}
-        style={{minHeight:42,paddingHorizontal:12,borderRadius:13,borderWidth:1,borderColor:audience==="public"?t.yellow:t.line,
+        style={{minHeight:37,paddingHorizontal:9,borderRadius:12,borderWidth:1,borderColor:audience==="public"?t.yellow:t.line,
          backgroundColor:audience==="public"?t.cream:t.surface,flexDirection:"row",alignItems:"center",gap:6}}>
-        <Ionicons name="globe-outline" size={17} color={t.ink}/><Text style={{fontSize:13,fontWeight:audience==="public"?"700":"500",color:t.ink}}>Público</Text>
+        <Ionicons name="globe-outline" size={15} color={t.ink}/><Text style={{fontSize:12,fontWeight:audience==="public"?"700":"500",color:t.ink}}>Público</Text>
        </Pressable>
-       <Pressable accessibilityRole="button" accessibilityState={{selected:audience==="private",expanded:audienceMenuOpen}}
-        accessibilityLabel="Elegir destinatarios privados"
+       <Pressable ref={privateButtonRef} accessibilityRole="button" accessibilityState={{selected:audience==="private",expanded:audienceMenuOpen}}
+        accessibilityLabel="Elegir destinatarios privados" hitSlop={{top:4,bottom:4}}
         disabled={kind==="video"||kind==="live"}
-        onPress={()=>setAudienceMenuOpen(open=>!open)}
-        style={{minHeight:42,paddingHorizontal:12,borderRadius:13,borderWidth:1,borderColor:audience==="private"?t.yellow:t.line,
+        onPress={toggleAudienceMenu}
+        style={{minHeight:37,paddingHorizontal:9,borderRadius:12,borderWidth:1,borderColor:audience==="private"?t.yellow:t.line,
          backgroundColor:audience==="private"?t.cream:t.surface,opacity:kind==="video"||kind==="live"?0.45:1,
          flexDirection:"row",alignItems:"center",gap:6}}>
-        <Ionicons name="lock-closed-outline" size={17} color={t.ink}/><Text style={{fontSize:13,fontWeight:audience==="private"?"700":"500",color:t.ink}}>Privado</Text>
-        <Ionicons name={audienceMenuOpen?"chevron-up":"chevron-down"} size={15} color={t.ink}/>
+        <Ionicons name="lock-closed-outline" size={15} color={t.ink}/><Text style={{fontSize:12,fontWeight:audience==="private"?"700":"500",color:t.ink}}>Privado</Text>
+        <Ionicons name={audienceMenuOpen?"chevron-up":"chevron-down"} size={13} color={t.ink}/>
        </Pressable>
       </View>
      </View>
-     {audienceMenuOpen&&<View style={{marginLeft:56,maxWidth:280,borderWidth:1,borderColor:t.line,
-      borderRadius:17,backgroundColor:t.surface,paddingHorizontal:14,paddingVertical:12,gap:8}}>
-      <Text style={{fontSize:13,fontWeight:"700",color:t.ink}}>Compartir con</Text>
-      <Pressable accessibilityRole="checkbox" accessibilityState={{checked:audienceFollowers}}
-       accessibilityLabel="Compartir con mis seguidores" onPress={()=>setAudienceFollowers(current=>!current)}
-       style={{flexDirection:"row",alignItems:"center",minHeight:44,gap:9}}>
-       <Ionicons name={audienceFollowers?"checkmark-circle":"ellipse-outline"} size={23} color={audienceFollowers?t.ink:t.ink2}/>
-       <Text style={{fontSize:13,color:t.ink}}>Mis seguidores</Text>
-      </Pressable>
-      <Pressable accessibilityRole="checkbox" accessibilityState={{checked:audienceContacts}}
-       accessibilityLabel="Compartir con mis contactos" onPress={()=>setAudienceContacts(current=>!current)}
-       style={{flexDirection:"row",alignItems:"center",minHeight:44,gap:9}}>
-       <Ionicons name={audienceContacts?"checkmark-circle":"ellipse-outline"} size={23} color={audienceContacts?t.ink:t.ink2}/>
-       <Text style={{fontSize:13,color:t.ink}}>Mis contactos</Text>
-      </Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel="Aplicar audiencia privada"
-       disabled={!audienceFollowers&&!audienceContacts}
-       onPress={()=>{setAudience("private");setAudienceMenuOpen(false);setError("");}}
-       style={{minHeight:43,borderRadius:12,backgroundColor:t.ink,justifyContent:"center",alignItems:"center",opacity:audienceFollowers||audienceContacts?1:0.4}}>
-       <Text style={{color:t.surface,fontWeight:"700",fontSize:13}}>Aplicar</Text>
-      </Pressable>
-     </View>}
      {(kind==="video"||kind==="live")&&<Text style={{color:t.ink2,fontSize:12,paddingLeft:60}}>
       Los videos y Lives aprobados solo pueden compartirse públicamente.
      </Text>}
@@ -130,7 +127,7 @@ export default function PostCreate(){
       style={{backgroundColor:t.surface,borderWidth:1,borderColor:t.line,borderRadius:17,
        paddingHorizontal:15,paddingVertical:12,height:composerHeight,color:t.ink,fontSize:15,lineHeight:22}}/>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
-     {kinds.map(option=><Pressable key={option.kind} accessibilityRole="button" accessibilityState={{selected:kind===option.kind}} onPress={()=>switchKind(option.kind)}
+     {kinds.map(option=><Pressable key={option.kind} accessibilityRole="button" accessibilityState={{selected:kind===option.kind}} accessibilityLabel={kind===option.kind?"Quitar "+option.label:"Añadir "+option.label} onPress={()=>switchKind(option.kind)}
       style={{flexDirection:"row",alignItems:"center",gap:7,paddingHorizontal:12,minHeight:45,borderRadius:18,borderWidth:1,borderColor:kind===option.kind?t.yellow:t.line,backgroundColor:kind===option.kind?t.cream:t.surface}}>
       <Ionicons name={option.icon} size={18} color={t.ink}/>
       <Text style={{color:t.ink,fontWeight:kind===option.kind?"700":"500",fontSize:13}}>{option.label}</Text>
@@ -214,5 +211,39 @@ export default function PostCreate(){
     </View>
    </View>}
   </SafeAreaView>
+  <Modal transparent visible={audienceMenuOpen} animationType="fade" statusBarTranslucent={false}
+   onRequestClose={()=>setAudienceMenuOpen(false)}>
+   <View style={{flex:1}}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Cerrar opciones de privacidad"
+     onPress={()=>setAudienceMenuOpen(false)}
+     style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:t.uploadScrim}}/>
+    <View accessibilityViewIsModal style={{position:"absolute",top:audienceAnchor.top,left:audienceAnchor.left,
+     width:Math.min(270,windowWidth-28),maxWidth:"95%",borderWidth:1,borderColor:t.line,
+     borderRadius:18,backgroundColor:t.surface,paddingHorizontal:15,paddingVertical:14,gap:8,
+     shadowColor:t.floatingCardShadow,shadowOpacity:0.24,shadowRadius:18,shadowOffset:{width:0,height:9},elevation:18}}>
+     <View style={{width:34,height:3,borderRadius:3,backgroundColor:t.yellow,marginBottom:4}}/>
+     <Text style={{fontSize:14,fontWeight:"700",color:t.ink}}>Compartir con</Text>
+     <Pressable accessibilityRole="checkbox" accessibilityState={{checked:audienceFollowers}}
+      accessibilityLabel="Compartir con mis seguidores" onPress={()=>setAudienceFollowers(current=>!current)}
+      style={{flexDirection:"row",alignItems:"center",minHeight:44,gap:10}}>
+      <Ionicons name={audienceFollowers?"checkmark-circle":"ellipse-outline"} size={23} color={audienceFollowers?t.ink:t.ink2}/>
+      <Text style={{fontSize:13,color:t.ink}}>Mis seguidores</Text>
+     </Pressable>
+     <Pressable accessibilityRole="checkbox" accessibilityState={{checked:audienceContacts}}
+      accessibilityLabel="Compartir con mis contactos" onPress={()=>setAudienceContacts(current=>!current)}
+      style={{flexDirection:"row",alignItems:"center",minHeight:44,gap:10}}>
+      <Ionicons name={audienceContacts?"checkmark-circle":"ellipse-outline"} size={23} color={audienceContacts?t.ink:t.ink2}/>
+      <Text style={{fontSize:13,color:t.ink}}>Mis contactos</Text>
+     </Pressable>
+     <Pressable accessibilityRole="button" accessibilityLabel="Aplicar audiencia privada"
+      disabled={!audienceFollowers&&!audienceContacts}
+      onPress={()=>{setAudience("private");setAudienceMenuOpen(false);setError("");}}
+      style={{minHeight:44,borderRadius:13,backgroundColor:t.ink,justifyContent:"center",alignItems:"center",
+       opacity:audienceFollowers||audienceContacts?1:0.4}}>
+      <Text style={{color:t.surface,fontWeight:"700",fontSize:13}}>Aplicar</Text>
+     </Pressable>
+    </View>
+   </View>
+  </Modal>
  </>;
 }
