@@ -42,6 +42,6 @@ test("Leaving the JCard with unsaved changes asks before discarding",()=>{
  assert.ok(editor.includes("onPress={keepEditing}"));
  assert.ok(editor.includes("onPress={discardChanges}"));
  assert.ok(editor.includes("onRequestClose={keepEditing}"));
- assert.ok(!editor.includes('Alert.alert("Cambios sin guardar"')),"Avoid native system alert styling");
+ assert.ok(!editor.includes('Alert.alert("Cambios sin guardar"'),"Avoid native system alert styling");
  assert.ok(editor.includes("Guard ar cambios")===false);
 });
