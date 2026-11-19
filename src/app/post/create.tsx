@@ -1,11 +1,15 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useLocalSearchParams} from "expo-router";
+import {usePreventRemove} from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import {useEffect,useRef,useState} from "react";
-import {ActivityIndicator,Image,Keyboard,Modal,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
+import {ActivityIndicator,AppState,Image,Keyboard,Modal,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {PublicProfileAvatar} from "../../components/PublicProfileAvatar";
-import {currentSocialUser,publishHomePost,shareApprovedMedia,type FeedPostKind,type FeedAudience} from "../../lib/social-content";
+import {currentSocialUser,publishHomePost,shareApprovedMedia,uploadPhoto,type FeedPostKind,type FeedAudience} from "../../lib/social-content";
+import {PostComposerSheets} from "../../components/PostComposerSheets";
+import {DRAFT_PHOTO_BUCKET,emptyPostDraft,hasDraftContent,readPostDrafts,savePostDraft,deletePostDraft,restorePostDraftPhotoUrls,type PostDraft,type PostDraftPhoto} from "../../lib/post-drafts";
+import {searchPostMentions,type PostMention} from "../../lib/post-mentions";
 import type {PublishedMedia} from "../../lib/safety-api";
 import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
@@ -26,7 +30,7 @@ export default function PostCreate(){
  const [composerHeight,setComposerHeight]=useState(56);
  const [mediaHelpOpen,setMediaHelpOpen]=useState(false);
  const [termsExpanded,setTermsExpanded]=useState(false);
- const [photos,setPhotos]=useState<string[]>([]);
+ const [photos,setPhotos]=useState<PostDraftPhoto[]>([]);
  const [media,setMedia]=useState<PublishedMedia[]>([]);
  const [mediaId,setMediaId]=useState("");
  const [consent,setConsent]=useState(false);
@@ -37,6 +41,23 @@ export default function PostCreate(){
  const [audienceFollowers,setAudienceFollowers]=useState(true);
  const [audienceContacts,setAudienceContacts]=useState(false);
  const [busy,setBusy]=useState(false);const [loading,setLoading]=useState(true);const [error,setError]=useState("");
+ const [draftId,setDraftId]=useState(()=>emptyPostDraft().id);
+ const [drafts,setDrafts]=useState<PostDraft[]>([]);
+ const [hydrated,setHydrated]=useState(false);
+ const [draftsOpen,setDraftsOpen]=useState(false);
+ const [previewOpen,setPreviewOpen]=useState(false);
+ const [optionsOpen,setOptionsOpen]=useState(false);
+ const [exitOpen,setExitOpen]=useState(false);
+ const [editingDone,setEditingDone]=useState(false);
+ const [destination,setDestination]=useState<string|null>(null);
+ const [mentionQuery,setMentionQuery]=useState("");
+ const [mentionResults,setMentionResults]=useState<PostMention[]>([]);
+ const [mentionSearching,setMentionSearching]=useState(false);
+ const [mentionedProfileIds,setMentionedProfileIds]=useState<string[]>([]);
+ const draftSnapshotRef=useRef<PostDraft>(emptyPostDraft());
+ const savingChainRef=useRef<Promise<void>>(Promise.resolve());
+ const pendingUploadsRef=useRef<Promise<void>[]>([]);
+ const autosaveEnabledRef=useRef(true);
  useEffect(()=>{let active=true;void(async()=>{
   try{
    const uid=await currentSocialUser();
