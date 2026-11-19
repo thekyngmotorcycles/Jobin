@@ -143,11 +143,10 @@ export async function publishHomePost(payload:{body:string;photos:string[];kind:
    const saved=payload.photoDraftPaths?.[i];
    if(saved){
     if(!saved.startsWith(owner+"/"))throw Error("La fotografía del borrador no pertenece a tu cuenta.");
-    const {data:blob,error:downloadError}=await db.storage.from(DRAFT_POSTS_BUCKET).download(saved);
-    if(downloadError||!blob)throw downloadError??Error("No se pudo recuperar la fotografía del borrador.");
     const path=owner+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,10)+".jpg";
-    const {error:uploadError}=await db.storage.from(bucket).upload(path,await blob.arrayBuffer(),{contentType:"image/jpeg",upsert:false});
-    if(uploadError)throw uploadError;
+    // Copy server-side to avoid unsupported Blob.arrayBuffer() in the Android runtime.
+    const {error:copyError}=await db.storage.from(DRAFT_POSTS_BUCKET).copy(saved,path,{destinationBucket:bucket});
+    if(copyError)throw copyError;
     uploaded.push(path);
    }else uploaded.push(await uploadPhoto(owner,payload.photos[i],bucket));
   }
