@@ -103,7 +103,7 @@ export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;v
  </View>;
  return <View style={{gap:10}}>
   {authorRow}
-  {post.kind==="photos"&&<PhotoCarousel post={{author:post.authorName,photos:post.photoUrls}}/>}
+  {post.kind==="photos"&&<PhotoCarousel post={{author:post.authorName,photos:post.photoUrls,altTexts:post.photoAltTexts}}/>}
   {(post.kind==="video"||post.kind==="live")&&<Pressable accessibilityRole="button" accessibilityLabel="Ver contenido profesional"
    onPress={()=>post.mediaId&&router.push({pathname:"/work-media/[id]",params:{id:post.mediaId}})}
    style={{minHeight:210,backgroundColor:colors.accent,alignItems:"center",justifyContent:"center",gap:10}}>
@@ -142,7 +142,7 @@ export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;v
  </View>;
 }
 
-export function HomePublishedPosts({filter="all"}:{filter?:HomeFeedFilter}){
+export function HomePublishedPosts({filter="all",featuredPostId=""}:{filter?:HomeFeedFilter;featuredPostId?:string}){
  const {theme}=useTheme();const t=jobeenTokens(theme);
  const [posts,setPosts]=useState<FeedPost[]>([]);
  const [viewer,setViewer]=useState("");
@@ -183,7 +183,8 @@ export function HomePublishedPosts({filter="all"}:{filter?:HomeFeedFilter}){
   return()=>{active=false;};
  },[]);
  useFocusEffect(reload);
- const visible=posts.filter(post=>filter==="all"||(filter==="following"?followedIds.includes(post.authorId):businessIds.includes(post.authorId)));
+ const visible=posts.filter(post=>filter==="all"||(filter==="following"?followedIds.includes(post.authorId):businessIds.includes(post.authorId)))
+  .sort((a,b)=>a.id===featuredPostId?-1:b.id===featuredPostId?1:0);
  if(!posts.length&&!loading&&!error&&filter==="all")return null;
  return <View style={{gap:14}}>
   <View style={{paddingHorizontal:16,flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
@@ -197,6 +198,9 @@ export function HomePublishedPosts({filter="all"}:{filter?:HomeFeedFilter}){
   {!loading&&!error&&filter!=="all"&&!visible.length&&<Text style={{color:t.ink2,fontSize:13,paddingHorizontal:16}}>
    {filter==="following"?"Aún no hay publicaciones recientes de las cuentas que sigues.":"Aún no hay publicaciones recientes de empresas."}
   </Text>}
-  {visible.map(post=><HomePostCard key={post.id} post={post} viewer={viewer} savedByViewer={savedIds.includes(post.id)} onHide={id=>setPosts(items=>items.filter(post=>post.id!==id))}/>)}
+  {visible.map(post=><View key={post.id}>
+   {post.id===featuredPostId&&<Text style={{color:t.ink2,fontSize:12,fontWeight:"700",paddingHorizontal:16,paddingBottom:8}}>Tu publicación reciente</Text>}
+   <HomePostCard post={post} viewer={viewer} savedByViewer={savedIds.includes(post.id)} onHide={id=>setPosts(items=>items.filter(post=>post.id!==id))}/>
+  </View>)}
  </View>;
 }
