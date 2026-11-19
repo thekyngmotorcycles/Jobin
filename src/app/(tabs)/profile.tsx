@@ -12,7 +12,8 @@ import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness
 import { useTabClearance } from "../../theme/navigation";
 import {opacity} from "../../theme/color";
 import {useRef} from "react";
-import {UserProfileContent} from "../../components/ProfileSharedSections";
+import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../../components/ProfileSharedSections";
+import {useReducedMotion} from "react-native-reanimated";
 import {ProfileOwnedPosts} from "../../components/ProfileOwnedPosts";
 import {NotificationBell} from "../../components/NotificationBell";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
@@ -38,7 +39,7 @@ import { Button, Notice, useUi } from "../../components/ui";
 import { canSendHistory } from "../../lib/rules";
 import { DEMO_PROFILE, DEMO_REQUESTING_COMPANIES, type EmploymentEntry } from "../../lib/me";
 
-type Mode = "grid" | "cv" | "videos" | "live";
+type Mode=ProfileSection;
 
 function validPhoneLabel(value:string):boolean{
  const label=value.trim();if(!label)return true;
@@ -47,7 +48,15 @@ function validPhoneLabel(value:string):boolean{
 }
 export default function Profile() {
   const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
-  const [mode, setMode] = useState<Mode>("grid");
+  const [mode,setMode]=useState<Mode>("home");
+  const profileScroll=useRef<ScrollView|null>(null);
+  const [tabOffset,setTabOffset]=useState(0);
+  const [tabsPinned,setTabsPinned]=useState(false);
+  const reducedMotion=useReducedMotion();
+  const selectSection=(next:Mode)=>{
+    setMode(next);
+    if(tabOffset>0)profileScroll.current?.scrollTo({y:tabOffset,animated:!reducedMotion});
+  };
   const [verifiedIdentity,setVerifiedIdentity]=useState(false);
   const [profileToolsOpen,setProfileToolsOpen]=useState(false);
   const openProfileMenu=()=>setProfileToolsOpen(true);
@@ -105,7 +114,7 @@ export default function Profile() {
   const p = DEMO_PROFILE;
 
   function openLive() {
-    setMode("live");
+    selectSection("live");
   }
 
   function send(company: string) {
@@ -202,9 +211,17 @@ export default function Profile() {
           </SafeAreaView></View>
         </View>
       </Modal>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 76, gap: 18, paddingBottom: contentBottom }} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={profileScroll} stickyHeaderIndices={[1]} scrollEventThrottle={16}
+        style={{flex:1,marginTop:insets.top+NAVIGATION_ROW_HEIGHT+2}}
+        contentContainerStyle={{paddingHorizontal:16,paddingTop:12,gap:16,paddingBottom:contentBottom}}
+        onScroll={event=>{
+          const pinned=tabOffset>0&&event.nativeEvent.contentOffset.y>=tabOffset-2;
+          setTabsPinned(previous=>previous===pinned?previous:pinned);
+        }}
+        showsVerticalScrollIndicator={false}>
+        <View style={{gap:16}}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
-        <UserProfileContent
+        <ProfileIdentityHeader
           card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
             {!!workspace.error&&isJCardConnectivityError(workspace.error)&&<View style={{marginTop:12}}>
               <JCardOfflineNotice retry={workspace.reload} cached/>
@@ -212,9 +229,13 @@ export default function Profile() {
            </> : <JCardLoadState loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>} 
           trust={workspace.data?.card ? <ProfessionalTrustMark worker={workspace.data.card.id}/> : null}
           profileUserId={workspace.data?.card?.id}
-          section={mode}
-          onSelect={next=>next==="live"?openLive():setMode(next)}
-        >
+        />
+        </View>
+        <View onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}>
+          <ProfileSectionTabs section={mode} onSelect={selectSection} pinned={tabsPinned}/>
+        </View>
+        <View style={{gap:16}}>
+        {mode==="home"&&<ProfileOwnedPosts filter="all" limit={6} heading="Trabajo reciente" onSeeAll={()=>selectSection("grid")}/>}
         {mode==="live"&&<View style={{gap:12,padding:14,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
           <Text style={s.h3}>Transmisiones en vivo</Text>
           <Text style={s.muted}>Cuando este perfil transmita, aparecerá aquí la vista previa para entrar al directo.</Text>
@@ -252,7 +273,7 @@ export default function Profile() {
         {mode==="grid"&&<ProfileOwnedPosts filter="all"/>}
         {mode==="videos"&&<ProfileOwnedPosts filter="videos"/>}
         {mode==="live"&&<ProfileOwnedPosts filter="live"/>}
-        </UserProfileContent>
+        </View>
       </ScrollView>
 
       <BottomSheet visible={businessOpen} onClose={()=>setBusinessOpen(false)} title="Editar JCard de negocio">
