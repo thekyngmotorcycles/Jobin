@@ -1,18 +1,22 @@
 import { useTabClearance } from "../../theme/navigation";
-import {useLocalSearchParams} from "expo-router";
+import {router,useLocalSearchParams} from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {usePreventRemove} from "@react-navigation/native";
 import {FlashComposer} from "../../components/FlashComposer";
 import { WorkRulesFields,useWorkDraft } from "../../components/WorkRulesFields";
 import { MyWorkMedia } from "../../components/MyWorkMedia";
 import { uploadWorkVideo } from "../../lib/safety-api";
+import {currentSocialUser} from "../../lib/social-content";
 import { useEffect, useRef, useState } from "react";
-import { Platform, Pressable, Text, TextInput, View } from "react-native";
+import { AppState,Platform,Pressable,Text,TextInput,View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { Button, Notice, Screen, useUi } from "../../components/ui";
+import {BottomSheet} from "../../components/social-ui";
 import { CHAPTERS, CLIP_SECONDS, chapterAt, emptyClips, nextOpenSlot, type ChapterId, type SlotClips } from "../../lib/day";
-function Editor({asset}:{asset:ImagePicker.ImagePickerAsset}){
- const {s,colors}=useUi();const [title,setTitle]=useState("");const [start,setStart]=useState("0");
- const [end,setEnd]=useState(String(Math.min(180,(asset.duration??180000)/1000)));const [notice,setNotice]=useState("");
+type VideoEditorState={title:string;start:string;end:string};
+function Editor({asset,edit,onEdit}:{asset:ImagePicker.ImagePickerAsset;edit:VideoEditorState;onEdit:(edit:VideoEditorState)=>void}){
+ const {s,colors}=useUi();const {title,start,end}=edit;const [notice,setNotice]=useState("");
  const draft=useWorkDraft();const [sending,setSending]=useState(false);const sendingGuard=useRef(false);
  const player=useVideoPlayer(asset.uri,p=>{p.timeUpdateEventInterval=0.25;});
  const from=Number(start),to=Number(end),valid=Number.isFinite(from)&&Number.isFinite(to)&&from>=0&&to>from&&to-from<=180;
@@ -20,12 +24,12 @@ function Editor({asset}:{asset:ImagePicker.ImagePickerAsset}){
  const input={borderWidth:1,borderColor:colors.line,color:colors.ink,padding:12,borderRadius:10};
  return <View style={s.panel}><Text style={s.h2}>Tu resumen del día</Text>
  <VideoView player={player} style={{height:280,width:"100%",borderRadius:12}} nativeControls contentFit="contain"/>
- <TextInput accessibilityLabel="Título del video" placeholder="¿Qué lograste hoy?" placeholderTextColor={colors.muted} value={title} onChangeText={setTitle} style={input}/>
+ <TextInput accessibilityLabel="Título del video" placeholder="¿Qué lograste hoy?" placeholderTextColor={colors.muted} value={title} onChangeText={value=>onEdit({...edit,title:value})} style={input}/>
  <Text style={s.muted}>Selecciona el inicio y final en segundos. Máximo 180 segundos.</Text>
- <View style={s.row}><Text style={s.text}>Desde</Text><TextInput accessibilityLabel="Inicio en segundos" keyboardType="decimal-pad" value={start} onChangeText={setStart} style={[input,{minWidth:70}]}/>
- <Text style={s.text}>Hasta</Text><TextInput accessibilityLabel="Final en segundos" keyboardType="decimal-pad" value={end} onChangeText={setEnd} style={[input,{minWidth:70}]}/></View>
+ <View style={s.row}><Text style={s.text}>Desde</Text><TextInput accessibilityLabel="Inicio en segundos" keyboardType="decimal-pad" value={start} onChangeText={value=>onEdit({...edit,start:value})} style={[input,{minWidth:70}]}/>
+ <Text style={s.text}>Hasta</Text><TextInput accessibilityLabel="Final en segundos" keyboardType="decimal-pad" value={end} onChangeText={value=>onEdit({...edit,end:value})} style={[input,{minWidth:70}]}/></View>
  <Button secondary title="Ver recorte" onPress={()=>{if(!valid||to>player.duration){setNotice("Selecciona un intervalo válido dentro del video de hasta 180 segundos.");return;}player.currentTime=from;player.play();}}/>
- <Button title="Guardar borrador local" onPress={()=>{if(!valid||!title.trim()||to>player.duration){setNotice("Añade un título y un recorte válido de hasta 180 segundos.");return;}setNotice("Borrador preparado en esta pantalla: "+title.trim()+", "+(to-from).toFixed(1)+" segundos. No se ha exportado ni publicado. El procesamiento final necesita el servicio de video.");}}/>
+ <Text style={s.muted}>Los cambios en el título y el recorte se guardan automáticamente como borrador local.</Text>
  <WorkRulesFields draft={draft} live={false}/>
  <Button title={sending?"Enviando a procesamiento…":"Enviar video a procesamiento y moderación"} onPress={()=>{if(sendingGuard.current)return;sendingGuard.current=true;void (async()=>{setSending(true);try{
  if(!valid||!title.trim()||to>player.duration)throw new Error("Completa un título y un intervalo válido de hasta 180 segundos.");
