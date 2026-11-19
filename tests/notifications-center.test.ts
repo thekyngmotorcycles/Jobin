@@ -10,7 +10,7 @@ test("My network is replaced by a notification bell and old links remain safe",(
  assert.ok(profile.includes("<NotificationBell/>"));
  assert.ok(!profile.includes('router.push("/my-network")'));
  assert.ok(bell.includes('router.push("/notifications")'));
- assert.ok(bell.includes("countUnreadActivityNotifications"));
+ assert.ok(bell.includes("countPendingProfileAlerts"));
  assert.ok(old.includes('<Redirect href="/notifications"/>'));
 });
 test("Profile followers and following open a private accessible bottom sheet",()=>{
