@@ -98,19 +98,22 @@ test("All Home post types use author-first structure and a single-line expandabl
  assert.ok(demo.includes('marginLeft:"auto"'));
 });
 
-test("Professional, Todo, Videos and Live form the same four tabs in owner and visitor profiles",()=>{
+test("Creator profiles share Inicio, Todo, Videos, En vivo and Acerca de with real publication data",()=>{
  const sections=source("src/components/ProfileSharedSections.tsx");
  const own=source("src/app/(tabs)/profile.tsx");
  const visitor=source("src/app/jcard.tsx");
  const grid=source("src/components/ProfileOwnedPosts.tsx");
  const api=source("src/lib/social-content.ts");
- const order=['id:"cv"','id:"grid"','id:"videos"','id:"live"'].map(key=>sections.indexOf(key));
+ const order=['id:"home"','id:"grid"','id:"videos"','id:"live"','id:"cv"'].map(key=>sections.indexOf(key));
  assert.ok(order.every((position,index)=>position>0&&(index===0||position>order[index-1])));
- assert.ok(own.includes('useState<Mode>("grid")'));
- assert.ok(visitor.includes('useState<ProfileSection>("grid")'));
+ assert.ok(own.includes('useState<Mode>("home")'));
+ assert.ok(visitor.includes('useState<ProfileSection>("home")'));
  assert.ok(own.includes('<ProfileOwnedPosts filter="all"/>'));
  assert.ok(own.includes('<ProfileOwnedPosts filter="videos"/>'));
- assert.ok(visitor.includes("<ProfilePublicPosts userId={user}"));
+ assert.ok(visitor.includes("<ProfilePublicPosts userId={resource.data.id}"));
+ assert.ok(sections.includes("<ScrollView horizontal"));
+ assert.ok(own.includes("stickyHeaderIndices={[1]}"));
+ assert.ok(visitor.includes("stickyHeaderIndices={resource.data?[1]:undefined}"));
  assert.ok(grid.includes("loadAllProfilePosts(viewer,target)"));
  assert.ok(grid.includes("loadPublishedMedia()"));
  assert.ok(grid.includes('filter==="videos"?"video":"live"'));
