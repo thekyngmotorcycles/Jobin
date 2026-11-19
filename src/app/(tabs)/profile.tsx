@@ -24,7 +24,7 @@ import { useProfessionalData } from "../../state/useProfessionalData";
 import { useCallback,useEffect,useState } from "react";
 import {getEmployerLinks} from "../../lib/employer-links";
 import { Animated, Keyboard, Modal, Share, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { NAVIGATION_ROW_HEIGHT } from "../../theme/navigation";
 import Svg,{Defs,LinearGradient,Rect,Stop} from "react-native-svg";
 import { router,useFocusEffect,useLocalSearchParams } from "expo-router";
@@ -47,12 +47,26 @@ function validPhoneLabel(value:string):boolean{
  return /^(?:[\p{Regional_Indicator}]{2}|[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?(?:\u200D[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?)*)$/u.test(label);
 }
 export default function Profile() {
-  const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
+  const { s, colors } = useUi();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
   const [mode,setMode]=useState<Mode>("home");
   const profileScroll=useRef<ScrollView|null>(null);
   const profileScrollY=useRef(new Animated.Value(0)).current;
   const [tabOffset,setTabOffset]=useState(0);
   const [tabsPinned,setTabsPinned]=useState(false);
+  // The JCard moves at half the section sheet's speed, as in a layered creator profile.
+  const heroParallax=Animated.multiply(profileScrollY,0.5);
+  const retreatStart=Math.max(1,tabOffset-NAVIGATION_ROW_HEIGHT);
+  const retreatEnd=Math.max(retreatStart+1,tabOffset);
+  const topHeaderOffset=profileScrollY.interpolate({
+    inputRange:[0,retreatStart,retreatEnd],
+    outputRange:[0,0,-NAVIGATION_ROW_HEIGHT],
+    extrapolate:"clamp"
+  });
+  const topHeaderOpacity=profileScrollY.interpolate({
+    inputRange:[0,retreatStart,retreatEnd],
+    outputRange:[1,1,0],
+    extrapolate:"clamp"
+  });
   const reducedMotion=useReducedMotion();
   const selectSection=(next:Mode)=>{
     setMode(next);
@@ -169,7 +183,7 @@ export default function Profile() {
 
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={[s.screen,{backgroundColor:jt.bg}]}>
-      <View style={{ position:"absolute",top:insets.top,left:0,right:0,zIndex:10,height:60,flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8 }}>
+      <Animated.View pointerEvents={tabsPinned?"none":"auto"} style={{ position:"absolute",top:0,left:0,right:0,zIndex:10,height:NAVIGATION_ROW_HEIGHT,flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8,transform:[{translateY:topHeaderOffset}],opacity:topHeaderOpacity }}>
         <View pointerEvents="none" style={{position:"absolute",top:0,left:0,right:0,height:fadeHeight}}>
           <Svg width="100%" height="100%" accessible={false}>
             <Defs><LinearGradient id="profileTopFade" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -192,7 +206,7 @@ export default function Profile() {
           <NotificationBell/>
           <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>profileToolsOpen?closeProfileMenu():openProfileMenu()} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}><Ionicons name="ellipsis-horizontal" size={23} color={colors.ink}/></Pressable>
         </View>
-      </View>
+      </Animated.View>
       <Modal visible={profileToolsOpen} transparent animationType="none" onRequestClose={closeProfileMenu} statusBarTranslucent={false}>
         <View style={{flex:1,flexDirection:"row"}}>
           <View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:colors.scrim}}/>
@@ -214,8 +228,8 @@ export default function Profile() {
         </View>
       </Modal>
       <Animated.ScrollView ref={profileScroll} stickyHeaderIndices={[1]} scrollEventThrottle={16}
-        style={{flex:1,marginTop:insets.top+NAVIGATION_ROW_HEIGHT+2}}
-        contentContainerStyle={{paddingTop:12,paddingBottom:0}}
+        style={{flex:1}}
+        contentContainerStyle={{paddingTop:NAVIGATION_ROW_HEIGHT+12,paddingBottom:0}}
         onScroll={Animated.event([{nativeEvent:{contentOffset:{y:profileScrollY}}}],{
           useNativeDriver:true,
           listener:(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
@@ -224,7 +238,7 @@ export default function Profile() {
           }
         })}
         showsVerticalScrollIndicator={false}>
-        <Animated.View style={{gap:16,paddingHorizontal:16,paddingBottom:20,zIndex:0,transform:[{translateY:profileScrollY}]}}>
+        <Animated.View style={{gap:16,paddingHorizontal:16,paddingBottom:20,zIndex:0,transform:[{translateY:heroParallax}]}}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         <ProfileIdentityHeader
           card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
