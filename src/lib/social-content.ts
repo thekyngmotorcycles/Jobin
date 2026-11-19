@@ -4,6 +4,7 @@ import {loadPublishedMedia,type PublishedMedia} from "./safety-api";
 
 const POSTS_BUCKET="photo-posts";
 const PRIVATE_POSTS_BUCKET="jobeen-private-post-photos";
+const DRAFT_POSTS_BUCKET="jobeen-post-draft-photos";
 export type FeedAudience="public"|"private";
 const STORIES_BUCKET="jobeen-story-media";
 
@@ -11,14 +12,14 @@ export type FeedPostKind="text"|"photos"|"video"|"live";
 export type StoryKind="text"|"photo"|"video";
 export type FeedPost={
  id:string;authorId:string;authorName:string;authorHandle:string;body:string;kind:FeedPostKind;
- photoUrls:string[];mediaId:string|null;createdAt:string;
+ photoUrls:string[];photoAltTexts:string[];mentionedProfileIds:string[];mediaId:string|null;createdAt:string;
  likes:number;comments:number;shares:number;likedByViewer:boolean;
 };
 export type SocialStory={
  id:string;authorId:string;authorName:string;authorHandle:string;kind:StoryKind;body:string;
  imageUrl:string|null;mediaId:string|null;createdAt:string;expiresAt:string;
 };
-type FeedRow={id:string;author_id:string;body:string;kind:FeedPostKind;photo_paths:string[];photo_bucket:string;work_media_id:string|null;created_at:string};
+type FeedRow={id:string;author_id:string;body:string;kind:FeedPostKind;photo_paths:string[];photo_bucket:string;photo_alt_texts:string[];mentioned_profile_ids:string[];work_media_id:string|null;created_at:string};
 type StoryRow={id:string;author_id:string;kind:StoryKind;body:string;photo_path:string|null;work_media_id:string|null;created_at:string;expires_at:string};
 
 async function namesFor(ids:string[]){
@@ -41,7 +42,7 @@ export async function currentSocialUser():Promise<string>{
 export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,postIds?:string[],offset=0):Promise<FeedPost[]>{
  const db=requireSupabase();
  const query=db.from("jobeen_feed_posts" as never)
-  .select("id,author_id,body,kind,photo_paths,photo_bucket,work_media_id,created_at")
+  .select("id,author_id,body,kind,photo_paths,photo_bucket,photo_alt_texts,mentioned_profile_ids,work_media_id,created_at")
   .is("removed_at",null).order("created_at",{ascending:false}).range(offset,offset+(postId?0:79));
  const {data,error}=await (postId?query.eq("id",postId):postIds?.length?query.in("id",postIds):authorId?query.eq("author_id",authorId):query);
  if(error)throw error;
@@ -73,6 +74,7 @@ export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,
    authorHandle:authors.get(row.author_id)?.handle??"",body:row.body,kind:row.kind,
    photoUrls:(row.photo_paths??[]).map(path=>row.photo_bucket===PRIVATE_POSTS_BUCKET?
     signedUrls.get(path)??"":db.storage.from(POSTS_BUCKET).getPublicUrl(path).data.publicUrl).filter(Boolean),
+   photoAltTexts:row.photo_alt_texts??[],mentionedProfileIds:row.mentioned_profile_ids??[],
    mediaId:row.work_media_id,createdAt:row.created_at,
    likes:Number(count?.likes??0),comments:Number(count?.comments??0),shares:Number(count?.shares??0),
    likedByViewer:viewerLikes.has(row.id)
@@ -108,7 +110,7 @@ export async function loadActiveStories():Promise<SocialStory[]>{
   imageUrl:photos[index],mediaId:row.work_media_id,createdAt:row.created_at,expiresAt:row.expires_at
  }));
 }
-async function uploadPhoto(owner:string,uri:string,bucket:string){
+export async function uploadPhoto(owner:string,uri:string,bucket:string){
  const normalized=await ImageManipulator.manipulateAsync(uri,[{resize:{width:1440}}],{format:ImageManipulator.SaveFormat.JPEG,compress:0.76,base64:true});
  if(!normalized.base64)throw Error("No se pudo preparar la fotografía.");
  const data=atob(normalized.base64);const bytes=new Uint8Array(data.length);
@@ -123,7 +125,7 @@ export async function shareApprovedMedia(kind:"video"|"live",owner:string):Promi
  const entries=await loadPublishedMedia();
  return entries.filter(x=>x.creator_id===owner&&x.kind===kind);
 }
-export async function publishHomePost(payload:{body:string;photos:string[];kind:FeedPostKind;mediaId?:string|null;audience?:FeedAudience;audienceFollowers?:boolean;audienceContacts?:boolean}):Promise<void>{
+export async function publishHomePost(payload:{body:string;photos:string[];kind:FeedPostKind;mediaId?:string|null;audience?:FeedAudience;audienceFollowers?:boolean;audienceContacts?:boolean;photoDraftPaths?:(string|null)[];photoAltTexts?:string[];mentionedProfileIds?:string[]}):Promise<string>{
  const db=requireSupabase(),owner=await currentSocialUser(),uploaded:string[]=[];
  if(payload.kind==="text"&&!payload.body.trim())throw Error("Escribe un mensaje para publicar.");
  if(payload.kind==="photos"&&(!payload.photos.length||payload.photos.length>5))throw Error("Añade entre 1 y 5 fotografías.");
@@ -134,15 +136,29 @@ export async function publishHomePost(payload:{body:string;photos:string[];kind:
   throw Error("Los videos y Lives aprobados solo pueden compartirse de forma pública.");
  const bucket=privatePost?PRIVATE_POSTS_BUCKET:POSTS_BUCKET;
  try{
-  if(payload.kind==="photos")for(const uri of payload.photos)uploaded.push(await uploadPhoto(owner,uri,bucket));
-  const {error}=await db.from("jobeen_feed_posts" as never).insert({
+  if(payload.kind==="photos")for(let i=0;i<payload.photos.length;i++){
+   const saved=payload.photoDraftPaths?.[i];
+   if(saved){
+    if(!saved.startsWith(owner+"/"))throw Error("La fotografía del borrador no pertenece a tu cuenta.");
+    const {data:blob,error:downloadError}=await db.storage.from(DRAFT_POSTS_BUCKET).download(saved);
+    if(downloadError||!blob)throw downloadError??Error("No se pudo recuperar la fotografía del borrador.");
+    const path=owner+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,10)+".jpg";
+    const {error:uploadError}=await db.storage.from(bucket).upload(path,await blob.arrayBuffer(),{contentType:"image/jpeg",upsert:false});
+    if(uploadError)throw uploadError;
+    uploaded.push(path);
+   }else uploaded.push(await uploadPhoto(owner,payload.photos[i],bucket));
+  }
+  const {data:created,error}=await db.from("jobeen_feed_posts" as never).insert({
    author_id:owner,body:payload.body.trim().slice(0,2000),kind:payload.kind,
    photo_paths:uploaded,work_media_id:payload.mediaId??null,
    photo_bucket:bucket,audience:privatePost?"private":"public",
    audience_followers:privatePost&&!!payload.audienceFollowers,
-   audience_contacts:privatePost&&!!payload.audienceContacts
-  } as never);
+   audience_contacts:privatePost&&!!payload.audienceContacts,
+   photo_alt_texts:payload.kind==="photos"?(payload.photoAltTexts??[]).map(t=>t.trim().slice(0,500)):[],
+   mentioned_profile_ids:(payload.mentionedProfileIds??[]).slice(0,20)
+  } as never).select("id").single();
   if(error)throw error;
+  return (created as unknown as {id:string}).id;
  }catch(e){
   if(uploaded.length)await db.storage.from(bucket).remove(uploaded).catch(()=>{});
   throw e;
