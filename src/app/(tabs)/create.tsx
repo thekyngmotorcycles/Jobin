@@ -43,16 +43,59 @@ function Editor({asset,edit,onEdit}:{asset:ImagePicker.ImagePickerAsset;edit:Vid
 function CreateVideo(){
  const {contentBottom}=useTabClearance();
  const {s,colors}=useUi();const [clips,setClips]=useState<SlotClips>(emptyClips());const [asset,setAsset]=useState<ImagePicker.ImagePickerAsset|null>(null);const [notice,setNotice]=useState("");
+ const [edit,setEdit]=useState<VideoEditorState>({title:"",start:"0",end:"180"});
+ const [owner,setOwner]=useState("");const [hydrated,setHydrated]=useState(false);
+ const [exitOpen,setExitOpen]=useState(false);const [exitAllowed,setExitAllowed]=useState(false);const [goHome,setGoHome]=useState(false);
+ const suppressRef=useRef(false);
+ const draftRef=useRef({clips,asset,edit});
+ draftRef.current={clips,asset,edit};
+ const hasWork=Boolean(asset||edit.title.trim()||Object.values(clips).some(list=>list.some(Boolean)));
+ async function persist(){
+  if(!owner||!hydrated||suppressRef.current)return;
+  const draft=draftRef.current;
+  if(!draft.asset&&!draft.edit.title.trim()&&!Object.values(draft.clips).some(list=>list.some(Boolean)))return;
+  await AsyncStorage.setItem("jobeen.reel.draft.v1."+owner,JSON.stringify({...draft,savedAt:Date.now()}));
+ }
+ function home(){suppressRef.current=true;setExitOpen(false);setExitAllowed(true);setGoHome(true);}
+ function requestExit(){if(hasWork)setExitOpen(true);else home();}
+ usePreventRemove(!exitAllowed,()=>requestExit());
+ useEffect(()=>{if(goHome)router.replace("/(tabs)/index");},[goHome]);
+ useEffect(()=>{let active=true;void(async()=>{
+  try{
+   const id=await currentSocialUser();if(!active)return;setOwner(id);
+   const raw=await AsyncStorage.getItem("jobeen.reel.draft.v1."+id);
+   if(raw&&active){
+    const saved=JSON.parse(raw) as {clips:SlotClips;asset:ImagePicker.ImagePickerAsset|null;edit:VideoEditorState};
+    if(saved.clips&&saved.edit){setClips(saved.clips);setAsset(saved.asset);setEdit(saved.edit);}
+   }
+  }catch(e){if(active)setNotice(e instanceof Error?e.message:"No se pudo recuperar el borrador.");}
+  finally{if(active)setHydrated(true);}
+ })();return()=>{active=false;};},[]);
+ useEffect(()=>{
+  if(!owner||!hydrated||!hasWork||suppressRef.current)return;
+  const timer=setTimeout(()=>{void persist().catch(()=>{});},180);
+  return()=>clearTimeout(timer);
+ },[clips,asset,edit,owner,hydrated]);
+ useEffect(()=>{
+  const subscription=AppState.addEventListener("change",state=>{if(state!=="active")void persist().catch(()=>{});});
+  return()=>{subscription.remove();void persist().catch(()=>{});};
+ },[owner,hydrated]);
+ async function discardAndExit(){
+  suppressRef.current=true;
+  try{if(owner)await AsyncStorage.removeItem("jobeen.reel.draft.v1."+owner);home();}
+  catch(e){suppressRef.current=false;setNotice(e instanceof Error?e.message:"No se pudo descartar el borrador.");setExitOpen(false);}
+ }
  const chapter=chapterAt(new Date());const open=nextOpenSlot(clips[chapter.id]);const slot=open>=0?chapter.slots[open]:null;
  async function record(camera:boolean){try{
   if(open<0){setNotice(chapter.title+" is full. Remove a clip to re-record.");return;}
   if(camera){const permission=await ImagePicker.requestCameraPermissionsAsync();if(!permission.granted){setNotice("Camera permission is needed to record your POV.");return;}}
   const options:ImagePicker.ImagePickerOptions={mediaTypes:["videos"],allowsEditing:false,videoMaxDuration:CLIP_SECONDS};
   const result=camera?await ImagePicker.launchCameraAsync(options):await ImagePicker.launchImageLibraryAsync(options);
-  if(!result.canceled){const a=result.assets[0];setAsset(a);setClips(c=>({...c,[chapter.id]:c[chapter.id].map((x,i)=>i===open?a.uri:x)}));setNotice("");}
+  if(!result.canceled){const a=result.assets[0];setAsset(a);setEdit({title:"",start:"0",end:String(Math.min(180,(a.duration??180000)/1000))});setClips(c=>({...c,[chapter.id]:c[chapter.id].map((x,i)=>i===open?a.uri:x)}));setNotice("");}
  }catch(error){setNotice(error instanceof Error?error.message:"Could not open the video.");}}
  function remove(id:ChapterId,index:number){setClips(c=>({...c,[id]:c[id].map((x,i)=>i===index?null:x)}));}
- return <Screen bottomPadding={contentBottom} demo={false} title="A day in the life, POV." subtitle={"Film "+CLIP_SECONDS+"-second POV moments through your day. They are stitched into My Day, My Evening and My Night."}>
+ return <Screen bottomPadding={contentBottom} demo={false} title="Crear video profesional" subtitle={"Graba o selecciona clips de "+CLIP_SECONDS+" segundos. Tus avances se guardan localmente."}>
+ <Button secondary title="Volver a inicio" onPress={requestExit}/>
  {!!notice&&<Notice text={notice} onClose={()=>setNotice("")}/>}
  <View style={s.panel}>
  <Text style={s.eyebrow}>{chapter.title.toUpperCase()} · HORARIO SUGERIDO {chapter.publishLabel}</Text>
@@ -66,8 +109,17 @@ function CreateVideo(){
   <Text style={{color:filled?colors.inverse:colors.muted,fontSize:11,fontWeight:"700"}}>{filled?"✓ "+CLIP_SECONDS+"s":sl.label}</Text>{filled&&<Text style={{color:colors.inverse,fontSize:10}}>{sl.label}</Text>}</Pressable>;})}</View>
  </View>)}
  <Text style={s.muted}>Toca un clip para retirarlo. Los clips permanecen locales hasta que envíes el resumen; no se publican automáticamente.</Text>
- {asset&&<Editor key={asset.uri} asset={asset}/>}
+ {asset&&<Editor key={asset.uri} asset={asset} edit={edit} onEdit={setEdit}/>}
  <MyWorkMedia/>
+ <Text style={s.muted}>El título y las selecciones se recuperan como borrador local. Si Android borra un archivo temporal, será necesario seleccionar el video nuevamente.</Text>
+ <BottomSheet visible={exitOpen} onClose={()=>setExitOpen(false)} title="¿Qué deseas hacer con tu video?">
+  <View style={{gap:10,paddingTop:9}}>
+   <Text style={s.muted}>El video no se publicará al salir. Puedes conservar los datos de edición como borrador.</Text>
+   <Button title="Guardar borrador" onPress={()=>void persist().then(home).catch(e=>setNotice(String(e)))}/>
+   <Button secondary title="Descartar cambios" onPress={()=>void discardAndExit()}/>
+   <Button secondary title="Continuar editando" onPress={()=>setExitOpen(false)}/>
+  </View>
+ </BottomSheet>
  </Screen>;
 }
 
