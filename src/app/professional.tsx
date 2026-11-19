@@ -141,6 +141,7 @@ export default function Professional() {
    setSection(null);
   });
  };
+ const saveSection=(target:SaveTarget)=>saveSections(Array.from(new Set([...pendingTargets,target])));
  usePreventRemove(hasUnsavedChanges||professionFormOpen,({data})=>{
   Alert.alert("Cambios sin guardar","Si salís ahora, perderás los cambios que todavía no guardaste.",[
    {text:"Seguir editando",style:"cancel"},
@@ -148,7 +149,16 @@ export default function Professional() {
   ]);
  });
 
- return <Screen demo={false} hideHeader hideFooter scrollRef={scrollRef} title="Editar mi JCard" subtitle="">
+ return <>
+  <Stack.Screen options={{headerRight:hasUnsavedChanges?()=>(
+   <Pressable accessibilityRole="button" accessibilityLabel="Guardar cambios de JCard"
+    accessibilityState={{disabled:action.busy}} disabled={action.busy}
+    onPress={()=>saveSections(pendingTargets)}
+    style={{minWidth:72,minHeight:44,justifyContent:"center",alignItems:"center"}}>
+    <Text style={{fontSize:15,fontWeight:"700",color:colors.ink}}>{action.busy?"Guardando…":"Guardar"}</Text>
+   </Pressable>
+  ):undefined}}/>
+  <Screen demo={false} hideHeader hideFooter scrollRef={scrollRef} title="Editar mi JCard" subtitle="">
   {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
    {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
    <View style={{gap:6,paddingTop:0,paddingBottom:8}}>
@@ -163,6 +173,7 @@ export default function Professional() {
       {(["email_primary","email_secondary","phone_primary","phone_secondary"] as const).map(key=><View key={key} style={{gap:5}}><Text style={s.muted}>{{email_primary:"Correo electrónico principal (opcional)",email_secondary:"Correo electrónico secundario (opcional)",phone_primary:"Teléfono principal (opcional)",phone_secondary:"Teléfono secundario (opcional)"}[key]}</Text><TextInput accessibilityLabel={key} value={personalContacts[key]} onChangeText={value=>setPersonalContacts(p=>({...p,[key]:value}))} keyboardType={key.startsWith("email")?"email-address":"phone-pad"} autoCapitalize="none" maxLength={key.startsWith("email")?254:40} style={input}/></View>)}
       <Text style={s.muted}>Disponibilidad profesional</Text><Chips values={["AVAILABLE","ACTIVE"] as const} value={availability} onChange={setAvailability} getLabel={v=>v==="AVAILABLE"?"Disponible para trabajar":"Trabajando actualmente"} label="Disponibilidad profesional"/>
       <View style={{gap:8,padding:12,borderWidth:1,borderColor:colors.line,borderRadius:12}}><Text style={s.muted}>{availability==="ACTIVE"?"Para mostrar una empresa en tu JCard, envíale una solicitud. Solo aparecerá después de que la empresa la apruebe.":"Puedes administrar o finalizar vínculos laborales anteriores. El nombre de la empresa solo se muestra mientras indiques que estás trabajando."}</Text><Button secondary title="Gestionar vínculos laborales" onPress={()=>router.push("/employer-links")}/></View>
+      <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("identity")}/>
      </View>}
     </View>
     <View onLayout={e=>{positions.current.languages=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="languages")]}>
@@ -181,6 +192,7 @@ export default function Professional() {
        <Button secondary title="Quitar idioma" onPress={()=>setLanguages(items=>items.filter((_,i)=>i!==index))}/>
       </View>)}
       <Button secondary title="+ Agregar idioma" onPress={()=>setLanguages(items=>[...items,{name:"",fluency:"45"}])}/>
+      <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("languages")}/>
      </View>}
     </View>
     {w.card.accountType==="personal"&&<View onLayout={e=>{positions.current.professions=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="professions")]}>
@@ -222,11 +234,13 @@ export default function Professional() {
       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showEmail}} onPress={()=>setShowEmail(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={showEmail?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar correo en mi JCard</Text></Pressable>
       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showPhone}} onPress={()=>setShowPhone(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={showPhone?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar teléfono en mi JCard</Text></Pressable>
        <Pressable accessibilityRole="checkbox" accessibilityState={{checked:visibility.personal_enabled}} onPress={()=>{if(visibility.personal_enabled&&!visibility.business_enabled){Alert.alert("Al menos una JCard activa","Debes conservar activa la JCard personal o la de negocio.");return;}setVisibility(v=>({...v,personal_enabled:!v.personal_enabled}));}} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={visibility.personal_enabled?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar mi JCard personal en el perfil</Text></Pressable>
+      <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("privacy")}/>
      </View>}
     </View>
     <View style={[s.panel,glassPanel(false)]}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="color-palette-outline" size={25} color={sunflower?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined,color:sunflower?colors.glassText:colors.ink}]}>Apariencia</Text></View><Ionicons name="chevron-forward" size={20} color={sunflower?colors.glassMuted:colors.muted}/></Pressable></View>
 
    </View>
   </>}
- </Screen>;
+  </Screen>
+ </>;
 }
