@@ -1,6 +1,6 @@
 import {presentJCardContact} from "../lib/jcard-save-contact";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Reanimated,{interpolate,useAnimatedStyle,useReducedMotion,useSharedValue,withDelay,withSequence,withTiming} from "react-native-reanimated";
+import {useReducedMotion} from "react-native-reanimated";
 import {BusinessCard3D,CardFlipInteractionContext} from "./BusinessCard3D";
 import {jobeenTokens} from "../theme/jobeen";
 import {personalAvatarUrl} from "../lib/personal-jcard-photo";
@@ -340,12 +340,11 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const canFlip=showOwnerActions||(visibility.personal_enabled&&visibility.business_enabled);
  const reducedMotion=useReducedMotion();
  const [hintVisible,setHintVisible]=useState(false);
- const handProgress=useSharedValue(0);
  const activeBusiness=!visibility.personal_enabled&&visibility.business_enabled;
  useEffect(()=>{
   if(!canFlip||!ownerId||reducedMotion){setHintVisible(false);return;}
   let active=true;
-  const key="jobeen.jcard.flip.coachmark.v1."+ownerId;
+  const key="jobeen.jcard.flip.ghost.v2."+ownerId;
   void AsyncStorage.getItem(key).then(value=>{
    if(active&&!value){
     setHintVisible(true);
@@ -355,23 +354,13 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
   return()=>{active=false;};
  },[ownerId,canFlip,reducedMotion]);
  useEffect(()=>{
-  if(!hintVisible){handProgress.value=0;return;}
-  handProgress.value=withDelay(180,withSequence(
-   withTiming(1,{duration:250}),
-   withTiming(1,{duration:1250}),
-   withTiming(0,{duration:250})
-  ));
-  const timeout=setTimeout(()=>setHintVisible(false),2050);
-  return()=>{clearTimeout(timeout);handProgress.value=0;};
- },[hintVisible,handProgress]);
- const handHintStyle=useAnimatedStyle(()=>({
-  opacity:handProgress.value,
-  transform:[{translateX:interpolate(handProgress.value,[0,1],[10,0])}]
- }));
+  if(!hintVisible)return;
+  const timeout=setTimeout(()=>setHintVisible(false),1750);
+  return()=>clearTimeout(timeout);
+ },[hintVisible]);
  // Preserve approved dimensions on normal phones; give narrow screens and large text room.
  const {height:cardHeight}=jcardSurfaceSize({screenWidth:width,measuredWidth:measuredCardWidth,fontScale,theme:previewTheme??theme});
  useEffect(()=>{if(!canFlip)setBack(activeBusiness);},[canFlip,activeBusiness]);
- const toggle=()=>{if(canFlip)setBack(value=>!value);};
  const cardTheme=previewTheme??theme;
  const cardColors=jobeenTokens(cardTheme);
  const savePersonal=()=>void presentJCardContact({name:card.name,phone:contact.details?.phone_primary||contact.details?.phone_secondary||contact.phone,email:contact.details?.email_primary||contact.details?.email_secondary||contact.email});
@@ -384,32 +373,11 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  };
  return <>
   <View style={{width:"100%",maxWidth:jcardSurfaceMetrics.maxWidth,alignSelf:"center"}}>
-   <View style={{position:"relative",paddingBottom:14}}>
-   <BusinessCard3D height={cardHeight} enabled={canFlip} tutorialNudge={hintVisible} initialSide={initialSide} side={back?"business":"personal"}
+   <BusinessCard3D height={cardHeight} enabled={canFlip} ghostPreview={hintVisible} initialSide={initialSide} side={back?"business":"personal"}
      onSideChange={side=>{setBack(side==="business");setHintVisible(false);}} shadowColor={jcardCommon.cardShadowColor}
      front={(showOwnerActions||visibility.personal_enabled)?<CardFace card={card} theme={cardTheme} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onEditPhoto={showOwnerActions?onEditPersonalPhoto:undefined} onQr={()=>setQrOpen(true)} onSaveContact={!showOwnerActions?(onDemoSaveContact??(ownerId?savePersonal:undefined)):undefined} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>:null}
      back={<View style={{height:cardHeight}}>{(showOwnerActions||visibility.business_enabled)&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onQr={()=>setQrOpen(true)} onSaveContact={!showOwnerActions?(onDemoSaveContact??(ownerId?saveBusiness:undefined)):undefined} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} visibility={visibility}/>}</View>}
    />
-   {canFlip&&hintVisible&&<Reanimated.View pointerEvents="none" accessibilityElementsHidden
-    importantForAccessibility="no-hide-descendants"
-    style={[{position:"absolute",top:"51%",left:"28%",right:"24%",alignItems:"center",justifyContent:"center",gap:5},handHintStyle]}>
-    <View style={{backgroundColor:cardColors.cream,borderWidth:1,borderColor:cardColors.yellow,borderRadius:18,
-     paddingVertical:8,paddingHorizontal:11,alignItems:"center",justifyContent:"center",gap:4}}>
-     <Ionicons name="hand-left-outline" size={24} color={cardColors.ink}/>
-     <Text style={{fontSize:10,color:cardColors.ink,textAlign:"center",fontWeight:"700"}}>Toca o desliza para girar</Text>
-    </View>
-   </Reanimated.View>}
-   {canFlip&&<Pressable accessibilityRole="button"
-    accessibilityLabel={back?"Volver a la JCard personal":"Girar a JCard de negocio"}
-    accessibilityHint="También puedes tocar cualquier espacio libre de la tarjeta o deslizarla horizontalmente."
-    onPress={toggle} style={{position:"absolute",right:8,bottom:-7,width:44,height:44,
-     alignItems:"center",justifyContent:"center"}}>
-    <View style={{width:29,height:29,borderRadius:15,borderWidth:1,borderColor:cardColors.line,backgroundColor:cardColors.surface,
-     alignItems:"center",justifyContent:"center"}}>
-     <Ionicons name="sync-outline" size={17} color={cardColors.ink2}/>
-    </View>
-   </Pressable>}
-   </View>
    {showOwnerActions&&<View style={{flexDirection:"row",gap:10,paddingTop:10}}>
     <Pressable accessibilityRole="button" accessibilityLabel={back?"Compartir JCard de negocio":"Compartir JCard personal"} onPress={()=>void share(back?"business":"personal")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,backgroundColor:cardColors.ink}}>
       <Ionicons name="share-social-outline" size={20} color={cardColors.surface}/><Text style={{color:cardColors.surface,fontWeight:"700"}}>Compartir</Text>
