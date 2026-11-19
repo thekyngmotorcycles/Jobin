@@ -410,7 +410,7 @@ export default function PostCreate(){
      <Pressable accessibilityRole="button" accessibilityLabel={"Borradores. Pendientes: "+draftCount}
       onPress={()=>void openDrafts()}
       style={{minHeight:49,flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",
-       gap:6,borderRadius:15,borderWidth:1,borderColor:t.line,backgroundColor:t.surface,paddingHorizontal:6}}>
+       gap:6,borderRadius:15,borderWidth:1,borderColor:t.silver,backgroundColor:t.surface,paddingHorizontal:6}}>
       <Ionicons name="albums-outline" size={18} color={t.ink}/>
       <Text numberOfLines={1} style={{fontSize:12,fontWeight:"600",color:t.ink}}>Borradores</Text>
       {draftCount>0&&<View style={{minWidth:19,height:19,paddingHorizontal:3,alignItems:"center",
@@ -420,7 +420,7 @@ export default function PostCreate(){
      </Pressable>
      <Pressable accessibilityRole="button" accessibilityLabel="Vista previa" onPress={()=>setPreviewOpen(true)}
       style={{minHeight:49,flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",
-       gap:7,borderRadius:15,borderWidth:1,borderColor:t.line,backgroundColor:t.surface,paddingHorizontal:8}}>
+       gap:7,borderRadius:15,borderWidth:1,borderColor:t.silver,backgroundColor:t.surface,paddingHorizontal:8}}>
       <Ionicons name="eye-outline" size={19} color={t.ink}/>
       <Text numberOfLines={1} style={{fontSize:12,fontWeight:"600",color:t.ink}}>Vista previa</Text>
      </Pressable>
