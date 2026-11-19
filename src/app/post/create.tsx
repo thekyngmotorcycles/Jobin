@@ -216,11 +216,11 @@ export default function PostCreate(){
    <View style={{flex:1}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar opciones de privacidad"
      onPress={()=>setAudienceMenuOpen(false)}
-     style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:"rgba(0,0,0,0.36)"}}/>
+     style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:t.uploadScrim}}/>
     <View accessibilityViewIsModal style={{position:"absolute",top:audienceAnchor.top,left:audienceAnchor.left,
      width:Math.min(270,windowWidth-28),maxWidth:"95%",borderWidth:1,borderColor:t.line,
      borderRadius:18,backgroundColor:t.surface,paddingHorizontal:15,paddingVertical:14,gap:8,
-     shadowColor:"#000",shadowOpacity:0.24,shadowRadius:18,shadowOffset:{width:0,height:9},elevation:18}}>
+     shadowColor:t.floatingCardShadow,shadowOpacity:0.24,shadowRadius:18,shadowOffset:{width:0,height:9},elevation:18}}>
      <View style={{width:34,height:3,borderRadius:3,backgroundColor:t.yellow,marginBottom:4}}/>
      <Text style={{fontSize:14,fontWeight:"700",color:t.ink}}>Compartir con</Text>
      <Pressable accessibilityRole="checkbox" accessibilityState={{checked:audienceFollowers}}
