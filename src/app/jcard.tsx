@@ -12,7 +12,7 @@ import { useLocalSearchParams } from "expo-router";
 
 import { JobinCard } from "../components/JobinCard";
 import { Screen,useUi } from "../components/ui";
-import { ProfessionalStatus } from "../components/ProfessionalStatus";
+import {JCardLoadState} from "../components/JCardConnectionState";
 import { loadPublicCard } from "../lib/professional-api";
 import { useProfessionalData } from "../state/useProfessionalData";
 export default function PublicJCard(){
@@ -56,7 +56,7 @@ export default function PublicJCard(){
      <ProfilePublicPosts userId={user} filter={section==="grid"?"all":section==="videos"?"videos":"live"}/>}
 
 
-  </UserProfileContent>:<ProfessionalStatus loading={resource.loading} error={resource.error} retry={resource.reload}/>}
+  </UserProfileContent>:<JCardLoadState loading={resource.loading} error={resource.error} retry={resource.reload}/>}
  </Screen>
  </>;
 }
