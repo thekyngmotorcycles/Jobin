@@ -99,7 +99,7 @@ export default function MyJShop(){
        {status==="all"?"Todavía no creaste anuncios":"No hay anuncios en esta sección"}
       </Text>
       <Text style={{fontSize:13,lineHeight:20,color:t.ink2,textAlign:"center",maxWidth:360}}>
-       {status==="all"?"Creá tu primer anuncio con el botón superior.":"Podés elegir otra categoría de estado para ver tus artículos."}
+       {status==="all"?"Crea tu primer anuncio con el botón superior.":"Puedes elegir otra categoría de estado para ver tus artículos."}
       </Text>
      </View>
     }
