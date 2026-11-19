@@ -36,7 +36,7 @@ test("Floating card shadow does not live inside the clipping layer",()=>{
  const shadow=src.indexOf('pointerEvents="none"');
  const clip=src.indexOf('style={[{overflow:"hidden"},revealStyle]}');
  assert.ok(shadow>=0&&clip>shadow);
- assert.ok(src.includes("shadowColor:\"#000000\""));
+ assert.ok(src.includes("shadowColor:t.floatingCardShadow"));
  assert.ok(src.includes("shadowRadius:18"));
  assert.ok(src.includes("shadowOpacity:interpolate("));
  assert.ok(src.includes("elevation:interpolate("));
