@@ -5,11 +5,12 @@ import {readFileSync} from "node:fs";
 const composer=readFileSync("src/app/post/create.tsx","utf8");
 const tabs=readFileSync("src/app/(tabs)/_layout.tsx","utf8");
 
-test("After a successful post, navigate to an explicit existing profile route rather than Android root",()=>{
- assert.ok(tabs.includes('{name:"profile",title:"Perfil"'));
- assert.ok(composer.includes('router.replace("/(tabs)/profile")'));
+test("After a successful post, navigate to Home and highlight the created entry",()=>{
+ assert.ok(tabs.includes('{name:"index",title:"Casa"'));
+ assert.ok(composer.includes('pathname:"/(tabs)/index"'));
+ assert.ok(composer.includes("finishHome(publishedId)"));
  assert.ok(!composer.includes('router.dismissTo("/(tabs)/index")'));
- assert.ok(composer.includes('await publishHomePost({body,kind,photos:'));
+ assert.ok(composer.includes('const publishedId=await publishHomePost({'));
  assert.ok(composer.includes('}catch(e){setError('),"Publishing failures should still be shown");
 });
 

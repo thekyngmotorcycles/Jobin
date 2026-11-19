@@ -89,7 +89,7 @@ test("All Home post types use author-first structure and a single-line expandabl
  assert.ok(!real.includes('{media&&authorRow}'));
  assert.ok(demo.includes("<PostCaption text={caption}/>"));
  assert.ok(demo.includes("<PostCaption text={post.caption}/>"));
- assert.ok(real.includes("<PostCaption text={post.body}/>"));
+ assert.ok(real.includes("<PostCaption text={post.body} mentions={post.mentions}/>"));
  assert.ok(caption.includes("numberOfLines={1}"));
  assert.ok(caption.includes("<BottomSheet visible={expanded}"));
  assert.ok(demo.includes("onSave={()=>toggleSave(id)}"));

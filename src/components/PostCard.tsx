@@ -36,7 +36,7 @@ export function PostEngagementRow({likes,comments,shares,liked,onLike,onComments
  </View>;
 }
 
-export function PhotoCarousel({ post }: { post: Pick<PhotoPost, "photos" | "author"> }) {
+export function PhotoCarousel({ post }: { post: Pick<PhotoPost, "photos" | "author"> & {altTexts?:string[]} }) {
   const { colors } = useUi();
   const { width } = useWindowDimensions();
   const [index, setIndex] = useState(0);
@@ -47,7 +47,7 @@ export function PhotoCarousel({ post }: { post: Pick<PhotoPost, "photos" | "auth
     <View>
       <FlatList data={post.photos} horizontal pagingEnabled showsHorizontalScrollIndicator={false} keyExtractor={uri => uri}
         onViewableItemsChanged={onViewable} viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
-        renderItem={({ item }) => <Image source={{ uri: item }} accessibilityLabel={"Foto de " + post.author} style={{ width, aspectRatio: 1, backgroundColor: colors.accent }} />} />
+        renderItem={({ item,index:photoIndex }) => <Image source={{ uri: item }} accessibilityLabel={post.altTexts?.[photoIndex]||"Foto de "+post.author} style={{ width, aspectRatio: 1, backgroundColor: colors.accent }} />} />
       <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, paddingVertical: 8 }}>
         {post.photos.map((_, i) => <View key={i} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: i === index ? colors.ink : colors.line }} />)}
       </View>

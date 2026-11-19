@@ -1,11 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
+import {usePreventRemove} from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import {VideoView,useVideoPlayer} from "expo-video";
-import {useCallback,useState} from "react";
-import {ActivityIndicator,Pressable,ScrollView,Text,TextInput,View} from "react-native";
+import {useCallback,useEffect,useRef,useState} from "react";
+import {ActivityIndicator,AppState,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
+import {BottomSheet} from "./social-ui";
 import {requireSupabase} from "../lib/supabase";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
@@ -28,6 +30,41 @@ export function FlashComposer(){
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState("");
+ const [exitOpen,setExitOpen]=useState(false);
+ const [exitAllowed,setExitAllowed]=useState(false);
+ const [goHome,setGoHome]=useState(false);
+ const suppressAutosave=useRef(false);
+ const snapshotRef=useRef({title:"",uri:""});
+ snapshotRef.current={title,uri};
+ async function persist(){
+  if(!userId||loading||suppressAutosave.current)return;
+  const value=snapshotRef.current;
+  if(!value.uri&&!value.title.trim())return;
+  const saved=Date.now();
+  await AsyncStorage.setItem(key(userId),JSON.stringify({title:value.title,videoUri:value.uri,savedAt:saved} satisfies FlashDraft));
+  setSavedAt(saved);
+ }
+ function home(){suppressAutosave.current=true;setExitOpen(false);setExitAllowed(true);setGoHome(true);}
+ function requestExit(){
+  if(snapshotRef.current.uri||snapshotRef.current.title.trim())setExitOpen(true);
+  else home();
+ }
+ usePreventRemove(!exitAllowed,()=>requestExit());
+ useEffect(()=>{if(goHome)router.replace("/(tabs)/index");},[goHome]);
+ useEffect(()=>{
+  if(!userId||loading||(!title.trim()&&!uri)||suppressAutosave.current)return;
+  const timer=setTimeout(()=>{void persist().catch(()=>{});},180);
+  return()=>clearTimeout(timer);
+ },[title,uri,userId,loading]);
+ useEffect(()=>{
+  const sub=AppState.addEventListener("change",status=>{if(status!=="active")void persist().catch(()=>{});});
+  return()=>{sub.remove();void persist().catch(()=>{});};
+ },[userId,loading]);
+ async function discardAndExit(){
+  suppressAutosave.current=true;
+  try{if(userId)await AsyncStorage.removeItem(key(userId));home();}
+  catch(e){suppressAutosave.current=false;setNotice(e instanceof Error?e.message:"No se pudo descartar el borrador.");setExitOpen(false);}
+ }
  useFocusEffect(useCallback(()=>{
   let active=true;setLoading(true);
   void(async()=>{
@@ -74,7 +111,7 @@ export function FlashComposer(){
  return <SafeAreaView edges={["top","left","right"]} style={{flex:1,backgroundColor:t.bg}}>
   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:18,paddingBottom:60,gap:18}} showsVerticalScrollIndicator={false}>
    <View style={{flexDirection:"row",alignItems:"center",gap:12}}>
-    <Pressable accessibilityRole="button" accessibilityLabel="Volver" onPress={()=>router.back()} style={{minHeight:48,minWidth:48,alignItems:"center",justifyContent:"center"}}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Volver" onPress={requestExit} style={{minHeight:48,minWidth:48,alignItems:"center",justifyContent:"center"}}>
      <Ionicons name="arrow-back" size={24} color={t.ink}/>
     </Pressable>
     <View style={{flex:1,gap:2}}><Text accessibilityRole="header" style={{fontSize:22,fontWeight:"800",color:t.ink}}>Crear Flash</Text>
@@ -112,5 +149,21 @@ export function FlashComposer(){
     <Text style={{color:t.ink2,fontSize:12,lineHeight:18}}>Los archivos seleccionados pueden dejar de estar disponibles si el sistema elimina sus copias temporales. Los borradores no se sincronizan entre dispositivos.</Text>
    </>}
   </ScrollView>
+ <BottomSheet visible={exitOpen} onClose={()=>setExitOpen(false)} title="¿Qué deseas hacer con tu Flash?">
+  <View style={{gap:11,paddingTop:9}}>
+   <Text style={{color:t.ink2,fontSize:13}}>Tu video aún no se ha publicado. Puedes conservar un borrador local o descartarlo.</Text>
+   <Pressable accessibilityRole="button" onPress={()=>void persist().then(home).catch(e=>setNotice(String(e)))}
+    style={{backgroundColor:t.ink,minHeight:50,borderRadius:15,alignItems:"center",justifyContent:"center"}}>
+    <Text style={{color:t.surface,fontWeight:"700"}}>Guardar borrador</Text>
+   </Pressable>
+   <Pressable accessibilityRole="button" onPress={()=>void discardAndExit()}
+    style={{backgroundColor:t.cream,minHeight:50,borderRadius:15,alignItems:"center",justifyContent:"center"}}>
+    <Text style={{color:t.ink,fontWeight:"700"}}>Descartar cambios</Text>
+   </Pressable>
+   <Pressable accessibilityRole="button" onPress={()=>setExitOpen(false)} style={{minHeight:44,alignItems:"center",justifyContent:"center"}}>
+    <Text style={{color:t.ink2,fontWeight:"600"}}>Continuar editando</Text>
+   </Pressable>
+  </View>
+ </BottomSheet>
  </SafeAreaView>;
 }
