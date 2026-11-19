@@ -46,7 +46,7 @@ test("Incoming contacts are actionable and count toward notification badge",()=>
  const screen=source("src/app/notifications.tsx");
  const lib=source("src/lib/activity-notifications.ts");
  const sql=source("supabase/migrations/20261119030000_jobeen_professional_contacts.sql");
- assert.ok(screen.includes("respondContactRequest(id,approve)"));
+ assert.ok(screen.includes("replyContactRequest(id,approve)"));
  assert.ok(screen.includes('n.kind==="contact_request"'));
  assert.ok(screen.includes("pendingWithoutNotice"));
  assert.ok(lib.includes("pendingUncountedContacts"));
