@@ -3,7 +3,7 @@ import {jcardCommon, jcardFlipShadow} from "../theme/jcard";
 import {createContext, useCallback, useEffect, useRef, type ReactNode} from "react";
 import {Platform, StyleSheet} from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
-import Animated, {cancelAnimation, interpolate, runOnJS, useAnimatedReaction, useAnimatedStyle, useSharedValue, withSequence, withSpring} from "react-native-reanimated";
+import Animated, {cancelAnimation, interpolate, runOnJS, useAnimatedReaction, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSequence, withSpring, withTiming} from "react-native-reanimated";
 import {LinearGradient} from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 
@@ -17,6 +17,7 @@ export interface BusinessCardProps {
   side: "personal" | "business";
   onSideChange: (side:"personal" | "business")=>void;
   shadowColor?: string;
+  tutorialNudge?: boolean;
 }
 
 /** Child action controls mark their touches so the card flip never steals a link/button tap. */
@@ -27,8 +28,10 @@ function lightImpact(){
   if(Platform.OS!=="web")void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(()=>{});
 }
 
-export function BusinessCard3D({front,back,height,enabled=true,initialSide="personal",side,onSideChange,shadowColor=jcardCommon.cardShadowColor}:BusinessCardProps){
+export function BusinessCard3D({front,back,height,enabled=true,initialSide="personal",side,onSideChange,shadowColor=jcardCommon.cardShadowColor,tutorialNudge=false}:BusinessCardProps){
   const interactiveTouch=useRef(false);
+  const reducedMotion=useReducedMotion();
+  const hintTilt=useSharedValue(0);
   const lastGestureSide=useRef<"personal"|"business"|null>(null);
   const markInteractive=useCallback(()=>{interactiveTouch.current=true;},[]);
   const angle=useSharedValue(initialSide==="business"?180:0);
@@ -52,6 +55,16 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
     }
   },[enabled,side,angle,lift,moving]);
 
+  // One-time gesture discoverability; not a real flip and never changes the card side.
+  useEffect(()=>{
+    if(!enabled||!tutorialNudge||reducedMotion)return;
+    hintTilt.value=withDelay(260,withSequence(
+      withTiming(-8,{duration:240}),
+      withTiming(0,{duration:370})
+    ));
+    return()=>{cancelAnimation(hintTilt);hintTilt.value=0;};
+  },[enabled,tutorialNudge,reducedMotion,hintTilt]);
+
   // Cross the midpoint once per flip, including while dragging.
   useAnimatedReaction(
     ()=>angle.value>=90,
@@ -64,6 +77,7 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
   const tap=Gesture.Tap().enabled(enabled).maxDistance(12).runOnJS(true).onEnd(()=>{
     if(interactiveTouch.current)return;
     const next=side==="personal"?"business":"personal";
+    cancelAnimation(hintTilt);hintTilt.value=0;
     lift.value=withSequence(withSpring(1.04,SPRING),withSpring(1,SPRING));
     angle.value=withSpring(next==="business"?180:0,SPRING);
     lastGestureSide.current=next;
@@ -73,6 +87,7 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
     .onBegin(()=>{
       if(interactiveTouch.current)return;
       cancelAnimation(angle);
+      cancelAnimation(hintTilt);hintTilt.value=0;
       panStart.value=angle.value;
       moving.value=true;
       lift.value=withSpring(1.04,SPRING);
@@ -99,7 +114,7 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
   const gesture=Gesture.Exclusive(pan,tap);
 
   const outerStyle=useAnimatedStyle(()=>({
-    transform:[{scale:lift.value}],
+    transform:[{perspective:1000},{rotateY:`${hintTilt.value}deg`},{scale:lift.value}],
 
   }));
   const frontStyle=useAnimatedStyle(()=>({
