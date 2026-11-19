@@ -154,7 +154,7 @@ export default function PostCreate(){
      {termsExpanded&&<Text style={{fontSize:12,lineHeight:18,color:t.ink2,paddingBottom:10}}>
       Confirmo que el contenido es laboral o educativo y cumple las normas de Jobeen. No publicaré contenido privado de otras personas.
      </Text>}
-    </View></Pressable>
+    </View>
     {loading&&<ActivityIndicator color={t.yellow}/>}
     {!!error&&<Text accessibilityLiveRegion="polite" style={{color:t.ink,fontSize:13}}>{error}</Text>}
     <Pressable accessibilityRole="button" disabled={busy||!author||!eligible||!consent} onPress={()=>void submit()}
