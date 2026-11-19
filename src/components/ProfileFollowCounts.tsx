@@ -1,24 +1,28 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import {useCallback,useEffect,useState} from "react";
-import {ActivityIndicator,Pressable,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Alert,Pressable,Text,TextInput,View} from "react-native";
 import {requireSupabase} from "../lib/supabase";
+import {contactCount,myContacts,replyContactRequest,removeContactRequest,type ContactPerson} from "../lib/professional-contacts";
 import {useUi} from "./ui";
 import {BottomSheet} from "./social-ui";
 import {AccountAvatar} from "./AccountAvatar";
+import {jobeenTokens} from "../theme/jobeen";
+import {useTheme} from "../state/ThemeProvider";
 
-type ListType="followers"|"following";
+type ListType="followers"|"following"|"contacts";
 type Connection={id:string;name:string;following:boolean};
-
 export function ProfileFollowCounts({userId,refreshKey=0}:{userId:string;refreshKey?:number}){
- const {colors,s}=useUi();
+ const {colors,s}=useUi();const {theme}=useTheme();const jt=jobeenTokens(theme);
  const [viewer,setViewer]=useState("");
- const [counts,setCounts]=useState<{followers:number;following:number}|null>(null);
+ const [counts,setCounts]=useState<{followers:number;following:number;contacts:number}|null>(null);
  const [sheet,setSheet]=useState(false);
  const [tab,setTab]=useState<ListType>("followers");
  const [rows,setRows]=useState<Connection[]>([]);
+ const [contactRows,setContactRows]=useState<ContactPerson[]>([]);
  const [query,setQuery]=useState("");
  const [loading,setLoading]=useState(false);
+ const [busy,setBusy]=useState("");
  const [error,setError]=useState("");
  const refreshCounts=useCallback(async()=>{
   if(!userId)return;
@@ -26,12 +30,13 @@ export function ProfileFollowCounts({userId,refreshKey=0}:{userId:string;refresh
    const db=requireSupabase();
    const {data:{user}}=await db.auth.getUser();
    setViewer(user?.id??"");
-   const [followers,following]=await Promise.all([
+   const [followers,following,contacts]=await Promise.all([
     db.from("profile_follows" as never).select("*",{head:true,count:"exact"}).eq("followed_id",userId),
-    db.from("profile_follows" as never).select("*",{head:true,count:"exact"}).eq("follower_id",userId)
+    db.from("profile_follows" as never).select("*",{head:true,count:"exact"}).eq("follower_id",userId),
+    contactCount(userId)
    ]);
-   if(followers.error||following.error)throw new Error("No se pudieron cargar los contadores");
-   setCounts({followers:followers.count??0,following:following.count??0});
+   if(followers.error||following.error)throw new Error("No se pudieron cargar los contadores.");
+   setCounts({followers:followers.count??0,following:following.count??0,contacts});
   }catch{setCounts(null);}
  },[userId]);
  useFocusEffect(useCallback(()=>{void refreshCounts();},[refreshCounts]));
@@ -40,8 +45,12 @@ export function ProfileFollowCounts({userId,refreshKey=0}:{userId:string;refresh
 
  async function loadConnections(kind:ListType){
   if(!isOwner)return;
-  setLoading(true);setError("");setRows([]);
+  setLoading(true);setError("");setRows([]);setContactRows([]);
   try{
+   if(kind==="contacts"){
+    setContactRows(await myContacts());
+    return;
+   }
    const db=requireSupabase();
    const col=kind==="followers"?"followed_id":"follower_id";
    const other=kind==="followers"?"follower_id":"followed_id";
@@ -79,34 +88,86 @@ export function ProfileFollowCounts({userId,refreshKey=0}:{userId:string;refresh
    void refreshCounts();
   }catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar el seguimiento.");}
  }
+ async function contactAction(person:ContactPerson,approve?:boolean){
+  if(busy)return;
+  setBusy(person.requestId);setError("");
+  try{
+   if(person.direction==="incoming")await replyContactRequest(person.requestId,approve===true);
+   else await removeContactRequest(person.requestId);
+   await loadConnections("contacts");
+   await refreshCounts();
+  }catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar la relación profesional.");}
+  finally{setBusy("");}
+ }
+ function confirmRemove(person:ContactPerson){
+  Alert.alert("Eliminar contacto","Se eliminará la relación profesional para ambos perfiles.",[
+   {text:"Cancelar",style:"cancel"},
+   {text:"Eliminar",style:"destructive",onPress:()=>void contactAction(person)}
+  ]);
+ }
  function changeTab(next:ListType){setTab(next);setQuery("");void loadConnections(next);}
  const visible=rows.filter(r=>r.name.toLowerCase().includes(query.trim().toLowerCase()));
+ const visibleContacts=contactRows.filter(r=>r.name.toLowerCase().includes(query.trim().toLowerCase()));
  return <>
-  <View style={{flexDirection:"row",justifyContent:"space-evenly",alignItems:"center",paddingVertical:8}}>
-   {([{id:"followers",label:"Seguidores",value:counts?.followers},{id:"following",label:"Seguidos",value:counts?.following}] as const).map(item=>
-    <Pressable key={item.id} accessibilityRole={isOwner?"button":undefined}
-     accessibilityLabel={item.label+": "+(item.value??"no disponible")+(isOwner?", ver lista":"")}
-     disabled={!isOwner} onPress={()=>openList(item.id)}
-     style={{alignItems:"center",gap:3,flex:1,minHeight:56,justifyContent:"center"}}>
-     <Text style={{fontSize:20,fontWeight:"800",color:colors.ink}}>{item.value===undefined?"—":new Intl.NumberFormat("es").format(item.value)}</Text>
-     <Text style={{fontSize:13,color:colors.muted}}>{item.label}</Text>
-    </Pressable>)}
+  <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:15,paddingVertical:3,minHeight:44}}>
+   {([{id:"followers",label:"Seguidores",value:counts?.followers},{id:"contacts",label:"Contactos",value:counts?.contacts}] as const).map((item,index)=>
+    <View key={item.id} style={{flexDirection:"row",alignItems:"center",gap:15}}>
+     {index>0&&<View style={{width:1,height:18,backgroundColor:jt.line}}/>}
+     <Pressable accessibilityRole={isOwner?"button":undefined}
+      accessibilityLabel={item.label+": "+(item.value??"no disponible")+(isOwner?", ver lista":"")}
+      disabled={!isOwner} onPress={()=>openList(item.id)}
+      style={{minHeight:44,flexDirection:"row",gap:5,alignItems:"center",justifyContent:"center",paddingHorizontal:2}}>
+      <Text style={{fontSize:14,fontWeight:"800",color:colors.ink}}>{item.value===undefined?"—":new Intl.NumberFormat("es").format(item.value)}</Text>
+      <Text style={{fontSize:13,color:colors.muted}}>{item.label}</Text>
+     </Pressable>
+    </View>)}
   </View>
-  <BottomSheet visible={sheet} onClose={()=>setSheet(false)} title="Conexiones">
-   <View style={{gap:14,paddingVertical:8}}>
-    <View style={{flexDirection:"row",gap:8}}>
-     {(["followers","following"] as const).map(option=><Pressable key={option} accessibilityRole="tab" accessibilityState={{selected:tab===option}}
-      onPress={()=>changeTab(option)} style={{flex:1,minHeight:44,borderRadius:13,borderWidth:1,borderColor:tab===option?colors.ink:colors.line,
-       backgroundColor:tab===option?colors.accent:colors.paper,alignItems:"center",justifyContent:"center"}}>
-      <Text style={{color:colors.ink,fontWeight:tab===option?"800":"600"}}>{option==="followers"?"Seguidores":"Siguiendo"}</Text>
+  <BottomSheet visible={sheet} onClose={()=>setSheet(false)} title="Mi red">
+   <View style={{gap:12,paddingVertical:8}}>
+    <View style={{flexDirection:"row",gap:5}}>
+     {(["followers","following","contacts"] as const).map(option=><Pressable key={option} accessibilityRole="tab" accessibilityState={{selected:tab===option}}
+      onPress={()=>changeTab(option)} style={{flex:1,minHeight:44,borderRadius:12,borderWidth:1,borderColor:tab===option?colors.ink:colors.line,
+       backgroundColor:tab===option?colors.accent:colors.paper,alignItems:"center",justifyContent:"center",paddingHorizontal:3}}>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}
+       style={{color:colors.ink,fontWeight:tab===option?"800":"600",fontSize:12}}>
+       {option==="followers"?"Seguidores":option==="following"?"Siguiendo":"Contactos"}
+      </Text>
      </Pressable>)}
     </View>
-    <TextInput accessibilityLabel="Buscar en mis conexiones" value={query} onChangeText={setQuery} placeholder="Buscar personas" placeholderTextColor={colors.muted}
+    <TextInput accessibilityLabel="Buscar en mi red" value={query} onChangeText={setQuery} placeholder="Buscar personas" placeholderTextColor={colors.muted}
      style={{minHeight:44,borderRadius:13,borderWidth:1,borderColor:colors.line,paddingHorizontal:12,color:colors.ink}}/>
+    {tab==="contacts"&&<Text style={{color:colors.muted,fontSize:12,lineHeight:17}}>Los contactos se crean cuando ambas personas aceptan relacionarse. Seguir una cuenta no la convierte en contacto.</Text>}
     {loading&&<ActivityIndicator color={colors.ink}/>}
     {!!error&&<Text accessibilityLiveRegion="polite" style={s.muted}>{error}</Text>}
-    {!loading&&!visible.length&&<Text style={[s.muted,{paddingVertical:16,textAlign:"center"}]}>{rows.length?"No se encontraron personas.":"Todavía no hay personas en esta lista."}</Text>}
-    {visible.map(person=><View key={person.id} style={{flexDirection:"row",alignItems:"center",gap:9,minHeight:58}}>
+    {!loading&&!(tab==="contacts"?visibleContacts:visible).length&&<Text style={[s.muted,{paddingVertical:16,textAlign:"center"}]}>
+     {query.trim()?"No se encontraron personas.":tab==="contacts"?"Aún no tienes contactos ni solicitudes.":"Todavía no hay personas en esta lista."}
+    </Text>}
+    {tab==="contacts"?visibleContacts.map(person=><View key={person.requestId} style={{flexDirection:"row",alignItems:"center",gap:7,minHeight:60}}>
+     <Pressable accessibilityRole="button" accessibilityLabel={"Ver perfil de "+person.name}
+      onPress={()=>{setSheet(false);router.push({pathname:"/jcard",params:{user:person.id}});}}
+      style={{flex:1,flexDirection:"row",alignItems:"center",gap:8}}>
+      <AccountAvatar accountId={person.id} fallbackName={person.name} size={38}/>
+      <View style={{flex:1,gap:2}}>
+       <Text numberOfLines={1} style={[s.text,{fontWeight:"700",fontSize:13}]}>{person.name}</Text>
+       <Text style={{color:colors.muted,fontSize:11}}>{person.direction==="incoming"?"Solicita conectar":person.direction==="outgoing"?"Pendiente de aceptación":"Contacto profesional"}</Text>
+      </View>
+     </Pressable>
+     {person.direction==="incoming"?<View style={{flexDirection:"row",gap:4}}>
+      <Pressable accessibilityRole="button" accessibilityLabel={"Aceptar invitación de "+person.name} disabled={!!busy}
+       onPress={()=>void contactAction(person,true)} style={{minHeight:44,paddingHorizontal:9,alignItems:"center",justifyContent:"center",borderRadius:12,backgroundColor:colors.ink}}>
+       <Ionicons name="checkmark" size={18} color={colors.paper}/>
+      </Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={"Rechazar invitación de "+person.name} disabled={!!busy}
+       onPress={()=>void contactAction(person,false)} style={{minHeight:44,paddingHorizontal:9,alignItems:"center",justifyContent:"center",borderRadius:12,backgroundColor:colors.accent}}>
+       <Ionicons name="close" size={18} color={colors.ink}/>
+      </Pressable>
+     </View>:<Pressable accessibilityRole="button" disabled={!!busy}
+      accessibilityLabel={person.direction==="outgoing"?"Cancelar solicitud de "+person.name:"Eliminar contacto "+person.name}
+      onPress={()=>person.direction==="outgoing"?void contactAction(person):confirmRemove(person)}
+      style={{minHeight:44,paddingHorizontal:10,alignItems:"center",justifyContent:"center",borderRadius:12,borderWidth:1,borderColor:colors.line}}>
+      <Text style={{fontSize:11,color:colors.ink,fontWeight:"600"}}>{person.direction==="outgoing"?"Cancelar":"Eliminar"}</Text>
+     </Pressable>}
+    </View>):visible.map(person=><View key={person.id} style={{flexDirection:"row",alignItems:"center",gap:9,minHeight:58}}>
      <Pressable accessibilityRole="button" accessibilityLabel={"Ver perfil de "+person.name} onPress={()=>{setSheet(false);router.push({pathname:"/jcard",params:{user:person.id}});}}
       style={{flex:1,flexDirection:"row",alignItems:"center",gap:10}}>
       <AccountAvatar accountId={person.id} fallbackName={person.name} size={40}/>
@@ -118,7 +179,8 @@ export function ProfileFollowCounts({userId,refreshKey=0}:{userId:string;refresh
       <Text style={{fontSize:12,fontWeight:"700",color:person.following?colors.ink:colors.paper}}>{person.following?"Siguiendo":"Seguir"}</Text>
      </Pressable>
     </View>)}
-    {rows.length>=200&&<Text style={s.muted}>Mostrando las primeras 200 conexiones.</Text>}
+    {tab!=="contacts"&&rows.length>=200&&<Text style={s.muted}>Mostrando las primeras 200 conexiones.</Text>}
+    {tab==="contacts"&&contactRows.length>=300&&<Text style={s.muted}>Mostrando las primeras 300 relaciones.</Text>}
    </View>
   </BottomSheet>
  </>;
