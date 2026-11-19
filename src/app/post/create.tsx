@@ -89,7 +89,7 @@ export default function PostCreate(){
    const saved=await readPostDrafts(uid);
    if(!active)return;
    setDrafts(saved);
-   if(saved[0])applyDraft(saved[0]);
+   // New publication is always blank. Existing drafts open only from Borradores.
    const approved=await Promise.all([shareApprovedMedia("video",uid),shareApprovedMedia("live",uid)]);
    if(active)setMedia([...approved[0],...approved[1]]);
   }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudo cargar la cuenta.");}
@@ -118,7 +118,7 @@ export default function PostCreate(){
  },[mentionQuery,optionsOpen]);
  useEffect(()=>{
   if(!editingDone||destination===null)return;
-  router.replace({pathname:"/(tabs)/index",params:destination?{published:destination}:{}});
+  router.replace({pathname:"/(tabs)/inicio",params:destination?{published:destination}:{}});
  },[editingDone,destination]);
  usePreventRemove(!editingDone,()=>{
   if(hasDraftContent(draftSnapshotRef.current))setExitOpen(true);
