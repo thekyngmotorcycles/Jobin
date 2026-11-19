@@ -3,6 +3,8 @@ import {requireSupabase} from "./supabase";
 import {loadPublishedMedia,type PublishedMedia} from "./safety-api";
 
 const POSTS_BUCKET="photo-posts";
+const PRIVATE_POSTS_BUCKET="jobeen-private-post-photos";
+export type FeedAudience="public"|"private";
 const STORIES_BUCKET="jobeen-story-media";
 
 export type FeedPostKind="text"|"photos"|"video"|"live";
@@ -16,7 +18,7 @@ export type SocialStory={
  id:string;authorId:string;authorName:string;authorHandle:string;kind:StoryKind;body:string;
  imageUrl:string|null;mediaId:string|null;createdAt:string;expiresAt:string;
 };
-type FeedRow={id:string;author_id:string;body:string;kind:FeedPostKind;photo_paths:string[];work_media_id:string|null;created_at:string};
+type FeedRow={id:string;author_id:string;body:string;kind:FeedPostKind;photo_paths:string[];photo_bucket:string;work_media_id:string|null;created_at:string};
 type StoryRow={id:string;author_id:string;kind:StoryKind;body:string;photo_path:string|null;work_media_id:string|null;created_at:string;expires_at:string};
 
 async function namesFor(ids:string[]){
@@ -39,7 +41,7 @@ export async function currentSocialUser():Promise<string>{
 export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,postIds?:string[],offset=0):Promise<FeedPost[]>{
  const db=requireSupabase();
  const query=db.from("jobeen_feed_posts" as never)
-  .select("id,author_id,body,kind,photo_paths,work_media_id,created_at")
+  .select("id,author_id,body,kind,photo_paths,photo_bucket,work_media_id,created_at")
   .is("removed_at",null).order("created_at",{ascending:false}).range(offset,offset+(postId?0:79));
  const {data,error}=await (postId?query.eq("id",postId):postIds?.length?query.in("id",postIds):authorId?query.eq("author_id",authorId):query);
  if(error)throw error;
@@ -54,12 +56,23 @@ export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,
  // Posts must remain visible during an additive backend migration.
  const counts=new Map(((summary.error?[]:summary.data??[]) as unknown as CountRow[]).map(x=>[x.post_id,x]));
  const viewerLikes=new Set(((liked.error?[]:liked.data??[]) as unknown as {post_id:string}[]).map(x=>x.post_id));
+ // A private bucket is never served with getPublicUrl. Only viewers who
+ // pass Storage RLS may request these short-lived links.
+ const privatePaths=[...new Set(rows.filter(row=>row.photo_bucket===PRIVATE_POSTS_BUCKET)
+  .flatMap(row=>row.photo_paths??[]))];
+ const signedUrls=new Map<string,string>();
+ if(privatePaths.length){
+  const {data:links,error:linkError}=await db.storage.from(PRIVATE_POSTS_BUCKET).createSignedUrls(privatePaths,300);
+  if(linkError)throw linkError;
+  for(const link of links??[])if(link.signedUrl&&link.path)signedUrls.set(link.path,link.signedUrl);
+ }
  return rows.map(row=>{
   const count=counts.get(row.id);
   return {
    id:row.id,authorId:row.author_id,authorName:authors.get(row.author_id)?.name??"Profesional",
    authorHandle:authors.get(row.author_id)?.handle??"",body:row.body,kind:row.kind,
-   photoUrls:(row.photo_paths??[]).map(path=>db.storage.from(POSTS_BUCKET).getPublicUrl(path).data.publicUrl),
+   photoUrls:(row.photo_paths??[]).map(path=>row.photo_bucket===PRIVATE_POSTS_BUCKET?
+    signedUrls.get(path)??"":db.storage.from(POSTS_BUCKET).getPublicUrl(path).data.publicUrl).filter(Boolean),
    mediaId:row.work_media_id,createdAt:row.created_at,
    likes:Number(count?.likes??0),comments:Number(count?.comments??0),shares:Number(count?.shares??0),
    likedByViewer:viewerLikes.has(row.id)
@@ -110,20 +123,28 @@ export async function shareApprovedMedia(kind:"video"|"live",owner:string):Promi
  const entries=await loadPublishedMedia();
  return entries.filter(x=>x.creator_id===owner&&x.kind===kind);
 }
-export async function publishHomePost(payload:{body:string;photos:string[];kind:FeedPostKind;mediaId?:string|null}):Promise<void>{
+export async function publishHomePost(payload:{body:string;photos:string[];kind:FeedPostKind;mediaId?:string|null;audience?:FeedAudience;audienceFollowers?:boolean;audienceContacts?:boolean}):Promise<void>{
  const db=requireSupabase(),owner=await currentSocialUser(),uploaded:string[]=[];
  if(payload.kind==="text"&&!payload.body.trim())throw Error("Escribe un mensaje para publicar.");
  if(payload.kind==="photos"&&(!payload.photos.length||payload.photos.length>5))throw Error("Añade entre 1 y 5 fotografías.");
  if((payload.kind==="video"||payload.kind==="live")&&!payload.mediaId)throw Error("Selecciona un video o Live publicado y aprobado.");
+ const privatePost=payload.audience==="private";
+ if(privatePost&&!payload.audienceFollowers&&!payload.audienceContacts)throw Error("Selecciona seguidores, contactos o ambos.");
+ if(privatePost&&(payload.kind==="video"||payload.kind==="live"))
+  throw Error("Los videos y Lives aprobados solo pueden compartirse de forma pública.");
+ const bucket=privatePost?PRIVATE_POSTS_BUCKET:POSTS_BUCKET;
  try{
-  if(payload.kind==="photos")for(const uri of payload.photos)uploaded.push(await uploadPhoto(owner,uri,POSTS_BUCKET));
+  if(payload.kind==="photos")for(const uri of payload.photos)uploaded.push(await uploadPhoto(owner,uri,bucket));
   const {error}=await db.from("jobeen_feed_posts" as never).insert({
    author_id:owner,body:payload.body.trim().slice(0,2000),kind:payload.kind,
-   photo_paths:uploaded,work_media_id:payload.mediaId??null
+   photo_paths:uploaded,work_media_id:payload.mediaId??null,
+   photo_bucket:bucket,audience:privatePost?"private":"public",
+   audience_followers:privatePost&&!!payload.audienceFollowers,
+   audience_contacts:privatePost&&!!payload.audienceContacts
   } as never);
   if(error)throw error;
  }catch(e){
-  if(uploaded.length)await db.storage.from(POSTS_BUCKET).remove(uploaded).catch(()=>{});
+  if(uploaded.length)await db.storage.from(bucket).remove(uploaded).catch(()=>{});
   throw e;
  }
 }
@@ -155,11 +176,12 @@ export async function deleteStory(id:string){
 export async function deleteHomePost(id:string){
  const db=requireSupabase(),owner=await currentSocialUser();
  const {data,error}=await db.from("jobeen_feed_posts" as never).update({removed_at:new Date().toISOString()} as never)
- .eq("id",id).eq("author_id",owner).select("photo_paths").maybeSingle();
+ .eq("id",id).eq("author_id",owner).select("photo_paths,photo_bucket").maybeSingle();
  if(error)throw error;
  if(!data)throw Error("No se pudo eliminar la publicación.");
- const paths=(data as unknown as {photo_paths:string[]}).photo_paths??[];
- if(paths.length)await db.storage.from(POSTS_BUCKET).remove(paths).catch(()=>{});
+ const stored=data as unknown as {photo_paths:string[];photo_bucket:string};
+ const paths=stored.photo_paths??[];
+ if(paths.length)await db.storage.from(stored.photo_bucket===PRIVATE_POSTS_BUCKET?PRIVATE_POSTS_BUCKET:POSTS_BUCKET).remove(paths).catch(()=>{});
 }
 
 export type HomePostComment={

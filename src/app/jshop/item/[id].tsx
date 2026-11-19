@@ -130,7 +130,7 @@ export default function JShopItemDetail(){
      <JShopButton title={busy?"Eliminando...":"Eliminar borrador"} secondary icon="trash-outline" disabled={busy} onPress={requestDelete}/>
      <Text style={{color:t.ink2,fontSize:12,lineHeight:19}}>Este borrador no está publicado. Entrá en Editar borrador para publicarlo.</Text>
     </View>:owner&&listing?<View style={{gap:9}}>
-     <JShopTitle title="Administrar anuncio" subtitle="Solo vos podés modificar su estado."/>
+     <JShopTitle title="Administrar anuncio" subtitle="Solo vos puedes modificar su estado."/>
      {listing.status==="published"?<>
       <JShopButton title="Pausar anuncio" secondary icon="pause-circle-outline" disabled={busy} onPress={()=>void changeStatus("paused")}/>
       <JShopButton title="Marcar como vendido" secondary icon="checkmark-circle-outline" disabled={busy} onPress={()=>void changeStatus("sold")}/>
@@ -149,7 +149,7 @@ export default function JShopItemDetail(){
     {!!error&&<Text accessibilityLiveRegion="polite" style={{color:t.ink,fontWeight:"600"}}>{error}</Text>}
     <View style={{borderRadius:18,padding:14,backgroundColor:t.cream,gap:5}}>
      <Text style={{color:t.ink,fontWeight:"700"}}>Compra entre usuarios</Text>
-     <Text style={{color:t.ink2,fontSize:12,lineHeight:18}}>JShop permite descubrir artículos y contactar vendedores. No procesa cobros ni garantiza transacciones. Evitá adelantos de dinero y verificá el producto y al vendedor.</Text>
+     <Text style={{color:t.ink2,fontSize:12,lineHeight:18}}>JShop permite descubrir artículos y contactar vendedores. No procesa cobros ni garantiza transacciones. Evitá adelantos de dinero y verifica el producto y al vendedor.</Text>
     </View>
    </>:<JShopEmpty icon="alert-circle-outline" title="Artículo no disponible"
     description="El anuncio no existe, no está publicado o no pertenece a esta cuenta."

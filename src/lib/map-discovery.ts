@@ -14,7 +14,7 @@ function valid(point:MapPoint){
  return Number.isFinite(point.lat)&&Number.isFinite(point.lon)&&Math.abs(point.lat)<=85&&Math.abs(point.lon)<=180;
 }
 export async function discoverMapProfiles(center:MapPoint,radiusKm:number,query:string,kind:DiscoveryKind):Promise<DiscoveredProfile[]>{
- if(!valid(center))throw Error("Elegí una zona válida.");
+ if(!valid(center))throw Error("Elige una zona válida.");
  const db=requireSupabase();
  const {data,error}=await db.rpc("jobeen_find_profiles_on_map" as never,{
   p_lat:center.lat,p_lon:center.lon,p_radius_km:radiusKm,p_query:query.trim().slice(0,100),p_kind:kind

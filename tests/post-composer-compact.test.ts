@@ -29,7 +29,7 @@ test("Up to five photo previews live in one horizontal scroll row",()=>{
  assert.ok(composer.includes('<ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled'));
  assert.ok(composer.includes('accessibilityLabel="Fotografías seleccionadas, deslizar horizontalmente"'));
  assert.ok(composer.includes('contentContainerStyle={{flexDirection:"row",gap:9,paddingVertical:2}}'));
- assert.ok(!composer.includes('flexWrap:"wrap"'));
+ assert.ok(!composer.includes('style={{flexDirection:"row",flexWrap:"wrap",gap:8}}'),"Photo previews must never wrap to more rows");
 });
 
 test("Video and consent explanations can expand without occupying the initial viewport",()=>{

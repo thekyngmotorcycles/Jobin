@@ -52,16 +52,16 @@ export default function VerifyIdentity(){
  }
  async function submit(){
   if(busy)return;
-  if(!consent){Alert.alert("Consentimiento requerido","Confirmá que el documento es tuyo y que autorizás su almacenamiento privado y revisión manual.");return;}
-  if(expiresOn.trim()&&!/^\\d{4}-\\d{2}-\\d{2}$/.test(expiresOn.trim())){Alert.alert("Fecha incorrecta","Usá el formato AAAA-MM-DD.");return;}
-  if(legalName.trim().length<3||!front||(needsBack&&!back)){Alert.alert("Datos incompletos","Ingresá el nombre legal y fotografiá las caras requeridas del documento.");return;}
+  if(!consent){Alert.alert("Consentimiento requerido","Confirma que el documento es tuyo y que autorizás su almacenamiento privado y revisión manual.");return;}
+  if(expiresOn.trim()&&!/^\\d{4}-\\d{2}-\\d{2}$/.test(expiresOn.trim())){Alert.alert("Fecha incorrecta","Usa el formato AAAA-MM-DD.");return;}
+  if(legalName.trim().length<3||!front||(needsBack&&!back)){Alert.alert("Datos incompletos","Ingresa el nombre legal y fotografiá las caras requeridas del documento.");return;}
   setBusy(true);const uploaded:string[]=[];
   try{
    const db=requireSupabase();const {data:{user},error:authError}=await db.auth.getUser();
    if(authError||!user)throw Error("Iniciá sesión para continuar.");
    const {data:existing,error:checkError}=await (db as any).from("identity_verification_requests").select("id").eq("user_id",user.id).eq("status","pending").limit(1);
    if(checkError)throw checkError;
-   if(existing?.length)throw Error("Ya tenés una solicitud pendiente de revisión.");
+   if(existing?.length)throw Error("Ya tienes una solicitud pendiente de revisión.");
    const prefix=user.id+"/"+Date.now()+"-"+Math.random().toString(36).slice(2);
    async function upload(image:Picked,side:string){
     const path=prefix+"-"+side+".jpg";
@@ -81,7 +81,7 @@ export default function VerifyIdentity(){
   {isReviewer&&<Pressable accessibilityRole="button" onPress={()=>router.push("/identity-admin")} style={{borderWidth:1,borderColor:colors.line,padding:13,borderRadius:12}}><Text style={s.text}>Panel administrativo de verificación →</Text></Pressable>}
   <Text style={s.muted}>La insignia J representa identidad verificada, no licencias ni experiencia profesional. Los documentos son privados y no aparecen en tu JCard.</Text>
   {status==="pending"&&<View style={s.panel}><Text style={s.h3}>Solicitud en revisión</Text><Text style={s.muted}>Ya recibimos tus documentos. No es necesario enviarlos nuevamente.</Text></View>}
-  {status==="rejected"&&<View style={s.panel}><Text style={s.h3}>Solicitud rechazada</Text><Text style={s.muted}>{reviewReason??"Revisá tus datos y enviá una nueva solicitud."}</Text><Text style={s.muted}>Podés presentar un nuevo documento. Las solicitudes anteriores permanecen registradas para auditoría.</Text></View>}
+  {status==="rejected"&&<View style={s.panel}><Text style={s.h3}>Solicitud rechazada</Text><Text style={s.muted}>{reviewReason??"Revisa tus datos y envía una nueva solicitud."}</Text><Text style={s.muted}>Puedes presentar un nuevo documento. Las solicitudes anteriores permanecen registradas para auditoría.</Text></View>}
   {status==="approved"&&<View style={s.panel}><Text style={s.h3}>Solicitud aprobada</Text><Text style={s.muted}>La aprobación documental se registró. La insignia J se activa cuando el correo está confirmado y el servidor valida la aprobación documental. No requiere SMS.</Text></View>}
   {status!=="pending"&&status!=="approved"&&<>
    <Text style={s.h3}>País emisor</Text>
@@ -97,7 +97,7 @@ export default function VerifyIdentity(){
     <Text style={s.text}>{side==="front"?"Fotografiar frente":"Fotografiar reverso"}</Text>
     {(side==="front"?front:back)&&<Image source={{uri:(side==="front"?front:back)!.uri}} style={{width:190,height:115,borderRadius:8}} resizeMode="contain"/>}
    </Pressable>)}
-   <Text style={s.muted}>Usá un documento propio, vigente y legible. No se utiliza reconocimiento facial automático. No envíes documentos de terceros.</Text>
+   <Text style={s.muted}>Usa un documento propio, vigente y legible. No se utiliza reconocimiento facial automático. No envíes documentos de terceros.</Text>
    <Pressable accessibilityRole="checkbox" accessibilityState={{checked:consent}} onPress={()=>setConsent(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Text style={s.text}>{consent?"☑":"☐"} Confirmo que el documento es mío y autorizo su almacenamiento privado y revisión manual.</Text></Pressable>
    <Pressable accessibilityRole="button" disabled={busy} onPress={()=>void submit()} style={{backgroundColor:colors.accent,borderRadius:12,padding:17,alignItems:"center"}}>{busy?<ActivityIndicator color={colors.ink}/>:<Text style={[s.text,{fontWeight:"700"}]}>Enviar para revisión</Text>}</Pressable>
   </>}

@@ -96,7 +96,7 @@ export default function JShopSettings(){
      {saving&&option===currency&&<ActivityIndicator size="small" color={t.ink}/>}
     </Pressable>)}
     <Text style={{fontSize:12,lineHeight:18,color:t.ink2}}>
-     Se aplicará a los nuevos anuncios. Podés cambiarla al publicar.
+     Se aplicará a los nuevos anuncios. Puedes cambiarla al publicar.
     </Text>
    </View>
   </BottomSheet>

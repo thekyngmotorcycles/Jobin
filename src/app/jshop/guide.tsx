@@ -9,9 +9,9 @@ import {jobeenTokens} from "../../theme/jobeen";
 export default function JShopPublishingGuide(){
  const {theme}=useTheme();const t=jobeenTokens(theme);
  const guidance=[
-  {icon:"images-outline" as const,title:"Fotografías",text:"Agregá entre 1 y 5 fotos claras del artículo."},
+  {icon:"images-outline" as const,title:"Fotografías",text:"Agrega entre 1 y 5 fotos claras del artículo."},
   {icon:"create-outline" as const,title:"Información",text:"Incluí un título, descripción, precio y estado del artículo."},
-  {icon:"location-outline" as const,title:"Zona de venta",text:"Elegí una ciudad o zona aproximada. No publiques tu domicilio particular."},
+  {icon:"location-outline" as const,title:"Zona de venta",text:"Elige una ciudad o zona aproximada. No publiques tu domicilio particular."},
   {icon:"shield-checkmark-outline" as const,title:"Seguridad",text:"Describí el producto con precisión y respetá las leyes y reglas aplicables a su venta."}
  ];
  return <>

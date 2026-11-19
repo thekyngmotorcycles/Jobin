@@ -48,7 +48,7 @@ export default function StoryCreate(){
    <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{padding:18,paddingBottom:50,gap:17}}>
     <View style={{gap:6}}>
      <Text accessibilityRole="header" style={{color:t.ink,fontSize:23,fontWeight:"800"}}>Tu historia</Text>
-     <Text style={{color:t.ink2,fontSize:13,lineHeight:19}}>Compartí un momento de tu trabajo. Las historias desaparecen después de 24 horas.</Text>
+     <Text style={{color:t.ink2,fontSize:13,lineHeight:19}}>Comparte un momento de tu trabajo. Las historias desaparecen después de 24 horas.</Text>
     </View>
     <View style={{flexDirection:"row",gap:9}}>
      {modes.map(m=><Pressable key={m.id} accessibilityRole="button" accessibilityState={{selected:m.id===kind}} onPress={()=>{setKind(m.id);setError("");}}

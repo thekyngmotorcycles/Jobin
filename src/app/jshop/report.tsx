@@ -16,7 +16,7 @@ export default function ReportJShopItem(){
  const [details,setDetails]=useState("");
  const [busy,setBusy]=useState(false);const [error,setError]=useState("");const [sent,setSent]=useState(false);
  async function send(){
-  if(!listing||!reason||details.trim().length<10){setError("Seleccioná un motivo y explicá qué ocurrió (mínimo 10 caracteres).");return;}
+  if(!listing||!reason||details.trim().length<10){setError("Selecciona un motivo y explicá qué ocurrió (mínimo 10 caracteres).");return;}
   setBusy(true);setError("");
   try{
    const user=await jshopAccountId();

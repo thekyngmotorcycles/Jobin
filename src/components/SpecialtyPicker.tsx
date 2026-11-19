@@ -42,7 +42,7 @@ export function SpecialtyPicker({options,selected,onChange,loading=false}:{optio
     <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>
      {visible.map(item=><Pressable key={item} accessibilityRole="checkbox" accessibilityState={{checked:selected.includes(item),disabled:!selected.includes(item)&&selected.length>=20}} onPress={()=>toggle(item)} disabled={!selected.includes(item)&&selected.length>=20} style={{borderWidth:1,borderColor:colors.line,borderRadius:12,paddingHorizontal:10,paddingVertical:10,minHeight:44,backgroundColor:selected.includes(item)?colors.accent:colors.paper}}><Text style={{color:colors.ink,fontSize:13}}>{selected.includes(item)?"✓ ":""}{item}</Text></Pressable>)}
     </View>
-    {!visible.length&&<Text style={s.muted}>No encontramos esa especialidad. Probá con otra palabra.</Text>}
+    {!visible.length&&<Text style={s.muted}>No encontramos esa especialidad. Prueba con otra palabra.</Text>}
     {!q&&!showAll&&filtered.length>12&&<Pressable accessibilityRole="button" onPress={()=>setShowAll(true)} style={{padding:12,alignItems:"center"}}><Text style={{color:colors.ink,textDecorationLine:"underline"}}>Ver todas ({filtered.length})</Text></Pressable>}
     {!q&&showAll&&filtered.length>12&&<Pressable accessibilityRole="button" onPress={()=>setShowAll(false)} style={{padding:12,alignItems:"center"}}><Text style={{color:colors.ink,textDecorationLine:"underline"}}>Mostrar menos</Text></Pressable>}
    </ScrollView>}
