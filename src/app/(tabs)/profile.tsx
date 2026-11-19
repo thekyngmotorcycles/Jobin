@@ -23,7 +23,7 @@ import { ProfessionPicker } from "../../components/ProfessionPicker";
 import { useProfessionalData } from "../../state/useProfessionalData";
 import { useCallback,useEffect,useState } from "react";
 import {getEmployerLinks} from "../../lib/employer-links";
-import { Keyboard, Modal, Share, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Animated, Keyboard, Modal, Share, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { NAVIGATION_ROW_HEIGHT } from "../../theme/navigation";
 import Svg,{Defs,LinearGradient,Rect,Stop} from "react-native-svg";
@@ -50,6 +50,7 @@ export default function Profile() {
   const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
   const [mode,setMode]=useState<Mode>("home");
   const profileScroll=useRef<ScrollView|null>(null);
+  const profileScrollY=useRef(new Animated.Value(0)).current;
   const [tabOffset,setTabOffset]=useState(0);
   const [tabsPinned,setTabsPinned]=useState(false);
   const reducedMotion=useReducedMotion();
@@ -61,7 +62,7 @@ export default function Profile() {
   const [profileToolsOpen,setProfileToolsOpen]=useState(false);
   const openProfileMenu=()=>setProfileToolsOpen(true);
   const closeProfileMenu=()=>setProfileToolsOpen(false);
-  const {width:screenWidth}=useWindowDimensions();
+  const {width:screenWidth,height:screenHeight}=useWindowDimensions();
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
   const [history, setHistory] = useState<EmploymentEntry[]>([]);
   const [incomingCV,setIncomingCV]=useState<CVRequest[]>([]);
@@ -172,12 +173,17 @@ export default function Profile() {
         <View pointerEvents="none" style={{position:"absolute",top:0,left:0,right:0,height:fadeHeight}}>
           <Svg width="100%" height="100%" accessible={false}>
             <Defs><LinearGradient id="profileTopFade" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0" stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={1}/>
-              <Stop offset={1-fadeCenter} stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={colors.navigationOpacity}/>
-              <Stop offset={1-fadeCenter*.4} stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={.035}/>
+              <Stop offset="0" stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={0.92}/>
+              <Stop offset={1-fadeCenter} stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={0.72}/>
+              <Stop offset={1-fadeCenter*.4} stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={.09}/>
               <Stop offset="1" stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={0}/>
+            </LinearGradient>
+            <LinearGradient id="profileTopShade" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0" stopColor={jt.ink} stopOpacity={theme==="light"?.11:.08}/>
+              <Stop offset=".55" stopColor={jt.ink} stopOpacity={0}/>
             </LinearGradient></Defs>
             <Rect width="100%" height="100%" fill="url(#profileTopFade)"/>
+            <Rect width="100%" height="100%" fill="url(#profileTopShade)"/>
           </Svg>
         </View>
         <JobinWordmark width={theme==="light"?112:92} style={{ alignSelf: "flex-start" }} />
@@ -207,15 +213,18 @@ export default function Profile() {
           </SafeAreaView></View>
         </View>
       </Modal>
-      <ScrollView ref={profileScroll} stickyHeaderIndices={[1]} scrollEventThrottle={16}
+      <Animated.ScrollView ref={profileScroll} stickyHeaderIndices={[1]} scrollEventThrottle={16}
         style={{flex:1,marginTop:insets.top+NAVIGATION_ROW_HEIGHT+2}}
-        contentContainerStyle={{paddingHorizontal:16,paddingTop:12,gap:16,paddingBottom:contentBottom}}
-        onScroll={event=>{
-          const pinned=tabOffset>0&&event.nativeEvent.contentOffset.y>=tabOffset-2;
-          setTabsPinned(previous=>previous===pinned?previous:pinned);
-        }}
+        contentContainerStyle={{paddingTop:12,paddingBottom:0}}
+        onScroll={Animated.event([{nativeEvent:{contentOffset:{y:profileScrollY}}}],{
+          useNativeDriver:true,
+          listener:(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
+            const pinned=tabOffset>0&&event.nativeEvent.contentOffset.y>=tabOffset-2;
+            setTabsPinned(previous=>previous===pinned?previous:pinned);
+          }
+        })}
         showsVerticalScrollIndicator={false}>
-        <View style={{gap:16}}>
+        <Animated.View style={{gap:16,paddingHorizontal:16,paddingBottom:20,zIndex:0,transform:[{translateY:profileScrollY}]}}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         <ProfileIdentityHeader
           card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
@@ -226,11 +235,12 @@ export default function Profile() {
           trust={workspace.data?.card ? <ProfessionalTrustMark worker={workspace.data.card.id}/> : null}
           profileUserId={workspace.data?.card?.id}
         />
-        </View>
-        <View onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}>
+        </Animated.View>
+        <View onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}
+          style={{zIndex:3,backgroundColor:jt.bg,borderTopLeftRadius:18,borderTopRightRadius:18}}>
           <ProfileSectionTabs section={mode} onSelect={selectSection} pinned={tabsPinned}/>
         </View>
-        <View style={{gap:16}}>
+        <View style={{gap:16,paddingHorizontal:16,paddingTop:20,paddingBottom:contentBottom,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
         {mode==="home"&&<ProfileOwnedPosts filter="all" limit={6} heading="Trabajo reciente" onSeeAll={()=>selectSection("grid")}/>}
         {mode==="live"&&<View style={{gap:12,padding:14,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
           <Text style={s.h3}>Transmisiones en vivo</Text>
@@ -270,7 +280,7 @@ export default function Profile() {
         {mode==="videos"&&<ProfileOwnedPosts filter="videos"/>}
         {mode==="live"&&<ProfileOwnedPosts filter="live"/>}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       <BottomSheet visible={businessOpen} onClose={()=>setBusinessOpen(false)} title="Editar JCard de negocio">
        <View style={{gap:12,paddingVertical:12}}>
