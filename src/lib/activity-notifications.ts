@@ -41,6 +41,33 @@ export async function countUnreadActivityNotifications():Promise<number>{
  if(error)throw error;
  return count??0;
 }
+/**
+ * Count unresolved CV access requests as actionable items even when their
+ * notification was already opened. Do not double-count requests that still
+ * have an unread activity notification.
+ */
+export async function countPendingProfileAlerts():Promise<number>{
+ const db=requireSupabase();
+ const {data:{user},error:authError}=await db.auth.getUser();
+ if(authError)throw authError;
+ if(!user)return 0;
+ const [unread,pending,unreadCv]=await Promise.all([
+  db.from("notifications" as never)
+   .select("id",{head:true,count:"exact"}).eq("recipient_id",user.id).is("read_at",null),
+  db.from("employment_access_requests" as never)
+   .select("id").eq("owner_id",user.id).eq("status","pending"),
+  db.from("notifications" as never)
+   .select("payload").eq("recipient_id",user.id).eq("kind","cv_request").is("read_at",null)
+ ]);
+ if(unread.error)throw unread.error;
+ if(pending.error)throw pending.error;
+ if(unreadCv.error)throw unreadCv.error;
+ const alreadyCounted=new Set(((unreadCv.data??[]) as unknown as {payload:Record<string,unknown>|null}[])
+  .map(n=>n.payload?.request_id).filter((id):id is string=>typeof id==="string"));
+ const pendingUncounted=((pending.data??[]) as unknown as {id:string}[])
+  .filter(request=>!alreadyCounted.has(request.id)).length;
+ return (unread.count??0)+pendingUncounted;
+}
 export async function markActivityNotificationsRead(ids?:string[]):Promise<void>{
  const db=requireSupabase();const {data:{user}}=await db.auth.getUser();
  if(!user)return;

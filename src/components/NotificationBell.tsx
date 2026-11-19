@@ -1,25 +1,35 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import {useCallback,useState} from "react";
-import {Pressable,Text,View} from "react-native";
-import {countUnreadActivityNotifications} from "../lib/activity-notifications";
+import {Pressable,View} from "react-native";
+import {countPendingProfileAlerts} from "../lib/activity-notifications";
+import {useJobinNotices} from "../state/NoticeProvider";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 
+const REFRESH_INTERVAL_MS=30_000;
+
 export function NotificationBell(){
  const {theme}=useTheme();const t=jobeenTokens(theme);
+ const {unreadActivity}=useJobinNotices();
  const [count,setCount]=useState(0);
  useFocusEffect(useCallback(()=>{
   let active=true;
-  void countUnreadActivityNotifications().then(n=>{if(active)setCount(n);}).catch(()=>{if(active)setCount(0);});
-  return()=>{active=false;};
+  const refresh=()=>{void countPendingProfileAlerts().then(n=>{if(active)setCount(n);})
+   .catch(()=>{/* Preserve the last confirmed badge until the next refresh. */});};
+  refresh();
+  // The profile can remain open while new alerts arrive. Refresh only while
+  // focused, rather than running polling in the background.
+  const interval=setInterval(refresh,REFRESH_INTERVAL_MS);
+  return()=>{active=false;clearInterval(interval);};
  },[]));
- return <Pressable accessibilityRole="button" accessibilityLabel={"Notificaciones"+(count?", "+count+" sin leer":"")}
-  onPress={()=>router.push("/notifications")} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}>
-  <Ionicons name={count>0?"notifications":"notifications-outline"} size={24} color={t.ink}/>
-  {count>0&&<View style={{position:"absolute",right:0,top:0,minWidth:18,height:18,borderRadius:10,backgroundColor:t.yellow,
-   borderWidth:1,borderColor:t.bg,paddingHorizontal:3,alignItems:"center",justifyContent:"center"}}>
-   <Text style={{fontSize:10,color:t.ink,fontWeight:"800"}}>{count>99?"99+":count}</Text>
-  </View>}
+ const hasAlerts=count+unreadActivity>0;
+ return <Pressable accessibilityRole="button" accessibilityLabel={"Notificaciones"+(hasAlerts?", avisos pendientes":"")}
+  onPress={()=>router.push("/notifications")}
+  style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}>
+  <Ionicons name="notifications-outline" size={24} color={t.ink}/>
+  {hasAlerts&&<View pointerEvents="none"
+   style={{position:"absolute",right:6,top:5,width:11,height:11,borderRadius:6,
+    backgroundColor:t.yellow,borderWidth:1.5,borderColor:t.bg}}/>}
  </Pressable>;
 }
