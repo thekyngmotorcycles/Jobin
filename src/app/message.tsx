@@ -83,7 +83,7 @@ export default function DirectMessage(){
     <Pressable accessibilityRole="button" accessibilityLabel="Volver" onPress={()=>router.back()} style={{padding:6}}><Ionicons name="arrow-back" size={24} color={colors.ink}/></Pressable>
     <Text numberOfLines={1} style={{flex:1,fontSize:18,fontWeight:"700",color:colors.ink}}>{name||"Mensaje"}</Text>
     <Pressable accessibilityRole="button" accessibilityLabel="Opciones de seguridad del chat"
-     onPress={()=>Alert.alert("Opciones de conversación","Elegí cómo gestionar esta conversación.",[
+     onPress={()=>Alert.alert("Opciones de conversación","Elige cómo gestionar esta conversación.",[
       {text:"Cancelar",style:"cancel"},
       ...(conversation?[{text:jshopSpam?"Quitar de Spam":"Mover a Spam",onPress:()=>{void(async()=>{
        try{await markJShopSpam(conversation,!jshopSpam);setJshopSpam(!jshopSpam);}catch(e){setError(e instanceof Error?e.message:"No se pudo modificar la carpeta.");}
@@ -123,7 +123,7 @@ export default function DirectMessage(){
    </Pressable>}
    {!conversation&&contactAccess.kind!=="accepted"&&<View style={{marginHorizontal:14,marginTop:12,borderRadius:17,backgroundColor:brand.cream,padding:13,gap:6}}>
     <Text style={{fontWeight:"800",color:brand.ink,fontSize:14}}>{contactAccess.kind==="none"?"Nueva solicitud de mensajes":contactAccess.kind==="outgoing"?"Solicitud enviada":contactAccess.kind==="incoming"?"Solicitud recibida":"No se pueden enviar nuevos mensajes"}</Text>
-    <Text style={{color:brand.ink2,fontSize:12,lineHeight:19}}>{contactAccess.kind==="none"?"Podés enviar un único mensaje de texto (máximo 500 caracteres). La otra persona deberá aceptar para continuar.":contactAccess.kind==="outgoing"?"Esperá a que la otra persona acepte la solicitud. No podés enviar más mensajes mientras tanto.":contactAccess.kind==="incoming"?"Revisá la solicitud y aceptala antes de comenzar el chat.":"Esta solicitud ya fue cerrada."}</Text>
+    <Text style={{color:brand.ink2,fontSize:12,lineHeight:19}}>{contactAccess.kind==="none"?"Puedes enviar un único mensaje de texto (máximo 500 caracteres). La otra persona deberá aceptar para continuar.":contactAccess.kind==="outgoing"?"Esperá a que la otra persona acepte la solicitud. No puedes enviar más mensajes mientras tanto.":contactAccess.kind==="incoming"?"Revisa la solicitud y aceptala antes de comenzar el chat.":"Esta solicitud ya fue cerrada."}</Text>
     {contactAccess.kind==="incoming"&&<Pressable accessibilityRole="button" onPress={()=>router.push("/message-requests")} style={{alignSelf:"flex-start",padding:9,borderRadius:12,backgroundColor:brand.surface}}>
      <Text style={{color:brand.ink,fontWeight:"700"}}>Revisar solicitud</Text>
     </Pressable>}
