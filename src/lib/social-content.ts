@@ -12,7 +12,7 @@ export type FeedPostKind="text"|"photos"|"video"|"live";
 export type StoryKind="text"|"photo"|"video";
 export type FeedPost={
  id:string;authorId:string;authorName:string;authorHandle:string;body:string;kind:FeedPostKind;
- photoUrls:string[];photoAltTexts:string[];mentionedProfileIds:string[];mediaId:string|null;createdAt:string;
+ photoUrls:string[];photoAltTexts:string[];mentionedProfileIds:string[];mentions:{id:string;label:string}[];mediaId:string|null;createdAt:string;
  likes:number;comments:number;shares:number;likedByViewer:boolean;
 };
 export type SocialStory={
@@ -47,7 +47,7 @@ export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,
  const {data,error}=await (postId?query.eq("id",postId):postIds?.length?query.in("id",postIds):authorId?query.eq("author_id",authorId):query);
  if(error)throw error;
  const rows=(data??[]) as unknown as FeedRow[];
- const authors=await namesFor(rows.map(r=>r.author_id));
+ const authors=await namesFor([...rows.map(r=>r.author_id),...rows.flatMap(r=>r.mentioned_profile_ids??[])]);
  const ids=rows.map(row=>row.id);
  type CountRow={post_id:string;likes:number|string;comments:number|string;shares:number|string};
  const [summary,liked]=ids.length?await Promise.all([
@@ -75,6 +75,9 @@ export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,
    photoUrls:(row.photo_paths??[]).map(path=>row.photo_bucket===PRIVATE_POSTS_BUCKET?
     signedUrls.get(path)??"":db.storage.from(POSTS_BUCKET).getPublicUrl(path).data.publicUrl).filter(Boolean),
    photoAltTexts:row.photo_alt_texts??[],mentionedProfileIds:row.mentioned_profile_ids??[],
+   mentions:(row.mentioned_profile_ids??[]).map(id=>({
+    id,label:authors.get(id)?.handle?"@"+authors.get(id)!.handle:authors.get(id)?.name??"Profesional"
+   })),
    mediaId:row.work_media_id,createdAt:row.created_at,
    likes:Number(count?.likes??0),comments:Number(count?.comments??0),shares:Number(count?.shares??0),
    likedByViewer:viewerLikes.has(row.id)
