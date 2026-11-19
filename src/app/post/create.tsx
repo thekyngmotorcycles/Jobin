@@ -96,14 +96,14 @@ export default function PostCreate(){
      <View style={{flexDirection:"row",alignItems:"center",gap:12}}>
       {!!author?<PublicProfileAvatar userId={author} name="Mi perfil" size={48}/>:<Ionicons name="person-circle-outline" size={45} color={t.ink}/>}
       <View style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:7,flexWrap:"wrap"}}>
-       <Pressable accessibilityRole="button" accessibilityState={{selected:audience==="public"}} accessibilityLabel="Publicación pública"
+       <Pressable accessibilityRole="button" accessibilityState={{selected:audience==="public"}} accessibilityLabel="Publicación pública" hitSlop={{top:4,bottom:4}}
         onPress={()=>{setAudience("public");setAudienceMenuOpen(false);setError("");}}
         style={{minHeight:37,paddingHorizontal:9,borderRadius:12,borderWidth:1,borderColor:audience==="public"?t.yellow:t.line,
          backgroundColor:audience==="public"?t.cream:t.surface,flexDirection:"row",alignItems:"center",gap:6}}>
         <Ionicons name="globe-outline" size={15} color={t.ink}/><Text style={{fontSize:12,fontWeight:audience==="public"?"700":"500",color:t.ink}}>Público</Text>
        </Pressable>
        <Pressable ref={privateButtonRef} accessibilityRole="button" accessibilityState={{selected:audience==="private",expanded:audienceMenuOpen}}
-        accessibilityLabel="Elegir destinatarios privados"
+        accessibilityLabel="Elegir destinatarios privados" hitSlop={{top:4,bottom:4}}
         disabled={kind==="video"||kind==="live"}
         onPress={toggleAudienceMenu}
         style={{minHeight:37,paddingHorizontal:9,borderRadius:12,borderWidth:1,borderColor:audience==="private"?t.yellow:t.line,
