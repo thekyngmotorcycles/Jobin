@@ -14,7 +14,7 @@ test("Search has a real List/Map switch and Home links directly to the map",()=>
  assert.ok(filters.includes('"Siguiendo"'));
  assert.ok(filters.includes('"Empresas"'));
  assert.ok(home.includes("<HomeFeedFilters value={filter} onChange={setFilter}/>"));
- assert.ok(home.includes('<HomePublishedPosts filter={filter} featuredPostId={published??""}/>'));
+ assert.ok(home.includes('<HomePublishedPosts filter={filter} featuredPostId={newlyPublished||(published??"")}/>'));
  assert.ok(home.includes('filter==="all"&&cards.map'));
 });
 test("Quick publisher is optional, off initially, with per-account cloud persistence",()=>{
