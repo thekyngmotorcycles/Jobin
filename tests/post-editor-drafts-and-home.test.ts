@@ -36,8 +36,10 @@ test("Back and cancel ask to save or discard; discard deletes the draft and both
  for(const label of ["Guardar borrador","Descartar cambios","Continuar editando"])assert.ok(sheets.includes(label));
  assert.ok(editor.includes('await deletePostDraft(author,draftSnapshotRef.current.id)'));
  assert.ok(editor.includes("finishHome(\"\")"));
- assert.ok(editor.includes('StackActions.popTo("(tabs)"'));
- assert.ok(editor.includes('screen:"index"'));
+ assert.ok(editor.includes('usePreventRemove(hasWork&&!editingDone'));
+ assert.ok(editor.includes('navigation.canGoBack()'));
+ assert.ok(editor.includes('navigation.goBack()'));
+ assert.ok(!editor.includes('StackActions.popTo('));
  assert.ok(!editor.includes('router.replace("/(tabs)/profile")'));
 });
 test("Publishing routes Home with the exact new ID; the feed promotes it above other posts",()=>{
