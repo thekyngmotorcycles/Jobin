@@ -5,7 +5,7 @@ import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import type {PostDraft,PostDraftPhoto} from "../lib/post-drafts";
 import type {PostMention} from "../lib/post-mentions";
-import type {FeedAudience} from "../lib/social-content";
+import type {FeedAudience,FeedPostKind} from "../lib/social-content";
 
 type Props={
  exitOpen:boolean;onContinue:()=>void;onSaveExit:()=>void;onDiscardExit:()=>void;
@@ -13,7 +13,7 @@ type Props={
  draftsOpen:boolean;onCloseDrafts:()=>void;drafts:PostDraft[];
  onRestore:(draft:PostDraft)=>void;onDelete:(draft:PostDraft)=>void;
  optionsOpen:boolean;onCloseOptions:()=>void;
- body:string;photos:PostDraftPhoto[];audience:FeedAudience;followers:boolean;contacts:boolean;
+ body:string;kind:FeedPostKind;mediaTitle:string;photos:PostDraftPhoto[];audience:FeedAudience;followers:boolean;contacts:boolean;
  onAlt:(id:string,text:string)=>void;
  mentionQuery:string;onMentionQuery:(value:string)=>void;mentions:PostMention[];
  onMention:(person:PostMention)=>void;mentionSearching:boolean;
@@ -51,6 +51,14 @@ export function PostComposerSheets(p:Props){
       "Privado · "+[p.followers?"Seguidores":"",p.contacts?"Contactos":""].filter(Boolean).join(" y ")}</Text>
     </View>
     <View style={{borderRadius:18,borderWidth:1,borderColor:t.line,backgroundColor:t.surface,padding:16,gap:12}}>
+     {(p.kind==="video"||p.kind==="live")&&<View style={{flexDirection:"row",alignItems:"center",gap:10,
+      borderRadius:13,backgroundColor:t.cream,padding:13}}>
+      <Ionicons name={p.kind==="live"?"radio-outline":"videocam-outline"} size={23} color={t.ink}/>
+      <View style={{flex:1,gap:3}}>
+       <Text style={{fontWeight:"700",color:t.ink,fontSize:13}}>{p.kind==="video"?"Video aprobado":"Clip de Live"}</Text>
+       <Text style={{color:t.ink2,fontSize:12}}>{p.mediaTitle||"Selecciona un contenido antes de publicar"}</Text>
+      </View>
+     </View>}
      <Text style={{color:t.ink,fontSize:15,lineHeight:23}}>{p.body||"Sin descripción"}</Text>
      {!!p.photos.length&&<ScrollView horizontal showsHorizontalScrollIndicator={false}
       contentContainerStyle={{gap:8}}>
