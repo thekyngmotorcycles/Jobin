@@ -4,6 +4,8 @@ import {useCallback,useEffect,useRef,useState} from "react";
 import {Animated,Pressable,ScrollView,Text,View,useWindowDimensions,type NativeScrollEvent,type NativeSyntheticEvent} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
+import {Ionicons} from "@expo/vector-icons";
+import {NAVIGATION_ROW_HEIGHT} from "../theme/navigation";
 import {jobeenTokens} from "../theme/jobeen";
 import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../components/ProfileSharedSections";
 import {useReducedMotion} from "react-native-reanimated";
@@ -30,6 +32,17 @@ export default function PublicJCard(){
  const profileScrollY=useRef(new Animated.Value(0)).current;
  const [tabOffset,setTabOffset]=useState(0);
  const [tabsPinned,setTabsPinned]=useState(false);
+ const heroParallax=Animated.multiply(profileScrollY,0.5);
+ const retreatStart=Math.max(1,tabOffset-NAVIGATION_ROW_HEIGHT);
+ const retreatEnd=Math.max(retreatStart+1,tabOffset);
+ const topHeaderOffset=profileScrollY.interpolate({
+  inputRange:[0,retreatStart,retreatEnd],
+  outputRange:[0,0,-NAVIGATION_ROW_HEIGHT],extrapolate:"clamp"
+ });
+ const topHeaderOpacity=profileScrollY.interpolate({
+  inputRange:[0,retreatStart,retreatEnd],
+  outputRange:[1,1,0],extrapolate:"clamp"
+ });
  const reducedMotion=useReducedMotion();
  function selectSection(next:ProfileSection){
   setSection(next);
@@ -52,11 +65,23 @@ export default function PublicJCard(){
   return loadPublicCard(user);
  },[user]));
  return <>
-  <Stack.Screen options={{title:resource.data?.handle?`@${resource.data.handle.replace(/^@/,"")}`:resource.data?.name??"Perfil",headerBackTitle:"Volver"}}/>
+  <Stack.Screen options={{headerShown:false}}/>
   <SafeAreaView edges={["top","left","right"]} style={s.screen}>
+   <Animated.View pointerEvents={tabsPinned?"none":"auto"}
+    style={{position:"absolute",top:0,left:0,right:0,height:NAVIGATION_ROW_HEIGHT,zIndex:10,
+     flexDirection:"row",alignItems:"center",gap:12,paddingHorizontal:12,
+     backgroundColor:jt.bar,transform:[{translateY:topHeaderOffset}],opacity:topHeaderOpacity}}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Volver" onPress={()=>router.back()}
+     style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
+     <Ionicons name="arrow-back" size={26} color={colors.ink}/>
+    </Pressable>
+    <Text numberOfLines={1} style={{color:colors.ink,fontSize:19,fontWeight:"700",flex:1}}>
+     {resource.data?.handle?`@${resource.data.handle.replace(/^@/,"")}`:resource.data?.name??"Perfil"}
+    </Text>
+   </Animated.View>
    <Animated.ScrollView ref={profileScroll} stickyHeaderIndices={resource.data?[1]:undefined}
     scrollEventThrottle={16} showsVerticalScrollIndicator={false}
-    contentContainerStyle={{paddingTop:20,paddingBottom:0,width:"100%",maxWidth:1180,alignSelf:"center"}}
+    contentContainerStyle={{paddingTop:NAVIGATION_ROW_HEIGHT+20,paddingBottom:0,width:"100%",maxWidth:1180,alignSelf:"center"}}
     onScroll={Animated.event([{nativeEvent:{contentOffset:{y:profileScrollY}}}],{
      useNativeDriver:true,
      listener:(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
@@ -64,7 +89,7 @@ export default function PublicJCard(){
       setTabsPinned(previous=>previous===pinned?previous:pinned);
      }
     })}>
-   <Animated.View style={{gap:14,paddingHorizontal:20,paddingBottom:20,zIndex:0,transform:[{translateY:profileScrollY}]}}>
+   <Animated.View style={{gap:14,paddingHorizontal:20,paddingBottom:20,zIndex:0,transform:[{translateY:heroParallax}]}}>
     {resource.data?<ProfileIdentityHeader
      card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/>}
      actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/>}
