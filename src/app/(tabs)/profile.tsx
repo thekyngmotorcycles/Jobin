@@ -24,7 +24,7 @@ import { useProfessionalData } from "../../state/useProfessionalData";
 import { useCallback,useEffect,useState } from "react";
 import {getEmployerLinks} from "../../lib/employer-links";
 import { Animated, Keyboard, Modal, Share, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView,useSafeAreaInsets } from "react-native-safe-area-context";
 import { NAVIGATION_ROW_HEIGHT } from "../../theme/navigation";
 import Svg,{Defs,LinearGradient,Rect,Stop} from "react-native-svg";
 import { router,useFocusEffect,useLocalSearchParams } from "expo-router";
@@ -47,7 +47,7 @@ function validPhoneLabel(value:string):boolean{
  return /^(?:[\p{Regional_Indicator}]{2}|[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?(?:\u200D[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?)*)$/u.test(label);
 }
 export default function Profile() {
-  const { s, colors } = useUi();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
+  const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {view}=useLocalSearchParams<{view?:string}>();
   const [mode,setMode]=useState<Mode>("home");
   const profileScroll=useRef<ScrollView|null>(null);
   const profileScrollY=useRef(new Animated.Value(0)).current;
@@ -183,7 +183,7 @@ export default function Profile() {
 
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={[s.screen,{backgroundColor:jt.bg}]}>
-      <Animated.View pointerEvents={tabsPinned?"none":"auto"} style={{ position:"absolute",top:0,left:0,right:0,zIndex:10,height:NAVIGATION_ROW_HEIGHT,flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8,transform:[{translateY:topHeaderOffset}],opacity:topHeaderOpacity }}>
+      <Animated.View pointerEvents={tabsPinned?"none":"auto"} style={{ position:"absolute",top:insets.top,left:0,right:0,zIndex:10,height:NAVIGATION_ROW_HEIGHT,flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8,transform:[{translateY:topHeaderOffset}],opacity:topHeaderOpacity }}>
         <View pointerEvents="none" style={{position:"absolute",top:0,left:0,right:0,height:fadeHeight}}>
           <Svg width="100%" height="100%" accessible={false}>
             <Defs><LinearGradient id="profileTopFade" x1="0%" y1="0%" x2="0%" y2="100%">
