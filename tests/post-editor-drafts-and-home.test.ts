@@ -10,17 +10,19 @@ const home=read("src/app/(tabs)/index.tsx");
 const postList=read("src/components/HomePublishedPosts.tsx");
 const migration=read("supabase/migrations/20261119234500_jobeen_draft_media_alt_mentions.sql");
 
-test("Bottom toolbar provides draft, preview and options without another row of media chips",()=>{
- for(const label of ['label:"Borrador"','label:"Vista previa"','label:"Opciones"'])assert.ok(editor.includes(label));
+test("Bottom toolbar provides balanced drafts and preview, removing unused Options",()=>{
+ assert.ok(editor.includes("Borradores. Pendientes: "));
+ assert.ok(editor.includes('accessibilityLabel="Vista previa"'));
+ assert.ok(!editor.includes('label:"Opciones"'));
  assert.ok(editor.includes("<PostComposerSheets"));
- assert.ok(sheets.includes("title=\"Mis borradores\""));
- assert.ok(sheets.includes("title=\"Vista previa\""));
- assert.ok(sheets.includes("title=\"Opciones de publicación\""));
+ assert.ok(sheets.includes('floatingCard("Borradores"'));
+ assert.ok(sheets.includes('floatingCard("Vista previa"'));
+ assert.ok(!sheets.includes('title="Opciones de publicación"'));
 });
 test("Every edit is saved automatically and an app background event flushes the current snapshot",()=>{
  assert.ok(editor.includes('AppState.addEventListener("change"'));
  assert.ok(editor.includes('if(status!=="active")void persistSnapshot(draftSnapshotRef.current)'));
- assert.ok(editor.includes("setTimeout(()=>{void persistSnapshot(draftSnapshotRef.current);},180)"));
+ assert.ok(editor.includes('const timer=setTimeout(()=>{'));
  assert.ok(editor.includes('usePreventRemove(!editingDone'));
  assert.ok(drafts.includes("AsyncStorage.setItem"));
  assert.ok(drafts.includes("jobeen.post.drafts.v1."));
@@ -30,7 +32,7 @@ test("Every edit is saved automatically and an app background event flushes the 
 test("Back and cancel ask to save or discard; discard deletes the draft and both return Home",()=>{
  assert.ok(editor.includes('onPress={requestExit}'));
  assert.ok(editor.includes('setExitOpen(true)'));
- assert.ok(sheets.includes('title="¿Qué deseas hacer con tu publicación?"'));
+ assert.ok(sheets.includes('¿Guardar tu publicación?'));
  for(const label of ["Guardar borrador","Descartar cambios","Continuar editando"])assert.ok(sheets.includes(label));
  assert.ok(editor.includes('await deletePostDraft(author,draftSnapshotRef.current.id)'));
  assert.ok(editor.includes("finishHome(\"\")"));
@@ -55,13 +57,14 @@ test("Private draft image backups are saved and published without making origina
  assert.ok(feed.includes('db.storage.from(DRAFT_POSTS_BUCKET).download(saved)'));
  assert.ok(feed.includes('photoDraftPaths'));
 });
-test("Options provide real mentions, photo alt text and a non-actionable scheduling notice",()=>{
- assert.ok(editor.includes("searchPostMentions(mentionQuery)"));
- assert.ok(editor.includes("setMentionedProfileIds"));
- assert.ok(sheets.includes("Etiquetar profesionales y empresas"));
+test("Mentioning with @ searches in the text field; accessible descriptions live on each photo",()=>{
+ assert.ok(editor.includes('searchPostMentions(mentionQuery)'));
+ assert.ok(editor.includes('setMentionedProfileIds'));
+ assert.ok(editor.includes('Mencionar "+person.name'));
+ assert.ok(editor.includes('onPress={()=>setAltPhotoId(photo.id)}'));
+ assert.ok(sheets.includes('floatingCard("Describir foto"'));
  assert.ok(sheets.includes('Descripción accesible de fotografía'));
  assert.ok(feed.includes("mentioned_profile_ids"));
  assert.ok(feed.includes("photo_alt_texts"));
- assert.ok(sheets.includes("Disponible cuando el servidor pueda publicar automáticamente."));
- assert.ok(!sheets.includes('accessibilityLabel="Programar ahora"'));
+ assert.ok(!editor.includes('optionsOpen'));
 });
