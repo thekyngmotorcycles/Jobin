@@ -179,6 +179,12 @@ export default function PostCreate(){
    }
    const saved=await readPostDrafts(author);
    setDrafts(saved);setDraftCount(saved.length);setDraftsOpen(true);
+   // Private draft photos may have temporary local URIs; refresh covers without
+   // delaying opening the gallery or exposing any private bucket publicly.
+   void Promise.all(saved.map(async draft=>{
+    try{return {...draft,photos:await restorePostDraftPhotoUrls(draft.photos)};}
+    catch{return draft;}
+   })).then(setDrafts).catch(()=>{});
   }catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar los borradores.");}
  }
  async function deleteDraft(d:PostDraft){
