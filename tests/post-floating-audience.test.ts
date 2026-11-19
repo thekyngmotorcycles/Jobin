@@ -18,8 +18,8 @@ test("Private audience floats over content with no reflow, dim backdrop and shad
  assert.ok(composer.includes('measureInWindow(openAt)'));
  assert.ok(composer.includes('setAudienceAnchor({left,top})'));
  assert.ok(composer.includes('top:audienceAnchor.top,left:audienceAnchor.left'));
- assert.ok(composer.includes('position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:"rgba(0,0,0,0.36)"'));
- assert.ok(composer.includes('shadowOpacity:0.24,shadowRadius:18'));
+ assert.ok(composer.includes('position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:t.uploadScrim'));
+ assert.ok(composer.includes('shadowColor:t.floatingCardShadow,shadowOpacity:0.24,shadowRadius:18'));
  assert.ok(composer.includes('elevation:18'));
  assert.ok(!composer.includes('audienceMenuOpen&&<View style={{marginLeft:56'));
  assert.ok(composer.includes('accessibilityLabel="Cerrar opciones de privacidad"'));
