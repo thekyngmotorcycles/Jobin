@@ -34,7 +34,11 @@ test("Leaving the JCard with unsaved changes asks before discarding",()=>{
  assert.ok(editor.includes("usePreventRemove(hasUnsavedChanges||professionFormOpen"));
  assert.ok(editor.includes('<Modal visible={unsavedDialogOpen}'));
  assert.ok(editor.includes('accessibilityViewIsModal'));
- assert.ok(editor.includes('animationType="fade"'));
+ assert.ok(editor.includes('animationType="slide"'));
+ assert.ok(editor.includes('justifyContent:"flex-end"'),"The confirmation must rise from the bottom");
+ assert.ok(editor.includes('borderTopLeftRadius:28,borderTopRightRadius:28'),"Sheet should have rounded top corners");
+ assert.ok(editor.includes('backgroundColor:jt.videoViewsOverlay'),"The page behind must be visibly dimmed");
+ assert.ok(editor.includes('Math.max(insets.bottom,20)'),"Sheet buttons should clear Android navigation insets");
  assert.ok(editor.includes('statusBarTranslucent={false}'));
  assert.ok(editor.includes('accessibilityLabel="Seguir editando"'));
  assert.ok(editor.includes('accessibilityLabel="Descartar cambios sin guardar"'));
