@@ -6,6 +6,7 @@ import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {jcardSharingColors} from "../theme/jcard-share";
+import {PublicProfileAvatar} from "./PublicProfileAvatar";
 import {readJCardVisibility} from "../lib/jcard-visibility";
 import {buildSharedJCard,MAX_SHARE_RECIPIENTS,sendJCardToContacts,shareContactSuggestions,type ShareRecipient,type SharedJCardSide} from "../lib/jcard-sharing";
 
@@ -17,7 +18,6 @@ const externals=[
  {id:"copy" as const,label:"Copiar",icon:"copy-outline" as const,color:jcardSharingColors.neutral},
  {id:"more" as const,label:"Más",icon:"ellipsis-horizontal" as const,color:jcardSharingColors.neutral}
 ];
-const initials=(name:string)=>name.trim().split(/\s+/).slice(0,2).map(s=>s.charAt(0)).join("").toUpperCase()||"J";
 
 export function JCardShareSheet({visible,onClose,ownerId,name,side}:{visible:boolean;onClose:()=>void;ownerId?:string;name:string;side:SharedJCardSide}){
  const {theme}=useTheme(),color=jobeenTokens(theme),insets=useSafeAreaInsets(),{width}=useWindowDimensions();
@@ -52,7 +52,7 @@ export function JCardShareSheet({visible,onClose,ownerId,name,side}:{visible:boo
   }).catch(()=>{});
   return()=>{cancel();live=false;};
  },[visible,load]);
- const matches=useMemo(()=>contacts.filter(c=>c.name.toLocaleLowerCase("es").includes(query.trim().toLocaleLowerCase("es"))),[contacts,query]);
+ const matches=useMemo(()=>contacts.filter(c=>c.name.toLocaleLowerCase("es").includes(query.trim().toLocaleLowerCase("es"))).slice(0,query.trim()?40:12),[contacts,query]);
  const apps=useMemo(()=>[...externals].sort((a,b)=>(usage[b.id]??0)-(usage[a.id]??0)||externals.indexOf(a)-externals.indexOf(b)),[usage]);
  const remember=(id:ExternalAction)=>{
   const next={...usage,[id]:Math.min(10000,(usage[id]??0)+1)};setUsage(next);
@@ -144,7 +144,7 @@ export function JCardShareSheet({visible,onClose,ownerId,name,side}:{visible:boo
         return <Pressable key={person.id} accessibilityRole="checkbox" accessibilityState={{checked:active}} accessibilityLabel={"Enviar a "+person.name}
          onPress={()=>toggle(person.id)} style={{width:width<350?"33.333%":"25%",alignItems:"center",gap:5,paddingHorizontal:3,minHeight:102}}>
          <View style={{width:56,height:56,borderRadius:28,backgroundColor:color.cream,borderWidth:active?3:1,borderColor:active?color.yellow:color.line,alignItems:"center",justifyContent:"center"}}>
-          <Text style={{fontWeight:"800",fontSize:16,color:color.ink}}>{initials(person.name)}</Text>
+          <PublicProfileAvatar userId={person.id} name={person.name} size={50}/>
           {active&&<View style={{position:"absolute",bottom:-3,right:-4,backgroundColor:color.yellow,width:20,height:20,borderRadius:10,alignItems:"center",justifyContent:"center"}}><Ionicons name="checkmark" size={15} color={color.ink}/></View>}
          </View>
          <Text numberOfLines={2} style={{textAlign:"center",fontSize:11,lineHeight:14,color:color.ink}}>{person.name}</Text>
