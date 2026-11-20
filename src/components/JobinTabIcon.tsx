@@ -1,36 +1,40 @@
 import {memo} from "react";
-import Svg,{Path,Circle,Rect} from "react-native-svg";
+import {Ionicons} from "@expo/vector-icons";
+import Svg,{Path,Circle} from "react-native-svg";
 import {JobeenMessageIcon} from "./JobeenMessageIcon";
 
 export type JobinTabName="index"|"streams"|"videos"|"shop"|"inbox"|"profile";
 
 /**
- * Five public tabs: hollow when inactive, solid when selected.
- * Uses only theme-supplied colors. Videos keeps the larger size assigned by
- * the tab layout; no geometry, navigation or focus effects live here.
+ * Jobeen iconography: rounded contours, consistent optical weight and
+ * honeycomb geometry when meaningful. Same silhouette in both focus states.
+ * See AGENTS.md for the permanent visual standard.
  */
+const HOME_SILHOUETTE="M4.4 12.4 12.9 5.4 Q14 4.4 15.1 5.4 L23.6 12.4 Q24.2 12.9 24.2 13.7 V22.3 Q24.2 24 22.5 24 H5.5 Q3.8 24 3.8 22.3 V13.7 Q3.8 12.9 4.4 12.4 Z";
+const HOME_DOOR="M10.9 24.6 V16.5 Q10.9 15.8 11.6 15.8 H16.4 Q17.1 15.8 17.1 16.5 V24.6 Z";
+const PROFILE_SHOULDERS="M4.8 24.2 Q3.2 24.2 3.2 22.6 V21.6 C3.2 16.9 7.7 14.5 14 14.5 C20.3 14.5 24.8 16.9 24.8 21.6 V22.6 Q24.8 24.2 23.2 24.2 Z";
+const HEXA_PLAY="M22.5 5.5 Q26 3.5 29.5 5.5 L43 13.5 Q46 15.2 46 19 V33 Q46 36.8 43 38.5 L29.5 46.5 Q26 48.5 22.5 46.5 L9 38.5 Q6 36.8 6 33 V19 Q6 15.2 9 13.5 Z";
+const HEXA_TRIANGLE="M21.5 17.5 Q21.5 16 23 16.8 L34.5 24.5 Q36 26 34.5 27.5 L23 35.2 Q21.5 36 21.5 34.5 Z";
+
 function TabIcon({name,color,focused=false,size=25}:{name:JobinTabName;color:string;focused?:boolean;size?:number}){
  if(name==="inbox")return <JobeenMessageIcon size={size} color={color} filled={focused}/>;
- // Normalize the optical silhouette of the four standard tabs against Messages.
- // Identical canvas in active/inactive states prevents icon jumps.
- // Keep the visible outline close to the Messages icon's ~1.5px line weight.
- const isLargeCanvas=name==="videos"||name==="streams";
- const viewBox=isLargeCanvas?"0 0 28 28":"2 2 24 24";
- const stroke={stroke:color,strokeWidth:(isLargeCanvas?28:24)*1.55/size,strokeLinecap:"round" as const,strokeLinejoin:"round" as const};
+ // Reuse the exact rounded bag-handle icon from Messages > JShop.
+ if(name==="shop")return <Ionicons name={focused?"bag-handle":"bag-handle-outline"} size={size} color={color}/>;
+ const isVideo=name==="videos";
+ const viewBox=isVideo?"0 0 52 52":name==="streams"?"0 0 28 28":"2 2 24 24";
+ const coordinateSize=isVideo?52:name==="streams"?28:24;
+ const stroke={stroke:color,strokeWidth:coordinateSize*1.55/size,strokeLinecap:"round" as const,strokeLinejoin:"round" as const};
  return <Svg width={size} height={size} viewBox={viewBox} fill="none" accessibilityLabel={name}>
   {name==="index"&&(focused
-   ?<Path d="M3.5 12.3 14 3.8l10.5 8.5V24H3.5V12.3Z M10.6 15.9h6.8v8.3h-6.8v-8.3Z" fill={color} fillRule="evenodd"/>
-   :<Path d="M3.5 12.3 14 3.8l10.5 8.5V24h-7.1v-8h-6.8v8H3.5V12.3Z" {...stroke}/>)}
+   ?<Path d={HOME_SILHOUETTE+" "+HOME_DOOR} fill={color} fillRule="evenodd"/>
+   :<><Path d={HOME_SILHOUETTE} {...stroke}/><Path d="M10.9 24 V16.5 Q10.9 15.8 11.6 15.8 H16.4 Q17.1 15.8 17.1 16.5 V24" {...stroke}/></>)}
   {name==="streams"&&<><Circle cx="14" cy="14" r="2.4" fill={color}/><Path d="M9.4 9.4a6.5 6.5 0 0 0 0 9.2M18.6 9.4a6.5 6.5 0 0 1 0 9.2M6.2 6.2a11 11 0 0 0 0 15.6M21.8 6.2a11 11 0 0 1 0 15.6" {...stroke}/></>}
   {name==="videos"&&(focused
-   ?<Path d="M9.7 3.6H18.3C22.3 3.6 24.4 5.7 24.4 9.7V18.3C24.4 22.3 22.3 24.4 18.3 24.4H9.7C5.7 24.4 3.6 22.3 3.6 18.3V9.7C3.6 5.7 5.7 3.6 9.7 3.6Z M10 9.6 18 14l-8 4.4V9.6Z" fill={color} fillRule="evenodd"/>
-   :<><Rect x="3.6" y="3.6" width="20.8" height="20.8" rx="6" {...stroke}/><Path d="M10 9.6 18 14l-8 4.4V9.6Z" {...stroke}/></>)}
-  {name==="shop"&&(focused
-   ?<><Path d="M3.7 10.2h20.6l-1.2 13.9H4.9l-1.2-13.9Z M11.1 15.4h5.8v1.9h-5.8v-1.9Z" fill={color} fillRule="evenodd"/><Path d="M10.1 10.1V8a3.9 3.9 0 0 1 7.8 0v2.1" {...stroke}/></>
-   :<><Path d="M3.7 10.2h20.6l-1.2 13.9H4.9l-1.2-13.9ZM10.1 10.1V8a3.9 3.9 0 0 1 7.8 0v2.1" {...stroke}/><Path d="M12 15.2h4" {...stroke}/></>)}
+   ?<Path d={HEXA_PLAY+" "+HEXA_TRIANGLE} fill={color} fillRule="evenodd"/>
+   :<><Path d={HEXA_PLAY} {...stroke}/><Path d={HEXA_TRIANGLE} {...stroke}/></>)}
   {name==="profile"&&(focused
-   ?<><Circle cx="14" cy="9" r="4.4" fill={color}/><Path d="M3 24.4v-2.7c0-4.65 4.7-7.2 11-7.2s11 2.55 11 7.2v2.7H3Z" fill={color}/></>
-   :<><Circle cx="14" cy="9" r="4.4" {...stroke}/><Path d="M3 24.4v-2.7c0-4.65 4.7-7.2 11-7.2s11 2.55 11 7.2v2.7H3Z" {...stroke}/></>)}
+   ?<><Circle cx="14" cy="9" r="4.4" fill={color}/><Path d={PROFILE_SHOULDERS} fill={color}/></>
+   :<><Circle cx="14" cy="9" r="4.4" {...stroke}/><Path d={PROFILE_SHOULDERS} {...stroke}/></>)}
  </Svg>;
 }
 export const JobinTabIcon=memo(TabIcon);

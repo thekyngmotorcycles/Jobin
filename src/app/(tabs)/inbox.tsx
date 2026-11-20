@@ -4,6 +4,7 @@ import {useCallback,useEffect,useState} from "react";
 import {ActivityIndicator,Image,Pressable,ScrollView,Text,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {AccountAvatar} from "../../components/AccountAvatar";
+import {JobeenMessageIcon} from "../../components/JobeenMessageIcon";
 import {SocialHeader} from "../../components/SocialHeader";
 import {Button,useUi} from "../../components/ui";
 import {loadPublicCard} from "../../lib/professional-api";
@@ -95,14 +96,14 @@ export default function Messages(){
    <SocialHeader />
    <View style={{paddingHorizontal:16,gap:14,marginTop:8}}>
     <View accessibilityRole="tablist" style={{flexDirection:"row",gap:10}}>
-     {([{key:"chats",label:"Chats",icon:"chatbubble-ellipses-outline"},{key:"jshop",label:"JShop",icon:"bag-handle-outline"}] as const).map(option=>{
+     {([{key:"chats",label:"Chats"},{key:"jshop",label:"JShop"}] as const).map(option=>{
       const selected=tab===option.key;
       return <Pressable key={option.key} accessibilityRole="tab" accessibilityState={{selected}}
        accessibilityLabel={option.label} onPress={()=>setTab(option.key)}
        style={({pressed})=>({flex:1,minHeight:53,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:10,
         borderWidth:1,borderColor:selected?t.yellow:t.line,borderRadius:18,backgroundColor:tabBackground(selected),
         opacity:pressed?0.75:1})}>
-       <Ionicons name={option.icon} size={22} color={t.ink}/>
+       {option.key==="chats"?<JobeenMessageIcon size={22} color={t.ink} filled={false}/>:<Ionicons name="bag-handle-outline" size={22} color={t.ink}/>}
        <Text numberOfLines={1} style={{fontSize:15,fontWeight:selected?"800":"600",color:t.ink}}>{option.label}</Text>
       </Pressable>;
      })}
