@@ -6,6 +6,7 @@ import {cvRequests,respondCV,revokeCV,type CVRequest} from "../../lib/cv-access"
 import {identityVerified} from "../../lib/identity-status";
 import {pickBusinessGalleryPhoto,uploadBusinessPhoto} from "../../lib/business-media";
 import {cloudOwner} from "../../lib/jcard-cloud";
+import {EMPTY_BUSINESS_CARD,readScopedBusinessCard,writeScopedBusinessCard} from "../../lib/business-card-cache";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { employmentMonths,experienceLabel } from "../../lib/employment";
 import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness,readBusinessRating,readBusinessExcellence } from "../../lib/jcard-cloud";
@@ -94,15 +95,16 @@ export default function Profile() {
   const [businessOpen,setBusinessOpen]=useState(false);
   const [businessCategoryOpen,setBusinessCategoryOpen]=useState(false);
   const [businessCategoryQuery,setBusinessCategoryQuery]=useState("");
-  const [business,setBusiness]=useState<BusinessCardData>({name:"",opened:"",closed:"",services:[],location:"",licenseVerified:false,rating:null,reviewCount:0});
+  const [business,setBusiness]=useState<BusinessCardData>(EMPTY_BUSINESS_CARD);
+  const [businessOwner,setBusinessOwner]=useState("");
   const [businessDraft,setBusinessDraft]=useState({name:"",opened:"",closed:"",services:"",category:"",email:"",emailSecondary:"",phone:"",phoneSecondary:"",phoneLabel:"",phoneSecondaryLabel:"",location:""});
-  useEffect(()=>{let live=true;void readCloudBusiness().then(async row=>{if(!live)return;if(row){setBusiness(b=>({...b,...row}));return;}const raw=await AsyncStorage.getItem("jobin.business.card.v1");if(raw){const local=JSON.parse(raw) as BusinessCardData;await writeCloudBusiness(local);if(live)setBusiness(local);}}).catch(()=>{AsyncStorage.getItem("jobin.business.card.v1").then(raw=>{if(live&&raw)setBusiness(JSON.parse(raw) as BusinessCardData);}).catch(()=>{});});return()=>{live=false;};},[]);
+  // Business records are loaded only for the authenticated owner below; never import an unscoped legacy card.
   
   function changePersonalPhoto(){router.push("/personal-avatar-editor");}
   const [businessImageBusy,setBusinessImageBusy]=useState(false);
-  async function replaceBusinessImage(slot:"banner"|"avatar"){if(slot==="avatar"){router.push({pathname:"/personal-avatar-editor",params:{target:"business"}});return;}if(businessImageBusy)return;setBusinessImageBusy(true);try{const photo=await pickBusinessGalleryPhoto(slot);if(!photo)return;const owner=await cloudOwner();const uploaded=await uploadBusinessPhoto("business-profile-media",owner,photo,slot);const updated={...business,[slot==="banner"?"bannerUrl":"avatarUrl"]:uploaded.url};await writeCloudBusiness(updated);setBusiness(updated);await AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(updated));}catch(e){setNotice(e instanceof Error?e.message:"No se pudo actualizar la imagen.");}finally{setBusinessImageBusy(false);}}
+  async function replaceBusinessImage(slot:"banner"|"avatar"){if(slot==="avatar"){router.push({pathname:"/personal-avatar-editor",params:{target:"business"}});return;}if(businessImageBusy)return;setBusinessImageBusy(true);try{const photo=await pickBusinessGalleryPhoto(slot);if(!photo)return;const owner=await cloudOwner();const uploaded=await uploadBusinessPhoto("business-profile-media",owner,photo,slot);if(owner!==workspace.data?.card.id||owner!==businessOwner)throw new Error("La cuenta cambió. Abre de nuevo tu JCard.");const updated={...business,[slot==="banner"?"bannerUrl":"avatarUrl"]:uploaded.url};await writeCloudBusiness(updated,owner);await writeScopedBusinessCard(owner,updated);setBusiness(updated);}catch(e){setNotice(e instanceof Error?e.message:"No se pudo actualizar la imagen.");}finally{setBusinessImageBusy(false);}}
   function editBusiness(){router.push("/jcard-business-edit");}
-  function saveBusiness(){Keyboard.dismiss();if(businessDraft.name.trim().length>30){setNotice("El nombre de empresa admite un máximo de 30 caracteres.");return;}if(businessDraft.email.trim()&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessDraft.email.trim())){setNotice("Revisa el correo empresarial.");return;}if(businessDraft.emailSecondary.trim()&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessDraft.emailSecondary.trim())){setNotice("Revisa el correo secundario.");return;}for(const label of [businessDraft.phoneLabel,businessDraft.phoneSecondaryLabel]){if(!validPhoneLabel(label)){setNotice("La identificación permite hasta 4 caracteres de texto o un único emoji.");return;}}if(businessDraft.services.length>100){setNotice("Los servicios admiten un máximo de 100 caracteres.");return;}if(businessDraft.category&&!["Climatización HVAC","Refrigeración"].includes(businessDraft.category)&&!professionCatalog.data?.categories.some(c=>c.code===businessDraft.category||c.label===businessDraft.category)){setNotice("Selecciona una categoría del catálogo de Jobin.");return;}const services=businessDraft.services.split(",").map(x=>x.trim()).filter(Boolean);if(services.length>3){setNotice("Máximo tres servicios.");return;}const opened=businessDraft.opened.trim(),closed=businessDraft.closed.trim(),year=new Date().getFullYear();if((opened&&(!/^\d{4}$/.test(opened)||Number(opened)>year||Number(opened)<1800))||(closed&&(!/^\d{4}$/.test(closed)||Number(closed)>year||Number(closed)<Number(opened)))){setNotice("Revisa los años de apertura y cierre.");return;}const updated={...business,...businessDraft,name:businessDraft.name.trim(),category:professionCatalog.data?.categories.find(c=>c.code===businessDraft.category||c.label===businessDraft.category)?.label??businessDraft.category,email:businessDraft.email.trim(),emailSecondary:businessDraft.emailSecondary.trim(),phone:businessDraft.phone.trim(),phoneSecondary:businessDraft.phoneSecondary.trim(),phoneLabel:businessDraft.phoneLabel.trim(),phoneSecondaryLabel:businessDraft.phoneSecondaryLabel.trim(),location:businessDraft.location.trim(),services,licenseVerified:business.licenseVerified};setBusiness(updated);void AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(updated)).catch(()=>setNotice("No se pudo guardar el reverso."));void writeCloudBusiness(updated).catch(()=>setNotice("Guardado localmente, pero no se pudo sincronizar."));setBusinessOpen(false);}
+  function saveBusiness(){Keyboard.dismiss();if(businessDraft.name.trim().length>30){setNotice("El nombre de empresa admite un máximo de 30 caracteres.");return;}if(businessDraft.email.trim()&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessDraft.email.trim())){setNotice("Revisa el correo empresarial.");return;}if(businessDraft.emailSecondary.trim()&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessDraft.emailSecondary.trim())){setNotice("Revisa el correo secundario.");return;}for(const label of [businessDraft.phoneLabel,businessDraft.phoneSecondaryLabel]){if(!validPhoneLabel(label)){setNotice("La identificación permite hasta 4 caracteres de texto o un único emoji.");return;}}if(businessDraft.services.length>100){setNotice("Los servicios admiten un máximo de 100 caracteres.");return;}if(businessDraft.category&&!["Climatización HVAC","Refrigeración"].includes(businessDraft.category)&&!professionCatalog.data?.categories.some(c=>c.code===businessDraft.category||c.label===businessDraft.category)){setNotice("Selecciona una categoría del catálogo de Jobin.");return;}const services=businessDraft.services.split(",").map(x=>x.trim()).filter(Boolean);if(services.length>3){setNotice("Máximo tres servicios.");return;}const opened=businessDraft.opened.trim(),closed=businessDraft.closed.trim(),year=new Date().getFullYear();if((opened&&(!/^\d{4}$/.test(opened)||Number(opened)>year||Number(opened)<1800))||(closed&&(!/^\d{4}$/.test(closed)||Number(closed)>year||Number(closed)<Number(opened)))){setNotice("Revisa los años de apertura y cierre.");return;}const updated={...business,...businessDraft,name:businessDraft.name.trim(),category:professionCatalog.data?.categories.find(c=>c.code===businessDraft.category||c.label===businessDraft.category)?.label??businessDraft.category,email:businessDraft.email.trim(),emailSecondary:businessDraft.emailSecondary.trim(),phone:businessDraft.phone.trim(),phoneSecondary:businessDraft.phoneSecondary.trim(),phoneLabel:businessDraft.phoneLabel.trim(),phoneSecondaryLabel:businessDraft.phoneSecondaryLabel.trim(),location:businessDraft.location.trim(),services,licenseVerified:business.licenseVerified};void(async()=>{const owner=await cloudOwner();if(owner!==workspace.data?.card.id||owner!==businessOwner)throw new Error("La cuenta cambió. Abre de nuevo tu JCard.");await writeCloudBusiness(updated,owner);await writeScopedBusinessCard(owner,updated);setBusiness(updated);setBusinessOpen(false);})().catch(e=>setNotice(e instanceof Error?e.message:"No se pudo guardar la JCard."));}
   const [sendOpen, setSendOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editingId,setEditingId] = useState<string|null>(null);
@@ -115,7 +117,31 @@ export default function Profile() {
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address:"", contact:"" });
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace,true);
- useFocusEffect(useCallback(()=>{if(consumePersonalPhotoChange())void workspace.reload();void AsyncStorage.getItem("jobin.business.card.v1").then(raw=>{if(raw)setBusiness(JSON.parse(raw) as BusinessCardData);}).catch(()=>{});},[workspace.reload]));
+ useFocusEffect(useCallback(()=>{
+  if(consumePersonalPhotoChange())void workspace.reload();
+  const owner=workspace.data?.card.id;
+  let active=true;
+  if(!owner){setBusinessOwner("");setBusiness(EMPTY_BUSINESS_CARD);return()=>{active=false;};}
+  // Server data is authoritative. A legacy local value is never migrated or
+  // uploaded because it might belong to a different signed-in account.
+  void (async()=>{
+   try{
+    if((await cloudOwner())!==owner)return;
+    const row=await readCloudBusiness();
+    if(!active||(await cloudOwner())!==owner)return;
+    const current={...EMPTY_BUSINESS_CARD,...(row??{})};
+    setBusiness(current);setBusinessOwner(owner);
+    if(row)void writeScopedBusinessCard(owner,current).catch(()=>{});
+   }catch{
+    const cached=await readScopedBusinessCard(owner).catch(()=>null);
+    if(active&&(await cloudOwner().catch(()=>null))===owner){
+     setBusiness(cached??EMPTY_BUSINESS_CARD);setBusinessOwner(owner);
+     setNotice("No se pudo sincronizar la JCard de negocio. Verifica tu conexión.");
+    }
+   }
+  })();
+  return()=>{active=false;};
+ },[workspace.reload,workspace.data?.card.id]));
   useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void identityVerified(id).then(v=>{if(live)setVerifiedIdentity(v);}).catch(()=>{if(live)setVerifiedIdentity(false);});return()=>{live=false;};},[workspace.data?.card.id]);
   const professionCatalog=useProfessionalData(loadCatalog);
   const [showEmploymentProfessionPicker,setShowEmploymentProfessionPicker]=useState(false);
@@ -241,7 +267,7 @@ export default function Profile() {
         <Animated.View style={{gap:16,paddingHorizontal:16,paddingBottom:20,zIndex:0,transform:[{translateY:heroParallax}]}}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         <ProfileIdentityHeader
-          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...business,...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
+          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
             {!!workspace.error&&isJCardConnectivityError(workspace.error)&&<View style={{marginTop:12}}>
               <JCardOfflineNotice retry={workspace.reload} cached/>
             </View>}

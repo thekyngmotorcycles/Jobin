@@ -4,7 +4,7 @@ import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "
 import {useEffect,useState} from "react";
 import {router} from "expo-router";
 import {Pressable,Text,TextInput,View} from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {EMPTY_BUSINESS_CARD,readScopedBusinessCard,writeScopedBusinessCard} from "../lib/business-card-cache";
 import {Ionicons} from "@expo/vector-icons";
 import {Screen,Button,useUi} from "../components/ui";
 import {readCloudBusiness,writeCloudBusiness,checkBusinessHandleAvailable,BUSINESS_HANDLE_PATTERN} from "../lib/jcard-cloud";
@@ -12,7 +12,7 @@ import type {BusinessCardData} from "../lib/jcard";
 
 type Field="name"|"businessHandle"|"category"|"opened"|"closed"|"email"|"emailSecondary"|"phone"|"phoneLabel"|"phoneSecondary"|"phoneSecondaryLabel"|"location"|"services";
 type Section="main"|"contact"|"services"|"privacy";
-const empty:BusinessCardData={name:"",category:"",opened:"",closed:"",email:"",emailSecondary:"",phone:"",phoneSecondary:"",phoneLabel:"",phoneSecondaryLabel:"",location:"",services:[],licenseVerified:false,rating:null,reviewCount:0};
+const empty:BusinessCardData=EMPTY_BUSINESS_CARD;
 const fields:Record<Field,string>={name:"Nombre de empresa",businessHandle:"Usuario empresarial (opcional)",category:"Categoría profesional",opened:"Año de apertura",closed:"Año de cierre",email:"Correo empresarial",emailSecondary:"Correo secundario",phone:"Teléfono empresarial",phoneLabel:"Identificador de teléfono 1",phoneSecondary:"Teléfono secundario",phoneSecondaryLabel:"Identificador de teléfono 2",location:"Ubicación",services:"Servicios (máximo 3, separados por comas)"};
 const sections:{id:Section;title:string;icon:React.ComponentProps<typeof Ionicons>["name"];keys:Field[]}[]=[
  {id:"main",title:"Datos principales",icon:"business-outline",keys:["name","businessHandle","category","opened","closed"]},
@@ -22,12 +22,35 @@ const sections:{id:Section;title:string;icon:React.ComponentProps<typeof Ionicon
 export default function BusinessEditor(){
  const {s,colors}=useUi();
  const [data,setData]=useState<BusinessCardData>(empty);
+ const [editorOwner,setEditorOwner]=useState("");
  const [open,setOpen]=useState<Section|null>(null);
  const [handleFeedback,setHandleFeedback]=useState("");
  const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
  useEffect(()=>{let live=true;void appearanceOwner().then(readJCardVisibility).then(v=>{if(live)setVisibility(v);}).catch(()=>{});return()=>{live=false;};},[]);
  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
- useEffect(()=>{let live=true;void (async()=>{try{const local=await AsyncStorage.getItem("jobin.business.card.v1");const cached=local?JSON.parse(local) as BusinessCardData:empty;if(live)setData({...empty,...cached});const cloud=await readCloudBusiness();if(live&&cloud)setData(current=>({...current,...cloud}));}catch{if(live)setNotice("No se pudo sincronizar; revisa los datos antes de guardar.");}finally{if(live)setLoading(false);}})();return()=>{live=false;};},[]);
+ useEffect(()=>{
+  let live=true;
+  void(async()=>{
+   try{
+    const owner=await appearanceOwner();
+    if(!live)return;
+    setEditorOwner(owner);setData(EMPTY_BUSINESS_CARD);
+    try{
+     const cloud=await readCloudBusiness();
+     if(!live||(await appearanceOwner())!==owner)return;
+     const next={...EMPTY_BUSINESS_CARD,...(cloud??{})};
+     setData(next);
+     if(cloud)void writeScopedBusinessCard(owner,next).catch(()=>{});
+    }catch{
+     const cached=await readScopedBusinessCard(owner).catch(()=>null);
+     if(live&&(await appearanceOwner().catch(()=>null))===owner)setData(cached??EMPTY_BUSINESS_CARD);
+     if(live)setNotice("Sin conexión a la nube. No se sobrescribirán datos de otra cuenta.");
+    }
+   }catch{if(live)setNotice("Inicia sesión para editar tu JCard.");}
+   finally{if(live)setLoading(false);}
+  })();
+  return()=>{live=false;};
+ },[]);
  const update=(key:Field,value:string)=>setData(d=>({...d,[key]:key==="services"?value.split(",").map(v=>v.trim()):key==="businessHandle"?value.replace(/^@/,"").toLowerCase():value}));
  useEffect(()=>{
   if(open!=="main")return;
@@ -52,8 +75,8 @@ export default function BusinessEditor(){
   if(section==="services"&&(data.services.filter(Boolean).length>3||data.services.join(", ").length>100)){setNotice("Máximo 3 servicios y 100 caracteres.");return;}
   if(section==="contact"&&[data.phoneLabel,data.phoneSecondaryLabel].some(v=>v&&Array.from(v).length>4)){setNotice("Identificadores: máximo 4 caracteres.");return;}
   setSaving(true);setNotice("");
-  try{if(section==="main"&&businessHandle&&!(await checkBusinessHandleAvailable(businessHandle)))throw new Error("Este usuario empresarial ya está ocupado.");
-   if(section==="privacy"){await saveJCardVisibility(visibility);}else{const stored=await readCloudBusiness()??empty;const keys=sections.find(item=>item.id===section)?.keys??[];const clean:BusinessCardData={...empty,...stored};for(const key of keys){(clean as unknown as Record<string,unknown>)[key]=key==="services"?data.services.filter(Boolean):key==="name"?data.name.trim():key==="businessHandle"?businessHandle:data[key];}await writeCloudBusiness(clean);await AsyncStorage.setItem("jobin.business.card.v1",JSON.stringify(clean));}setOpen(null);}
+  try{if(!editorOwner||(await appearanceOwner())!==editorOwner)throw new Error("La cuenta cambió. Abre de nuevo tu JCard.");if(section==="main"&&businessHandle&&!(await checkBusinessHandleAvailable(businessHandle)))throw new Error("Este usuario empresarial ya está ocupado.");
+   if(section==="privacy"){await saveJCardVisibility(visibility);}else{const stored=await readCloudBusiness()??empty;const keys=sections.find(item=>item.id===section)?.keys??[];const clean:BusinessCardData={...empty,...stored};for(const key of keys){(clean as unknown as Record<string,unknown>)[key]=key==="services"?data.services.filter(Boolean):key==="name"?data.name.trim():key==="businessHandle"?businessHandle:data[key];}await writeCloudBusiness(clean,editorOwner);await writeScopedBusinessCard(editorOwner,clean);setData(clean);}setOpen(null);}
   catch(e){setNotice(e instanceof Error?e.message:"No se pudieron guardar los cambios.");}finally{setSaving(false);}
  }
  return <Screen demo={false} hideHeader hideFooter title="JCard de negocio" subtitle="">
