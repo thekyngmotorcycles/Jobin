@@ -13,6 +13,10 @@ create index jobeen_saved_jcards_owner_sorted
 create index jobeen_saved_jcards_target_idx
  on public.jobeen_saved_jcards(target_id,card_side);
 
+-- Public visibility is used by the insert policy; the authenticated role
+-- must be able to read the already-public visibility flags in CI and production.
+grant select on public.jcard_visibility to authenticated;
+
 alter table public.jobeen_saved_jcards enable row level security;
 revoke all on public.jobeen_saved_jcards from anon;
 grant select,insert,delete on public.jobeen_saved_jcards to authenticated;
