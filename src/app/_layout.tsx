@@ -31,7 +31,8 @@ function Navigation() {
  <Stack.Screen name="post/[id]" options={{title:"Publicación"}}/>
  <Stack.Screen name="story/create" options={{title:"Crear historia"}}/>
  <Stack.Screen name="story/[id]" options={{headerShown:false}}/>
- <Stack.Screen name="message-requests" options={{title:"Solicitudes de mensajes"}}/>
+ <Stack.Screen name="message" options={{headerShown:false}}/>
+  <Stack.Screen name="message-requests" options={{title:"Solicitudes de mensajes"}}/>
  <Stack.Screen name="jshop" options={{title:"JShop"}}/>
  <Stack.Screen name="jshop/publish" options={{title:"Nuevo anuncio"}}/>
  <Stack.Screen name="jshop/location" options={{headerShown:false,presentation:"transparentModal",animation:"slide_from_bottom"}}/>
