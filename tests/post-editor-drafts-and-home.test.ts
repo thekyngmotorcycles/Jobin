@@ -74,3 +74,21 @@ test("Mentioning with @ searches in the text field; accessible descriptions live
  assert.ok(feed.includes("photo_alt_texts"));
  assert.ok(!editor.includes('optionsOpen'));
 });
+
+test("A successful publish navigates to Home without waiting on draft Storage cleanup",()=>{
+ const submitted=editor.slice(editor.indexOf("async function submit()"),editor.indexOf("const eligible="));
+ const navigation=editor.slice(editor.indexOf("useEffect(()=>{\n  if(!editingDone"),editor.indexOf("// Only intercept removal"));
+ assert.ok(submitted.includes("const publishedId=await publishHomePost({"));
+ assert.ok(submitted.includes("await deletePostDraft(author,draftSnapshotRef.current.id,false)"));
+ assert.ok(submitted.includes("finishHome(publishedId)"));
+ assert.ok(submitted.includes("if(draftPaths.length)void requireSupabase().storage.from(DRAFT_PHOTO_BUCKET).remove(draftPaths).catch(()=>{});"));
+ assert.ok(submitted.indexOf("finishHome(publishedId)")<submitted.indexOf(".remove(draftPaths)"));
+ assert.ok(!submitted.includes("await deletePostDraft(author,draftSnapshotRef.current.id).catch"));
+ assert.ok(navigation.includes("const timer=setTimeout(()=>{"));
+ assert.ok(navigation.includes("navigation.goBack()"));
+ assert.ok(navigation.includes('router.replace("/(tabs)/index")'));
+ assert.ok(navigation.includes("return()=>clearTimeout(timer)"));
+ assert.ok(!navigation.includes("InteractionManager.runAfterInteractions("));
+ assert.ok(editor.includes("setExitOpen(false);setDraftsOpen(false);setPreviewOpen(false);"));
+ assert.ok(editor.includes("setAltPhotoId(null);setAudienceMenuOpen(false);"));
+});
