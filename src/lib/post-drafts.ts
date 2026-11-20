@@ -1,25 +1,26 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {requireSupabase} from "./supabase";
 import type {FeedAudience,FeedPostKind} from "./social-content";
+import type {PostBusinessMention} from "./post-mentions";
 
 export const DRAFT_PHOTO_BUCKET="jobeen-post-draft-photos";
 export type PostDraftPhoto={id:string;uri:string;backupPath?:string;altText:string};
 export type PostDraft={
  id:string;updatedAt:number;body:string;kind:FeedPostKind;photos:PostDraftPhoto[];
  mediaId:string;audience:FeedAudience;audienceFollowers:boolean;audienceContacts:boolean;
- consent:boolean;mentionedProfileIds:string[];
+ consent:boolean;mentionedProfileIds:string[];businessMentions?:PostBusinessMention[];
 };
 export const MAX_POST_DRAFTS=10;
 const key=(owner:string)=>"jobeen.post.drafts.v1."+owner;
 
 export function hasDraftContent(draft:PostDraft){
- return Boolean(draft.body.trim()||draft.photos.length||draft.mediaId||draft.mentionedProfileIds.length);
+ return Boolean(draft.body.trim()||draft.photos.length||draft.mediaId||(draft.mentionedProfileIds?.length??0)||(draft.businessMentions?.length??0));
 }
 export function emptyPostDraft():PostDraft{
  return {
   id:Date.now().toString(36)+"-"+Math.random().toString(36).slice(2),
   updatedAt:Date.now(),body:"",kind:"text",photos:[],mediaId:"",
-  audience:"public",audienceFollowers:true,audienceContacts:false,consent:false,mentionedProfileIds:[]
+  audience:"public",audienceFollowers:true,audienceContacts:false,consent:false,mentionedProfileIds:[],businessMentions:[]
  };
 }
 export async function readPostDrafts(owner:string):Promise<PostDraft[]>{
