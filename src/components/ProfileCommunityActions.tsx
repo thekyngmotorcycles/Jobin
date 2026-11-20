@@ -1,5 +1,6 @@
 import {jobeenTokens} from "../theme/jobeen";
 import {JCardShareSheet} from "./JCardShareSheet";
+import {JobeenMessageIcon} from "./JobeenMessageIcon";
 import {jcardCommon} from "../theme/jcard";
 import {useCallback,useEffect,useState} from "react";
 import {Alert,Modal,Pressable,StyleSheet,Text,View} from "react-native";
@@ -61,7 +62,7 @@ export function ProfileCommunityActions({user,name,menuOpen=false,onMenuClose,on
     <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{color:jobeen.ink,fontWeight:"700",fontSize:14}}>{contactLabel}</Text>
    </Pressable>
    <Pressable accessibilityRole="button" accessibilityLabel={"Enviar mensaje a "+name} onPress={()=>router.push({pathname:"/message",params:{user,name}})} style={{width:52,height:52,flexDirection:"row",justifyContent:"center",alignItems:"center",borderRadius:13,borderWidth:1,borderColor:jobeen.yellow,backgroundColor:jobeen.cream}}>
-    <Ionicons name="paper-plane-outline" size={22} color={jobeen.ink}/>
+    <JobeenMessageIcon size={25} color={jobeen.ink}/>
    </Pressable>
   </View>
   <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={()=>onMenuClose?.()}>
