@@ -4,6 +4,7 @@ import {router,useLocalSearchParams} from "expo-router";
 import {Ionicons} from "@expo/vector-icons";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {requireSupabase} from "../lib/supabase";
+import {sharedJCardFromMessage} from "../lib/jcard-sharing";
 import {useUi} from "../components/ui";
 import {jobeenTokens} from "../theme/jobeen";
 import {useTheme} from "../state/ThemeProvider";
@@ -129,9 +130,19 @@ export default function DirectMessage(){
     </Pressable>}
    </View>}
    <ScrollView style={{flex:1}} contentContainerStyle={{padding:16,gap:10,flexGrow:1,justifyContent:"flex-end"}}>
-    {loading?<ActivityIndicator color={brand.yellow}/>:items.length===0?<Text style={{color:colors.muted,textAlign:"center"}}>{conversation?"Preguntá por este artículo. El vendedor recibirá tu mensaje.":"Inicia una conversación profesional."}</Text>:items.map(item=><View key={item.id} style={{alignSelf:item.sender_id===me?"flex-end":"flex-start",maxWidth:"85%",padding:12,borderRadius:16,backgroundColor:item.sender_id===me?brand.cream:brand.surface,borderWidth:1,borderColor:brand.line}}>
-      <Text style={{color:brand.ink}}>{item.body}</Text>
-     </View>)}
+    {loading?<ActivityIndicator color={brand.yellow}/>:items.length===0?<Text style={{color:colors.muted,textAlign:"center"}}>{conversation?"Preguntá por este artículo. El vendedor recibirá tu mensaje.":"Inicia una conversación profesional."}</Text>:items.map(item=>{
+      const shared=sharedJCardFromMessage(item.body);
+      return <View key={item.id} style={{alignSelf:item.sender_id===me?"flex-end":"flex-start",maxWidth:"85%",padding:12,borderRadius:16,backgroundColor:item.sender_id===me?brand.cream:brand.surface,borderWidth:1,borderColor:brand.line,gap:9}}>
+       <Text style={{color:brand.ink}}>{item.body}</Text>
+       {!!shared&&<Pressable accessibilityRole="link" accessibilityLabel={"Abrir JCard "+(shared.side==="business"?"empresarial":"personal")}
+        onPress={()=>router.push({pathname:"/jcard",params:{user:shared.userId,card:shared.side}})}
+        style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:8,backgroundColor:brand.surface,borderWidth:1,borderColor:brand.line,borderRadius:11,paddingHorizontal:12}}>
+        <Ionicons name="id-card-outline" size={19} color={brand.ink}/>
+        <Text style={{fontSize:13,fontWeight:"700",color:brand.ink}}>Ver JCard {shared.side==="business"?"empresarial":"personal"}</Text>
+        <Ionicons name="chevron-forward" size={16} color={brand.ink2}/>
+       </Pressable>}
+      </View>;
+     })}
     {!!error&&<Text accessibilityLiveRegion="polite" style={{color:colors.ink}}>{error}</Text>}
    </ScrollView>
    <View style={{flexDirection:"row",alignItems:"flex-end",gap:8,padding:12,borderTopWidth:1,borderTopColor:brand.line}}>
