@@ -22,7 +22,14 @@ async function sessionUser(){
 /** Public JCards need no owner acceptance. SQL RLS verifies that the face is visible. */
 export async function saveVisibleJCard(targetId:string,side:SavedJCardSide):Promise<void>{
  assertTarget(targetId);const uid=await sessionUser();
- const {error}=await (requireSupabase() as any).from("jobeen_saved_jcards")
+ const db=requireSupabase() as any;
+ if(side==="business"){
+  const {data:business,error:businessError}=await db.from("jcard_business_details")
+   .select("name").eq("owner_id",targetId).maybeSingle();
+  if(businessError)throw new Error(businessError.message);
+  if(!business?.name?.trim())throw new Error("Esta cuenta no tiene una JCard empresarial pública disponible.");
+ }
+ const {error}=await db.from("jobeen_saved_jcards")
   .insert({target_id:targetId,card_side:side,saver_id:uid});
  if(error && error.code!=="23505")throw new Error(error.message||"No se pudo guardar la JCard pública.");
 }
