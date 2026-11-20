@@ -22,13 +22,13 @@ test("Saved JCards are private; visitor tabs do not expose owner gallery",()=>{
  assert.ok(owner.includes('useState<Mode>("grid")'));
  assert.ok(visitor.includes('useState<ProfileSection>("grid")'));
 });
-test("Unimplemented persistence is never represented as fake saved cards",()=>{
+test("Saved JCards are live references; only a genuinely empty collection shows an empty state",()=>{
  assert.ok(gallery.includes("Todavía no guardaste ninguna JCard"));
- assert.ok(gallery.includes("tu colección privada")||gallery.includes("Tu colección privada"));
- assert.ok(gallery.includes("siguientes etapas"));
+ assert.ok(gallery.includes("listSavedJCards"));
+ assert.ok(gallery.includes("useFocusEffect"));
+ assert.ok(gallery.includes("item.available"));
  assert.ok(!gallery.includes("AsyncStorage"));
- assert.ok(!gallery.includes("useEffect("));
- assert.ok(!gallery.includes("Guardar ahora"));
+ assert.ok(!gallery.includes("DEMO_SAVED_JCARDS"));
 });
 test("Preserve both already-approved parallax accordion interactions verbatim",()=>{
  for(const page of [owner,visitor]){

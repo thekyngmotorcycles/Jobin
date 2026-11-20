@@ -8,7 +8,7 @@ import {router,useFocusEffect} from "expo-router";
 import {contactState,inviteContact,replyContactRequest,removeContactRequest,type ContactRequest} from "../lib/professional-contacts";
 import {requireSupabase} from "../lib/supabase";
 import {useUi} from "./ui";
-export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void}){
+export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose,onToggleSaved,savedJCard=false,savingJCard=false,visibleCardSide="personal"}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void;onToggleSaved?:()=>void;savedJCard?:boolean;savingJCard?:boolean;visibleCardSide?:"personal"|"business"}){
  const {s,colors}=useUi();const insets=useSafeAreaInsets();const jobeen=jobeenTokens("light");const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
  const [contact,setContact]=useState<ContactRequest|null>(null),[viewer,setViewer]=useState("");
  useFocusEffect(useCallback(()=>{let active=true;void contactState(user).then(value=>{if(active){setContact(value.request);setViewer(value.mine);}}).catch(()=>{if(active)setContact(null);});return()=>{active=false;};},[user]));
@@ -66,6 +66,9 @@ export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClos
    <View style={{flex:1,backgroundColor:jcardCommon.scrim,paddingTop:insets.top+65,paddingHorizontal:16,alignItems:"flex-end"}}>
     <Pressable accessibilityLabel="Cerrar opciones del perfil" onPress={()=>onMenuClose?.()} style={StyleSheet.absoluteFill}/>
     <View style={{width:260,maxWidth:"85%",padding:10,borderWidth:1,borderColor:colors.line,backgroundColor:colors.paper,borderRadius:14,gap:5}}>
+   {onToggleSaved&&<Pressable accessibilityRole="button" disabled={savingJCard} onPress={()=>{onMenuClose?.();onToggleSaved();}} style={{minHeight:48,padding:12,flexDirection:"row",alignItems:"center",gap:12}}>
+    <Ionicons name={savedJCard?"bookmark":"bookmark-outline"} size={21} color={colors.ink}/><Text style={s.text}>{savingJCard?"Actualizando…":savedJCard?"Quitar de mis JCards":visibleCardSide==="business"?"Guardar JCard empresarial":"Guardar JCard personal"}</Text>
+   </Pressable>}
    <Pressable accessibilityRole="button" onPress={()=>{onMenuClose?.();void Share.share({message:"JCard de "+name+" · "+url,url});}} style={{padding:12,flexDirection:"row",gap:12}}><Ionicons name="share-social-outline" size={21} color={colors.ink}/><Text style={s.text}>Compartir perfil</Text></Pressable>
    <Pressable accessibilityRole="button" onPress={()=>void block()} style={{padding:12,flexDirection:"row",gap:12}}><Ionicons name="ban-outline" size={21} color={colors.ink}/><Text style={s.text}>Bloquear perfil</Text></Pressable>
    <Pressable accessibilityRole="button" onPress={()=>{onMenuClose?.();router.push({pathname:"/report-profile",params:{user}});}} style={{padding:12,flexDirection:"row",gap:12}}><Ionicons name="flag-outline" size={21} color={colors.ink}/><Text style={s.text}>Denunciar perfil</Text></Pressable>
