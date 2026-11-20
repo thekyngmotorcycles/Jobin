@@ -21,9 +21,9 @@ async function sessionUser(){
 }
 /** Public JCards need no owner acceptance. SQL RLS verifies that the face is visible. */
 export async function saveVisibleJCard(targetId:string,side:SavedJCardSide):Promise<void>{
- assertTarget(targetId);await sessionUser();
+ assertTarget(targetId);const uid=await sessionUser();
  const {error}=await (requireSupabase() as any).from("jobeen_saved_jcards")
-  .insert({target_id:targetId,card_side:side,saver_id:(await sessionUser())});
+  .insert({target_id:targetId,card_side:side,saver_id:uid});
  if(error && error.code!=="23505")throw new Error(error.message||"No se pudo guardar la JCard pública.");
 }
 export async function removeSavedJCard(targetId:string,side:SavedJCardSide):Promise<void>{
