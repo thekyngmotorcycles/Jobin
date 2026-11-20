@@ -9,7 +9,7 @@ import {router,useFocusEffect} from "expo-router";
 import {contactState,inviteContact,replyContactRequest,removeContactRequest,type ContactRequest} from "../lib/professional-contacts";
 import {requireSupabase} from "../lib/supabase";
 import {useUi} from "./ui";
-export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose,onToggleSaved,savedJCard=false,savingJCard=false,visibleCardSide="personal",businessName}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void;onToggleSaved?:()=>void;savedJCard?:boolean;savingJCard?:boolean;visibleCardSide?:"personal"|"business";businessName?:string}){
+export function ProfileCommunityActions({user,name,menuOpen=false,onMenuClose,onToggleSaved,savedJCard=false,savingJCard=false,visibleCardSide="personal",businessName}:{user:string;name:string;menuOpen?:boolean;onMenuClose?:()=>void;onToggleSaved?:()=>void;savedJCard?:boolean;savingJCard?:boolean;visibleCardSide?:"personal"|"business";businessName?:string}){
  const {s,colors}=useUi();const insets=useSafeAreaInsets();const jobeen=jobeenTokens("light");const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
  const [contact,setContact]=useState<ContactRequest|null>(null),[viewer,setViewer]=useState("");
  const [shareOpen,setShareOpen]=useState(false);
