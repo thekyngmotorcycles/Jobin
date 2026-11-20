@@ -48,7 +48,8 @@ test("Business mention links navigate to the company's JCard business face, incl
  assert.ok(caption.includes('captionPieces(text,mentions)'));
  assert.ok(publicJcard.includes('initialSide={card==="business"?"business":"personal"}'));
  assert.ok(publicJcard.includes('business:publicBusiness??resource.data.business'));
- assert.ok(publicJcard.includes('user===viewer&&card!=="business"'));
+ assert.ok(publicJcard.includes('router.replace({pathname:"/(tabs)/profile",params:card==="business"?{card:"business"}:{}})'));
+ assert.ok(read("src/app/(tabs)/profile.tsx").includes('initialSide={card==="business"?"business":"personal"}'));
 });
 test("Previously published posts and personal mentions remain compatible",()=>{
  assert.ok(migration.includes("default '[]'::jsonb"));
