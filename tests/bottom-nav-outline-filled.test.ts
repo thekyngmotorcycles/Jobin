@@ -31,7 +31,8 @@ test("Keep Videos bigger, keyboard behavior, notification badge and inset",()=>{
  assert.ok(tabs.includes('route.name==="inbox"&&unreadInbox>0'));
  assert.ok(tabs.includes("tabBarHideOnKeyboard:true"));
  assert.ok(tabs.includes("height:NAVIGATION_ROW_HEIGHT+inset.bottom"));
- assert.ok(tabs.includes("paddingBottom:Math.max(5,inset.bottom)"));
+ assert.ok(tabs.includes("paddingBottom:Math.max(7,inset.bottom+2)"));
+ assert.ok(tabs.includes("paddingTop:3"));
  assert.ok(tabs.includes('tabBarBackground:()=> desktop?null:<NavigationFade/>'));
  assert.ok(tabs.includes('route.name==="videos"&&(pathname==="/streams"||pathname.endsWith("/streams"))'));
  assert.ok(tabs.includes('const {colors}=useTheme()'));
@@ -75,4 +76,26 @@ test("Approved rounded honeycomb icon rule is preserved for future work",()=>{
  assert.ok(rules.includes("No compilar ni generar un APK sin autorización explícita"));
  assert.ok(icons.includes('strokeLinecap:"round"'));
  assert.ok(icons.includes('strokeLinejoin:"round"'));
+});
+
+test("Home doorway has rounded shoulders and an open outline at the base",()=>{
+ assert.ok(icons.includes("const HOME_OUTLINE="));
+ assert.ok(icons.includes('H17.1";'));
+ assert.ok(icons.includes("const HOME_DOOR_OUTLINE="));
+ assert.ok(icons.includes("Q10.9 15.6 12.6 15.6 H15.4 Q17.1 15.6 17.1 17.3"));
+ assert.ok(icons.includes("<Path d={HOME_OUTLINE} {...stroke}/>"));
+ assert.ok(!icons.includes("<Path d={HOME_SILHOUETTE} {...stroke}/>"));
+ assert.ok(icons.includes('d={HOME_SILHOUETTE+" "+HOME_DOOR} fill={color} fillRule="evenodd"'));
+});
+test("Message bubble outline has identical round weights without cropped edges",()=>{
+ assert.equal(messages.split("strokeWidth={7.2}").length-1,2);
+ assert.equal(messages.split('viewBox="-4 -4 108 108"').length-1,2);
+ assert.ok(messages.includes('strokeLinecap="round" strokeLinejoin="round"'));
+ assert.ok(messages.includes('fillRule="evenodd"'));
+});
+test("Tab bar gets breathing room without changing height, widths or safe-area clearance",()=>{
+ assert.ok(tabs.includes("height:NAVIGATION_ROW_HEIGHT+inset.bottom"));
+ assert.ok(tabs.includes("paddingTop:3,paddingBottom:Math.max(7,inset.bottom+2)"));
+ assert.ok(tabs.includes('tabBarIconStyle:{height:48,width:48'));
+ assert.ok(tabs.includes('width:48,height:48,alignItems:"center",justifyContent:"center"'));
 });
