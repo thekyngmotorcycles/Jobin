@@ -25,7 +25,7 @@ test("Services use a raw text buffer until save to prevent rewriting at each com
 });
 test("Business card groups contacts between heading and non-overlapping medals without shrinking touch targets",()=>{
  assert.ok(business.includes('borderBottomColor:finish.line,flexShrink:0'));
- assert.ok(business.includes('height:64,flexShrink:0'));
+ assert.ok(business.includes('height:businessSections.footerHeight,flexShrink:0'));
  assert.ok(business.includes('minHeight:44,paddingRight:3'));
  assert.ok(business.includes('minHeight:44,paddingRight:5'));
  assert.ok(business.includes('minimumFontScale={0.84}'));
