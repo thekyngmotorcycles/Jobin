@@ -8,18 +8,20 @@ import {MediaThumbnail} from "./MediaThumbnail";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 
-export type ProfileSection="home"|"grid"|"cv"|"videos"|"live";
-const tabs=[
- {id:"home",icon:"home-outline",label:"Inicio"},
+export type ProfileSection="grid"|"jcards"|"cv"|"videos"|"live";
+const ownerTabs=[
  {id:"grid",icon:"grid-outline",label:"Todo"},
+ {id:"jcards",icon:"albums-outline",label:"JCards"},
  {id:"videos",icon:"play-outline",label:"Videos"},
  {id:"live",icon:"radio-outline",label:"En vivo"},
  {id:"cv",icon:"briefcase-outline",label:"Acerca de"}
 ] as const;
+const visitorTabs=ownerTabs.filter(tab=>tab.id!=="jcards");
 
 /** Accessible horizontally scrollable tabs, pinned by the parent ScrollView. */
-export function ProfileSectionTabs({section,onSelect,pinned=false}:{section:ProfileSection;onSelect:(section:ProfileSection)=>void;pinned?:boolean}){
+export function ProfileSectionTabs({section,onSelect,pinned=false,showPrivateJCards=false}:{section:ProfileSection;onSelect:(section:ProfileSection)=>void;pinned?:boolean;showPrivateJCards?:boolean}){
  const {theme}=useTheme();const jt=jobeenTokens(theme);
+ const tabs=showPrivateJCards?ownerTabs:visitorTabs;
  const {width}=useWindowDimensions();const reducedMotion=useReducedMotion();
  const scroller=useRef<ScrollView|null>(null);
  const selectedIndex=Math.max(0,tabs.findIndex(tab=>tab.id===section));
