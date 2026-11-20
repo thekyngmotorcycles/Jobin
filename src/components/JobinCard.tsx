@@ -1,4 +1,5 @@
 import {presentJCardContact} from "../lib/jcard-save-contact";
+import {JCardShareSheet} from "./JCardShareSheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {useReducedMotion} from "react-native-reanimated";
 import {BusinessCard3D,CardFlipInteractionContext} from "./BusinessCard3D";
@@ -12,7 +13,7 @@ import {JCardPremiumTexture} from "./JCardPremiumTexture";
 import {BUSINESS_BADGE_NEUTRAL,BUSINESS_MEDAL_COLORS} from "../theme/business-medals";
 import { memo, useCallback, useContext, useEffect, useId, useRef, useState } from "react";
 import { router } from "expo-router";
-import { Alert, Animated, Image, Linking, Modal, Pressable as NativePressable, Share, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Alert, Animated, Image, Linking, Modal, Pressable as NativePressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Rect, Stop, Path, Circle, SvgXml, ClipPath, Image as SvgImage } from "react-native-svg";
@@ -389,6 +390,8 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
  useFocusEffect(useCallback(()=>{let live=true;if(ownerId)void readJCardVisibility(ownerId).then(v=>{if(live)setVisibility(v);}).catch(()=>{});return()=>{live=false;};},[ownerId]));
  const [back,setBack]=useState(initialSide==="business"),[qrOpen,setQrOpen]=useState(false);
+ const [shareOpen,setShareOpen]=useState(false);
+ const [shareSide,setShareSide]=useState<"personal"|"business">(initialSide);
   useEffect(()=>setBack(initialSide==="business"),[initialSide]);
  const canFlip=showOwnerActions||(visibility.personal_enabled&&visibility.business_enabled);
  const reducedMotion=useReducedMotion();
@@ -419,11 +422,9 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const cardColors=jobeenTokens(cardTheme);
  const savePersonal=()=>void presentJCardContact({name:card.name,phone:contact.details?.phone_primary||contact.details?.phone_secondary||contact.phone,email:contact.details?.email_primary||contact.details?.email_secondary||contact.email});
  const saveBusiness=()=>void presentJCardContact({name:card.business?.name?.trim()||card.name,phone:visibility.business_show_phone?(card.business?.phone||card.business?.phoneSecondary):null,email:visibility.business_show_email?(card.business?.email||card.business?.emailSecondary):null});
- const share=async (side:"personal"|"business")=>{
-  const label=side==="business"?(card.business?.name?.trim()||card.name):card.name;
-  const separator=card.profileUrl.includes("?")?"&":"?";
-  const link=card.profileUrl+separator+"card="+side;
-  try {await Share.share({message:`JCard ${side==="business"?"de negocio":"personal"} de ${label}: ${link}`,title:`JCard ${side==="business"?"de negocio":"personal"} · ${label}`});} catch(error){console.warn("No se pudo abrir el menú para compartir la JCard",error);}
+ const share=(side:"personal"|"business")=>{
+  if(!ownerId){Alert.alert("Compartir JCard","Abre una JCard real para compartirla.");return;}
+  setShareSide(side);setShareOpen(true);
  };
  return <>
   <View onLayout={event=>{
@@ -432,11 +433,11 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
   }} style={{width:"100%",maxWidth:jcardSurfaceMetrics.maxWidth,alignSelf:"center"}}>
    <BusinessCard3D height={cardHeight} enabled={canFlip} ghostPreview={hintVisible} initialSide={initialSide} side={back?"business":"personal"}
      onSideChange={side=>{setBack(side==="business");setHintVisible(false);}} shadowColor={jcardCommon.cardShadowColor}
-     front={(showOwnerActions||visibility.personal_enabled)?<CardFace card={card} theme={cardTheme} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onEditPhoto={showOwnerActions?onEditPersonalPhoto:undefined} onQr={()=>setQrOpen(true)} onSaveContact={!showOwnerActions?(onDemoSaveContact??(ownerId?savePersonal:undefined)):undefined} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>:null}
-     back={<View style={{height:cardHeight}}>{(showOwnerActions||visibility.business_enabled)&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onQr={()=>setQrOpen(true)} onSaveContact={!showOwnerActions?(onDemoSaveContact??(ownerId?saveBusiness:undefined)):undefined} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} visibility={visibility}/>}</View>}
+     front={(showOwnerActions||visibility.personal_enabled)?<CardFace card={card} theme={cardTheme} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onEditPhoto={showOwnerActions?onEditPersonalPhoto:undefined} onQr={()=>setQrOpen(true)} onSaveContact={!showOwnerActions?(onDemoSaveContact??(ownerId?savePersonal:undefined)):undefined} onShare={!showOwnerActions?()=>share("personal"):undefined}/>:null}
+     back={<View style={{height:cardHeight}}>{(showOwnerActions||visibility.business_enabled)&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onQr={()=>setQrOpen(true)} onSaveContact={!showOwnerActions?(onDemoSaveContact??(ownerId?saveBusiness:undefined)):undefined} onShare={!showOwnerActions?()=>share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} visibility={visibility}/>}</View>}
    />
    {showOwnerActions&&<View style={{flexDirection:"row",gap:10,paddingTop:10}}>
-    <Pressable accessibilityRole="button" accessibilityLabel={back?"Compartir JCard de negocio":"Compartir JCard personal"} onPress={()=>void share(back?"business":"personal")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,backgroundColor:cardColors.ink}}>
+    <Pressable accessibilityRole="button" accessibilityLabel={back?"Compartir JCard de negocio":"Compartir JCard personal"} onPress={()=>share(back?"business":"personal")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,backgroundColor:cardColors.ink}}>
       <Ionicons name="share-social-outline" size={20} color={cardColors.surface}/><Text style={{color:cardColors.surface,fontWeight:"700"}}>Compartir</Text>
     </Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel="Editar JCard" onPress={()=>back?onEditBusiness?.():router.push("/professional")} style={{flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:9,paddingVertical:13,borderRadius:12,borderWidth:1,borderColor:cardColors.yellow,backgroundColor:cardColors.cream}}>
@@ -444,6 +445,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
     </Pressable>
    </View>}
   </View>
+  <JCardShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} ownerId={ownerId} side={shareSide} name={shareSide==="business"?(card.business?.name?.trim()||card.name):card.name}/>
   <Modal visible={qrOpen} transparent animationType="fade" onRequestClose={()=>setQrOpen(false)}>
    <SafeAreaView style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",alignItems:"center",padding:16}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar QR" onPress={()=>setQrOpen(false)} style={StyleSheet.absoluteFill}/>

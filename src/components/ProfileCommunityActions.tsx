@@ -1,16 +1,18 @@
 import {jobeenTokens} from "../theme/jobeen";
+import {JCardShareSheet} from "./JCardShareSheet";
 import {jcardCommon} from "../theme/jcard";
 import {useCallback,useEffect,useState} from "react";
-import {Alert,Modal,Pressable,Share,StyleSheet,Text,View} from "react-native";
+import {Alert,Modal,Pressable,StyleSheet,Text,View} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import {contactState,inviteContact,replyContactRequest,removeContactRequest,type ContactRequest} from "../lib/professional-contacts";
 import {requireSupabase} from "../lib/supabase";
 import {useUi} from "./ui";
-export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose,onToggleSaved,savedJCard=false,savingJCard=false,visibleCardSide="personal"}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void;onToggleSaved?:()=>void;savedJCard?:boolean;savingJCard?:boolean;visibleCardSide?:"personal"|"business"}){
+export function ProfileCommunityActions({user,name,menuOpen=false,onMenuClose,onToggleSaved,savedJCard=false,savingJCard=false,visibleCardSide="personal",businessName}:{user:string;name:string;menuOpen?:boolean;onMenuClose?:()=>void;onToggleSaved?:()=>void;savedJCard?:boolean;savingJCard?:boolean;visibleCardSide?:"personal"|"business";businessName?:string}){
  const {s,colors}=useUi();const insets=useSafeAreaInsets();const jobeen=jobeenTokens("light");const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
  const [contact,setContact]=useState<ContactRequest|null>(null),[viewer,setViewer]=useState("");
+ const [shareOpen,setShareOpen]=useState(false);
  useFocusEffect(useCallback(()=>{let active=true;void contactState(user).then(value=>{if(active){setContact(value.request);setViewer(value.mine);}}).catch(()=>{if(active)setContact(null);});return()=>{active=false;};},[user]));
  async function connect(){
   if(busy)return;
@@ -69,12 +71,13 @@ export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClos
    {onToggleSaved&&<Pressable accessibilityRole="button" disabled={savingJCard} onPress={()=>{onMenuClose?.();onToggleSaved();}} style={{minHeight:48,padding:12,flexDirection:"row",alignItems:"center",gap:12}}>
     <Ionicons name={savedJCard?"bookmark":"bookmark-outline"} size={21} color={colors.ink}/><Text style={s.text}>{savingJCard?"Actualizando…":savedJCard?"Quitar de mis JCards":visibleCardSide==="business"?"Guardar JCard empresarial":"Guardar JCard personal"}</Text>
    </Pressable>}
-   <Pressable accessibilityRole="button" onPress={()=>{onMenuClose?.();void Share.share({message:"JCard de "+name+" · "+url,url});}} style={{padding:12,flexDirection:"row",gap:12}}><Ionicons name="share-social-outline" size={21} color={colors.ink}/><Text style={s.text}>Compartir perfil</Text></Pressable>
+   <Pressable accessibilityRole="button" onPress={()=>{onMenuClose?.();setShareOpen(true);}} style={{padding:12,flexDirection:"row",gap:12}}><Ionicons name="share-social-outline" size={21} color={colors.ink}/><Text style={s.text}>Compartir JCard</Text></Pressable>
    <Pressable accessibilityRole="button" onPress={()=>void block()} style={{padding:12,flexDirection:"row",gap:12}}><Ionicons name="ban-outline" size={21} color={colors.ink}/><Text style={s.text}>Bloquear perfil</Text></Pressable>
    <Pressable accessibilityRole="button" onPress={()=>{onMenuClose?.();router.push({pathname:"/report-profile",params:{user}});}} style={{padding:12,flexDirection:"row",gap:12}}><Ionicons name="flag-outline" size={21} color={colors.ink}/><Text style={s.text}>Denunciar perfil</Text></Pressable>
     </View>
    </View>
   </Modal>
+  <JCardShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} ownerId={user} side={visibleCardSide} name={visibleCardSide==="business"?(businessName?.trim()||name):name}/>
   {!!message&&<Text accessibilityLiveRegion="polite" style={s.muted}>{message}</Text>}
  </View>;
 }
