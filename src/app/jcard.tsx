@@ -29,6 +29,7 @@ export default function PublicJCard(){
  const {theme}=useTheme();const jt=jobeenTokens(theme);
  const {height:screenHeight}=useWindowDimensions();
  const [viewer,setViewer]=useState("");
+ const [profileMenuOpen,setProfileMenuOpen]=useState(false);
   const [publicBusiness,setPublicBusiness]=useState<BusinessCardData|null>(null);
   useEffect(()=>{if(!user)return;let active=true;setPublicBusiness(null);void readPublicBusinessCard(user).then(v=>{if(active)setPublicBusiness(v);}).catch(()=>{if(active)setPublicBusiness(null);});return()=>{active=false;};},[user]);
  const [section,setSection]=useState<ProfileSection>("home");
@@ -72,7 +73,7 @@ export default function PublicJCard(){
   <Stack.Screen options={{headerShown:false}}/>
   <SafeAreaView edges={["top","left","right"]} style={s.screen}>
    <Animated.View pointerEvents={tabsPinned?"none":"auto"}
-    style={{position:"absolute",top:0,left:0,right:0,height:NAVIGATION_ROW_HEIGHT,zIndex:10,
+    style={{position:"absolute",top:10,left:0,right:0,height:NAVIGATION_ROW_HEIGHT,zIndex:10,
      flexDirection:"row",alignItems:"center",gap:12,paddingHorizontal:12,
      backgroundColor:jt.bar,transform:[{translateY:topHeaderOffset}],opacity:topHeaderOpacity}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Volver" onPress={()=>router.back()}
@@ -82,6 +83,10 @@ export default function PublicJCard(){
     <Text numberOfLines={1} style={{color:colors.ink,fontSize:19,fontWeight:"700",flex:1}}>
      {resource.data?.handle?`@${resource.data.handle.replace(/^@/,"")}`:resource.data?.name??"Perfil"}
     </Text>
+    {!!resource.data&&<Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" onPress={()=>setProfileMenuOpen(true)}
+     style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
+     <Ionicons name="ellipsis-horizontal" size={24} color={colors.ink}/>
+    </Pressable>}
    </Animated.View>
    <Animated.ScrollView ref={profileScroll} stickyHeaderIndices={resource.data?[1]:undefined}
     scrollEventThrottle={16} showsVerticalScrollIndicator={false}
@@ -96,7 +101,7 @@ export default function PublicJCard(){
    <Animated.View style={{gap:14,paddingHorizontal:20,paddingBottom:20,zIndex:0,transform:[{translateY:heroParallax}]}}>
     {resource.data?<ProfileIdentityHeader
      card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??resource.data.business}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/>}
-     actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/>}
+     actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}/>}
      trust={<ProfessionalTrustMark worker={resource.data.id}/>}
      profileUserId={resource.data.id}
     />:<JCardLoadState loading={resource.loading} error={resource.error} retry={resource.reload}/>}
