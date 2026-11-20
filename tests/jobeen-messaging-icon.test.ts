@@ -13,7 +13,7 @@ test("Use the user's vectorized double-chat icon at both requested locations",()
  assert.ok(icon.includes("fill={color}"));
  assert.ok(icon.includes("two-overlapping-chat-bubbles"));
  assert.ok(tabIcon.includes('import {JobeenMessageIcon} from "./JobeenMessageIcon";'));
- assert.ok(tabIcon.includes('if(name==="inbox")return <JobeenMessageIcon size={size} color={color}/>;'));
+ assert.ok(tabIcon.includes('if(name==="inbox")return <JobeenMessageIcon size={size} color={color} filled={focused}/>;'));
  assert.ok(visitor.includes('import {JobeenMessageIcon} from "./JobeenMessageIcon";'));
  assert.ok(visitor.includes('<JobeenMessageIcon size={25} color={jobeen.ink}/>'));
  assert.ok(!visitor.includes('name="paper-plane-outline"'));
@@ -34,7 +34,10 @@ test("The three dots remain transparent in any theme and both icon surfaces reus
  const start=icon.indexOf('<Path d="');
  assert.ok(start>=0);
  const paths=icon.match(/<Path d="/g)??[];
- assert.equal(paths.length,2,"Two overlapping silhouette paths");
+ assert.equal(paths.length,4,"Both outlined and filled versions have two overlapping silhouette paths");
+ assert.ok(icon.includes('if(!filled)return'));
+ assert.ok(icon.includes("filled=true"));
+ assert.equal((icon.match(/<Circle cx=/g)??[]).length,3,"Outlined icon retains three solid message dots");
  const compound=icon.match(/<Path d="([^"]+)" fill=\{color\} fillRule="evenodd"\/>/);
  assert.ok(compound);
  assert.equal((compound[1].match(/\bM\s/g)??[]).length,4,"Foreground bubble and three transparent hole subpaths");
