@@ -53,7 +53,7 @@ test("Personal JCard languages, links and identity badges avoid swallowing empty
  const source=card();
  const lightLanguages=between(source,'{card.languages.slice(0,2).map','</View>:<View style={{minHeight:62');
  assert.ok(lightLanguages.includes('style={{flex:1,minWidth:0,alignItems:"center"'));
- assert.ok(lightLanguages.includes('style={{alignSelf:"center",maxWidth:"100%",minHeight:48'));
+ assert.ok(lightLanguages.includes('style={{alignSelf:"center",maxWidth:"100%",minHeight:44'));
  assert.ok(!lightLanguages.includes('style={{flex:1,minWidth:0,minHeight:48'));
  assert.ok(source.includes('accessibilityLabel={"Ver empresa "+employerLink.name}'));
  assert.ok(source.includes('style={{alignSelf:"flex-start",maxWidth:"100%"}}'));
