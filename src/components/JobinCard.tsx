@@ -180,7 +180,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         
         
 
-        {onSaveContact&&<Pressable accessibilityRole="button" accessibilityLabel="Guardar contacto personal" onPress={event=>{event.stopPropagation();onSaveContact();}} style={{alignSelf:"center",flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,backgroundColor:jobeen.yellow,borderRadius:20,paddingHorizontal:10,paddingVertical:4,minHeight:28,marginTop:1}}>
+        {onSaveContact&&<Pressable accessibilityRole="button" accessibilityLabel="Guardar contacto personal" onPress={event=>{event.stopPropagation();onSaveContact();}} style={{alignSelf:"center",flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,backgroundColor:jobeen.yellow,borderRadius:20,paddingHorizontal:10,paddingVertical:4,minHeight:28,marginTop:0,marginBottom:theme==="light"?12:0,transform:[{translateY:theme==="light"?-6:0}]}}>
           <Ionicons name="person-add-outline" size={12} color={jobeen.ink}/><Text style={{fontSize:10,fontWeight:"700",color:jobeen.ink}}>Guardar contacto</Text>
         </Pressable>}
         {card.status==="ACTIVE"&&employerLink&&<Pressable accessibilityRole="link" accessibilityLabel={"Ver empresa "+employerLink.name} onPress={()=>router.push({pathname:"/company",params:{id:employerLink.id}})} style={{alignSelf:"flex-start",maxWidth:"100%"}}><Text style={[lineStyle,{textDecorationLine:"underline"}]}>Trabaja en {employerLink.name} · @{employerLink.handle} ↗</Text><Text style={{fontSize:10,color:finish.secondary}}>Vínculo laboral verificado por la empresa</Text></Pressable>}
