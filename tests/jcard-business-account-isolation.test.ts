@@ -50,5 +50,5 @@ test("Business title preserves word boundaries and fixes cramped service/contact
  assert.ok(wrapBusinessCardName("Long multi word business title").split("\n").every(x=>x.length<=15));
  assert.ok(card.includes("wrapBusinessCardName(businessName)"));
  assert.ok(card.includes('flex:1,minHeight:0,justifyContent:"space-evenly"'));
- assert.ok(card.includes('height:64,flexShrink:0'));
+ assert.ok(card.includes('height:businessSections.footerHeight,flexShrink:0'));
 });
