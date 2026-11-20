@@ -52,3 +52,27 @@ test("Public profile has the lowered header and only three bottom actions",()=>{
  assert.ok(actions.includes('<Modal visible={menuOpen}'));
  assert.ok(!actions.includes('setMenu(v=>!v)'));
 });
+
+test("Approved share window is a branded bottom sheet with QR before WhatsApp",()=>{
+ const sheet=src("src/components/JCardShareSheet.tsx");
+ assert.ok(sheet.indexOf('{id:"qr",label:"Mi QR"')<sheet.indexOf('{id:"whatsapp",label:"WhatsApp"'));
+ assert.ok(sheet.includes('animationType="slide"'));
+ assert.ok(sheet.includes('height:5,borderRadius:3'));
+ assert.ok(sheet.includes('onPress={()=>choose(option.id)}'));
+ assert.ok(sheet.includes("https://wa.me/?text="));
+ assert.ok(sheet.includes("Share.share({message"));
+ assert.ok(sheet.includes('<QRCode value={link}'));
+});
+test("Personal and business QR are available only via Share JCard",()=>{
+ assert.ok(business.includes('<JCardShareSheet visible={shareSide!==null}'));
+ assert.ok(business.includes('link={sideLink(shareSide??(back?"business":"personal"))}'));
+ assert.ok(!business.includes('accessibilityLabel="Ampliar código QR personal"'));
+ assert.ok(!business.includes('accessibilityLabel="Ampliar código QR del negocio"'));
+ assert.ok(!business.includes('Share.share({message:'));
+});
+test("Own profile removes upper left wordmark without changing actions",()=>{
+ assert.ok(!home.includes("<JobinWordmark"));
+ assert.ok(home.includes("<JobeenCreateMenu/>"));
+ assert.ok(home.includes("<NotificationBell/>"));
+ assert.ok(home.includes('accessibilityLabel="Opciones del perfil"'));
+});

@@ -31,7 +31,7 @@ import Svg,{Defs,LinearGradient,Rect,Stop} from "react-native-svg";
 import { router,useFocusEffect,useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheet } from "../../components/social-ui";
-import { JobinWordmark } from "../../components/JobinWordmark";
+
 import {JobeenCreateMenu} from "../../components/JobeenCreateMenu";
 import { JobinCard } from "../../components/JobinCard";
 
@@ -230,7 +230,7 @@ export default function Profile() {
             <Rect width="100%" height="100%" fill="url(#profileTopShade)"/>
           </Svg>
         </View>
-        <JobinWordmark width={theme==="light"?112:92} style={{ alignSelf: "flex-start" }} />
+        <View style={{flex:1}}/>
         <View style={{flexDirection:"row",alignItems:"center",gap:2}}>
           <JobeenCreateMenu/>
           <NotificationBell/>
