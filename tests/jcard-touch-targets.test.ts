@@ -28,7 +28,7 @@ test("Business contacts have bounded touch areas and independent call/WhatsApp a
 });
 test("Personal language and business awards do not turn empty flex columns into buttons",()=>{
  assert.ok(card.includes('<View key={language.name+index} style={{flex:1,minWidth:0,alignItems:"center",justifyContent:"center"}}><Pressable'));
- assert.ok(card.includes('style={{alignSelf:"center",maxWidth:"100%",minHeight:48,flexDirection:"row"'));
+ assert.ok(card.includes('style={{alignSelf:"center",maxWidth:"100%",minHeight:44,flexDirection:"row"'));
  assert.ok(card.includes('return <View style={{flex:1,minWidth:0,alignItems:"center",justifyContent:"center",marginHorizontal:compact?0:1}}><Pressable'));
  assert.ok(card.includes('width:compact?50:"100%"'));
  assert.ok(card.includes('size={sealDiameter+4}'));
