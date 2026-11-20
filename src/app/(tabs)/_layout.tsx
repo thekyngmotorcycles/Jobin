@@ -9,7 +9,6 @@ import { useTheme } from "../../state/ThemeProvider";
 import { NavigationFade } from "../../components/NavigationFade";
 import { JobinTabIcon } from "../../components/JobinTabIcon";
 import { NAVIGATION_ROW_HEIGHT } from "../../theme/navigation";
-import { LIGHT_JOBEEN } from "../../theme/jobeen";
 const routes=[
  {name:"index",title:"Casa",icon:"home",outline:"home-outline"},
  {name:"shop",title:"JShop",icon:"storefront",outline:"storefront-outline"},
@@ -22,7 +21,7 @@ export default function TabLayout(){
  const {width}=useWindowDimensions();const desktop=Platform.OS==="web"&&width>=1100;const pathname=usePathname();
  const nav=(name:string,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=> <Pressable key={name} accessibilityRole="link" onPress={()=>router.push(name as never)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:14,paddingHorizontal:16,borderRadius:12,backgroundColor:pathname===name?colors.line:colors.transparent}}><Ionicons name={icon} size={22} color={colors.ink}/><Text style={{fontSize:15,color:colors.ink,fontWeight:pathname===name?"700":"500"}}>{title}</Text></Pressable>;
  const tabs=<Tabs initialRouteName="videos" screenOptions={{
-  headerShown:false,tabBarShowLabel:false,tabBarActiveTintColor:colors.ink,tabBarInactiveTintColor:colors.muted,
+  headerShown:false,tabBarShowLabel:false,tabBarActiveTintColor:colors.ink,tabBarInactiveTintColor:colors.ink,
   tabBarHideOnKeyboard:true,tabBarItemStyle:{minHeight:48,justifyContent:"center",alignItems:"center",backgroundColor:colors.transparent},
   tabBarActiveBackgroundColor:colors.transparent,tabBarInactiveBackgroundColor:colors.transparent,
   tabBarBackground:()=> desktop?null:<NavigationFade/>,
@@ -33,7 +32,7 @@ export default function TabLayout(){
   <Tabs.Screen name="streams" options={{href:null}}/>
   {routes.map(route=><Tabs.Screen key={route.name} name={route.name} options={{
    title:route.title,tabBarAccessibilityLabel:route.title,tabBarButtonTestID:"tab-"+route.name,
-   tabBarIcon:({color,focused})=>{const selected=focused||(route.name==="videos"&&(pathname==="/streams"||pathname.endsWith("/streams")));return <View style={{width:48,height:48,alignItems:"center",justifyContent:"center"}}><View pointerEvents="none" style={{position:"absolute",width:48,height:48,borderRadius:999,overflow:"hidden",backgroundColor:selected?`${LIGHT_JOBEEN.yellow}66`:colors.transparent}}/><JobinTabIcon name={route.name} focused={selected} size={route.name==="videos"?(width<375?28:30):(width<375?23:25)} color={selected?colors.ink:color}/>{route.name==="inbox"&&unreadInbox>0&&<View style={{position:"absolute",top:-3,right:-4}}><Ionicons name="heart" size={12} color={colors.reaction}/></View>}</View>},
+   tabBarIcon:({color,focused})=>{const selected=focused||(route.name==="videos"&&(pathname==="/streams"||pathname.endsWith("/streams")));return <View style={{width:48,height:48,alignItems:"center",justifyContent:"center"}}><JobinTabIcon name={route.name} focused={selected} size={route.name==="videos"?(width<375?28:30):(width<375?23:25)} color={selected?colors.ink:color}/>{route.name==="inbox"&&unreadInbox>0&&<View style={{position:"absolute",top:-3,right:-4}}><Ionicons name="heart" size={12} color={colors.reaction}/></View>}</View>},
   }}/>)}
  </Tabs>;
  if(!desktop)return tabs;

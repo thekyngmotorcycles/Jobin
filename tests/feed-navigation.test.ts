@@ -22,8 +22,11 @@ test("Flashes and Lives share the same compact one-row header and category menu"
 test("Lives continues selecting Videos in the five-icon bottom navigation",()=>{
  const navigation=load("src/app/(tabs)/_layout.tsx");
  assert.ok(navigation.includes('route.name==="videos"&&(pathname==="/streams"||pathname.endsWith("/streams"))'));
- assert.ok(navigation.includes("backgroundColor:selected?"));
- assert.ok(navigation.includes("borderRadius:999,overflow:\"hidden\""));
+ assert.ok(navigation.includes('focused={selected}'));
+ assert.ok(navigation.includes('<JobinTabIcon name={route.name}'));
+ assert.ok(!navigation.includes("backgroundColor:selected?"));
+ assert.ok(!navigation.includes('borderRadius:999,overflow:"hidden"'));
+ assert.ok(navigation.includes('tabBarActiveTintColor:colors.ink,tabBarInactiveTintColor:colors.ink'));
  assert.ok(navigation.includes("tabBarActiveBackgroundColor:colors.transparent"));
 });
 test("Search remains one common route with contextual Streams preset",()=>{
