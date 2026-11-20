@@ -1,4 +1,5 @@
 import * as ImageManipulator from "expo-image-manipulator";
+import {validBusinessMentions,type PostBusinessMention} from "./post-mentions";
 import {requireSupabase} from "./supabase";
 import {loadPublishedMedia,type PublishedMedia} from "./safety-api";
 
@@ -12,14 +13,14 @@ export type FeedPostKind="text"|"photos"|"video"|"live";
 export type StoryKind="text"|"photo"|"video";
 export type FeedPost={
  id:string;authorId:string;authorName:string;authorHandle:string;body:string;kind:FeedPostKind;
- photoUrls:string[];photoAltTexts:string[];mentionedProfileIds:string[];mentions:{id:string;label:string}[];mediaId:string|null;createdAt:string;
+ photoUrls:string[];photoAltTexts:string[];mentionedProfileIds:string[];mentions:{id:string;label:string;card?:"personal"|"business"}[];mediaId:string|null;createdAt:string;
  likes:number;comments:number;shares:number;likedByViewer:boolean;
 };
 export type SocialStory={
  id:string;authorId:string;authorName:string;authorHandle:string;kind:StoryKind;body:string;
  imageUrl:string|null;mediaId:string|null;createdAt:string;expiresAt:string;
 };
-type FeedRow={id:string;author_id:string;body:string;kind:FeedPostKind;photo_paths:string[];photo_bucket:string;photo_alt_texts:string[];mentioned_profile_ids:string[];work_media_id:string|null;created_at:string};
+type FeedRow={id:string;author_id:string;body:string;kind:FeedPostKind;photo_paths:string[];photo_bucket:string;photo_alt_texts:string[];mentioned_profile_ids:string[];business_mentions:unknown;work_media_id:string|null;created_at:string};
 type StoryRow={id:string;author_id:string;kind:StoryKind;body:string;photo_path:string|null;work_media_id:string|null;created_at:string;expires_at:string};
 
 async function namesFor(ids:string[]){
@@ -42,7 +43,7 @@ export async function currentSocialUser():Promise<string>{
 export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,postIds?:string[],offset=0):Promise<FeedPost[]>{
  const db=requireSupabase();
  const query=db.from("jobeen_feed_posts" as never)
-  .select("id,author_id,body,kind,photo_paths,photo_bucket,photo_alt_texts,mentioned_profile_ids,work_media_id,created_at")
+  .select("id,author_id,body,kind,photo_paths,photo_bucket,photo_alt_texts,mentioned_profile_ids,business_mentions,work_media_id,created_at")
   .is("removed_at",null).order("created_at",{ascending:false}).range(offset,offset+(postId?0:79));
  const {data,error}=await (postId?query.eq("id",postId):postIds?.length?query.in("id",postIds):authorId?query.eq("author_id",authorId):query);
  if(error)throw error;
@@ -75,9 +76,9 @@ export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,
    photoUrls:(row.photo_paths??[]).map(path=>row.photo_bucket===PRIVATE_POSTS_BUCKET?
     signedUrls.get(path)??"":db.storage.from(POSTS_BUCKET).getPublicUrl(path).data.publicUrl).filter(Boolean),
    photoAltTexts:row.photo_alt_texts??[],mentionedProfileIds:row.mentioned_profile_ids??[],
-   mentions:(row.mentioned_profile_ids??[]).map(id=>({
-    id,label:authors.get(id)?.handle?"@"+authors.get(id)!.handle:authors.get(id)?.name??"Profesional"
-   })),
+   mentions:[...(row.mentioned_profile_ids??[]).map(id=>({
+    id,label:authors.get(id)?.handle?"@"+authors.get(id)!.handle:authors.get(id)?.name??"Profesional",card:"personal" as const
+   })),...validBusinessMentions(row.business_mentions).map(m=>({id:m.ownerId,label:m.label,card:"business" as const}))],
    mediaId:row.work_media_id,createdAt:row.created_at,
    likes:Number(count?.likes??0),comments:Number(count?.comments??0),shares:Number(count?.shares??0),
    likedByViewer:viewerLikes.has(row.id)
@@ -128,7 +129,7 @@ export async function shareApprovedMedia(kind:"video"|"live",owner:string):Promi
  const entries=await loadPublishedMedia();
  return entries.filter(x=>x.creator_id===owner&&x.kind===kind);
 }
-export async function publishHomePost(payload:{body:string;photos:string[];kind:FeedPostKind;mediaId?:string|null;audience?:FeedAudience;audienceFollowers?:boolean;audienceContacts?:boolean;photoDraftPaths?:(string|null)[];photoAltTexts?:string[];mentionedProfileIds?:string[]}):Promise<string>{
+export async function publishHomePost(payload:{body:string;photos:string[];kind:FeedPostKind;mediaId?:string|null;audience?:FeedAudience;audienceFollowers?:boolean;audienceContacts?:boolean;photoDraftPaths?:(string|null)[];photoAltTexts?:string[];mentionedProfileIds?:string[];businessMentions?:PostBusinessMention[]}):Promise<string>{
  const db=requireSupabase(),owner=await currentSocialUser(),uploaded:string[]=[];
  if(payload.kind==="text"&&!payload.body.trim())throw Error("Escribe un mensaje para publicar.");
  if(payload.kind==="photos"&&(!payload.photos.length||payload.photos.length>5))throw Error("Añade entre 1 y 5 fotografías.");
@@ -157,7 +158,8 @@ export async function publishHomePost(payload:{body:string;photos:string[];kind:
    audience_followers:privatePost&&!!payload.audienceFollowers,
    audience_contacts:privatePost&&!!payload.audienceContacts,
    photo_alt_texts:payload.kind==="photos"?(payload.photoAltTexts??[]).map(t=>t.trim().slice(0,500)):[],
-   mentioned_profile_ids:(payload.mentionedProfileIds??[]).slice(0,20)
+   mentioned_profile_ids:(payload.mentionedProfileIds??[]).slice(0,20),
+   business_mentions:validBusinessMentions(payload.businessMentions??[]).filter(m=>payload.body.includes(m.label))
   } as never).select("id").single();
   if(error)throw error;
   return (created as unknown as {id:string}).id;
