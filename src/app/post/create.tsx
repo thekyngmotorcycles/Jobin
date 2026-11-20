@@ -4,7 +4,7 @@ import {markPublishedPostForHome} from "../../lib/post-return";
 import {usePreventRemove} from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import {useEffect,useRef,useState} from "react";
-import {ActivityIndicator,AppState,Image,InteractionManager,Keyboard,Modal,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
+import {ActivityIndicator,AppState,Image,Keyboard,Modal,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {PublicProfileAvatar} from "../../components/PublicProfileAvatar";
 import {currentSocialUser,publishHomePost,shareApprovedMedia,uploadPhoto,type FeedPostKind,type FeedAudience} from "../../lib/social-content";
@@ -143,16 +143,16 @@ export default function PostCreate(){
  },[mentionQuery]);
  useEffect(()=>{
   if(!editingDone||destination===null)return;
-  // The native post screen is pushed above the existing tab navigator.
-  // Pop only this screen. Cross-navigator popTo("(tabs)",{screen:"index"})
-  // has caused the Android activity to close on Back; do not dispatch it.
-  // Home reads the published ID after the tab regains focus.
+  // The post screen sits above the existing tab navigator. Allow React to
+  // release the unsaved-draft guard and Android to dismiss native Modal windows
+  // before popping only this screen. InteractionManager can wait indefinitely
+  // while an animated interaction remains active, leaving a blank gray view.
   if(destination)markPublishedPostForHome(destination);
-  const task=InteractionManager.runAfterInteractions(()=>{
+  const timer=setTimeout(()=>{
    if(navigation.canGoBack())navigation.goBack();
-   else router.replace("/videos");
-  });
-  return()=>task.cancel();
+   else router.replace("/(tabs)/index");
+  },350);
+  return()=>clearTimeout(timer);
  },[editingDone,destination,navigation]);
  // Only intercept removal when there is actually content to preserve.
  // An empty composer should use the ordinary native Back behavior.
@@ -161,7 +161,10 @@ export default function PostCreate(){
  });
  function finishHome(published:string){
   autosaveEnabledRef.current=false;
-  setExitOpen(false);setEditingDone(true);setDestination(published);
+  Keyboard.dismiss();
+  setExitOpen(false);setDraftsOpen(false);setPreviewOpen(false);
+  setAltPhotoId(null);setAudienceMenuOpen(false);
+  setEditingDone(true);setDestination(published);
  }
  function requestExit(){
   if(hasDraftContent(draftSnapshotRef.current)){
@@ -287,10 +290,15 @@ export default function PostCreate(){
     audience,audienceFollowers:audience==="private"&&audienceFollowers,
     audienceContacts:audience==="private"&&audienceContacts
    });
+   // The post now exists. Do not keep the editor busy while remote draft
+   // photos are deleted: a slow Storage request must never block navigation.
    autosaveEnabledRef.current=false;
    await savingChainRef.current.catch(()=>{});
-   await deletePostDraft(author,draftSnapshotRef.current.id).catch(()=>{});
+   await deletePostDraft(author,draftSnapshotRef.current.id,false).catch(()=>{});
    finishHome(publishedId);
+   const draftPaths=[...new Set(selected.map(photo=>photo.backupPath)
+    .filter((path):path is string=>!!path&&path.startsWith(author+"/")))];
+   if(draftPaths.length)void requireSupabase().storage.from(DRAFT_PHOTO_BUCKET).remove(draftPaths).catch(()=>{});
   }catch(e){setError(e instanceof Error?e.message:"No se pudo publicar.");}
   finally{setBusy(false);}
  }
