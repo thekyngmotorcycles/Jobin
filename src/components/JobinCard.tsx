@@ -29,6 +29,7 @@ import {ProfessionGlyph} from "./ProfessionGlyph";
 import { LanguageRing, languageLabel, LANGUAGE_LEVELS } from "./LanguageRing";
 import { businessCardAccents, businessCardPaper, businessInformationSurface, jcardCommon, jcardFloating, jcardReviewGlass, jcardLayout, jcardTokens, jcardSurfaceSize, jcardSurfaceMetrics } from "../theme/jcard";
 import {businessCategoryArt} from "../lib/business-category-art";
+import {wrapBusinessCardName} from "../lib/business-card-layout";
 import {categoryGlyph} from "../lib/category-icons";
 
 export type { CardData } from "../lib/jcard";
@@ -298,14 +299,14 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
    <View style={{flexDirection:"row",alignItems:"center",gap:9,marginTop:9,paddingRight:49}}>
     <Pressable disabled={!canEditMedia} accessibilityLabel="Foto del negocio" onPress={event=>{event.stopPropagation();onEditMedia?.("avatar");}} style={{width:64,height:64,borderRadius:32,borderWidth:2,borderColor:jobeen.yellow,backgroundColor:jobeen.surface,alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>{b?.avatarUrl?<Image source={{uri:b.avatarUrl}} style={{width:60,height:60,borderRadius:30}}/>:<Ionicons name="person-outline" size={27} color={businessIconInk}/>}</Pressable>
     <View style={{flex:1,minWidth:0,gap:3}}>
-     <View style={{flexDirection:"row",alignItems:"center",gap:3}}><Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7} style={{flexShrink:1,fontSize:15,lineHeight:18,fontWeight:"700",color:finish.text}}>{businessName.length>15?businessName.slice(0,15).trimEnd()+"\n"+businessName.slice(15):businessName}</Text><Pressable accessibilityRole="button" accessibilityLabel="Verificación de empresa" onPress={event=>{event.stopPropagation();setShowBusinessVerification(true);}} hitSlop={{top:7,bottom:7,right:6,left:0}} style={{width:18,height:20,alignItems:"center",justifyContent:"center",flexShrink:0}}><Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={16} color={b?.licenseVerified?jcardCommon.verifiedBubble:jcardCommon.unverifiedBubble}/></Pressable></View>
+     <View style={{flexDirection:"row",alignItems:"center",gap:3}}><Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7} style={{flexShrink:1,fontSize:15,lineHeight:18,fontWeight:"700",color:finish.text}}>{wrapBusinessCardName(businessName)}</Text><Pressable accessibilityRole="button" accessibilityLabel="Verificación de empresa" onPress={event=>{event.stopPropagation();setShowBusinessVerification(true);}} hitSlop={{top:7,bottom:7,right:6,left:0}} style={{width:18,height:20,alignItems:"center",justifyContent:"center",flexShrink:0}}><Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={16} color={b?.licenseVerified?jcardCommon.verifiedBubble:jcardCommon.unverifiedBubble}/></Pressable></View>
      <View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name={categoryIcon} size={14} color={businessIconInk}/><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{flexShrink:1,fontSize:12,color:finish.secondary}}>{company?category:card.role}</Text></View>
      <View style={{flexDirection:"row",alignItems:"center",gap:4}}><Text style={{fontSize:11,fontWeight:"700",color:finish.text}}><Text style={{color:jcardCommon.businessGold}}>★</Text> {ratingUnlocked?rating!.toFixed(1):"0.0"}</Text><Text numberOfLines={1} style={{fontSize:10,color:finish.secondary}}>· ({reviewCount} {reviewCount===1?"reseña":"reseñas"})</Text></View>
     </View>
    </View>
 
-   {!!b?.services?.length&&<View style={{alignSelf:"stretch",paddingHorizontal:8,marginTop:4}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:14,fontWeight:"500",color:finish.secondary}}>{b.services.filter(Boolean).join(" · ")}</Text></View>}
-   <View style={{flex:1,justifyContent:"center",gap:theme==="light"?3:6,paddingVertical:theme==="light"?3:7,minHeight:0,alignSelf:"stretch"}}>
+   {!!b?.services?.length&&<View style={{alignSelf:"stretch",paddingHorizontal:8,marginTop:8,marginBottom:3,flexShrink:0}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{fontSize:14,lineHeight:19,fontWeight:"500",color:finish.secondary}}>{b.services.filter(Boolean).join(" · ")}</Text></View>}
+   <View style={{justifyContent:"flex-start",gap:theme==="light"?3:6,paddingTop:5,paddingBottom:2,alignSelf:"stretch",flexShrink:1}}>
     <View style={{gap:theme==="light"?0:5,alignSelf:"stretch"}}>
      {(visibility.business_show_email?(theme==="light"?[b?.email??b?.emailSecondary]:[b?.email,b?.emailSecondary]):[]).filter(Boolean).map((email,i)=><Pressable key={"business-email"+i} accessibilityRole="link" accessibilityLabel={"Enviar correo a "+email} onPress={event=>{event.stopPropagation();void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>{});}} style={{flexDirection:"row",alignItems:"center",gap:6,alignSelf:"flex-start",maxWidth:"100%",minHeight:44,paddingRight:5}}><View style={{width:theme==="light"?30:14,height:theme==="light"?30:14,borderRadius:15,backgroundColor:theme==="light"?jobeen.yellow:undefined,alignItems:"center",justifyContent:"center"}}><Ionicons name="mail-outline" size={14} color={businessIconInk}/></View><Text numberOfLines={1} ellipsizeMode="tail" style={{flexShrink:1,fontSize:11,color:businessContactInk}}>{email}</Text></Pressable>)}
      {visibility.business_show_phone&&!!(b?.phone||b?.phoneSecondary)&&<View style={{flexDirection:"row",alignItems:"center",gap:4,alignSelf:"stretch",minHeight:44}}><Pressable accessibilityRole="link" accessibilityLabel="Llamar al teléfono principal del negocio"
@@ -317,7 +318,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onQr,onSh
    </View>
    </View>
    <View style={{height:1,backgroundColor:finish.line,opacity:0.7,marginBottom:4}}/>
-   <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:5,minHeight:65,paddingHorizontal:5,marginTop:4}}>
+   <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:5,minHeight:65,paddingHorizontal:5,marginTop:"auto"}}>
     {awards.map(a=><BusinessAward key={a.label} {...a} finish={finish} surface={surface} compact={theme==="light"} onPress={()=>setSelectedAward({label:a.label,level:a.level})}/>)}
    </View>
    </View>
