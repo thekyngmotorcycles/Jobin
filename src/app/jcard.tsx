@@ -1,7 +1,7 @@
 import { ProfileCommunityActions } from "../components/ProfileCommunityActions";
 import { ProfessionalTrustMark } from "../components/ProfessionalTrustMark";
 import {useCallback,useEffect,useRef,useState} from "react";
-import {Animated,Pressable,ScrollView,Text,View,useWindowDimensions,type NativeScrollEvent,type NativeSyntheticEvent} from "react-native";
+import {Alert,Animated,Pressable,ScrollView,Text,View,useWindowDimensions,type NativeScrollEvent,type NativeSyntheticEvent} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
 import {Ionicons} from "@expo/vector-icons";
@@ -21,6 +21,8 @@ import {useUi} from "../components/ui";
 import {JCardLoadState} from "../components/JCardConnectionState";
 import { loadPublicCard } from "../lib/professional-api";
 import {readPublicBusinessCard} from "../lib/jcard-cloud";
+import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
+import {isSavedJCard,removeSavedJCard,saveVisibleJCard,type SavedJCardSide} from "../lib/saved-jcards";
 import type {BusinessCardData} from "../lib/jcard";
 import { useProfessionalData } from "../state/useProfessionalData";
 export default function PublicJCard(){
@@ -30,6 +32,23 @@ export default function PublicJCard(){
  const {height:screenHeight}=useWindowDimensions();
  const [viewer,setViewer]=useState("");
  const [profileMenuOpen,setProfileMenuOpen]=useState(false);
+ const [activeCardSide,setActiveCardSide]=useState<SavedJCardSide>(card==="business"?"business":"personal");
+ const [cardVisibility,setCardVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
+ const [cardVisibilityReady,setCardVisibilityReady]=useState(false);
+ const [cardSaved,setCardSaved]=useState(false);
+ const [savingCard,setSavingCard]=useState(false);
+ const sideIsPublic=activeCardSide==="personal"?cardVisibility.personal_enabled:cardVisibility.business_enabled;
+ useEffect(()=>setActiveCardSide(card==="business"?"business":"personal"),[card,user]);
+ useEffect(()=>{
+  if(!user)return;
+  let live=true;setCardVisibilityReady(false);
+  void readJCardVisibility(user).then(v=>{
+   if(live){setCardVisibility(v);setCardVisibilityReady(true);
+    if(!v.personal_enabled&&v.business_enabled)setActiveCardSide("business");
+    else if(!v.business_enabled&&v.personal_enabled)setActiveCardSide("personal");}
+  }).catch(()=>{if(live)setCardVisibilityReady(false);});
+  return()=>{live=false;};
+ },[user]);
   const [publicBusiness,setPublicBusiness]=useState<BusinessCardData|null>(null);
   useEffect(()=>{if(!user)return;let active=true;setPublicBusiness(null);void readPublicBusinessCard(user).then(v=>{if(active)setPublicBusiness(v);}).catch(()=>{if(active)setPublicBusiness(null);});return()=>{active=false;};},[user]);
  const [section,setSection]=useState<ProfileSection>("grid");
@@ -65,6 +84,25 @@ export default function PublicJCard(){
  useEffect(()=>{let active=true;void requireSupabase().auth.getUser().then(({data})=>{if(active)setViewer(data.user?.id??"");});return()=>{active=false;};},[]);
  useEffect(()=>{if(!user||!viewer||user===viewer)return;let active=true;void cvRequests().then(rows=>{if(active)setCvStatus(rows.find(r=>r.owner_id===user&&r.requester_id===viewer)?.status??"");}).catch(()=>{});return()=>{active=false;};},[user,viewer]);
  async function openCV(){if(!user)return;setCvOpen(true);if(user===viewer||cvStatus==="approved"){try{setCvRows(await approvedCV(user));}catch(e){setCvMessage(e instanceof Error?e.message:"No se pudo consultar el historial.");}}}
+ useEffect(()=>{
+  if(!user||!viewer||viewer===user||!cardVisibilityReady||!sideIsPublic){setCardSaved(false);return;}
+  let live=true;setCardSaved(false);
+  void isSavedJCard(user,activeCardSide).then(saved=>{if(live)setCardSaved(saved);}).catch(()=>{if(live)setCardSaved(false);});
+  return()=>{live=false;};
+ },[user,viewer,activeCardSide,cardVisibilityReady,sideIsPublic]);
+ const toggleSaved=async()=>{
+  if(!user)return;
+  if(!viewer){Alert.alert("Mis JCards","Inicia sesión para guardar tarjetas.");return;}
+  if(!cardVisibilityReady||!sideIsPublic){Alert.alert("JCard no disponible","Su propietario ya no tiene esta tarjeta visible.");return;}
+  if(savingCard)return;
+  setSavingCard(true);
+  try{
+   if(cardSaved)await removeSavedJCard(user,activeCardSide);
+   else await saveVisibleJCard(user,activeCardSide);
+   setCardSaved(!cardSaved);
+  }catch(e){Alert.alert("Mis JCards",e instanceof Error?e.message:"No se pudo actualizar tu colección.");}
+  finally{setSavingCard(false);}
+ };
  const resource=useProfessionalData(useCallback(()=>{
   if(!user||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user))return Promise.reject(new Error("Enlace de JCard inválido."));
   return loadPublicCard(user);
@@ -100,8 +138,10 @@ export default function PublicJCard(){
     })}>
    <Animated.View style={{gap:14,paddingHorizontal:20,paddingBottom:20,zIndex:0,transform:[{translateY:heroParallax}]}}>
     {resource.data?<ProfileIdentityHeader
-     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??resource.data.business}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/>}
-     actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}/>}
+     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??resource.data.business}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"} onActiveSideChange={setActiveCardSide}/>} 
+     actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
+      onToggleSaved={cardVisibilityReady&&sideIsPublic?()=>void toggleSaved():undefined}
+      savedJCard={cardSaved} savingJCard={savingCard} visibleCardSide={activeCardSide}/>} 
      trust={<ProfessionalTrustMark worker={resource.data.id}/>}
      profileUserId={resource.data.id}
     />:<JCardLoadState loading={resource.loading} error={resource.error} retry={resource.reload}/>}
