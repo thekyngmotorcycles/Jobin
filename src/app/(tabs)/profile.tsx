@@ -16,6 +16,7 @@ import {useRef} from "react";
 import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../../components/ProfileSharedSections";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfileOwnedPosts} from "../../components/ProfileOwnedPosts";
+import {SavedJCardsGallery} from "../../components/SavedJCardsGallery";
 import {NotificationBell} from "../../components/NotificationBell";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import {JCardLoadState,JCardOfflineNotice,isJCardConnectivityError} from "../../components/JCardConnectionState";
@@ -49,7 +50,7 @@ function validPhoneLabel(value:string):boolean{
 }
 export default function Profile() {
   const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {view,card}=useLocalSearchParams<{view?:string;card?:string}>();
-  const [mode,setMode]=useState<Mode>("home");
+  const [mode,setMode]=useState<Mode>("grid");
   const profileScroll=useRef<ScrollView|null>(null);
   const profileScrollY=useRef(new Animated.Value(0)).current;
   const [tabOffset,setTabOffset]=useState(0);
@@ -282,10 +283,10 @@ export default function Profile() {
         </Animated.View>
         <View onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}
           style={{zIndex:3,backgroundColor:jt.bg,borderTopLeftRadius:18,borderTopRightRadius:18}}>
-          <ProfileSectionTabs section={mode} onSelect={selectSection} pinned={tabsPinned}/>
+          <ProfileSectionTabs section={mode} onSelect={selectSection} pinned={tabsPinned} showPrivateJCards/>
         </View>
         <View style={{gap:16,paddingHorizontal:16,paddingTop:20,paddingBottom:contentBottom,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
-        {mode==="home"&&<ProfileOwnedPosts filter="all" limit={6} heading="Trabajo reciente" onSeeAll={()=>selectSection("grid")}/>}
+        {mode==="jcards"&&<SavedJCardsGallery/>}
         {mode==="live"&&<View style={{gap:12,padding:14,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
           <Text style={s.h3}>Transmisiones en vivo</Text>
           <Text style={s.muted}>Cuando este perfil transmita, aparecerá aquí la vista previa para entrar al directo.</Text>
