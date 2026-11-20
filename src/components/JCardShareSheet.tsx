@@ -5,6 +5,7 @@ import {ActivityIndicator,Alert,Linking,Modal,Platform,Pressable,ScrollView,Shar
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
+import {readJCardVisibility} from "../lib/jcard-visibility";
 import {buildSharedJCard,MAX_SHARE_RECIPIENTS,sendJCardToContacts,shareContactSuggestions,type ShareRecipient,type SharedJCardSide} from "../lib/jcard-sharing";
 
 type ExternalAction="whatsapp"|"sms"|"copy"|"more";
@@ -63,10 +64,16 @@ export function JCardShareSheet({visible,onClose,ownerId,name,side}:{visible:boo
    return [...previous,id];
   });
  };
+ const ensurePublic=async()=>{
+  if(!share)throw new Error("No se puede compartir esta JCard.");
+  const flags=await readJCardVisibility(share.userId);
+  if(!(share.side==="personal"?flags.personal_enabled:flags.business_enabled))throw new Error("El propietario ha ocultado esta JCard. No se puede compartir mientras permanezca oculta.");
+ };
  const send=async()=>{
   if(!share||sending||!selected.length)return;
   setSending(true);
   try{
+   await ensurePublic();
    const recipients=contacts.filter(c=>selected.includes(c.id));
    const result=await sendJCardToContacts(share,recipients);
    if(result.failed.length){
@@ -89,6 +96,7 @@ export function JCardShareSheet({visible,onClose,ownerId,name,side}:{visible:boo
   if(!share)return;
   remember(id);
   try{
+   await ensurePublic();
    if(id==="whatsapp"){
     await Linking.openURL("https://wa.me/?text="+encodeURIComponent(share.message));
    }else if(id==="sms"){
