@@ -20,6 +20,8 @@ import { JobinCard } from "../components/JobinCard";
 import {useUi} from "../components/ui";
 import {JCardLoadState} from "../components/JCardConnectionState";
 import { loadPublicCard } from "../lib/professional-api";
+import {readPublicBusinessCard} from "../lib/jcard-cloud";
+import type {BusinessCardData} from "../lib/jcard";
 import { useProfessionalData } from "../state/useProfessionalData";
 export default function PublicJCard(){
  const {user,card}=useLocalSearchParams<{user?:string;card?:string}>();
@@ -27,6 +29,8 @@ export default function PublicJCard(){
  const {theme}=useTheme();const jt=jobeenTokens(theme);
  const {height:screenHeight}=useWindowDimensions();
  const [viewer,setViewer]=useState("");
+  const [publicBusiness,setPublicBusiness]=useState<BusinessCardData|null>(null);
+  useEffect(()=>{if(!user)return;let active=true;setPublicBusiness(null);void readPublicBusinessCard(user).then(v=>{if(active)setPublicBusiness(v);}).catch(()=>{if(active)setPublicBusiness(null);});return()=>{active=false;};},[user]);
  const [section,setSection]=useState<ProfileSection>("home");
  const profileScroll=useRef<ScrollView|null>(null);
  const profileScrollY=useRef(new Animated.Value(0)).current;
@@ -52,7 +56,7 @@ export default function PublicJCard(){
  useEffect(()=>{if(!user)return;let live=true;void identityVerified(user).then(v=>{if(live)setVerifiedIdentity(v);}).catch(()=>{if(live)setVerifiedIdentity(false);});return()=>{live=false;};},[user]);
  const [followerCount,setFollowerCount]=useState<number|null>(null);
  useEffect(()=>{if(!user)return;let live=true;void requireSupabase().from("profile_follows" as never).select("*",{count:"exact",head:true}).eq("followed_id",user).then(({count})=>{if(live)setFollowerCount(count??0);});return()=>{live=false;};},[user]);
- useEffect(()=>{if(user&&viewer&&user===viewer)router.replace("/(tabs)/profile");},[user,viewer]);
+ useEffect(()=>{if(user&&viewer&&user===viewer&&card!=="business")router.replace("/(tabs)/profile");},[user,viewer]);
  const [cvStatus,setCvStatus]=useState("");
  const [cvRows,setCvRows]=useState<{company:string;role:string;from_year:number;to_year:number|null}[]>([]);
  const [cvMessage,setCvMessage]=useState("");
@@ -91,7 +95,7 @@ export default function PublicJCard(){
     })}>
    <Animated.View style={{gap:14,paddingHorizontal:20,paddingBottom:20,zIndex:0,transform:[{translateY:heroParallax}]}}>
     {resource.data?<ProfileIdentityHeader
-     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/>}
+     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??resource.data.business}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/>}
      actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl}/>}
      trust={<ProfessionalTrustMark worker={resource.data.id}/>}
      profileUserId={resource.data.id}
