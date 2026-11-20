@@ -1,9 +1,10 @@
-import {Alert} from "react-native";
+import {Alert,Keyboard,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {appearanceOwner} from "../lib/jcard-appearance";
 import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import {useEffect,useState} from "react";
 import {router} from "expo-router";
-import {Pressable,Text,TextInput,View} from "react-native";
+import {loadCatalog} from "../lib/professional-api";
+import type {ProfessionalCatalog} from "../lib/professional-types";
 import {EMPTY_BUSINESS_CARD,readScopedBusinessCard,writeScopedBusinessCard} from "../lib/business-card-cache";
 import {Ionicons} from "@expo/vector-icons";
 import {Screen,Button,useUi} from "../components/ui";
@@ -25,6 +26,10 @@ export default function BusinessEditor(){
  const [editorOwner,setEditorOwner]=useState("");
  const [open,setOpen]=useState<Section|null>(null);
  const [handleFeedback,setHandleFeedback]=useState("");
+ const [catalog,setCatalog]=useState<ProfessionalCatalog|null>(null);
+ const [categoryOpen,setCategoryOpen]=useState(false);
+ const [categoryQuery,setCategoryQuery]=useState("");
+ useEffect(()=>{let active=true;void loadCatalog().then(value=>{if(active)setCatalog(value);}).catch(()=>{});return()=>{active=false;};},[]);
  const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
  useEffect(()=>{let live=true;void appearanceOwner().then(readJCardVisibility).then(v=>{if(live)setVisibility(v);}).catch(()=>{});return()=>{live=false;};},[]);
  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
@@ -64,6 +69,13 @@ export default function BusinessEditor(){
   return()=>{active=false;clearTimeout(timer);};
  },[open,data.businessHandle]);
  const value=(key:Field)=>key==="services"?data.services.join(", "):String(data[key]??"");
+ const categoryOptions=[
+  {code:"",label:"Ninguna (opcional)"},
+  ...["Climatización HVAC","Refrigeración"].filter(label=>!catalog?.categories.some(c=>c.label===label)).map(label=>({code:label,label})),
+  ...(catalog?.categories??[])
+ ];
+ const normalizedCategoryQuery=categoryQuery.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("es").trim();
+ const visibleCategories=categoryOptions.filter(item=>item.label.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("es").includes(normalizedCategoryQuery));
  async function save(section:Section){
   if(saving)return;
   const year=new Date().getFullYear(),opened=data.opened.trim(),closed=data.closed.trim();
@@ -85,7 +97,28 @@ export default function BusinessEditor(){
     <Pressable accessibilityRole="button" accessibilityState={{expanded:open===section.id}} onPress={()=>setOpen(current=>current===section.id?null:section.id)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}>
      <Ionicons name={section.icon} size={25} color={colors.ink}/><Text style={[s.h3,{flex:1,fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>{section.title}</Text><Ionicons name={open===section.id?"chevron-up":"chevron-down"} size={20} color={colors.muted}/>
     </Pressable>
-    {open===section.id&&<View style={{gap:12,paddingBottom:12}}>{section.keys.map(key=><View key={key} style={{gap:5}}><Text style={s.muted}>{fields[key]}</Text><TextInput accessibilityLabel={fields[key]} value={value(key)} onChangeText={v=>update(key,v)} maxLength={key==="name"||key==="businessHandle"?30:key==="services"?100:undefined} keyboardType={key==="opened"||key==="closed"?"number-pad":key.startsWith("email")?"email-address":key.startsWith("phone")&&!key.includes("Label")?"phone-pad":"default"} autoCapitalize={key.startsWith("email")||key==="businessHandle"?"none":"sentences"} autoCorrect={key==="businessHandle"?false:undefined} style={{borderWidth:1,borderColor:colors.line,borderRadius:10,padding:12,minHeight:44,color:colors.ink}}/>{key==="businessHandle"&&<Text style={s.muted}>{handleFeedback||"Opcional. Se mostrará como @usuario en menciones."}</Text>}</View>)}<Button title={saving?"Guardando…":"Guardar"} onPress={()=>void save(section.id)}/></View>}
+    {open===section.id&&<View style={{gap:12,paddingBottom:12}}>{section.keys.map(key=><View key={key} style={{gap:5}}><Text style={s.muted}>{fields[key]}</Text>{key==="category"?<View style={{gap:8}}>
+  <Pressable accessibilityRole="button" accessibilityLabel="Seleccionar categoría empresarial" accessibilityState={{expanded:categoryOpen}}
+   onPress={()=>{Keyboard.dismiss();setCategoryOpen(v=>!v);}} style={{minHeight:48,paddingHorizontal:12,borderColor:colors.line,borderWidth:1,borderRadius:10,flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:10}}>
+   <Text numberOfLines={1} style={{flex:1,color:data.category?colors.ink:colors.muted}}>{data.category||"Seleccionar categoría"}</Text>
+   <Ionicons name={categoryOpen?"chevron-up":"chevron-down"} size={20} color={colors.ink}/>
+  </Pressable>
+  {categoryOpen&&<View style={{borderWidth:1,borderColor:colors.line,borderRadius:12,padding:8,gap:7}}>
+   <TextInput accessibilityLabel="Buscar categoría empresarial" placeholder="Buscar categoría…" placeholderTextColor={colors.muted}
+    value={categoryQuery} onChangeText={setCategoryQuery} autoCorrect={false}
+    style={{minHeight:44,paddingHorizontal:12,borderWidth:1,borderColor:colors.line,borderRadius:9,color:colors.ink}}/>
+   <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="always" style={{maxHeight:230}} showsVerticalScrollIndicator>
+    {visibleCategories.map(option=><Pressable key={option.code||"none"} accessibilityRole="button" accessibilityState={{selected:data.category===option.label}}
+     onPress={()=>{setData(d=>({...d,category:option.code?option.label:""}));setCategoryOpen(false);setCategoryQuery("");Keyboard.dismiss();}}
+     style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:10,paddingHorizontal:10,paddingVertical:6,borderRadius:9,backgroundColor:data.category===option.label?colors.line:colors.paper}}>
+     <Ionicons name={data.category===option.label?"checkmark-circle":"grid-outline"} size={18} color={colors.ink}/>
+     <Text style={{color:colors.ink,flex:1}}>{option.label}</Text>
+    </Pressable>)}
+    {!catalog&&<Text style={{color:colors.muted,padding:10,fontSize:12}}>Cargando catálogo de categorías…</Text>}
+    {catalog&&visibleCategories.length===0&&<Text style={{color:colors.muted,padding:10}}>No se encontraron categorías.</Text>}
+   </ScrollView>
+  </View>}
+ </View>:<TextInput accessibilityLabel={fields[key]} value={value(key)} onChangeText={v=>update(key,v)} maxLength={key==="name"||key==="businessHandle"?30:key==="services"?100:undefined} keyboardType={key==="opened"||key==="closed"?"number-pad":key.startsWith("email")?"email-address":key.startsWith("phone")&&!key.includes("Label")?"phone-pad":"default"} autoCapitalize={key.startsWith("email")||key==="businessHandle"?"none":"sentences"} autoCorrect={key==="businessHandle"?false:undefined} style={{borderWidth:1,borderColor:colors.line,borderRadius:10,padding:12,minHeight:44,color:colors.ink}}/>}{key==="businessHandle"&&<Text style={s.muted}>{handleFeedback||"Opcional. Se mostrará como @usuario en menciones."}</Text>}</View>)}<Button title={saving?"Guardando…":"Guardar"} onPress={()=>void save(section.id)}/></View>}
    </View>)}
    <View style={s.panel}><Pressable accessibilityRole="button" accessibilityState={{expanded:open==="privacy"}} onPress={()=>setOpen(v=>v==="privacy"?null:"privacy")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="lock-closed-outline" size={25} color={colors.ink}/><Text style={[s.h3,{flex:1,fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>Privacidad</Text><Ionicons name={open==="privacy"?"chevron-up":"chevron-down"} size={20} color={colors.muted}/></Pressable>{open==="privacy"&&<View style={{gap:12,paddingBottom:12}}>{([{key:"business_show_email",label:"Mostrar correo empresarial"},{key:"business_show_phone",label:"Mostrar teléfono empresarial"},{key:"business_enabled",label:"Mostrar mi JCard de negocio en el perfil"}] as const).map(item=><Pressable key={item.key} accessibilityRole="checkbox" accessibilityState={{checked:visibility[item.key]}} onPress={()=>{if(item.key==="business_enabled"&&visibility.business_enabled&&!visibility.personal_enabled){Alert.alert("Al menos una JCard activa","Debes conservar activa la JCard personal o la de negocio.");return;}setVisibility(v=>({...v,[item.key]:!v[item.key]}));}} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={visibility[item.key]?"checkbox":"square-outline"} size={25} color={colors.ink}/><Text style={{color:colors.ink,flex:1}}>{item.label}</Text></Pressable>)}<Button title={saving?"Guardando…":"Guardar"} onPress={()=>void save("privacy")}/></View>}</View>
    <View style={s.panel}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-business-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="color-palette-outline" size={25} color={colors.ink}/><Text style={[s.h3,{flex:1,fontSize:18,fontStyle:"normal",fontFamily:undefined}]}>Apariencia</Text><Ionicons name="chevron-forward" size={20} color={colors.muted}/></Pressable></View>
