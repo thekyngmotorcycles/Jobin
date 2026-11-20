@@ -1,0 +1,67 @@
+name: Jobeen JCard contact-first share Android OTA preview
+on:
+  push:
+    branches: [feature/jcard-share-sheet-social]
+    paths: [.github/workflows/jcard-share-sheet-preview-ota.yml]
+permissions:
+  contents: read
+concurrency:
+  group: jobeen-jcard-share-sheet-preview-ota
+  cancel-in-progress: false
+jobs:
+  publish-approved-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PROJECT_ID: ${{ vars.EXPO_PROJECT_ID }}
+    steps:
+      - name: Check out the specifically authorized experimental source
+        uses: actions/checkout@v4
+        with:
+          ref: feature/jcard-share-sheet-social
+      - name: Verify this preview uses the approved branch commit
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA" || { echo "::error::Unexpected source SHA"; exit 1; }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify Expo credentials are configured
+        run: test -n "$EXPO_TOKEN" || { echo "::error::Missing EXPO_TOKEN"; exit 1; }
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Check native runtime and Expo project identity
+        run: |
+          node - <<'JS'
+          const config=require("./app.json").expo;
+          const projectId=config.extra?.eas?.projectId;
+          if (!projectId || config.updates?.url !== "https://u.expo.dev/"+projectId) {
+            throw new Error("Expo update URL and project ID are inconsistent.");
+          }
+          if (process.env.EXPO_PROJECT_ID && process.env.EXPO_PROJECT_ID!==projectId) {
+            throw new Error("Repository Expo project ID mismatch.");
+          }
+          console.log("Expo project and OTA update URL confirmed.");
+          JS
+      - run: npx expo install --check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Publish authorized Android OTA with social JCard sharing
+        run: |
+          npx eas-cli@27.1.0 update --branch development --environment preview --platform android --message "Jobeen JCard share with contacts and external apps test" --non-interactive --json > jcard-share-sheet-ota.json
+          node - <<'JS'
+          const fs=require("node:fs");
+          const data=JSON.parse(fs.readFileSync("jcard-share-sheet-ota.json","utf8"));
+          console.log("EXPO_OTA_PUBLISH_RESULT",JSON.stringify(data));
+          JS
+      - name: Preserve OTA publication receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jobeen-jcard-share-sheet-ota
+          path: jcard-share-sheet-ota.json
+          if-no-files-found: ignore
+      - name: Record test-release boundaries
+        run: echo "Android OTA published to development EAS branch from isolated social JCard share source. No GitHub development/main merge was performed. Confirm runtime compatibility and test visually on the Android APK." >> "$GITHUB_STEP_SUMMARY"
