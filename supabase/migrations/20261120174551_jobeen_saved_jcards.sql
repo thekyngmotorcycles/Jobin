@@ -15,7 +15,7 @@ create index jobeen_saved_jcards_target_idx
 
 -- Public visibility is used by the insert policy; the authenticated role
 -- must be able to read the already-public visibility flags in CI and production.
-grant select on public.jcard_visibility to authenticated;
+grant select,insert,update on public.jcard_visibility to authenticated;
 
 alter table public.jobeen_saved_jcards enable row level security;
 revoke all on public.jobeen_saved_jcards from anon;
