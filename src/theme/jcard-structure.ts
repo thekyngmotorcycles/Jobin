@@ -17,7 +17,7 @@ export const jcardSectionMetrics={
   other:{padding:14,gap:8,footerHeight:92,footerWithSecondaryHeight:166}
  },
  business:{
-  light:{paddingHorizontal:10,paddingTop:14,paddingBottom:8,gap:3},
+  light:{paddingHorizontal:10,paddingTop:14,paddingBottom:8,gap:1},
   other:{paddingHorizontal:14,paddingTop:16,paddingBottom:9,gap:5},
   footerHeight:64
  }
