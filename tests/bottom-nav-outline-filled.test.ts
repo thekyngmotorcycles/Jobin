@@ -10,8 +10,11 @@ const messages=read("src/components/JobeenMessageIcon.tsx");
 test("Five tabs switch from an outline to a fill without changing routes",()=>{
  for(const route of ['name:"index"','name:"shop"','name:"videos"','name:"inbox"','name:"profile"'])
   assert.ok(tabs.includes(route),"Missing tab "+route);
- for(const id of ["index","videos","profile"])
+ for(const id of ["index","profile"])
   assert.ok(icons.includes('name==="'+id+'"&&(focused'),"Missing both icon states "+id);
+ assert.ok(icons.includes('name==="videos"&&<>'),"Missing Videos states");
+ assert.ok(icons.includes('{focused\n    ?<Path d={HEXA_PLAY+'),"Missing filled Videos state");
+ assert.ok(icons.includes('d={HEXA_PLAY} {...stroke}'),"Missing outlined Videos state");
  assert.ok(icons.includes('if(name==="inbox")return <JobeenMessageIcon size={size} color={color} filled={focused}/>;'));
  assert.ok(icons.includes('if(name==="shop")return <Ionicons name={focused?"bag-handle":"bag-handle-outline"}'));
  assert.ok(messages.includes("if(!filled)return"));
