@@ -56,7 +56,7 @@ export default function PublicJCard(){
  useEffect(()=>{if(!user)return;let live=true;void identityVerified(user).then(v=>{if(live)setVerifiedIdentity(v);}).catch(()=>{if(live)setVerifiedIdentity(false);});return()=>{live=false;};},[user]);
  const [followerCount,setFollowerCount]=useState<number|null>(null);
  useEffect(()=>{if(!user)return;let live=true;void requireSupabase().from("profile_follows" as never).select("*",{count:"exact",head:true}).eq("followed_id",user).then(({count})=>{if(live)setFollowerCount(count??0);});return()=>{live=false;};},[user]);
- useEffect(()=>{if(user&&viewer&&user===viewer&&card!=="business")router.replace("/(tabs)/profile");},[user,viewer]);
+ useEffect(()=>{if(user&&viewer&&user===viewer)router.replace({pathname:"/(tabs)/profile",params:card==="business"?{card:"business"}:{}});},[user,viewer,card]);
  const [cvStatus,setCvStatus]=useState("");
  const [cvRows,setCvRows]=useState<{company:string;role:string;from_year:number;to_year:number|null}[]>([]);
  const [cvMessage,setCvMessage]=useState("");
