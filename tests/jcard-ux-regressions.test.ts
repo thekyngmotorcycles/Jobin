@@ -24,11 +24,14 @@ test("Services use a raw text buffer until save to prevent rewriting at each com
  assert.ok(!editor.includes('key==="services"?value.split(",").map'));
 });
 test("Business card groups contacts between heading and non-overlapping medals without shrinking touch targets",()=>{
- assert.ok(business.includes('borderBottomColor:finish.line,flexShrink:0'));
- assert.ok(business.includes('height:64,flexShrink:0'));
- assert.ok(business.includes('minHeight:44,paddingRight:3'));
- assert.ok(business.includes('minHeight:44,paddingRight:5'));
- assert.ok(business.includes('minimumFontScale={0.84}'));
+ assert.ok(!business.includes('borderBottomColor:finish.line,flexShrink:0'));
+ assert.ok(!business.includes('label:"En el mercado"'));
+ assert.ok(business.includes('minHeight:48'));
+ assert.ok(business.includes('height:businessSections.footerHeight,flexShrink:0'));
+ assert.ok(business.includes('minHeight:48,paddingRight:3'));
+ assert.ok(business.includes('minHeight:48,paddingRight:5'));
+ assert.ok(business.includes('phonePlan.primaryText'));
+ assert.ok(business.includes('phonePlan.hiddenCount>0'));
  assert.ok(business.includes('businessName?wrapBusinessCardName(businessName):"Cargando negocio…"'));
  assert.ok(home.includes('const cached=await readScopedBusinessCard(owner)'));
  assert.ok(home.indexOf('const cached=await readScopedBusinessCard(owner)')<home.indexOf('const row=await readCloudBusiness();'));
