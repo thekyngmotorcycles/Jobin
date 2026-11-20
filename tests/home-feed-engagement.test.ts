@@ -98,17 +98,20 @@ test("All Home post types use author-first structure and a single-line expandabl
  assert.ok(demo.includes('marginLeft:"auto"'));
 });
 
-test("Creator profiles share Inicio, Todo, Videos, En vivo and Acerca de with real publication data",()=>{
+test("Creator profiles replace Inicio with JCards for owner and retain Todo, Videos, En vivo and Acerca de",()=>{
  const sections=source("src/components/ProfileSharedSections.tsx");
  const own=source("src/app/(tabs)/profile.tsx");
  const visitor=source("src/app/jcard.tsx");
  const grid=source("src/components/ProfileOwnedPosts.tsx");
  const api=source("src/lib/social-content.ts");
- const order=['id:"home"','id:"grid"','id:"videos"','id:"live"','id:"cv"'].map(key=>sections.indexOf(key));
+ const order=['id:"grid"','id:"jcards"','id:"videos"','id:"live"','id:"cv"'].map(key=>sections.indexOf(key));
  assert.ok(order.every((position,index)=>position>0&&(index===0||position>order[index-1])));
- assert.ok(own.includes('useState<Mode>("home")'));
- assert.ok(visitor.includes('useState<ProfileSection>("home")'));
+ assert.ok(own.includes('useState<Mode>("grid")'));
+ assert.ok(visitor.includes('useState<ProfileSection>("grid")'));
  assert.ok(own.includes('<ProfileOwnedPosts filter="all"/>'));
+ assert.ok(own.includes('<SavedJCardsGallery/>'));
+ assert.ok(!visitor.includes('<SavedJCardsGallery/>'));
+ assert.ok(sections.includes('const visitorTabs=ownerTabs.filter(tab=>tab.id!=="jcards")'));
  assert.ok(own.includes('<ProfileOwnedPosts filter="videos"/>'));
  assert.ok(visitor.includes("<ProfilePublicPosts userId={resource.data.id}"));
  assert.ok(sections.includes("<ScrollView horizontal"));
