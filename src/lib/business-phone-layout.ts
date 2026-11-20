@@ -43,12 +43,11 @@ export function planBusinessPhones(args:{
   estimatedBusinessPhoneWidth(first,scale)+estimatedBusinessPhoneWidth(label(numbers[1]),scale)+GAP+8<=room;
  if(both)return {numbers,visible:numbers,hiddenCount:0,primaryText:first,openDetailsFromPrimary:false};
  const hiddenCount=numbers.length-1;
- const proposed=first+(hiddenCount?" +"+hiddenCount:"");
- const fits=estimatedBusinessPhoneWidth(proposed,scale)<=room;
- const compact=fits?proposed:hiddenCount?(
-  estimatedBusinessPhoneWidth("Teléfonos +"+hiddenCount,scale)<=room?
-  "Teléfonos +"+hiddenCount:"Tel. +"+hiddenCount
- ):"Ver teléfono";
+ // Keep +1 as its own accessible 48dp action, directly beside the number.
+ const numberRoom=Math.max(0,room-(hiddenCount?48+GAP:0));
+ const fits=estimatedBusinessPhoneWidth(first,scale)<=numberRoom;
+ const compact=fits?first:
+  estimatedBusinessPhoneWidth("Teléfono",scale)<=numberRoom?"Teléfono":"Tel.";
  return {numbers,visible:[numbers[0]],hiddenCount,primaryText:compact,
-  openDetailsFromPrimary:hiddenCount>0||!fits};
+  openDetailsFromPrimary:!fits};
 }
