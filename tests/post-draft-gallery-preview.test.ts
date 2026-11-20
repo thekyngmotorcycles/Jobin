@@ -19,7 +19,9 @@ test("New post starts empty and existing drafts are restored only by explicit se
 test("Native Back returns to the existing tabs and never dispatches a cross-stack popTo",()=>{
  assert.ok(editor.includes('navigation.canGoBack()'));
  assert.ok(editor.includes('navigation.goBack()'));
- assert.ok(editor.includes('InteractionManager.runAfterInteractions'));
+ assert.ok(editor.includes('const timer=setTimeout(()=>{'));
+ assert.ok(editor.includes('else router.replace("/(tabs)/index")'));
+ assert.ok(!editor.includes('InteractionManager.runAfterInteractions('));
  assert.ok(editor.includes('usePreventRemove(hasWork&&!editingDone'));
  assert.ok(!editor.includes('StackActions.popTo('));
  assert.ok(!editor.includes('pathname:"/(tabs)/inicio"'));
