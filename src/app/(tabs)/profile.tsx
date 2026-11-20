@@ -127,6 +127,10 @@ export default function Profile() {
   void (async()=>{
    try{
     if((await cloudOwner())!==owner)return;
+    // Show the scoped card immediately on return or a card flip. Refresh from
+    // Supabase afterward, instead of briefly rendering the personal fallback.
+    const cached=await readScopedBusinessCard(owner).catch(()=>null);
+    if(active&&cached){setBusiness(cached);setBusinessOwner(owner);}
     const row=await readCloudBusiness();
     if(!active||(await cloudOwner())!==owner)return;
     const current={...EMPTY_BUSINESS_CARD,...(row??{})};
