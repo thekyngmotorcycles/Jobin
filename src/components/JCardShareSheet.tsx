@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useRef,useState} from "react";
 import {Linking,Modal,Pressable,ScrollView,Share,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {Ionicons} from "@expo/vector-icons";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -12,21 +12,23 @@ const OPTIONS=[
  {id:"qr",label:"Mi QR",icon:"qr-code-outline"},
  {id:"whatsapp",label:"WhatsApp",icon:"logo-whatsapp"},
  {id:"sms",label:"SMS",icon:"chatbubble-outline"},
- {id:"more",label:"Compartir",icon:"share-social-outline"}
+ {id:"more",label:"Más opciones",icon:"share-social-outline"}
 ] as const;
 
 /** Jobeen-owned bottom share sheet with real URL and QR. No invented contacts. */
-export function JCardShareSheet({visible,onClose,label,link,theme}:{
- visible:boolean;onClose:()=>void;label:string;link:string;theme:ThemeName
+export function JCardShareSheet({visible,onClose,label,link,theme,side}:{
+ visible:boolean;onClose:()=>void;label:string;link:string;theme:ThemeName;side:"personal"|"business"
 }){
  const t=jobeenTokens(theme);
  const {width}=useWindowDimensions();
  const [query,setQuery]=useState("");
  const [showQr,setShowQr]=useState(false);
+ const nativeSharePending=useRef(false);
+ const cardType=side==="business"?"JCard de negocios":"JCard personal";
  const options=OPTIONS.filter(item=>item.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
- const message="JCard de "+label+": "+link;
+ const message=cardType+" de "+label+": "+link;
  async function shareNative(){
-  try{await Share.share({message,title:"Compartir JCard · "+label});}catch{}
+  try{await Share.share({message,title:cardType+" · "+label});}catch{}
  }
  async function openExternal(url:string){
   try{await Linking.openURL(url);}catch{await shareNative();}
@@ -34,12 +36,15 @@ export function JCardShareSheet({visible,onClose,label,link,theme}:{
  function dismiss(){setShowQr(false);setQuery("");onClose();}
  function choose(action:ShareAction){
   if(action==="qr"){setShowQr(true);return;}
-  dismiss();
-  if(action==="whatsapp"){void openExternal("https://wa.me/?text="+encodeURIComponent(message));return;}
-  if(action==="sms"){void openExternal("sms:?body="+encodeURIComponent(message));return;}
-  void shareNative();
+  if(action==="whatsapp"){dismiss();void openExternal("https://wa.me/?text="+encodeURIComponent(message));return;}
+  if(action==="sms"){dismiss();void openExternal("sms:?body="+encodeURIComponent(message));return;}
+  // Dismiss the Jobeen modal before presenting Android's native chooser.
+ // Android's chooser supplies installed apps and its own suggested contacts.
+ nativeSharePending.current=true;
+ dismiss();
  }
- return <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={dismiss}>
+ return <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={dismiss}
+  onDismiss={()=>{if(nativeSharePending.current){nativeSharePending.current=false;void shareNative();}}}>
   <View style={{flex:1,justifyContent:"flex-end"}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Cerrar Compartir JCard" onPress={dismiss}
     style={{position:"absolute",top:0,left:0,right:0,bottom:0,backgroundColor:jcardCommon.scrim}}/>
@@ -49,7 +54,7 @@ export function JCardShareSheet({visible,onClose,label,link,theme}:{
     </View>
     <View style={{paddingHorizontal:20,gap:14,paddingTop:10,paddingBottom:20}}>
      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
-      <Text style={{fontSize:19,fontWeight:"800",color:t.ink}}>{showQr?"Mi código QR":"Compartir JCard"}</Text>
+      <Text style={{fontSize:19,fontWeight:"800",color:t.ink}}>{showQr?"Mi código QR":cardType}</Text>
       <Pressable accessibilityRole="button" accessibilityLabel={showQr?"Volver a compartir":"Cerrar panel de compartir"}
        onPress={()=>showQr?setShowQr(false):dismiss()} style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
        <Ionicons name={showQr?"arrow-back":"close"} size={23} color={t.ink}/>
@@ -71,7 +76,6 @@ export function JCardShareSheet({visible,onClose,label,link,theme}:{
          placeholderTextColor={t.ink2} accessibilityLabel="Buscar opción para compartir"
          style={{flex:1,color:t.ink,fontSize:15,paddingVertical:10}}/>
        </View>
-       <Text numberOfLines={1} style={{fontSize:13,color:t.ink2}}>Compartir {label}</Text>
        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{gap:16,paddingVertical:4,paddingRight:12}}>
         {options.map(option=><Pressable key={option.id} accessibilityRole="button"
@@ -86,7 +90,7 @@ export function JCardShareSheet({visible,onClose,label,link,theme}:{
         </Pressable>)}
         {options.length===0&&<Text style={{color:t.ink2,paddingVertical:24}}>No hay opciones con ese nombre.</Text>}
        </ScrollView>
-       <Text style={{fontSize:12,color:t.ink2}}>Mostrá tu QR o compartí tu JCard por WhatsApp, SMS y otras aplicaciones.</Text>
+       <Text style={{fontSize:12,color:t.ink2}}>Para ver los contactos sugeridos y todas las apps instaladas, elegí Más opciones.</Text>
       </>}
     </View>
    </SafeAreaView>
