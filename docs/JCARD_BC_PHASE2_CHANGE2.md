@@ -4,7 +4,7 @@
 
 ## Cambios autorizados realizados
 - Misma altura exterior que antes: 330 dp con tema claro, +8 dp si ancho compacto; 400 dp con tema oscuro, sin cambiar la lógica de escalado de fuentes.
-- Cabecera empresarial sin rediseño de identidad (foto, nombre, categoría, valoraciones, QR y verificación).
+- Reducir el padding superior de la cara empresarial clara de 14 a 10 dp para reservar las tres filas de 48 dp sin cambiar la altura exterior.\n- Cabecera empresarial sin rediseño de identidad (foto, nombre, categoría, valoraciones, QR y verificación).
 - Servicios en una línea y sin auto-reducir su fuente; tocar el texto abre la descripción completa.
 - «Desde AAAA» pequeño junto a servicios, siempre que exista año de apertura válido.
 - Eliminar ambas líneas horizontales añadidas a la cara empresarial (bajo servicios y sobre sellos). No cambiar la línea de idiomas de la JCard personal.
