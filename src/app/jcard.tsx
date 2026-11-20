@@ -32,7 +32,7 @@ export default function PublicJCard(){
  const [profileMenuOpen,setProfileMenuOpen]=useState(false);
   const [publicBusiness,setPublicBusiness]=useState<BusinessCardData|null>(null);
   useEffect(()=>{if(!user)return;let active=true;setPublicBusiness(null);void readPublicBusinessCard(user).then(v=>{if(active)setPublicBusiness(v);}).catch(()=>{if(active)setPublicBusiness(null);});return()=>{active=false;};},[user]);
- const [section,setSection]=useState<ProfileSection>("home");
+ const [section,setSection]=useState<ProfileSection>("grid");
  const profileScroll=useRef<ScrollView|null>(null);
  const profileScrollY=useRef(new Animated.Value(0)).current;
  const [tabOffset,setTabOffset]=useState(0);
@@ -111,7 +111,7 @@ export default function PublicJCard(){
     <ProfileSectionTabs section={section} onSelect={selectSection} pinned={tabsPinned}/>
    </View>}
    {!!resource.data&&<View style={{gap:14,paddingHorizontal:20,paddingTop:20,paddingBottom:40,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
-    {section==="home"&&<ProfilePublicPosts userId={resource.data.id} filter="all" limit={6} heading="Trabajo reciente" onSeeAll={()=>selectSection("grid")}/>}
+    
     {section==="cv"&&<View style={{marginVertical:4,gap:10}}>
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,minHeight:48,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
        <Text style={{fontWeight:"700",color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text>
