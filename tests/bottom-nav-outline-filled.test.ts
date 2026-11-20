@@ -10,9 +10,10 @@ const messages=read("src/components/JobeenMessageIcon.tsx");
 test("Five tabs switch from an outline to a fill without changing routes",()=>{
  for(const route of ['name:"index"','name:"shop"','name:"videos"','name:"inbox"','name:"profile"'])
   assert.ok(tabs.includes(route),"Missing tab "+route);
- for(const id of ["index","shop","videos","profile"])
+ for(const id of ["index","videos","profile"])
   assert.ok(icons.includes('name==="'+id+'"&&(focused'),"Missing both icon states "+id);
  assert.ok(icons.includes('if(name==="inbox")return <JobeenMessageIcon size={size} color={color} filled={focused}/>;'));
+ assert.ok(icons.includes('if(name==="shop")return <Ionicons name={focused?"bag-handle":"bag-handle-outline"}'));
  assert.ok(messages.includes("if(!filled)return"));
  assert.ok(messages.includes('fillRule="evenodd"'));
  assert.ok(icons.includes('fillRule="evenodd"'));
@@ -43,14 +44,35 @@ test("Message bubbles have both hollow and solid modes with transparent holes",(
 });
 
 test("Optical sizing balances Casa, JShop and Perfil against Mensajes",()=>{
- assert.ok(icons.includes('viewBox=isLargeCanvas?"0 0 28 28":"2 2 24 24"'));
- assert.ok(icons.includes('strokeWidth:(isLargeCanvas?28:24)*1.55/size'));
- assert.ok(icons.includes('M3.7 10.2h20.6l-1.2 13.9H4.9l-1.2-13.9Z'));
- assert.ok(icons.includes('M3 24.4v-2.7c0-4.65 4.7-7.2 11-7.2s11 2.55 11 7.2v2.7H3Z'));
+ assert.ok(icons.includes('viewBox=isVideo?"0 0 52 52":name==="streams"?"0 0 28 28":"2 2 24 24"'));
+ assert.ok(icons.includes('strokeWidth:coordinateSize*1.55/size'));
+ assert.ok(icons.includes('const HOME_SILHOUETTE='));
+ assert.ok(icons.includes('const PROFILE_SHOULDERS='));
+ assert.ok(icons.includes('if(name==="shop")return <Ionicons name={focused?"bag-handle":"bag-handle-outline"}'));
 });
 test("Video triangle uses the same centered geometry in both tab states",()=>{
- const centered='M10 9.6 18 14l-8 4.4V9.6Z';
- assert.equal(icons.split(centered).length-1,2);
+ assert.ok(icons.includes('const HEXA_PLAY='));
+ assert.ok(icons.includes('const HEXA_TRIANGLE='));
+ assert.ok(icons.includes('d={HEXA_PLAY+" "+HEXA_TRIANGLE}'));
+ assert.ok(icons.includes('d={HEXA_TRIANGLE} {...stroke}'));
+ assert.ok(!icons.includes('<Rect '));
  assert.ok(tabs.includes('(width<375?28:30)*1.15'));
  assert.ok(tabs.includes('width:48,height:48,alignItems:"center",justifyContent:"center"'));
+});
+
+test("Chats reuse the approved Messages icon while JShop keeps its bag-handle",()=>{
+ const inbox=read("src/app/(tabs)/inbox.tsx");
+ assert.ok(inbox.includes('import {JobeenMessageIcon} from "../../components/JobeenMessageIcon"'));
+ assert.ok(inbox.includes('option.key==="chats"?<JobeenMessageIcon size={22} color={t.ink} filled={false}/>'));
+ assert.ok(inbox.includes('<Ionicons name="bag-handle-outline" size={22} color={t.ink}/>'));
+ assert.ok(inbox.includes('accessibilityState={{selected}}'));
+ assert.ok(inbox.includes('onPress={()=>setTab(option.key)}'));
+});
+test("Approved rounded honeycomb icon rule is preserved for future work",()=>{
+ const rules=read("AGENTS.md");
+ assert.ok(rules.includes("Norma visual de iconografía Jobeen"));
+ assert.ok(rules.includes("Hexa Play A"));
+ assert.ok(rules.includes("No compilar ni generar un APK sin autorización explícita"));
+ assert.ok(icons.includes('strokeLinecap:"round"'));
+ assert.ok(icons.includes('strokeLinejoin:"round"'));
 });

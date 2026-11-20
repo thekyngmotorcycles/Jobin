@@ -9,6 +9,15 @@ Este archivo es la fuente de referencia para asistentes y desarrolladores que co
 - Diseño de marca: wordmark Jobin cursivo, tarjetas JCard con temas y detalles satinados.
 - No incluir tokens, contraseñas, claves de Supabase ni credenciales en prompts, commits o archivos de traspaso.
 
+## Norma visual de iconografía Jobeen (permanente; aprobada por el propietario)
+- La personalidad visual de Jobeen es **abeja y panal**: integrar celdas hexagonales suavizadas cuando tengan sentido semántico, sin convertir todos los controles en hexágonos.
+- Todos los iconos y botones nuevos o rediseñados deben compartir un lenguaje óptico consistente: trazos del mismo peso aparente, dimensiones perceptuales equilibradas, esquinas suavizadas y remates redondeados.
+- Preferir contornos orgánicos, simetría y centrado óptico; evitar ángulos rígidos, puntas agresivas y siluetas copiadas de plataformas conocidas.
+- La navegación inferior usa la misma silueta en estado activo/inactivo: **contorno** inactivo y **relleno** activo, sin círculos de selección añadidos ni saltos de tamaño.
+- La familia aprobada de la barra inferior es: Casa redondeada; JShop = `bag-handle-outline` / `bag-handle` (el mismo icono del botón JShop en Mensajes); Videos = **Hexa Play A**, celda de panal con triángulo centrado, más grande que los otros cuatro; Mensajes = `JobeenMessageIcon`; Perfil con cabeza y hombros suaves.
+- Reutilizar `JobeenMessageIcon` en el botón Chats de la pantalla Mensajes. Mantener la navegación, el acordeón, las áreas táctiles y el respeto por safe-area al modificar solo los dibujos.
+- Para cambios visuales usar **EAS OTA en la rama `development`** cuando el binario sea compatible. No compilar ni generar un APK sin autorización explícita del usuario. No publicar cambios de diseño sin aprobación previa.
+
 ## Política de ramas (obligatoria)
 1. `main` es la rama estable. NUNCA hacer commits, pushes, merges, cherry-picks ni despliegues de producción a `main` sin autorización explícita del usuario para esa acción.
 2. `development` es la rama de integración y pruebas. Los arreglos pequeños pueden aplicarse allí, siempre con verificación.
