@@ -1,5 +1,5 @@
 import {useRef,useState} from "react";
-import {Linking,Modal,Pressable,ScrollView,Share,Text,TextInput,View,useWindowDimensions} from "react-native";
+import {Linking,Modal,Platform,Pressable,ScrollView,Share,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {Ionicons} from "@expo/vector-icons";
 import {SafeAreaView} from "react-native-safe-area-context";
 import QRCode from "react-native-qrcode-svg";
@@ -38,8 +38,10 @@ export function JCardShareSheet({visible,onClose,label,link,theme,side}:{
   if(action==="qr"){setShowQr(true);return;}
   if(action==="whatsapp"){dismiss();void openExternal("https://wa.me/?text="+encodeURIComponent(message));return;}
   if(action==="sms"){dismiss();void openExternal("sms:?body="+encodeURIComponent(message));return;}
-  // Dismiss the Jobeen modal before presenting Android's native chooser.
- // Android's chooser supplies installed apps and its own suggested contacts.
+  // Android doesn't reliably fire Modal.onDismiss, so defer the native
+ // system chooser until the Jobeen modal closing animation has completed.
+ // The Android chooser itself supplies installed apps and suggested recipients.
+ if(Platform.OS==="android"){dismiss();setTimeout(()=>void shareNative(),400);return;}
  nativeSharePending.current=true;
  dismiss();
  }
