@@ -88,6 +88,7 @@ test("More options invokes Android native share chooser after closing custom she
  const sheet=src("src/components/JCardShareSheet.tsx");
  assert.ok(sheet.includes('{id:"more",label:"Más opciones"'));
  assert.ok(sheet.includes('nativeSharePending.current=true'));
+ assert.ok(sheet.includes('if(Platform.OS==="android"){dismiss();setTimeout(()=>void shareNative(),400);return;}'));
  assert.ok(sheet.includes('onDismiss={()=>{if(nativeSharePending.current)'));
  assert.ok(sheet.includes('Share.share({message,title:cardType+" · "+label})'));
  assert.ok(sheet.includes("Para ver los contactos sugeridos y todas las apps instaladas"));
