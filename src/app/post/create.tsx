@@ -10,7 +10,7 @@ import {PublicProfileAvatar} from "../../components/PublicProfileAvatar";
 import {currentSocialUser,publishHomePost,shareApprovedMedia,uploadPhoto,type FeedPostKind,type FeedAudience} from "../../lib/social-content";
 import {PostComposerSheets} from "../../components/PostComposerSheets";
 import {DRAFT_PHOTO_BUCKET,emptyPostDraft,hasDraftContent,readPostDrafts,savePostDraft,deletePostDraft,restorePostDraftPhotoUrls,type PostDraft,type PostDraftPhoto} from "../../lib/post-drafts";
-import {searchPostMentions,type PostMention} from "../../lib/post-mentions";
+import {searchPostMentions,type PostMention,type PostBusinessMention} from "../../lib/post-mentions";
 import {requireSupabase} from "../../lib/supabase";
 import type {PublishedMedia} from "../../lib/safety-api";
 import {useTheme} from "../../state/ThemeProvider";
@@ -60,6 +60,7 @@ export default function PostCreate(){
  const [mentionResults,setMentionResults]=useState<PostMention[]>([]);
  const [mentionSearching,setMentionSearching]=useState(false);
  const [mentionedProfileIds,setMentionedProfileIds]=useState<string[]>([]);
+ const [businessMentions,setBusinessMentions]=useState<PostBusinessMention[]>([]);
  const draftSnapshotRef=useRef<PostDraft>(emptyPostDraft());
  const savingChainRef=useRef<Promise<void>>(Promise.resolve());
  const pendingUploadsRef=useRef<Promise<void>[]>([]);
@@ -67,7 +68,7 @@ export default function PostCreate(){
 
  const snapshot:PostDraft={
   id:draftId,updatedAt:Date.now(),body,kind,photos,mediaId,audience,
-  audienceFollowers,audienceContacts,consent,mentionedProfileIds
+  audienceFollowers,audienceContacts,consent,mentionedProfileIds,businessMentions
  };
  draftSnapshotRef.current=snapshot;
  const hasWork=hasDraftContent(snapshot);
@@ -86,7 +87,7 @@ export default function PostCreate(){
   setDraftId(d.id);setBody(d.body);setKind(d.kind);
   setPhotos(d.photos);setMediaId(d.mediaId);setAudience(d.audience);
   setAudienceFollowers(d.audienceFollowers);setAudienceContacts(d.audienceContacts);
-  setConsent(d.consent);setMentionedProfileIds(d.mentionedProfileIds??[]);
+  setConsent(d.consent);setMentionedProfileIds(d.mentionedProfileIds??[]);setBusinessMentions(d.businessMentions??[]);
   void restorePostDraftPhotoUrls(d.photos).then(setPhotos).catch(()=>{
    setError("Algunas fotos necesitan conexión o volver a seleccionarse.");
   });
@@ -120,7 +121,7 @@ export default function PostCreate(){
    void persistSnapshot(draftSnapshotRef.current).catch(e=>setError(e instanceof Error?e.message:"No se pudo guardar el borrador."));
   },180);
   return()=>clearTimeout(timer);
- },[author,hydrated,draftId,body,kind,photos,mediaId,audience,audienceFollowers,audienceContacts,consent,mentionedProfileIds]);
+ },[author,hydrated,draftId,body,kind,photos,mediaId,audience,audienceFollowers,audienceContacts,consent,mentionedProfileIds,businessMentions]);
  useEffect(()=>{
   const subscription=AppState.addEventListener("change",status=>{
    if(status!=="active")void persistSnapshot(draftSnapshotRef.current).catch(()=>{});
@@ -128,7 +129,7 @@ export default function PostCreate(){
   return()=>{subscription.remove();void persistSnapshot(draftSnapshotRef.current).catch(()=>{});};
  },[author,hydrated]);
  useEffect(()=>{
-  const match=body.match(/(?:^|\s)@([\p{L}\p{N}_.]{1,40})$/u);
+  const match=body.endsWith(" ")?null:body.match(/(?:^|\s)@([\p{L}\p{N}_. -]{1,60})$/u);
   setMentionQuery(match?.[1]??"");
  },[body]);
  useEffect(()=>{
@@ -219,7 +220,7 @@ export default function PostCreate(){
     draftSnapshotRef.current=empty;
     setDraftId(empty.id);setBody("");setKind("text");setPhotos([]);setMediaId("");
     setAudience("public");setAudienceFollowers(true);setAudienceContacts(false);
-    setConsent(false);setMentionedProfileIds([]);
+    setConsent(false);setMentionedProfileIds([]);setBusinessMentions([]);
    }
    const saved=await readPostDrafts(author);
    setDrafts(saved);setDraftCount(saved.length);
@@ -227,9 +228,15 @@ export default function PostCreate(){
   finally{autosaveEnabledRef.current=true;}
  }
  function chooseMention(person:PostMention){
-  const token="@"+(person.handle.replace(/^@/,"")||person.name.trim().replace(/\s+/g,""));
-  setBody(current=>current.replace(/@([\p{L}\p{N}_.]*)$/u,token+" "));
-  setMentionedProfileIds(current=>current.includes(person.id)?current:[...current,person.id]);
+  const token="@"+(person.handle.replace(/^@/,"")||(person.kind==="business"?person.name.trim():person.name.trim().replace(/\s+/g,"")));
+  setBody(current=>{
+   const match=current.match(/(?:^|\s)@([\p{L}\p{N}_. -]{1,60})$/u);
+   return match?current.slice(0,current.length-match[1].length-1)+token+" ":current;
+  });
+  if(person.kind==="business"){
+   setBusinessMentions(current=>current.some(item=>item.ownerId===person.id&&item.label===token)
+    ?current:[...current.filter(item=>item.ownerId!==person.id),{ownerId:person.id,label:token}].slice(0,20));
+  }else setMentionedProfileIds(current=>current.includes(person.id)?current:[...current,person.id]);
   setMentionQuery("");setMentionResults([]);
  }
  async function choosePhotos(){
@@ -285,7 +292,7 @@ export default function PostCreate(){
     body,kind,photos:kind==="photos"?selected.map(p=>p.uri):[],
     photoDraftPaths:kind==="photos"?selected.map(p=>p.backupPath??null):[],
     photoAltTexts:kind==="photos"?selected.map(p=>p.altText):[],
-    mentionedProfileIds,
+    mentionedProfileIds,businessMentions,
     mediaId:(kind==="video"||kind==="live")?mediaId:null,
     audience,audienceFollowers:audience==="private"&&audienceFollowers,
     audienceContacts:audience==="private"&&audienceContacts
@@ -358,10 +365,10 @@ export default function PostCreate(){
        {mentionResults.map(person=><Pressable key={person.id} accessibilityRole="button"
         accessibilityLabel={"Mencionar "+person.name} onPress={()=>chooseMention(person)}
         style={{minHeight:48,paddingHorizontal:12,flexDirection:"row",alignItems:"center",gap:10}}>
-        <Ionicons name={person.company?"business-outline":"person-outline"} size={19} color={t.ink}/>
+        <Ionicons name={person.kind==="business"||person.company?"business-outline":"person-outline"} size={19} color={t.ink}/>
         <View style={{flex:1}}>
          <Text numberOfLines={1} style={{fontSize:13,fontWeight:"600",color:t.ink}}>{person.name}</Text>
-         {!!person.handle&&<Text numberOfLines={1} style={{fontSize:11,color:t.ink2}}>@{person.handle}</Text>}
+         <Text numberOfLines={1} style={{fontSize:11,color:t.ink2}}>{person.kind==="business"?["JCard de negocio",person.category,person.handle?"@"+person.handle:"Sin usuario empresarial"].filter(Boolean).join(" · "):person.handle?"@"+person.handle:"Cuenta personal"}</Text>
         </View>
        </Pressable>)}
       </ScrollView>
