@@ -12,14 +12,14 @@ test("Business location touch target is content-sized, not stretched across the 
  const target=match[0];
  assert.ok(target.includes('alignSelf:"flex-start"'));
  assert.ok(target.includes('maxWidth:"100%"'));
- assert.ok(target.includes("minHeight:44"));
+ assert.ok(target.includes("minHeight:48"));
  assert.ok(target.includes("flexGrow:0"));
  assert.ok(!target.includes("style={{flex:1,fontSize:11"));
  assert.ok(target.includes("event.stopPropagation()"));
 });
 test("Business contacts have bounded touch areas and independent call/WhatsApp actions",()=>{
  assert.ok(card.includes('accessibilityLabel={"Enviar correo a "+email}'));
- assert.ok(card.includes('alignSelf:"flex-start",maxWidth:"100%",minHeight:44,paddingRight:5'));
+ assert.ok(card.includes('alignSelf:"flex-start",maxWidth:"100%",minHeight:48,paddingRight:5'));
  assert.ok(card.includes('accessibilityLabel="Llamar al teléfono principal del negocio"'));
  assert.ok(card.includes('accessibilityLabel={"Llamar al número "+item.number}'));
  assert.ok(card.includes('accessibilityLabel="Abrir WhatsApp del negocio"'));
@@ -28,7 +28,7 @@ test("Business contacts have bounded touch areas and independent call/WhatsApp a
 });
 test("Personal language and business awards do not turn empty flex columns into buttons",()=>{
  assert.ok(card.includes('<View key={language.name+index} style={{flex:1,minWidth:0,alignItems:"center",justifyContent:"center"}}><Pressable'));
- assert.ok(card.includes('style={{alignSelf:"center",maxWidth:"100%",minHeight:44,flexDirection:"row"'));
+ assert.ok(card.includes('style={{alignSelf:"center",maxWidth:"100%",minHeight:48,flexDirection:"row"'));
  assert.ok(card.includes('return <View style={{flex:1,minWidth:0,alignItems:"center",justifyContent:"center",marginHorizontal:compact?0:1}}><Pressable'));
  assert.ok(card.includes('width:compact?50:"100%"'));
  assert.ok(card.includes('size={sealDiameter+4}'));
