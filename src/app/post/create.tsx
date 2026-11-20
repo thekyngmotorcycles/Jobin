@@ -368,7 +368,7 @@ export default function PostCreate(){
         <Ionicons name={person.kind==="business"||person.company?"business-outline":"person-outline"} size={19} color={t.ink}/>
         <View style={{flex:1}}>
          <Text numberOfLines={1} style={{fontSize:13,fontWeight:"600",color:t.ink}}>{person.name}</Text>
-         <Text numberOfLines={1} style={{fontSize:11,color:t.ink2}}>{person.kind==="business"?["JCard de negocio",person.category,person.handle?"@"+person.handle:"Sin usuario empresarial"].filter(Boolean).join(" · "):person.handle?"@"+person.handle:"Cuenta personal"}</Text>
+         <Text numberOfLines={2} style={{fontSize:11,color:t.ink2}}>{person.kind==="business"?["JCard de negocio",person.handle?"@"+person.handle:person.ownerHandle?"de @"+person.ownerHandle:"Sin usuario empresarial",person.category].filter(Boolean).join(" · "):person.handle?"@"+person.handle:"Cuenta personal"}</Text>
         </View>
        </Pressable>)}
       </ScrollView>
