@@ -139,7 +139,7 @@ export default function PublicJCard(){
    <Animated.View style={{gap:14,paddingHorizontal:20,paddingBottom:20,zIndex:0,transform:[{translateY:heroParallax}]}}>
     {resource.data?<ProfileIdentityHeader
      card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??resource.data.business}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"} onActiveSideChange={setActiveCardSide}/>} 
-     actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
+     actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
       onToggleSaved={cardVisibilityReady&&sideIsPublic?()=>void toggleSaved():undefined}
       savedJCard={cardSaved} savingJCard={savingCard} visibleCardSide={activeCardSide} businessName={publicBusiness?.name??resource.data.business?.name}/>} 
      trust={<ProfessionalTrustMark worker={resource.data.id}/>}
