@@ -23,7 +23,7 @@ test("Business location pressable matches icon and text, never stretching to the
  assert.ok(section.includes('Linking.openURL("https://www.google.com/maps/search/'));
 });
 
-test("Business email, phones, WhatsApp and QR have precise independent touch actions",()=>{
+test("Business email, phones, WhatsApp and sharing have precise independent touch actions",()=>{
  const source=card();
  const email=between(source,'<Pressable key={"business-email"+i}','</Pressable>');
  const phoneRow=between(source,'visibility.business_show_phone&&','</View>}');
@@ -34,7 +34,8 @@ test("Business email, phones, WhatsApp and QR have precise independent touch act
  assert.ok(phoneRow.includes('alignSelf:"flex-start",maxWidth:"100%"'));
  assert.ok(phoneRow.includes('accessibilityLabel="Abrir WhatsApp del negocio"'));
  assert.ok(phoneRow.includes('width:44,height:44'));
- assert.ok(source.includes('accessibilityLabel="Ampliar código QR del negocio"'));
+ assert.ok(!source.includes('accessibilityLabel="Ampliar código QR del negocio"'));
+ assert.ok(source.includes('<JCardShareSheet visible={shareSide!==null}'));
  assert.ok(source.includes('accessibilityLabel="Guardar contacto del negocio"'));
  assert.ok(source.includes('accessibilityLabel="Verificación de empresa"'));
 });
@@ -58,7 +59,8 @@ test("Personal JCard languages, links and identity badges avoid swallowing empty
  assert.ok(source.includes('accessibilityLabel={"Ver empresa "+employerLink.name}'));
  assert.ok(source.includes('style={{alignSelf:"flex-start",maxWidth:"100%"}}'));
  assert.ok(source.includes('hitSlop={{top:6,bottom:6,right:6,left:0}}'));
- assert.ok(source.includes('accessibilityLabel="Ampliar código QR personal"'));
+ assert.ok(!source.includes('accessibilityLabel="Ampliar código QR personal"'));
+ assert.ok(source.includes('onPress={()=>void share(back?"business":"personal")}'));
  assert.ok(source.includes('accessibilityLabel="Ver experiencia por profesión"'));
 });
 
