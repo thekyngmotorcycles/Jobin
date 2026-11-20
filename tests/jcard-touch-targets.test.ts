@@ -39,7 +39,8 @@ test("Personal language and business awards do not turn empty flex columns into 
 test("Card actions remain separate from flip gesture and decorative visuals are noninteractive",()=>{
  assert.ok(card.includes("CardFlipInteractionContext"));
  assert.ok(card.includes("markInteractive?.()"));
- assert.ok(card.includes('accessibilityLabel="Ampliar código QR del negocio"'));
+ assert.ok(!card.includes('accessibilityLabel="Ampliar código QR del negocio"'));
+ assert.ok(card.includes('<JCardShareSheet visible={shareSide!==null}'));
  assert.ok(card.includes('accessibilityLabel="Verificación de empresa"'));
  assert.ok(card.includes('accessibilityLabel="Guardar contacto del negocio"'));
  assert.ok(card.includes("event.stopPropagation()"));
