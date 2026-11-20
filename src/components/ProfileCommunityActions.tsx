@@ -1,4 +1,5 @@
 import {jobeenTokens} from "../theme/jobeen";
+import {jcardCommon} from "../theme/jcard";
 import {useCallback,useEffect,useState} from "react";
 import {Alert,Modal,Pressable,Share,StyleSheet,Text,View} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
@@ -62,7 +63,7 @@ export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClos
    </Pressable>
   </View>
   <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={()=>onMenuClose?.()}>
-   <View style={{flex:1,backgroundColor:"rgba(0,0,0,0.18)",paddingTop:insets.top+65,paddingHorizontal:16,alignItems:"flex-end"}}>
+   <View style={{flex:1,backgroundColor:jcardCommon.scrim,paddingTop:insets.top+65,paddingHorizontal:16,alignItems:"flex-end"}}>
     <Pressable accessibilityLabel="Cerrar opciones del perfil" onPress={()=>onMenuClose?.()} style={StyleSheet.absoluteFill}/>
     <View style={{width:260,maxWidth:"85%",padding:10,borderWidth:1,borderColor:colors.line,backgroundColor:colors.paper,borderRadius:14,gap:5}}>
    <Pressable accessibilityRole="button" onPress={()=>{onMenuClose?.();void Share.share({message:"JCard de "+name+" · "+url,url});}} style={{padding:12,flexDirection:"row",gap:12}}><Ionicons name="share-social-outline" size={21} color={colors.ink}/><Text style={s.text}>Compartir perfil</Text></Pressable>
