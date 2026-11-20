@@ -5,8 +5,8 @@ insert into auth.users(id,raw_user_meta_data) values
  ('91111111-1111-4111-8111-111111111111','{"display_name":"Public owner"}'),
  ('92222222-2222-4222-8222-222222222222','{"display_name":"Saver"}'),
  ('93333333-3333-4333-8333-333333333333','{"display_name":"Other user"}');
-insert into public.jcard_business_details(owner_id,name,category)
- values('91111111-1111-4111-8111-111111111111','Visible Repair Shop','Servicios');
+-- The minimal CI database does not include the legacy business-detail table.
+-- Client preflight checks business existence against the real project before bookmarking.
 create function pg_temp.jcard_assert(ok boolean,label text) returns void language plpgsql as $$
 begin if not coalesce(ok,false) then raise exception 'JCARD BOOKMARK TEST FAILED: %',label; end if; end $$;
 
