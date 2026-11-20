@@ -45,7 +45,7 @@ export function JCardShareSheet({visible,onClose,ownerId,name,side}:{visible:boo
    if(!live||!value)return;
    try{const parsed=JSON.parse(value) as Record<string,unknown>;
     const safe:Partial<Record<ExternalAction,number>>={};
-    for(const option of externals)if(typeof parsed[option.id]==="number"&&Number.isFinite(parsed[option.id])&&parsed[option.id]>=0)safe[option.id]=Math.min(10000,parsed[option.id] as number);
+    for(const option of externals){const count=parsed[option.id];if(typeof count==="number"&&Number.isFinite(count)&&count>=0)safe[option.id]=Math.min(10000,count);}
     setUsage(safe);
    }catch{/* Don't block the share sheet if preferences are damaged. */}
   }).catch(()=>{});
