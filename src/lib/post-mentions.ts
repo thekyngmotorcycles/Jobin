@@ -1,5 +1,5 @@
 import {requireSupabase} from "./supabase";
-export type PostMention={id:string;name:string;handle:string;company:boolean;kind:"personal"|"business";category?:string};
+export type PostMention={id:string;name:string;handle:string;company:boolean;kind:"personal"|"business";category?:string;ownerHandle?:string};
 export type PostBusinessMention={ownerId:string;label:string};
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function validBusinessMentions(value:unknown):PostBusinessMention[]{
@@ -35,7 +35,7 @@ export async function searchPostMentions(search:string):Promise<PostMention[]>{
  const handleMap=new Map((handles.data??[]).map(p=>[p.profile_id,(p.handle??"").replace(/^@/,"")]));
  const enabled=new Map(((visibility.data??[]) as unknown as {owner_id:string;business_enabled:boolean}[]).map(p=>[p.owner_id,p.business_enabled]));
  const companyResults:PostMention[]=cards.filter(p=>active.has(p.owner_id)&&p.name?.trim()&&enabled.get(p.owner_id)!==false)
-  .map(p=>({id:p.owner_id,name:p.name.trim(),handle:p.business_handle??"",company:true,kind:"business" as const,category:p.category??undefined}));
+  .map(p=>({id:p.owner_id,name:p.name.trim(),handle:p.business_handle??"",company:true,kind:"business" as const,category:p.category??undefined,ownerHandle:handleMap.get(p.owner_id)??""}));
  const peopleIds=[...new Set([...(named.data??[]).map(x=>x.id),...(personalHandles.data??[]).map(x=>x.profile_id)])];
  const personResults:PostMention[]=peopleIds.filter(id=>active.has(id)).map(id=>{
   const p=active.get(id)!;
