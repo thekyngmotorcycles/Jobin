@@ -341,6 +341,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
  useFocusEffect(useCallback(()=>{let live=true;if(ownerId)void readJCardVisibility(ownerId).then(v=>{if(live)setVisibility(v);}).catch(()=>{});return()=>{live=false;};},[ownerId]));
  const [back,setBack]=useState(initialSide==="business"),[qrOpen,setQrOpen]=useState(false);
+  useEffect(()=>setBack(initialSide==="business"),[initialSide]);
  const canFlip=showOwnerActions||(visibility.personal_enabled&&visibility.business_enabled);
  const reducedMotion=useReducedMotion();
  const [hintVisible,setHintVisible]=useState(false);
