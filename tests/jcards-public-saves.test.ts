@@ -14,7 +14,7 @@ test("Anyone signed in can bookmark a displayed public face, without owner appro
  assert.ok(sql.includes('saver_id=(select auth.uid())'));
  assert.ok(sql.includes('v.personal_enabled else v.business_enabled'));
  assert.ok(sql.includes('p.deactivated_at is null'));
- assert.ok(sql.includes('length(trim(b.name))>0'));
+ assert.ok(api.includes('if(!business?.name?.trim())'));
  assert.ok(!sql.includes("owner_approved"));
  assert.ok(api.includes(".insert({target_id:targetId,card_side:side"));
  assert.ok(visitor.includes("saveVisibleJCard(user,activeCardSide)"));
