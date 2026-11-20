@@ -9,6 +9,7 @@ const editor=file("src/app/jcard-business-edit.tsx");
 const cloud=file("src/lib/jcard-cloud.ts");
 const cache=file("src/lib/business-card-cache.ts");
 const card=file("src/components/JobinCard.tsx");
+const avatar=file("src/app/personal-avatar-editor.tsx");
 
 test("Business caches are account-scoped and legacy shared data is never imported",()=>{
  assert.ok(cache.includes('"jobeen.business.card.v2."+owner'));
@@ -20,6 +21,10 @@ test("Business caches are account-scoped and legacy shared data is never importe
  assert.ok(profile.includes("readScopedBusinessCard(owner)"));
  assert.ok(profile.includes("writeScopedBusinessCard(owner,current)"));
  assert.ok(editor.includes("writeScopedBusinessCard(editorOwner,clean)"));
+ assert.ok(!avatar.includes('AsyncStorage.getItem("jobin.business.card.v1")'));
+ assert.ok(!avatar.includes('AsyncStorage.setItem("jobin.business.card.v1")'));
+ assert.ok(avatar.includes("await writeCloudBusiness(updated,owner)"));
+ assert.ok(avatar.includes("await writeScopedBusinessCard(owner,updated)"));
 });
 test("Missing business cloud records cannot trigger uploads from previous accounts",()=>{
  assert.ok(!profile.includes("await writeCloudBusiness(local)"));
