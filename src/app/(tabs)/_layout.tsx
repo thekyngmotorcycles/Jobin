@@ -25,7 +25,7 @@ export default function TabLayout(){
   tabBarHideOnKeyboard:true,tabBarItemStyle:{minHeight:48,justifyContent:"center",alignItems:"center",backgroundColor:colors.transparent},
   tabBarActiveBackgroundColor:colors.transparent,tabBarInactiveBackgroundColor:colors.transparent,
   tabBarBackground:()=> desktop?null:<NavigationFade/>,
-  tabBarStyle:{display:desktop?"none":"flex",position:"absolute",backgroundColor:colors.transparent,borderTopWidth:0,elevation:0,shadowOpacity:0,overflow:"visible",height:NAVIGATION_ROW_HEIGHT+inset.bottom,paddingTop:5,paddingBottom:Math.max(5,inset.bottom)},
+  tabBarStyle:{display:desktop?"none":"flex",position:"absolute",backgroundColor:colors.transparent,borderTopWidth:0,elevation:0,shadowOpacity:0,overflow:"visible",height:NAVIGATION_ROW_HEIGHT+inset.bottom,paddingTop:3,paddingBottom:Math.max(7,inset.bottom+2)},
   tabBarIconStyle:{height:48,width:48,alignItems:"center",justifyContent:"center"},
  }}>
   <Tabs.Screen name="create" options={{href:null}}/>
