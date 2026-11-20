@@ -5,16 +5,17 @@ import {ActivityIndicator,Alert,Linking,Modal,Platform,Pressable,ScrollView,Shar
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
+import {jcardSharingColors} from "../theme/jcard-share";
 import {readJCardVisibility} from "../lib/jcard-visibility";
 import {buildSharedJCard,MAX_SHARE_RECIPIENTS,sendJCardToContacts,shareContactSuggestions,type ShareRecipient,type SharedJCardSide} from "../lib/jcard-sharing";
 
 type ExternalAction="whatsapp"|"sms"|"copy"|"more";
 const PREFERENCE_KEY="jobeen.jcard.share.external-use.v1";
 const externals=[
- {id:"whatsapp" as const,label:"WhatsApp",icon:"logo-whatsapp" as const,color:"#25D366"},
- {id:"sms" as const,label:"Mensajes",icon:"chatbubble-ellipses-outline" as const,color:"#397AD5"},
- {id:"copy" as const,label:"Copiar",icon:"copy-outline" as const,color:"#656B7A"},
- {id:"more" as const,label:"Más",icon:"ellipsis-horizontal" as const,color:"#656B7A"}
+ {id:"whatsapp" as const,label:"WhatsApp",icon:"logo-whatsapp" as const,color:jcardSharingColors.whatsapp},
+ {id:"sms" as const,label:"Mensajes",icon:"chatbubble-ellipses-outline" as const,color:jcardSharingColors.messages},
+ {id:"copy" as const,label:"Copiar",icon:"copy-outline" as const,color:jcardSharingColors.neutral},
+ {id:"more" as const,label:"Más",icon:"ellipsis-horizontal" as const,color:jcardSharingColors.neutral}
 ];
 const initials=(name:string)=>name.trim().split(/\s+/).slice(0,2).map(s=>s.charAt(0)).join("").toUpperCase()||"J";
 
@@ -115,7 +116,7 @@ export function JCardShareSheet({visible,onClose,ownerId,name,side}:{visible:boo
   }catch(e){Alert.alert("Compartir JCard",e instanceof Error?e.message:"No se pudo abrir esta aplicación.");}
  };
  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-  <View style={{flex:1,justifyContent:"flex-end",backgroundColor:"rgba(0,0,0,0.56)"}}>
+  <View style={{flex:1,justifyContent:"flex-end",backgroundColor:jcardSharingColors.scrim}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Cerrar compartir JCard" onPress={onClose} style={{flex:1}}/>
    <View style={{backgroundColor:color.surface,borderTopLeftRadius:26,borderTopRightRadius:26,paddingHorizontal:16,paddingTop:10,
      paddingBottom:Math.max(12,insets.bottom),gap:14,maxHeight:"90%"}}>
@@ -162,7 +163,7 @@ export function JCardShareSheet({visible,onClose,ownerId,name,side}:{visible:boo
      {apps.map(app=><Pressable key={app.id} accessibilityRole="button" accessibilityLabel={app.id==="copy"?"Copiar enlace mediante Android":app.label+" · Compartir JCard"}
       disabled={!share} onPress={()=>void external(app.id)} style={{flex:1,alignItems:"center",gap:7,minHeight:96,opacity:share?1:0.45}}>
        <View style={{width:55,height:55,borderRadius:28,backgroundColor:app.color,alignItems:"center",justifyContent:"center"}}>
-        <Ionicons name={app.icon} size={25} color="#FFFFFF"/>
+        <Ionicons name={app.icon} size={25} color={jcardSharingColors.white}/>
        </View>
        <Text numberOfLines={1} style={{fontSize:11,color:color.ink}}>{app.label}</Text>
       </Pressable>)}
