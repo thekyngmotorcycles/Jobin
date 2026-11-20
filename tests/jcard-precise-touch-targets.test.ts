@@ -15,7 +15,7 @@ test("Business location pressable matches icon and text, never stretching to the
  const section=between(card(),'!!b?.location&&<Pressable','</Pressable>');
  assert.ok(section.includes('alignSelf:"flex-start"'));
  assert.ok(section.includes('maxWidth:"100%"'));
- assert.ok(section.includes('minHeight:44'));
+ assert.ok(section.includes('minHeight:48'));
  assert.ok(section.includes('flexShrink:1,flexGrow:0'));
  assert.ok(!section.includes('style={{flex:1,fontSize:11'));
  assert.ok(!section.includes('alignSelf:"stretch"'));
@@ -28,18 +28,18 @@ test("Business email, phones, WhatsApp and QR have precise independent touch act
  const email=between(source,'<Pressable key={"business-email"+i}','</Pressable>');
  const phoneRow=between(source,'visibility.business_show_phone&&','</View>}');
  assert.ok(email.includes('alignSelf:"flex-start"'));
- assert.ok(email.includes('minHeight:44'));
+ assert.ok(email.includes('minHeight:48'));
  assert.ok(phoneRow.includes('accessibilityLabel="Llamar al teléfono principal del negocio"'));
  assert.ok(phoneRow.includes('accessibilityLabel={"Llamar al número "+item.number}'));
- assert.ok(phoneRow.includes('alignSelf:"flex-start",maxWidth:"100%"'));
+ assert.ok(phoneRow.includes('alignSelf:"flex-start",minHeight:48'));
  assert.ok(phoneRow.includes('accessibilityLabel="Abrir WhatsApp del negocio"'));
- assert.ok(phoneRow.includes('width:44,height:44'));
+ assert.ok(phoneRow.includes('width:48,height:48'));
  assert.ok(source.includes('accessibilityLabel="Ampliar código QR del negocio"'));
  assert.ok(source.includes('accessibilityLabel="Guardar contacto del negocio"'));
  assert.ok(source.includes('accessibilityLabel="Verificación de empresa"'));
 });
 
-test("Five business medals share space visually but have isolated centered touch targets",()=>{
+test("Four business medals share space visually but have isolated centered touch targets",()=>{
  const source=card();
  const award=between(source,'function BusinessAward(','export function BusinessFace');
  assert.ok(award.includes('return <View style={{flex:1'));
@@ -53,8 +53,8 @@ test("Personal JCard languages, links and identity badges avoid swallowing empty
  const source=card();
  const lightLanguages=between(source,'{card.languages.slice(0,2).map','</View>:<View style={{minHeight:62');
  assert.ok(lightLanguages.includes('style={{flex:1,minWidth:0,alignItems:"center"'));
- assert.ok(lightLanguages.includes('style={{alignSelf:"center",maxWidth:"100%",minHeight:44'));
- assert.ok(!lightLanguages.includes('style={{flex:1,minWidth:0,minHeight:44'));
+ assert.ok(lightLanguages.includes('style={{alignSelf:"center",maxWidth:"100%",minHeight:48'));
+ assert.ok(!lightLanguages.includes('style={{flex:1,minWidth:0,minHeight:48'));
  assert.ok(source.includes('accessibilityLabel={"Ver empresa "+employerLink.name}'));
  assert.ok(source.includes('style={{alignSelf:"flex-start",maxWidth:"100%"}}'));
  assert.ok(source.includes('hitSlop={{top:6,bottom:6,right:6,left:0}}'));
