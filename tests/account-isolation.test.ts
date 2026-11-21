@@ -33,9 +33,19 @@ test("Changing authenticated identity remounts state providers and rejects previ
 test("Private device collections require the current authenticated UUID, not just a cache key",()=>{
  const guard=src("src/lib/account-scope.ts");
  assert.ok(guard.includes("data.session?.user.id!==owner"));
- for(const [file,owner] of [["post-drafts.ts","owner"],["jshop-local.ts","ownerId"],["search-history.ts","ownerId"]]){
+ for(const [file,owner] of [["post-drafts.ts","owner"],["jshop-local.ts","ownerId"],["search-history.ts","ownerId"],["business-card-cache.ts","owner"],["feed-preferences.ts","owner"],["jshop-location.ts","owner"],["jshop-selling-location.ts","owner"]]){
   const s=src("src/lib/"+file);
   assert.ok(s.includes("await assertAccountOwner("+owner+")"),file);
   assert.ok(s.includes("import {assertAccountOwner}"),file);
  }
+});
+
+test("Avatar saves cannot attach a previous user's photo to a new session",()=>{
+ const editor=src("src/app/personal-avatar-editor.tsx");
+ const upload=src("src/lib/personal-jcard-photo.ts");
+ assert.ok(editor.includes("const owner=editorOwner"));
+ assert.ok(editor.includes("readCloudBusiness(owner)"));
+ assert.ok(editor.includes('uploadPersonalJCardPhoto(result.base64??"","image/jpeg",owner)'));
+ assert.ok(upload.includes("user.id!==expectedOwner"));
+ assert.ok(upload.indexOf("await assertAccountOwner(user.id);",upload.indexOf("if(uploaded.error)"))>upload.indexOf("if(uploaded.error)"));
 });
