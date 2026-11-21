@@ -11,7 +11,7 @@ Jobeen es la plataforma **mobile-first de transmisiones EN VIVO de personas most
 Opción 2 aprobada: aislamiento reforzado. Leer AGENTS.md y docs/ACCOUNT_ISOLATION.md antes de continuar. Incidente de historial/JCard cruzados; UX suspendida hasta contención, pruebas y recuperación segura. No confundir código de revisión con protección ya publicada.
 
 ## Protocolo permanente de diseño (aprobado)
-Leer `DESIGN_RULES.md` antes de cualquier tarea UI/UX: consultar Mobbin, presentar 2 o 3 propuestas, aplicar MD3 con áreas táctiles mínimas de 48dp, preservar identidad visual y esperar aprobación explícita antes de implementar. Esto no bloquea correcciones técnicas y de seguridad autorizadas. La auditoría de privacidad sigue siendo prioritaria; no iniciar rediseños ni APK nuevas.
+Leer `DESIGN_RULES.md` antes de cualquier tarea UI/UX: consultar Mobbin, presentar 2 o 3 propuestas, aplicar MD3 con áreas táctiles mínimas de 48dp, preservar identidad visual y esperar aprobación explícita antes de implementar. Aplicar minimalismo funcional contemporáneo en todas las pantallas: referencias actuales verificadas en Mobbin, títulos únicos y claros en menús/configuración sin descripciones rutinarias, excepciones imprescindibles justificadas y aprobadas, accesibilidad y avisos necesarios intactos. Esto no bloquea correcciones técnicas y de seguridad autorizadas. La auditoría de privacidad sigue siendo prioritaria; no iniciar rediseños ni APK nuevas.
 
 ## Referencias
 - GitHub: https://github.com/thekyngmotorcycles/Jobin
