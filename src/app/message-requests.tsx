@@ -85,12 +85,9 @@ export default function MessageRequests(){
  return <>
   <Stack.Screen options={{title:"Solicitudes de mensajes"}}/>
   <SafeAreaView edges={["bottom"]} style={{flex:1,backgroundColor:t.bg}}>
-   <ScrollView contentContainerStyle={{padding:16,paddingBottom:45,gap:15}} keyboardShouldPersistTaps="handled">
+   <ScrollView contentContainerStyle={{padding:JOBEEN_CONTROL.pageHorizontalPadding,paddingBottom:45,gap:12}} keyboardShouldPersistTaps="handled">
     <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
-     <View style={{gap:3,flex:1}}>
-      <Text style={{fontSize:20,fontWeight:"800",color:t.ink}}>Solicitudes de mensajes</Text>
-      <Text style={{fontSize:13,color:t.ink2}}>Contactos que todavía no aceptaste</Text>
-     </View>
+     <Text style={{flex:1,fontSize:JOBEEN_TYPE.secondary,color:t.ink2}}>Contactos que todavía no aceptaste</Text>
      <Pressable accessibilityRole="button" accessibilityLabel="Privacidad de mensajes" onPress={()=>setSettingsOpen(true)} style={{width:45,height:45,borderRadius:16,alignItems:"center",justifyContent:"center",backgroundColor:t.surface,borderWidth:1,borderColor:t.line}}>
       <Ionicons name="settings-outline" size={22} color={t.ink}/>
      </Pressable>
