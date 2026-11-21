@@ -24,7 +24,8 @@ export async function endJobinSession(expectedOwner?:string,expectedToken?:strin
  const {data,error}=await supabase.auth.getSession();
  if(error)throw error;
  const owner=data.session?.user.id;
- const key=owner&&data.session?sessionMarkerKey(owner,data.session.access_token):null;
+ let key:string|null=null;
+ try{if(owner&&data.session)key=sessionMarkerKey(owner,data.session.access_token);}catch{if(expectedToken)throw new Error("La sesión cambió.");}
  if(expectedOwner&&(owner!==expectedOwner||(expectedToken&&key!==sessionMarkerKey(expectedOwner,expectedToken))))throw new Error("La cuenta cambió. Vuelve a intentar.");
  const {error:signOutError}=await supabase.auth.signOut({scope:"local"});
  if(signOutError)throw signOutError;
@@ -45,7 +46,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
   let observedSession:string|null=null;
   let oauthInFlight=false;
   usernameCompleted=()=>{if(active)setNeedsUsername(false);};
-  async function checkUsername(userId:string,sessionSetupIncomplete:boolean){
+  async function checkUsername(userId:string,sessionSetupIncomplete:boolean,expectedToken:string){
+   const checkedRevision=revision;
    const [{data:claimed,error:usernameError},{data:profile,error:profileError},{data:jcard,error:jcardError}]=await Promise.all([
     supabase!.from("usernames").select("username").eq("user_id",userId).maybeSingle(),
     supabase!.from("profiles").select("display_name").eq("id",userId).maybeSingle(),
@@ -55,14 +57,15 @@ export function AuthGate({ children }: { children: ReactNode }) {
    const named=!!profile?.display_name?.trim() && profile.display_name!=="Nuevo usuario";
    const chosen=!!claimed?.username && !!jcard?.handle && claimed.username.toLowerCase()===jcard.handle.toLowerCase();
    const current=await supabase!.auth.getSession();
-   if(active&&current.data.session?.user.id===userId)setNeedsUsername(sessionSetupIncomplete||!named||!chosen);
+   if(active&&revision===checkedRevision&&current.data.session?.user.id===userId&&sessionMarkerKey(userId,current.data.session.access_token)===sessionMarkerKey(userId,expectedToken))setNeedsUsername(sessionSetupIncomplete||!named||!chosen);
   }
   async function check() {
    const checkedRevision=revision;
    const valid=()=>active&&revision===checkedRevision;
    if (!supabase) { if (active) { setSignedIn(false); setReady(true); } return; }
    try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session },error } = await supabase.auth.getSession();
+    if(error)throw error;
     const started=session?await AsyncStorage.getItem(sessionMarkerKey(session.user.id,session.access_token)):null;
     if(!valid())return;
     if (!session) {
@@ -72,8 +75,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
      if (valid()) {setSessionOwner(null);setSignedIn(false);}
     } else {
      if(sessionLifetimeState(started)==="missing")await startJobinSession(session.user.id,session.access_token);
-     await checkUsername(session.user.id,session.user.user_metadata?.account_setup_completed!==true);
-     if (valid()&&(await supabase.auth.getSession()).data.session?.user.id===session.user.id&&valid()){setSessionOwner(session.user.id);setSignedIn(true);}
+     await checkUsername(session.user.id,session.user.user_metadata?.account_setup_completed!==true,session.access_token);
+     const current=(await supabase.auth.getSession()).data.session;
+     if(valid()&&current?.user.id===session.user.id&&sessionMarkerKey(current.user.id,current.access_token)===sessionMarkerKey(session.user.id,session.access_token)){setSessionOwner(session.user.id);setSignedIn(true);}
     }
    } catch { if (valid()) {setSessionOwner(null);setSignedIn(false);} }
    finally { if (valid()) setReady(true); }
@@ -90,7 +94,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     if(error)throw error;
     if(!data.session)throw new Error("El proveedor de acceso no devolvió una sesión válida");
     await startJobinSession(data.session.user.id,data.session.access_token);
-    await checkUsername(data.session.user.id,data.session.user.user_metadata?.account_setup_completed!==true);
+    await checkUsername(data.session.user.id,data.session.user.user_metadata?.account_setup_completed!==true,data.session.access_token);
     const current=await supabase.auth.getSession();
     if(active&&current.data.session?.user.id===data.session.user.id&&sessionMarkerKey(data.session.user.id,current.data.session.access_token)===sessionMarkerKey(data.session.user.id,data.session.access_token)){setSessionOwner(data.session.user.id);setSignedIn(true);}
    }catch{if(active){setSignedIn(false);setSessionOwner(null);}}
