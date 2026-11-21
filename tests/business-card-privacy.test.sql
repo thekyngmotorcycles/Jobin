@@ -33,6 +33,14 @@ select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222'
 select pg_temp.privacy_assert(exists(select 1 from public.jcard_business_details
  where owner_id='a1111111-1111-4111-8111-111111111111'),'legacy lookup reads another valid business before the cutover');
 reset role;
+\ir ../supabase/security-review/business-card-projection.sql
+set local role authenticated;
+select pg_temp.privacy_assert((select email is null and phone is null
+ from public.jobeen_public_business_cards where business_handle='private_hvac'),'additive projection masks private contact');
+select pg_temp.privacy_assert(exists(select 1 from public.jcard_business_details
+ where owner_id='a1111111-1111-4111-8111-111111111111'),'additive stage leaves the legacy reader available');
+select pg_temp.privacy_assert(not public.jobeen_business_handle_available('private_hvac'),'additive handle contract preserves uniqueness check');
+reset role;
 \ir ../supabase/security-review/business-card-privacy.sql
 select pg_temp.privacy_assert(not has_table_privilege('anon','public.jcard_business_details','SELECT'),'anonymous raw reads denied');
 select pg_temp.privacy_assert(not has_table_privilege('anon','public.jobeen_public_business_cards','SELECT'),'anonymous projection denied');

@@ -102,3 +102,11 @@ Supabase RLS: https://supabase.com/docs/guides/database/postgres/row-level-secur
 | Requiere decisión de arquitectura | Imponer un reto de un solo uso por operación en Auth con el origen protegido. Resolver la entrega revocable de documentos sensibles sin una ruta directa alternativa. Conservar evidencia de datos cruzados hasta confirmar titulares y aprobar una reparación aparte. |
 
 El bloqueo de privacidad sigue vigente. Los ensayos aislados no aplicaron SQL ni cambiaron Auth en el proyecto compartido. No se publicó OTA ni se construyó una APK.
+
+## Cierre de seguridad y preparación nativa
+
+- **Verificado en aislamiento.** Ensayo REST de JCards empresariales con el lector anterior, el corregido, la etapa aditiva y el corte. La reversión simulada del lector pierde acceso de terceros sin deshacer la ACL y conserva la consulta propia. Los SQL candidatos quedaron separados por etapa con una precondición de corte. Storage confirmó que revocar permisos por sí solo deja accesible un enlace emitido. Retirar su dirección antigua en origen y servir el objeto desde un destino reservado al backend bloqueó lectura directa y pública, listado, firma individual y por lote, y copia. El proxy de prueba revalidó sesión y permiso. [Evidencia y plan de reversión](SECURITY_DEPLOYMENT.md)
+- **Decisiones por aprobar.** Pilotar GoTrue privado sin bifurcar y con ingreso que asegure todos los endpoints de mutación. Aprobar el alcance de documentos, el proxy definitivo y el procedimiento de traslado y purga. Seleccionar las dependencias de la futura APK únicamente tras validar las necesidades. [Inventario clasificado](native-capabilities-baseline.md)
+- **Bloqueo vigente.** Falta validar la arquitectura elegida con todas las rutas de Auth y Storage, los documentos preexistentes y Smart CDN en un entorno equivalente, y ensayar allí los bloques del backend de forma conjunta. Identificar la APK y completar A→B→A en Jelly 2 antes y después del cliente corregido, con sus resultados ligados al runtime y esquema. El almacenamiento seguro y la persistencia sensible requieren su propia validación nativa. [Identificación y protocolo](ANDROID_SECURITY_JELLY2.md)
+
+No se desplegaron estos cambios. Las pruebas de archivos usaron datos ficticios y el catálogo compartido se consultó en solo lectura.

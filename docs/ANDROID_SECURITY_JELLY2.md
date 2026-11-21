@@ -2,6 +2,34 @@
 
 Usar la APK instalada y dos cuentas de prueba A y B con datos ficticios en un entorno aislado. Si la APK apunta al proyecto compartido y no hay cuentas o escrituras de prueba autorizadas, registrar versión, canal, update y lo que pueda observarse en lectura. No cambiar contraseñas reales, eliminar datos, limpiar el almacenamiento de la app ni instalar otro binario para esta pasada.
 
+## Identificar la instalación actual
+
+1. En el Jelly 2, abre **Ajustes → Apps → Jobeen** o **Jobin → Información de la app**. Anota la versión que aparece y la fecha de la prueba. Si tienes el registro de la APK instalada, anota el identificador del build. La versión visible por sí sola puede corresponder a varios builds.
+2. Si tienes las herramientas Android en un ordenador, habilita temporalmente depuración USB, conecta el teléfono y acepta solo tu ordenador. Estos comandos leen la versión y copian la APK existente al ordenador. No instalan nada.
+
+   ```sh
+   adb devices
+   adb shell pm list packages jobin
+   PKG=com.thekyngmotorcycles.jobin
+   adb shell dumpsys package "$PKG" | grep -E 'version(Name|Code)='
+   BASE_APK="$(adb shell pm path "$PKG" | tr -d '\r' | sed -n 's/^package:\(.*\/base\.apk\)$/\1/p' | head -n 1)"
+   if [ -n "$BASE_APK" ]; then
+     adb pull "$BASE_APK" ./jobeen-jelly2-base.apk
+   fi
+   apkanalyzer manifest print ./jobeen-jelly2-base.apk > ./jobeen-jelly2-manifest.xml
+   ```
+
+   Si `pm list packages` muestra otro identificador para tu APK, usa ese valor en `PKG`. En el manifiesto, busca `expo.modules.updates.EXPO_RUNTIME_VERSION` y `expo-channel-name` dentro de la configuración de cabeceras de Expo Updates. Si el runtime aparece como `@string/expo_runtime_version`, puedes resolverlo con `aapt2 dump resources ./jobeen-jelly2-base.apk | grep -A 4 'string/expo_runtime_version'`. El registro del build exacto en EAS también permite contrastar runtime y canal. El runtime o canal del código del repositorio no identifica la APK instalada.
+3. **Distinguir el update activo.** La APK contiene el manifiesto del binario y su actualización embebida. Para identificar la actualización ejecutada, busca una entrada de **lanzamiento** de Expo Updates en los registros del teléfono. Un ID de descarga o el último ID publicado en EAS no acredita el ID activo.
+
+   ```sh
+   adb logcat -d -s dev.expo.updates | grep -Ei 'launch|embedded'
+   ```
+
+   Revisa la salida localmente y comparte solo el ID si la entrada lo identifica como lanzado, o el estado embebido si es explícito. Si la APK no expone esos datos o el registro no es concluyente, anota **update activo desconocido**. Un diagnóstico de prueba autorizado puede leer `Updates.updateId`, `Updates.runtimeVersion`, `Updates.channel` y `Updates.isEmbeddedLaunch` directamente del proceso. No es necesario forzar una descarga ni limpiar datos para esta identificación. No compartas la APK ni registros completos. Desactiva la depuración USB al terminar.
+
+[Expo Updates](https://docs.expo.dev/versions/v54.0.0/sdk/updates/) · [Android SDK Platform Tools](https://developer.android.com/tools/releases/platform-tools)
+
 ## Con la APK instalada
 
 1. **A en línea.** Confirmar la identidad en Perfil. Guardar un borrador de prueba con texto y foto distinguibles. Abrir Historial, JCard personal, JCard empresarial si existe, Mis JCards y Mensajes. Registrar qué datos privados ficticios pertenecen exclusivamente a A y cuáles se compartieron expresamente.
