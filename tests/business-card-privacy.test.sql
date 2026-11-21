@@ -37,6 +37,10 @@ select pg_temp.privacy_assert(not exists(select 1 from public.jcard_business_det
 select pg_temp.privacy_assert((select count(*)=2 from public.jobeen_public_business_cards),'only visible businesses published');
 select pg_temp.privacy_assert((select email is null and email_secondary is null and phone is null and phone_secondary is null and phone_label is null and phone_secondary_label is null from public.jobeen_public_business_cards where business_handle='private_hvac'),'A hidden contacts masked before API response');
 select pg_temp.privacy_assert((select email is null and phone is null from public.jobeen_public_business_cards where business_handle='legacy_company'),'missing visibility does not expose contacts');
+select set_config('request.jwt.claim.sub','c3333333-3333-4333-8333-333333333333',true);
+insert into public.jcard_visibility(owner_id,personal_enabled,business_enabled) values(auth.uid(),true,true);
+select pg_temp.privacy_assert((select email is null and phone is null from public.jobeen_public_business_cards where business_handle='legacy_company'),'saving unrelated visibility preferences keeps contacts private');
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
 select pg_temp.privacy_assert(not public.jobeen_business_handle_available('private_hvac'),'foreign handle reserved');
 select pg_temp.privacy_assert(public.jobeen_business_handle_available('reserved_hidden'),'owner retains own handle');
 update public.jcard_business_details set name='Wrong account' where owner_id='a1111111-1111-4111-8111-111111111111';

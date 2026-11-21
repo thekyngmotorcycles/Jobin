@@ -1,5 +1,10 @@
 -- REVIEW CANDIDATE. Apply only in isolated tests until a coordinated migration
 -- and compatible mobile client have been approved. Never run against production by hand.
+-- Saving unrelated card preferences must not opt a new owner into sharing contacts.
+alter table public.jcard_visibility
+ alter column business_show_email set default false,
+ alter column business_show_phone set default false;
+
 -- The legacy business-details table exists in the hosted project, not base CI.
 alter table public.jcard_business_details enable row level security;
 revoke all on public.jcard_business_details from public,anon,authenticated;
