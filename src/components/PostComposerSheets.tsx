@@ -88,7 +88,7 @@ export function PostComposerSheets(p:Props){
     p.drafts.length?<ScrollView showsVerticalScrollIndicator contentContainerStyle={{paddingHorizontal:JOBEEN_CONTROL.modalHorizontalPadding,paddingBottom:18,gap:12}}>
      <Text style={{fontSize:JOBEEN_TYPE.secondary,color:modal.muted}}>{p.drafts.length} de {MAX_POST_DRAFTS} borradores</Text>
      <View style={{flexDirection:"row",flexWrap:"wrap",gap:10}}>
-      {p.drafts.map((draft,index)=><View key={draft.id} style={{width:screenWidth<360?"100%":"48%",borderRadius:modal.radius.control,
+      {p.drafts.map((draft,index)=><View key={draft.id} style={{width:"48%",borderRadius:modal.radius.control,
        borderWidth:1,borderColor:t.line,backgroundColor:t.surface,overflow:"hidden"}}>
        <Pressable accessibilityRole="button" accessibilityLabel={"Continuar borrador "+(index+1)}
         onPress={()=>p.onRestore(draft)}>
