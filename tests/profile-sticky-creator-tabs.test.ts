@@ -138,7 +138,7 @@ test("Visitor profile keeps global tabs while scrolling JCard and media sections
 });
 test("Primary feeds progressively retract and reveal navigation on scroll",()=>{
  for(const path of ["src/app/(tabs)/index.tsx","src/app/jshop.tsx","src/app/(tabs)/inbox.tsx","src/app/(tabs)/videos.tsx","src/app/search.tsx"]){
-  const page=read(path);
+  const page=source(path);
   assert.ok(page.includes("useScrollNavigation"),path+" needs shared scroll state");
   assert.ok(page.includes("onScroll={e=>reportScroll(e.nativeEvent.contentOffset.y)}"),path+" needs scroll listener");
  }
