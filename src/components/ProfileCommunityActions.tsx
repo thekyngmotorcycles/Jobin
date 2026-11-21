@@ -13,7 +13,7 @@ import {useUi} from "./ui";
 import {useTheme} from "../state/ThemeProvider";
 import {JobeenShareSheet} from "./JCardShareSheet";
 import {JobeenNoticeDialog} from "./JobeenNoticeDialog";
-export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void}){
+export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose,onToggleSaved,savedJCard=false,savingJCard=false,visibleCardSide="personal"}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void;onToggleSaved?:()=>void;savedJCard?:boolean;savingJCard?:boolean;visibleCardSide?:"personal"|"business"}){
  const {s,colors}=useUi();const {theme}=useTheme();const modal=jobeenModalTokens(theme);const danger=jobeenModalTokens(theme,"danger");const insets=useSafeAreaInsets();const jobeen=jobeenTokens("light");const [shareOpen,setShareOpen]=useState(false);const [confirm,setConfirm]=useState<"remove"|"block"|null>(null);const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
  const [contact,setContact]=useState<ContactRequest|null>(null),[viewer,setViewer]=useState("");
  useFocusEffect(useCallback(()=>{let active=true;void contactState(user).then(value=>{if(active){setContact(value.request);setViewer(value.mine);}}).catch(()=>{if(active)setContact(null);});return()=>{active=false;};},[user]));
@@ -83,6 +83,10 @@ export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClos
    <View style={{flex:1,backgroundColor:modal.scrim,paddingTop:insets.top+65,paddingHorizontal:16,alignItems:"flex-end"}}>
     <Pressable accessibilityLabel="Cerrar opciones del perfil" onPress={()=>onMenuClose?.()} style={StyleSheet.absoluteFill}/>
     <View style={{width:254,maxWidth:"85%",padding:5,borderWidth:1,borderColor:modal.border,backgroundColor:modal.surface,borderRadius:modal.radius.popover,gap:1}}>
+    {onToggleSaved&&<Pressable accessibilityRole="button" disabled={savingJCard} onPress={()=>{onMenuClose?.();onToggleSaved();}}
+      style={{minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:13,justifyContent:"center"}}>
+      <Text style={{fontSize:JOBEEN_TYPE.modalAction,color:modal.text}}>{savingJCard?"Actualizando…":savedJCard?"Quitar de mis JCards":visibleCardSide==="business"?"Guardar JCard empresarial":"Guardar JCard personal"}</Text>
+    </Pressable>}
    <Pressable accessibilityRole="button" onPress={()=>{onMenuClose?.();setTimeout(()=>setShareOpen(true),350);}}
      style={{minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:13,flexDirection:"row",alignItems:"center",gap:12}}>
      <Ionicons name="share-social-outline" size={20} color={modal.text}/>
