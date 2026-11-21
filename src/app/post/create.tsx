@@ -15,6 +15,8 @@ import {requireSupabase} from "../../lib/supabase";
 import type {PublishedMedia} from "../../lib/safety-api";
 import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
+import {jobeenModalTokens} from "../../theme/modals";
+import {JOBEEN_TYPE} from "../../theme/typography";
 
 const kinds=[
  {kind:"photos",label:"Foto",icon:"image-outline"},
@@ -25,7 +27,7 @@ const kinds=[
 export default function PostCreate(){
  const {kind:requested}=useLocalSearchParams<{kind?:string}>();
  const navigation=useNavigation();
- const {theme}=useTheme();const t=jobeenTokens(theme);
+ const {theme}=useTheme();const t=jobeenTokens(theme);const modal=jobeenModalTokens(theme);
  const {width:windowWidth,height:windowHeight}=useWindowDimensions();
  const [kind,setKind]=useState<FeedPostKind>(requested==="photo"?"photos":requested==="video"?"video":requested==="live"?"live":"text");
  const [author,setAuthor]=useState("");
@@ -482,7 +484,7 @@ export default function PostCreate(){
     </Pressable>
     <Pressable accessibilityRole="button" onPress={requestExit} style={{minHeight:44,alignItems:"center",justifyContent:"center"}}><Text style={{color:t.ink2}}>Cancelar</Text></Pressable>
    </ScrollView>
-   {busy&&<View accessibilityLiveRegion="polite" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:t.uploadScrim,alignItems:"center",justifyContent:"center"}}>
+   {busy&&<View accessibilityLiveRegion="polite" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:modal.scrim,alignItems:"center",justifyContent:"center"}}>
     <View style={{backgroundColor:t.surface,borderRadius:20,paddingHorizontal:32,paddingVertical:23,alignItems:"center",gap:13}}>
      <ActivityIndicator color={t.ink} size="large"/>
      <Text style={{color:t.ink,fontSize:15,fontWeight:"700"}}>Publicando...</Text>
@@ -515,11 +517,11 @@ export default function PostCreate(){
      onPress={()=>setAudienceMenuOpen(false)}
      style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:t.uploadScrim}}/>
     <View accessibilityViewIsModal style={{position:"absolute",top:audienceAnchor.top,left:audienceAnchor.left,
-     width:Math.min(270,windowWidth-28),maxWidth:"95%",borderWidth:1,borderColor:t.line,
-     borderRadius:18,backgroundColor:t.surface,paddingHorizontal:15,paddingVertical:14,gap:8,
+     width:Math.min(270,windowWidth-28),maxWidth:"95%",borderWidth:1,borderColor:modal.border,
+     borderRadius:modal.radius.popover,backgroundColor:modal.surface,paddingHorizontal:15,paddingVertical:14,gap:8,
      shadowColor:t.floatingCardShadow,shadowOpacity:0.24,shadowRadius:18,shadowOffset:{width:0,height:9},elevation:18}}>
-     <View style={{width:34,height:3,borderRadius:3,backgroundColor:t.yellow,marginBottom:4}}/>
-     <Text style={{fontSize:14,fontWeight:"700",color:t.ink}}>Compartir con</Text>
+     <View style={{width:34,height:3,borderRadius:3,backgroundColor:modal.accent,marginBottom:4}}/>
+     <Text style={{fontSize:JOBEEN_TYPE.sectionTitle,fontWeight:"700",color:modal.text}}>Compartir con</Text>
      <Pressable accessibilityRole="checkbox" accessibilityState={{checked:audienceFollowers}}
       accessibilityLabel="Compartir con mis seguidores" onPress={()=>setAudienceFollowers(current=>!current)}
       style={{flexDirection:"row",alignItems:"center",minHeight:44,gap:10}}>
