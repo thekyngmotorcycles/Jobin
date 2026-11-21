@@ -21,7 +21,7 @@ test("Settings list and side menu reuse one proportional row and section typogra
  const settings=src("src/app/settings/cuenta.tsx");
  assert.ok(row.includes("minHeight:JOBEEN_CONTROL.settingsRowMinHeight"));
  assert.ok(row.includes("fontSize:JOBEEN_TYPE.body"));
- assert.ok(side.includes("minHeight:44"));
+ assert.ok(side.includes("minHeight:JOBEEN_CONTROL.touchTarget"),"Settings search should use the 48dp shared touch target");
  assert.ok(settings.includes("fontSize:JOBEEN_TYPE.sectionTitle"));
  assert.ok(settings.includes("gap:16,maxWidth:720"));
  assert.ok(settings.includes("<JobeenNoticeDialog"));
