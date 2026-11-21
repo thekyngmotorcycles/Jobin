@@ -42,7 +42,7 @@ export function ProfileSectionTabs({section,onSelect,pinned=false}:{section:Prof
       onLayout={event=>{tabLayouts.current[tab.id]=event.nativeEvent.layout;if(selected)scrollToSection(tab.id);}}
       style={{minHeight:50,minWidth:54,flexGrow:1,paddingHorizontal:9,alignItems:"center",justifyContent:"center",
        borderBottomWidth:3,borderBottomColor:selected?jt.yellow:jt.bg}}>
-     <Text numberOfLines={1} style={{fontSize:JOBEEN_TYPE.input,fontWeight:selected?"700":"600",color:jt.ink,textAlign:"center"}}>{tab.label}</Text>
+     <Text numberOfLines={2} style={{fontSize:JOBEEN_TYPE.input,fontWeight:selected?"700":"600",color:jt.ink,textAlign:"center"}}>{tab.label}</Text>
     </Pressable>;
    })}
   </ScrollView>
