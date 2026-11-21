@@ -17,7 +17,7 @@ test("Anyone signed in can bookmark a displayed public face, without owner appro
  assert.ok(api.includes('if(!business?.name?.trim())'));
  assert.ok(!sql.includes("owner_approved"));
  assert.ok(api.includes(".insert({target_id:targetId,card_side:side"));
- assert.ok(visitor.includes("saveVisibleJCard(user,activeCardSide)"));
+ assert.ok(visitor.includes("saveVisibleJCard(user,activeCardSide,viewer)"));
  assert.ok(actions.includes("Guardar JCard empresarial"));
 });
 test("Bookmarks contain references, not cached phone numbers or emails",()=>{
@@ -42,7 +42,7 @@ test("Saved collection is readable and editable only by the user who saved it",(
 });
 test("Gallery supports search, favorite and remove, and loads fresh on focus",()=>{
  assert.ok(gallery.includes("useFocusEffect"));
- assert.ok(gallery.includes("listSavedJCards()"));
+ assert.ok(gallery.includes("listSavedJCards(owner)"));
  assert.ok(gallery.includes("Buscar en mis JCards"));
  assert.ok(gallery.includes('label:"Favoritas"'));
  assert.ok(gallery.includes("setSavedJCardFavorite"));
