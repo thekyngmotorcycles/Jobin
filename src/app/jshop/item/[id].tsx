@@ -2,9 +2,10 @@ import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useFocusEffect,useLocalSearchParams} from "expo-router";
 import * as Linking from "expo-linking";
 import {useCallback,useState} from "react";
-import {ActivityIndicator,Alert,Image,Pressable,Share,Text,View} from "react-native";
+import {ActivityIndicator,Alert,Image,Pressable,Text,View} from "react-native";
 import {JShopButton,JShopEmpty,JShopIconButton,JShopPage,JShopPhoto,JShopTitle} from "../../../components/JShopUI";
 import {PublicProfileAvatar} from "../../../components/PublicProfileAvatar";
+import {JobeenShareSheet} from "../../../components/JCardShareSheet";
 import {deleteJShopDraft,jshopAccountId,readJShopDrafts} from "../../../lib/jshop-local";
 import {deleteJShopListing,loadJShopFavoriteIds,loadJShopListing,setJShopFavorite,setJShopListingStatus} from "../../../lib/jshop-api";
 import {formatJShopPrice,type JShopDraft,type JShopListing} from "../../../lib/jshop-model";
@@ -21,6 +22,7 @@ export default function JShopItemDetail(){
  const [selectedPhoto,setSelectedPhoto]=useState(0);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
+ const [shareOpen,setShareOpen]=useState(false);
  const [busy,setBusy]=useState(false);
  useFocusEffect(useCallback(()=>{
   let live=true;setLoading(true);
@@ -75,12 +77,7 @@ export default function JShopItemDetail(){
   }catch(e){setError(e instanceof Error?e.message:"No se pudo abrir la conversación con el vendedor.");}
   finally{setBusy(false);}
  }
- const share=async()=>{
-  if(!listing)return;
-  const url=Linking.createURL("/jshop/item/"+listing.id);
-  try{await Share.share({message:listing.title+" · "+formatJShopPrice(listing.price,listing.currency)+"\n"+url});}
-  catch(e){setError(e instanceof Error?e.message:"No se pudo compartir.");}
- };
+ function share(){if(listing){setError("");setShareOpen(true);}}
  return <>
   <Stack.Screen options={{title:"Detalle del artículo"}}/>
   <JShopPage>
@@ -156,5 +153,9 @@ export default function JShopItemDetail(){
     action={{title:"Volver a JShop",onPress:()=>router.replace("/(tabs)/shop")}}/>}
    {!!error&&!item&&<Text accessibilityLiveRegion="polite" style={{color:t.ink}}>{error}</Text>}
   </JShopPage>
+ <JobeenShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} theme={theme} label={listing?.title??"Artículo"}
+  contentTitle="Artículo de JShop" link={listing?Linking.createURL("/jshop/item/"+listing.id):""}
+  contentMessage={listing?listing.title+" · "+formatJShopPrice(listing.price,listing.currency)+"\n"+Linking.createURL("/jshop/item/"+listing.id):""}
+  onError={setError}/>
  </>;
 }
