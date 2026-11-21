@@ -80,7 +80,8 @@ test("Own profile removes upper left wordmark without changing actions",()=>{
 test("Share sheet identifies personal/business JCard without duplicate name text",()=>{
  const sheet=src("src/components/JCardShareSheet.tsx");
  assert.ok(sheet.includes('cardType=side==="business"?"JCard de negocios":"JCard personal"'));
- assert.ok(sheet.includes('{showQr?"Mi código QR":shareTitle}'));
+ assert.ok(sheet.includes('{showQr?qrHeading:shareTitle}'));
+  assert.ok(sheet.includes('contentTitle?"Código QR":"Mi código QR"'));
   assert.ok(sheet.includes("const shareTitle=contentTitle??cardType"));
   assert.ok(sheet.includes("const message=contentMessage??("));
  assert.ok(!sheet.includes('>Compartir {label}</Text>'));
