@@ -1,6 +1,6 @@
 import {Ionicons} from "@expo/vector-icons";
 import {Image,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
-import {useCallback,useEffect,useRef} from "react";
+import {useCallback,useEffect,useRef,useState} from "react";
 import {useReducedMotion} from "react-native-reanimated";
 import type {ReactNode,ComponentProps} from "react";
 import {ProfileFollowCounts} from "./ProfileFollowCounts";
@@ -21,18 +21,19 @@ const tabs=[
 export function ProfileSectionTabs({section,onSelect,pinned=false}:{section:ProfileSection;onSelect:(section:ProfileSection)=>void;pinned?:boolean}){
  const {theme}=useTheme();const jt=jobeenTokens(theme);
  const {width}=useWindowDimensions();const reducedMotion=useReducedMotion();
+ const [viewportWidth,setViewportWidth]=useState(width);
  const scroller=useRef<ScrollView|null>(null);
  const tabLayouts=useRef<Partial<Record<ProfileSection,{x:number;width:number}>>>({});
  const scrollToSection=useCallback((id:ProfileSection)=>{
   const layout=tabLayouts.current[id];
-  if(layout)scroller.current?.scrollTo({x:Math.max(0,layout.x+layout.width/2-width/2),animated:!reducedMotion});
- },[width,reducedMotion]);
+  if(layout)scroller.current?.scrollTo({x:Math.max(0,layout.x+layout.width/2-viewportWidth/2),animated:!reducedMotion});
+ },[viewportWidth,reducedMotion]);
  useEffect(()=>{scrollToSection(section);},[section,scrollToSection]);
  return <View style={{backgroundColor:jt.bg,borderBottomWidth:1,borderBottomColor:jt.line,
   elevation:pinned?3:0,shadowColor:jt.ink,shadowOffset:{width:0,height:2},shadowOpacity:pinned?0.09:0,
   shadowRadius:pinned?5:0,zIndex:5}}>
   <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always"
-   ref={scroller} contentContainerStyle={{alignItems:"center",paddingHorizontal:4,gap:4}}>
+   onLayout={event=>setViewportWidth(event.nativeEvent.layout.width)} ref={scroller} contentContainerStyle={{alignItems:"center",paddingHorizontal:4,gap:4}}>
    {tabs.map(tab=>{
     const selected=section===tab.id;
     return <Pressable key={tab.id} accessibilityRole="tab" accessibilityLabel={tab.label}
