@@ -20,6 +20,9 @@ test("One provisional Premium Warm surface is shared by all major Jobeen windows
   "src/app/jshop/location.tsx",
   "src/app/jshop/sale-location.tsx",
   "src/app/post/create.tsx",
+  "src/components/LanguagePicker.tsx",
+  "src/components/JobeenCreateMenu.tsx",
+  "src/components/HomeSideMenu.tsx",
  ]){
   const page=src(path);
   assert.ok(page.includes("jobeenModalTokens(theme)"),path+" must reuse the modal theme");
