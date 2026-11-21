@@ -86,7 +86,7 @@ export default function PublicJCard(){
  useEffect(()=>{
   if(!user||!viewer||viewer===user||!cardVisibilityReady||!sideIsPublic){setCardSaved(false);return;}
   let live=true;setCardSaved(false);
-  void isSavedJCard(user,activeCardSide).then(saved=>{if(live)setCardSaved(saved);}).catch(()=>{if(live)setCardSaved(false);});
+  void isSavedJCard(user,activeCardSide,viewer).then(saved=>{if(live)setCardSaved(saved);}).catch(()=>{if(live)setCardSaved(false);});
   return()=>{live=false;};
  },[user,viewer,activeCardSide,cardVisibilityReady,sideIsPublic]);
  const toggleSaved=async()=>{
@@ -95,7 +95,7 @@ export default function PublicJCard(){
   if(!cardVisibilityReady||!sideIsPublic){Alert.alert("JCard no disponible","Su propietario ya no tiene esta tarjeta visible.");return;}
   if(savingCard)return;
   setSavingCard(true);
-  try{if(cardSaved)await removeSavedJCard(user,activeCardSide);else await saveVisibleJCard(user,activeCardSide);
+  try{if(cardSaved)await removeSavedJCard(user,activeCardSide,viewer);else await saveVisibleJCard(user,activeCardSide,viewer);
    setCardSaved(!cardSaved);
   }catch(e){Alert.alert("Mis JCards",e instanceof Error?e.message:"No se pudo actualizar tu colección.");}
   finally{setSavingCard(false);}
