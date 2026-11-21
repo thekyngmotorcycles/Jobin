@@ -31,6 +31,12 @@ test("Message privacy uses common sheet radius, colors, handle and scrollable sa
  assert.ok(s.includes("fontSize:JOBEEN_TYPE.modalTitle"));
  assert.ok(s.includes("saveMessagePrivacy(next)"),"Do not change privacy persistence");
 });
+test("Message requests controls have uniform accessible 48dp targets",()=>{
+ const s=src("src/app/message-requests.tsx");
+ assert.ok(s.includes('width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget'),"Privacy settings trigger has a full touch target");
+ assert.ok(s.includes('flex:1,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row"'),"Request tabs share the same minimum height");
+ assert.equal((s.match(/flex:1,minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:14/g)??[]).length,2,"Accept and delete controls match");
+});
 test("Destructive public profile action receives only semantic red emphasis",()=>{
  const s=src("src/components/ProfileCommunityActions.tsx");
  assert.ok(s.includes('const danger=jobeenModalTokens(theme,"danger")'));
