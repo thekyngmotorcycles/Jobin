@@ -1,6 +1,7 @@
 import {menuChrome} from "../theme/menu-chrome";
 import {jobeenModalTokens} from "../theme/modals";
 import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {useTheme} from "../state/ThemeProvider";
 import {SettingsMenuRow} from "./SettingsMenuRow";
 import {JOBIN_SETTINGS_GROUPS} from "../lib/jobin-settings-catalog";
@@ -49,11 +50,14 @@ export function HomeSideMenu({visible,onClose,onNavigate}:{visible:boolean;onClo
      <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:16,paddingBottom:30,gap:8,alignItems:"stretch"}}>
       <View style={{flexDirection:"row",alignItems:"flex-start",justifyContent:"space-between",paddingBottom:8,gap:8}}>
        <Text accessibilityRole="header" style={{color:modal.text,fontWeight:"700",fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle,flex:1}}>Configuración</Text>
-       <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={onClose} style={{padding:8}}><Text style={{color:chrome.text,fontSize:24}}>×</Text></Pressable>
+       <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={onClose}
+        style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
+        <Ionicons name="close" size={24} color={modal.text}/>
+       </Pressable>
       </View>
       <View style={{flexDirection:"row",alignItems:"center",backgroundColor:chrome.action,borderWidth:1,borderColor:chrome.border,borderRadius:20,paddingHorizontal:14,gap:10,marginBottom:10}}>
        <Ionicons name="search-outline" size={21} color={chrome.muted}/>
-       <TextInput accessibilityLabel="Buscar configuración" value={query} onChangeText={setQuery} placeholder="Buscar configuración" placeholderTextColor={chrome.muted} style={{flex:1,minHeight:44,color:chrome.text,fontSize:JOBEEN_TYPE.input}}/>
+       <TextInput accessibilityLabel="Buscar configuración" value={query} onChangeText={setQuery} placeholder="Buscar configuración" placeholderTextColor={chrome.muted} style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,color:chrome.text,fontSize:JOBEEN_TYPE.input}}/>
       </View>
       {filtered.map(group=><View key={group.title} style={{gap:7,marginBottom:12}}>
        <Text accessibilityRole="header" style={{color:chrome.text,fontWeight:"700",fontSize:JOBEEN_TYPE.sectionTitle}}>{group.title}</Text>
