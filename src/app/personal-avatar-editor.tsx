@@ -34,6 +34,8 @@ export default function PersonalAvatarEditor(){
  const [permissionDenied,setPermissionDenied]=useState(false);
  const [busy,setBusy]=useState(false);
  const [saveError,setSaveError]=useState("");
+ const [editorOwner,setEditorOwner]=useState("");
+ useEffect(()=>{let live=true;void cloudOwner().then(owner=>{if(live)setEditorOwner(owner);}).catch(()=>{});return()=>{live=false;};},[]);
  const [zoom,setZoom]=useState(1);
  const [offset,setOffset]=useState({x:0,y:0});
  const [dimensions,setDimensions]=useState({width:SIZE,height:SIZE});
@@ -102,6 +104,8 @@ export default function PersonalAvatarEditor(){
  async function save(){
   if(!selected||busy)return;setSaveError("");setBusy(true);
   try{
+   const owner=editorOwner;
+   if(!owner||await cloudOwner()!==owner)throw new Error("La cuenta cambió. Abre de nuevo el editor.");
    // The gallery asset already provides its URI and dimensions. Reading full asset
    // metadata on Android can require ACCESS_MEDIA_LOCATION for EXIF GPS data,
    // which is unnecessary for cropping and saving a profile photograph.
@@ -116,15 +120,15 @@ export default function PersonalAvatarEditor(){
    context.resize({width:512,height:512});
    const rendered=await context.renderAsync();
    const result=await rendered.saveAsync({format:ImageManipulator.SaveFormat.JPEG,compress:0.75,base64:true});
+   if(await cloudOwner()!==owner)throw new Error("La cuenta cambió. Abre de nuevo el editor.");
    if(businessAvatar){
-    const owner=await cloudOwner();
     const photo={uri:result.uri,name:"business-avatar.jpg",mimeType:"image/jpeg",size:0};
     const uploaded=await uploadBusinessPhoto("business-profile-media",owner,photo,"avatar");
-    const current=await readCloudBusiness();
+    const current=await readCloudBusiness(owner);
     const updated:BusinessCardData={...EMPTY_BUSINESS_CARD,...(current??{}),avatarUrl:uploaded.url};
     await writeCloudBusiness(updated,owner);
     await writeScopedBusinessCard(owner,updated);
-   }else await uploadPersonalJCardPhoto(result.base64??"","image/jpeg");
+   }else await uploadPersonalJCardPhoto(result.base64??"","image/jpeg",owner);
    if(router.canGoBack())router.back();
    else router.replace("/professional");
   }catch(e){const detail=e instanceof Error?e.message:String(e);setSaveError(detail);Alert.alert("No se pudo guardar",detail);}finally{setBusy(false);}
