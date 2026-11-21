@@ -2,7 +2,7 @@ import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import * as Linking from "expo-linking";
 import {useCallback,useEffect,useState} from "react";
-import {ActivityIndicator,Pressable,Share,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Pressable,Text,TextInput,View} from "react-native";
 import {BottomSheet} from "./social-ui";
 import {PhotoCarousel,PostEngagementRow} from "./PostCard";
 import {PostCaption} from "./PostCaption";
@@ -13,6 +13,7 @@ import {getHiddenPostIds,getSavedPostIds,setSavedPost} from "../lib/feed-prefere
 import {requireSupabase} from "../lib/supabase";
 import type {HomeFeedFilter} from "./HomeFeedFilters";
 import {FeedPostOptions} from "./FeedPostOptions";
+import {JobeenShareSheet} from "./JCardShareSheet";
 import {formatCount} from "../lib/feed";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
@@ -31,6 +32,7 @@ export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;v
  const [commentsLoading,setCommentsLoading]=useState(false);
  const [comments,setComments]=useState<HomePostComment[]>([]);
  const [optionsOpen,setOptionsOpen]=useState(false);
+ const [shareOpen,setShareOpen]=useState(false);
  const [draft,setDraft]=useState("");
  const [sending,setSending]=useState(false);
  useEffect(()=>{
@@ -55,21 +57,15 @@ export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;v
   catch(e){setError(e instanceof Error?e.message:"No se pudo registrar Me gusta.");}
   finally{setPending(false);}
  }
- async function share(){
-  try{
-   const result=await Share.share({message:post.authorName+": "+post.body+(post.kind==="video"?" · Video profesional en Jobeen":"")});
-   if(result.action===Share.sharedAction){
-    await recordHomePostShare(post.id);
-    setShares(n=>n+1);
-   }
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo compartir.");}
- }
+ function share(){setError("");setShareOpen(true);}
  async function sharePostLink(){
-  setError("");
-  try{
-   const result=await Share.share({message:Linking.createURL("post/"+post.id)});
-   if(result.action===Share.sharedAction){await recordHomePostShare(post.id);setShares(n=>n+1);}
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo compartir el enlace.");}
+  // Allow the publication options sheet to fully close before presenting the universal share panel.
+  setOptionsOpen(false);
+  setTimeout(()=>setShareOpen(true),350);
+ }
+ async function confirmNativeShare(){
+  try{await recordHomePostShare(post.id);setShares(n=>n+1);}
+  catch(e){setError(e instanceof Error?e.message:"No se pudo registrar el compartido.");}
  }
  async function openComments(){
   setCommentsOpen(true);setCommentsLoading(true);setError("");
@@ -116,6 +112,10 @@ export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;v
    saved={saved} onSave={()=>void toggleSaved()} saveDisabled={saving}/>
   {!!error&&!commentsOpen&&<Text accessibilityLiveRegion="polite" style={{paddingHorizontal:16,color:t.ink2,fontSize:12}}>{error}</Text>}
   <FeedPostOptions visible={optionsOpen} onClose={()=>setOptionsOpen(false)} viewerId={viewer} postId={post.id} onHidden={()=>onHide(post.id)} onShareLink={sharePostLink} onSaveChanged={setSaved}/>
+  <JobeenShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} theme={theme} label={post.authorName}
+   link={Linking.createURL("post/"+post.id)} contentTitle="Publicación"
+   contentMessage={post.authorName+": "+post.body+(post.kind==="video"?" · Video profesional en Jobeen":"")+"\n"+Linking.createURL("post/"+post.id)}
+   onShared={()=>void confirmNativeShare()}/>
   <BottomSheet visible={commentsOpen} onClose={()=>setCommentsOpen(false)} title={"Comentarios · "+formatCount(commentsCount)}>
    <View style={{gap:14,paddingVertical:10}}>
     {commentsLoading&&<ActivityIndicator color={t.yellow}/>}
