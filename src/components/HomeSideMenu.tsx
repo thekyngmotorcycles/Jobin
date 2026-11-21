@@ -1,4 +1,6 @@
 import {menuChrome} from "../theme/menu-chrome";
+import {jobeenModalTokens} from "../theme/modals";
+import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {useTheme} from "../state/ThemeProvider";
 import {SettingsMenuRow} from "./SettingsMenuRow";
 import {JOBIN_SETTINGS_GROUPS} from "../lib/jobin-settings-catalog";
@@ -22,7 +24,7 @@ export const HOME_MENU_ITEMS=[
  {slug:"uso-datos",label:"Uso de datos del celular",icon:"phone-portrait-outline",description:"Administra el consumo de datos móviles."},
 ] as const;
 export function HomeSideMenu({visible,onClose,onNavigate}:{visible:boolean;onClose:()=>void;onNavigate?:()=>void}){
- const {colors}=useUi();const {theme}=useTheme();const chrome=menuChrome(theme,colors);const {width}=useWindowDimensions();const panelWidth=Math.min(width*0.88,410);
+ const {colors}=useUi();const {theme}=useTheme();const chrome=menuChrome(theme,colors);const modal=jobeenModalTokens(theme);const {width}=useWindowDimensions();const panelWidth=Math.min(width*0.88,410);
  const touchStart=useRef<{x:number;y:number}|null>(null);
  const [mounted,setMounted]=useState(visible);
  const [query,setQuery]=useState("");
@@ -41,20 +43,20 @@ export function HomeSideMenu({visible,onClose,onNavigate}:{visible:boolean;onClo
  },[visible,slide,backdrop]);
  return <Modal visible={mounted} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent={false}>
   <View style={{flex:1,flexDirection:"row"}}>
-   <Animated.View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:colors.scrim,opacity:backdrop}}/>
+   <Animated.View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:modal.scrim,opacity:backdrop}}/>
    <Animated.View style={{width:panelWidth,transform:[{translateX:slide.interpolate({inputRange:[0,1],outputRange:[-panelWidth,0]})}]}}>
-    <SafeAreaView edges={["top","bottom"]} onTouchStart={event=>{touchStart.current={x:event.nativeEvent.pageX,y:event.nativeEvent.pageY};}} onTouchEnd={event=>{const start=touchStart.current;if(start&&start.x-event.nativeEvent.pageX>70&&Math.abs(start.y-event.nativeEvent.pageY)<70)onClose();touchStart.current=null;}} style={{flex:1,backgroundColor:chrome.surfaceTranslucent,borderTopRightRadius:18,borderBottomRightRadius:18,overflow:"hidden"}}>
+    <SafeAreaView edges={["top","bottom"]} onTouchStart={event=>{touchStart.current={x:event.nativeEvent.pageX,y:event.nativeEvent.pageY};}} onTouchEnd={event=>{const start=touchStart.current;if(start&&start.x-event.nativeEvent.pageX>70&&Math.abs(start.y-event.nativeEvent.pageY)<70)onClose();touchStart.current=null;}} style={{flex:1,backgroundColor:modal.surface,borderTopRightRadius:modal.radius.dialog,borderBottomRightRadius:modal.radius.dialog,overflow:"hidden"}}>
      <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:22,paddingBottom:32,gap:10,alignItems:"stretch"}}>
       <View style={{flexDirection:"row",alignItems:"flex-start",justifyContent:"space-between",paddingBottom:16,gap:8}}>
-       <Text accessibilityRole="header" style={{color:chrome.text,fontWeight:"700",fontSize:22,lineHeight:30,flex:1}}>Configuración</Text>
+       <Text accessibilityRole="header" style={{color:modal.text,fontWeight:"700",fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle,flex:1}}>Configuración</Text>
        <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={onClose} style={{padding:8}}><Text style={{color:chrome.text,fontSize:24}}>×</Text></Pressable>
       </View>
       <View style={{flexDirection:"row",alignItems:"center",backgroundColor:chrome.action,borderWidth:1,borderColor:chrome.border,borderRadius:20,paddingHorizontal:14,gap:10,marginBottom:14}}>
        <Ionicons name="search-outline" size={21} color={chrome.muted}/>
-       <TextInput accessibilityLabel="Buscar configuración" value={query} onChangeText={setQuery} placeholder="Buscar configuración" placeholderTextColor={chrome.muted} style={{flex:1,minHeight:50,color:chrome.text,fontSize:15}}/>
+       <TextInput accessibilityLabel="Buscar configuración" value={query} onChangeText={setQuery} placeholder="Buscar configuración" placeholderTextColor={chrome.muted} style={{flex:1,minHeight:50,color:chrome.text,fontSize:JOBEEN_TYPE.input}}/>
       </View>
       {filtered.map(group=><View key={group.title} style={{gap:9,marginBottom:15}}>
-       <Text accessibilityRole="header" style={{color:chrome.text,fontWeight:"700",fontSize:18}}>{group.title}</Text>
+       <Text accessibilityRole="header" style={{color:chrome.text,fontWeight:"700",fontSize:JOBEEN_TYPE.sectionTitle}}>{group.title}</Text>
        <Text style={{color:chrome.muted,fontSize:13,marginBottom:4}}>{group.description}</Text>
        {group.items.map(entry=><SettingsMenuRow key={entry.id} settingId={entry.id} title={entry.title} description={entry.description}
         onPress={()=>{onNavigate?.();onClose();if(entry.route){router.push(entry.route as any);}else{router.push({pathname:"/settings/[item]",params:{item:entry.id}});}}}/>)}
