@@ -4,6 +4,7 @@ import {Ionicons} from "@expo/vector-icons";
 import {SafeAreaView} from "react-native-safe-area-context";
 import QRCode from "react-native-qrcode-svg";
 import {jobeenTokens} from "../theme/jobeen";
+import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {jcardCommon} from "../theme/jcard";
 import {PublicProfileAvatar} from "./PublicProfileAvatar";
 import {loadShareRecipients,sendToShareRecipients,type ShareRecipient} from "../lib/share-contacts";
@@ -96,14 +97,14 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
    <Pressable accessibilityRole="button" accessibilityLabel="Cerrar panel de compartir" onPress={dismiss}
     style={{position:"absolute",top:0,left:0,right:0,bottom:0,backgroundColor:jcardCommon.scrim}}/>
    <SafeAreaView edges={["bottom"]} style={{backgroundColor:t.surface,borderTopLeftRadius:30,borderTopRightRadius:30,maxHeight:"88%",overflow:"hidden"}}>
-    <View style={{alignItems:"center",paddingTop:12,paddingBottom:6}}>
+    <View style={{alignItems:"center",paddingTop:10,paddingBottom:5}}>
      <View style={{width:42,height:5,borderRadius:3,backgroundColor:t.silver}}/>
     </View>
-    <View style={{paddingHorizontal:18,flexDirection:"row",alignItems:"center",gap:12,paddingTop:10,paddingBottom:13}}>
-     <View style={{width:43,height:43,borderRadius:14,alignItems:"center",justifyContent:"center",backgroundColor:t.yellow}}>
+    <View style={{paddingHorizontal:18,flexDirection:"row",alignItems:"center",gap:10,paddingTop:8,paddingBottom:10}}>
+     <View style={{width:39,height:39,borderRadius:13,alignItems:"center",justifyContent:"center",backgroundColor:t.yellow}}>
       <Ionicons name="share-social-outline" color={t.ink} size={24}/>
      </View>
-     <Text numberOfLines={2} style={{flex:1,fontSize:19,fontWeight:"800",color:t.ink}}>{showQr?qrHeading:shareTitle}</Text>
+     <Text numberOfLines={2} style={{flex:1,fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle,fontWeight:"800",color:t.ink}}>{showQr?qrHeading:shareTitle}</Text>
      <Pressable accessibilityRole="button" accessibilityLabel={showQr?"Volver a compartir":"Cerrar panel de compartir"}
       onPress={()=>showQr?setShowQr(false):dismiss()} style={{width:44,height:44,justifyContent:"center",alignItems:"center"}}>
       <Ionicons name={showQr?"arrow-back":"close"} size={24} color={t.ink}/>
@@ -116,18 +117,18 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
       <Text style={{color:t.ink,fontSize:15,fontWeight:"700"}}>{label}</Text>
      </View>:<>
      <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}
-      contentContainerStyle={{paddingHorizontal:18,paddingBottom:12,gap:13}}>
-      <View style={{minHeight:49,borderWidth:1,borderColor:t.line,borderRadius:25,backgroundColor:t.cream,
+      contentContainerStyle={{paddingHorizontal:18,paddingBottom:18,gap:10}}>
+      <View style={{minHeight:45,borderWidth:1,borderColor:t.line,borderRadius:25,backgroundColor:t.cream,
        flexDirection:"row",alignItems:"center",gap:10,paddingHorizontal:16}}>
        <Ionicons name="search-outline" size={22} color={t.ink2}/>
        <TextInput value={query} onChangeText={setQuery} placeholder="Buscar contactos de Jobeen"
         accessibilityLabel="Buscar contactos de Jobeen" placeholderTextColor={t.ink2}
-        autoCapitalize="none" style={{flex:1,fontSize:15,color:t.ink,paddingVertical:10}}/>
+        autoCapitalize="none" style={{flex:1,fontSize:JOBEEN_TYPE.input,color:t.ink,paddingVertical:9}}/>
       </View>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8,marginTop:4}}>
        <View style={{flexDirection:"row",gap:8,alignItems:"center",flexShrink:1}}>
         <Ionicons name="people-outline" size={21} color={t.yellow}/>
-        <Text numberOfLines={1} style={{fontSize:15,fontWeight:"800",color:t.ink}}>Contactos Jobeen</Text>
+        <Text numberOfLines={1} style={{fontSize:JOBEEN_TYPE.sectionTitle,fontWeight:"800",color:t.ink}}>Contactos Jobeen</Text>
        </View>
        <Text style={{fontSize:12,color:selected.length?t.ink:t.ink2,fontWeight:selected.length?"800":"500"}}>
         {selected.length?"Seleccionados: "+selected.length:"Seleccionar varios"}
@@ -161,7 +162,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
       <View style={{height:1,backgroundColor:t.line,marginVertical:4}}/>
       <View style={{flexDirection:"row",alignItems:"center",gap:9}}>
        <Ionicons name="layers-outline" size={20} color={t.yellow}/>
-       <Text style={{fontSize:15,fontWeight:"800",color:t.ink}}>Compartir mediante</Text>
+       <Text style={{fontSize:JOBEEN_TYPE.sectionTitle,fontWeight:"800",color:t.ink}}>Compartir mediante</Text>
       </View>
       <View style={{flexDirection:"row",justifyContent:"space-between",gap:6,marginBottom:4}}>
        {options.map(option=><Pressable key={option.id} accessibilityRole="button"
@@ -178,10 +179,10 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
      </ScrollView>
      {!!selected.length&&<Pressable accessibilityRole="button"
        accessibilityLabel={"Enviar a "+selected.length+" contactos"} disabled={sending}
-       onPress={()=>void sendSelected()} style={{minHeight:52,marginHorizontal:18,marginTop:6,marginBottom:12,
-        backgroundColor:t.yellow,borderRadius:26,alignItems:"center",justifyContent:"center",flexDirection:"row",gap:9,opacity:sending?0.6:1}}>
+       onPress={()=>void sendSelected()} style={{minHeight:46,marginHorizontal:13,marginTop:4,marginBottom:10,
+        backgroundColor:t.yellow,borderRadius:23,alignItems:"center",justifyContent:"center",flexDirection:"row",gap:9,opacity:sending?0.6:1}}>
        {sending?<ActivityIndicator color={t.ink}/>:<Ionicons name="paper-plane-outline" color={t.ink} size={22}/>}
-       <Text style={{fontSize:15,fontWeight:"800",color:t.ink}}>{sending?"Enviando...":"Enviar a "+selected.length+" contacto"+(selected.length===1?"":"s")}</Text>
+       <Text style={{fontSize:JOBEEN_TYPE.action,fontWeight:"700",color:t.ink}}>{sending?"Enviando...":"Enviar a "+selected.length+" contacto"+(selected.length===1?"":"s")}</Text>
       </Pressable>}
      </>}
    </SafeAreaView>
