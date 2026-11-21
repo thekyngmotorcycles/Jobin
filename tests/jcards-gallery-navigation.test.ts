@@ -12,7 +12,7 @@ test("Owner tabs are Todo, JCards, Videos, En vivo, Acerca de in that order",()=
  assert.ok(!tabs.includes('label:"Inicio"'));
  assert.ok(tabs.includes('label:"JCards"'));
  assert.ok(owner.includes("showPrivateJCards/>"));
- assert.ok(owner.includes('mode==="jcards"&&<SavedJCardsGallery/>'));
+ assert.ok(owner.includes('mode==="jcards"&&ownerId&&<SavedJCardsGallery key={ownerId} owner={ownerId}/>'));
 });
 test("Saved JCards are private; visitor tabs do not expose owner gallery",()=>{
  assert.ok(tabs.includes('const visitorTabs=tabs.filter(tab=>tab.id!=="jcards")'));
