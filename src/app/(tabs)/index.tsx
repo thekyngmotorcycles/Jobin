@@ -40,7 +40,7 @@ export default function Home() {
   ];
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={s.screen} onLayout={event=>{const {width,height}=event.nativeEvent.layout;setViewport(previous=>previous.width===width&&previous.height===height?previous:{width,height});}}>
-      <ScrollView ref={scrollRef} scrollEventThrottle={16} onScroll={e=>reportScroll(e.nativeEvent.contentOffset.y)} contentContainerStyle={{ paddingBottom: contentBottom, gap: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} scrollEventThrottle={16} onScroll={e=>{if(focused)reportScroll(e.nativeEvent.contentOffset.y);}} contentContainerStyle={{ paddingBottom: contentBottom, gap: 24 }} showsVerticalScrollIndicator={false}>
         <SocialHeader showComposer/>
         <HomeFeedFilters value={filter} onChange={setFilter}/>
         <HomePublishedPosts filter={filter} featuredPostId={newlyPublished||(published??"")}/>
