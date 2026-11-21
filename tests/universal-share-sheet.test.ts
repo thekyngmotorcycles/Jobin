@@ -10,7 +10,7 @@ test("All sharing contexts reuse the original rounded Jobeen share surface",()=>
  assert.ok(sheet.includes("borderTopLeftRadius:30,borderTopRightRadius:30"));
  assert.ok(sheet.includes('animationType="slide"'));
  assert.ok(sheet.includes("contentTitle,contentMessage,onShared,onError"));
- assert.ok(sheet.includes("const shareTitle=contentTitle??cardType"));
+ assert.ok(sheet.includes('const shareTitle=contentTitle??"Compartir "+cardType'));
  for(const path of [
   "src/components/ProfileCommunityActions.tsx",
   "src/components/HomePublishedPosts.tsx",
@@ -43,17 +43,17 @@ test("QR is offered for real links, never for CV or text-only demo posts",()=>{
  assert.ok(sheet.includes('if(action==="qr"){if(link.trim())setShowQr(true);return;}'));
  assert.ok(sheet.includes('<QRCode value={link}'));
  const cv=source("src/app/(tabs)/profile.tsx");
- assert.ok(cv.includes('contentTitle="Historial profesional"'));
+ assert.ok(cv.includes('contentTitle="Compartir CV"'));
  assert.ok(!cv.includes("link={cv"));
  const demo=source("src/components/PostCard.tsx");
  assert.equal(demo.split("<JobeenShareSheet").length-1,2);
- assert.ok(demo.includes('contentTitle="Video profesional"'));
+ assert.ok(demo.includes('contentTitle="Compartir video"'));
 });
 
 test("Public profile closes its existing menu before opening the branded share panel",()=>{
  const profile=source("src/components/ProfileCommunityActions.tsx");
  assert.ok(profile.includes('onMenuClose?.();setTimeout(()=>setShareOpen(true),350);'));
- assert.ok(profile.includes('contentTitle="Perfil profesional"'));
+ assert.ok(profile.includes('contentTitle="Compartir perfil"'));
  assert.ok(profile.includes('link={url}'));
  assert.ok(!profile.includes('void Share.share('));
  assert.ok(profile.includes('"Bloquear perfil"'),"Keep existing block actions");
