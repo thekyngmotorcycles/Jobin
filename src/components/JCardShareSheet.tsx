@@ -4,6 +4,7 @@ import {Ionicons} from "@expo/vector-icons";
 import {SafeAreaView} from "react-native-safe-area-context";
 import QRCode from "react-native-qrcode-svg";
 import {jobeenTokens} from "../theme/jobeen";
+import {jobeenModalTokens} from "../theme/modals";
 import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {jcardCommon} from "../theme/jcard";
 import {PublicProfileAvatar} from "./PublicProfileAvatar";
@@ -23,7 +24,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
  visible:boolean;onClose:()=>void;label:string;link?:string;theme:ThemeName;side?:"personal"|"business";
  contentTitle?:string;contentMessage?:string;onShared?:()=>void;onError?:(reason:string)=>void;
 }){
- const t=jobeenTokens(theme);
+ const t=jobeenTokens(theme);const modal=jobeenModalTokens(theme);
  const {width}=useWindowDimensions();
  const [query,setQuery]=useState("");
  const [showQr,setShowQr]=useState(false);
@@ -95,10 +96,10 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
   onDismiss={()=>{if(nativeSharePending.current){nativeSharePending.current=false;void shareNative();}}}>
   <View style={{flex:1,justifyContent:"flex-end"}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Cerrar panel de compartir" onPress={dismiss}
-    style={{position:"absolute",top:0,left:0,right:0,bottom:0,backgroundColor:jcardCommon.scrim}}/>
-   <SafeAreaView edges={["bottom"]} style={{backgroundColor:t.surface,borderTopLeftRadius:30,borderTopRightRadius:30,maxHeight:"88%",overflow:"hidden"}}>
+    style={{position:"absolute",top:0,left:0,right:0,bottom:0,backgroundColor:modal.scrim}}/>
+   <SafeAreaView edges={["bottom"]} style={{backgroundColor:modal.surface,borderTopLeftRadius:modal.radius.sheet,borderTopRightRadius:modal.radius.sheet,maxHeight:"88%",overflow:"hidden"}}>
     <View style={{alignItems:"center",paddingTop:10,paddingBottom:5}}>
-     <View style={{width:42,height:5,borderRadius:3,backgroundColor:t.silver}}/>
+     <View style={{width:42,height:5,borderRadius:3,backgroundColor:modal.handle}}/>
     </View>
     <View style={{paddingHorizontal:18,flexDirection:"row",alignItems:"center",gap:10,paddingTop:8,paddingBottom:10}}>
      <View style={{width:39,height:39,borderRadius:13,alignItems:"center",justifyContent:"center",backgroundColor:t.yellow}}>
@@ -117,7 +118,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
       <Text style={{color:t.ink,fontSize:15,fontWeight:"700"}}>{label}</Text>
      </View>:<>
      <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}
-      contentContainerStyle={{paddingHorizontal:18,paddingBottom:18,gap:10}}>
+      style={{flexShrink:1}} contentContainerStyle={{paddingHorizontal:18,paddingBottom:18,gap:10}}>
       <View style={{minHeight:45,borderWidth:1,borderColor:t.line,borderRadius:25,backgroundColor:t.cream,
        flexDirection:"row",alignItems:"center",gap:10,paddingHorizontal:16}}>
        <Ionicons name="search-outline" size={22} color={t.ink2}/>
@@ -146,7 +147,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
            borderRadius:35,borderWidth:active?3:2,borderColor:t.yellow,padding:2}}>
            <PublicProfileAvatar userId={contact.id} name={contact.name} size={60} framed={false}/>
            {active&&<View style={{position:"absolute",right:-4,top:-5,width:27,height:27,borderRadius:14,
-            backgroundColor:t.yellow,borderWidth:2,borderColor:t.surface,alignItems:"center",justifyContent:"center"}}>
+            backgroundColor:t.yellow,borderWidth:2,borderColor:modal.surface,alignItems:"center",justifyContent:"center"}}>
             <Ionicons name="checkmark" color={t.ink} size={18}/>
            </View>}
           </View>
