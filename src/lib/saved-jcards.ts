@@ -27,7 +27,7 @@ export async function saveVisibleJCard(targetId:string,side:SavedJCardSide,expec
  assertTarget(targetId);const uid=await sessionUser(expectedOwner);
  const db=requireSupabase() as any;
  if(side==="business"){
-  const {data:business,error:businessError}=await db.from("jcard_business_details")
+  const {data:business,error:businessError}=await db.from("jobeen_public_business_cards")
    .select("name").eq("owner_id",targetId).maybeSingle();
   if(businessError)throw new Error(businessError.message);
   if(!business?.name?.trim())throw new Error("Esta cuenta no tiene una JCard empresarial pública disponible.");
@@ -93,7 +93,7 @@ export async function listSavedJCards(expectedOwner:string):Promise<SavedJCard[]
  const businessIds=[...new Set(live.filter(x=>x.card_side==="business").map(x=>x.target_id))];
  let businesses:TargetBusiness[]=[];
  if(businessIds.length){
-  const {data:biz,error:businessError}=await db.from("jcard_business_details")
+  const {data:biz,error:businessError}=await db.from("jobeen_public_business_cards")
    .select("owner_id,name,category").in("owner_id",businessIds);
   if(businessError)throw new Error(businessError.message);
   businesses=(biz??[]) as TargetBusiness[];
