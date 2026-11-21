@@ -17,7 +17,7 @@ test("Creator profiles use a scrollable five-section tab bar with accessible nam
  assert.ok(tabs.includes('accessibilityRole="tab"'));
  assert.ok(tabs.includes("accessibilityState={{selected}}"));
  assert.ok(tabs.includes("minHeight:50"));
- assert.ok(tabs.includes("borderBottomColor:jt.yellow"));
+ assert.ok(tabs.includes("borderBottomWidth:3,borderBottomColor:selected?jt.yellow:jt.bg"),"Selection must not move icons or labels vertically");
  assert.ok(tabs.includes('fontWeight:selected?"700":"600",color:jt.ink'),"Inactive labels stay readable");
  assert.ok(tabs.includes('size={18} color={jt.ink}'),"Tab icons use balanced contrast and size");
  assert.ok(tabs.includes("minWidth:92"),"Five profile controls share minimum width");
