@@ -75,7 +75,7 @@ export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClos
    </View>
   </Modal>
   <JobeenShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} label={name} link={url} theme={theme}
-   contentTitle="Perfil profesional" contentMessage={"JCard de "+name+" · "+url}/>
+   contentTitle="Perfil profesional" contentMessage={"JCard de "+name+" · "+url} onError={setMessage}/>
   {!!message&&<Text accessibilityLiveRegion="polite" style={s.muted}>{message}</Text>}
  </View>;
 }
