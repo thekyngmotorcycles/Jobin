@@ -13,7 +13,7 @@ const publicJcard=read("src/app/jcard.tsx");
 const migration=read("supabase/migrations/20261120011500_jobeen_business_mentions_optional_handle.sql");
 
 test("Business JCards are searchable by company name or optional handle even on personal accounts",()=>{
- assert.ok(search.includes('db.from("jcard_business_details" as never)'));
+ assert.ok(search.includes('db.from("jobeen_public_business_cards" as never)'));
  assert.ok(search.includes('business_handle.ilike.'));
  assert.ok(search.includes('business_enabled'));
  assert.ok(search.includes('p.account_type==="company"'));
@@ -26,7 +26,7 @@ test("A company handle is optional, unique among business cards and checked agai
  assert.ok(migration.includes("if to_regclass('public.jcard_business_details') is not null"));
  assert.ok(cloud.includes("BUSINESS_HANDLE_PATTERN"));
  assert.ok(cloud.includes("checkBusinessHandleAvailable"));
- assert.ok(cloud.includes('"jcard_profiles"'));
+ assert.ok(cloud.includes('rpc("jobeen_business_handle_available"'));
  assert.ok(company.includes('businessHandle:"Usuario empresarial (opcional)"'));
  assert.ok(company.includes("handleFeedback"));
  assert.ok(company.includes("await checkBusinessHandleAvailable(businessHandle)"));
@@ -47,7 +47,7 @@ test("Business mention links navigate to the company's JCard business face, incl
  assert.ok(caption.includes('mention.card==="business"?{card:"business"}:{}'));
  assert.ok(caption.includes('captionPieces(text,mentions)'));
  assert.ok(publicJcard.includes('initialSide={card==="business"?"business":"personal"}'));
- assert.ok(publicJcard.includes('business:publicBusiness??resource.data.business'));
+ assert.ok(publicJcard.includes('business:publicBusiness??undefined'));
  assert.ok(publicJcard.includes('router.replace({pathname:"/(tabs)/profile",params:card==="business"?{card:"business"}:{}})'));
  assert.ok(read("src/app/(tabs)/profile.tsx").includes('initialSide={card==="business"?"business":"personal"}'));
 });
