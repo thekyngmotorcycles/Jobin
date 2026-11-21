@@ -20,10 +20,10 @@ test("Jobeen semantic typography preserves compact density across phone sizes",(
 test("Premium Jobeen share sheet uses common type scale and compact accessible send button",()=>{
  const sheet=src("src/components/JCardShareSheet.tsx");
  assert.ok(sheet.includes("JOBEEN_TYPE.modalTitle"));
- assert.ok(sheet.includes("JOBEEN_TYPE.sectionTitle"));
+ assert.ok(sheet.includes("JOBEEN_TYPE.modalSectionTitle"));
  assert.ok(sheet.includes("JOBEEN_TYPE.input"));
- assert.ok(sheet.includes("JOBEEN_TYPE.action"));
- assert.ok(sheet.includes("minHeight:48,marginHorizontal:13"));
+ assert.ok(sheet.includes("JOBEEN_TYPE.modalAction"));
+ assert.ok(sheet.includes("minHeight:JOBEEN_CONTROL.touchTarget,marginHorizontal:13"));
  assert.ok(sheet.includes("paddingBottom:18,gap:10"));
  assert.ok(sheet.includes("flex:1,fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle"));
  assert.ok(sheet.includes("contentTitle??\"Compartir \"+cardType"));
