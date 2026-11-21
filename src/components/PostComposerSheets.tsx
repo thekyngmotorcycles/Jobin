@@ -85,12 +85,8 @@ export function PostComposerSheets(p:Props){
 
   <Modal transparent visible={p.draftsOpen} animationType="fade" onRequestClose={p.onCloseDrafts} statusBarTranslucent={false}>
    {floatingCard("Borradores",p.onCloseDrafts,
-    <ScrollView showsVerticalScrollIndicator contentContainerStyle={{paddingHorizontal:15,paddingBottom:18,gap:12}}>
+    p.drafts.length?<ScrollView showsVerticalScrollIndicator contentContainerStyle={{paddingHorizontal:15,paddingBottom:18,gap:12}}>
      <Text style={{fontSize:12,color:t.ink2}}>{p.drafts.length} de {MAX_POST_DRAFTS} borradores</Text>
-     {!p.drafts.length&&<View style={{minHeight:92,alignItems:"center",justifyContent:"center",gap:9}}>
-      <Ionicons name="albums-outline" size={36} color={t.ink2}/>
-      <Text style={{color:t.ink2,fontSize:13}}>Aún no tienes borradores guardados.</Text>
-     </View>}
      <View style={{flexDirection:"row",flexWrap:"wrap",gap:10}}>
       {p.drafts.map((draft,index)=><View key={draft.id} style={{width:"48%",borderRadius:16,
        borderWidth:1,borderColor:t.line,backgroundColor:t.surface,overflow:"hidden"}}>
@@ -117,7 +113,13 @@ export function PostComposerSheets(p:Props){
        </Pressable>
       </View>)}
      </View>
-    </ScrollView>)}
+    </ScrollView>:<View style={{paddingHorizontal:18,paddingBottom:20,gap:10}}>
+     <Text style={{fontSize:12,color:t.ink2}}>0 de {MAX_POST_DRAFTS} borradores</Text>
+     <View style={{minHeight:52,flexDirection:"row",alignItems:"center",gap:10}}>
+      <Ionicons name="albums-outline" size={24} color={t.ink2}/>
+      <Text style={{color:t.ink2,fontSize:JOBEEN_TYPE.secondary,flex:1}}>Aún no tienes borradores guardados.</Text>
+     </View>
+    </View>)}
   </Modal>
 
   <Modal transparent visible={p.previewOpen} animationType="fade" onRequestClose={p.onClosePreview} statusBarTranslucent={false}>
