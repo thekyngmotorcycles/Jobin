@@ -59,6 +59,6 @@ test("Owner visibility still controls what can be saved; the accordion remains u
   assert.ok(page.includes("Animated.multiply(profileScrollY,0.5)"));
   assert.ok(page.includes("stickyHeaderIndices"));
   assert.ok(page.includes("topHeaderOffset=profileScrollY.interpolate("));
-  assert.ok(page.includes("transform:[{translateY:heroParallax}]"));
+  assert.ok(page.includes("transform:[{translateY:smoothHeroParallax}]"));
  }
 });
