@@ -28,6 +28,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
  const [needsUsername,setNeedsUsername]=useState(false);
  useEffect(() => {
   let active = true;
+  let revision=0;
+  let observedOwner:string|null=null;
   usernameCompleted=()=>{if(active)setNeedsUsername(false);};
   async function checkUsername(userId:string,sessionSetupIncomplete:boolean){
    const [{data:claimed,error:usernameError},{data:profile,error:profileError},{data:jcard,error:jcardError}]=await Promise.all([
@@ -38,26 +40,30 @@ export function AuthGate({ children }: { children: ReactNode }) {
    if(usernameError||profileError||jcardError)throw usernameError??profileError??jcardError;
    const named=!!profile?.display_name?.trim() && profile.display_name!=="Nuevo usuario";
    const chosen=!!claimed?.username && !!jcard?.handle && claimed.username.toLowerCase()===jcard.handle.toLowerCase();
-   if(active)setNeedsUsername(sessionSetupIncomplete||!named||!chosen);
+   const current=await supabase!.auth.getSession();
+   if(active&&current.data.session?.user.id===userId)setNeedsUsername(sessionSetupIncomplete||!named||!chosen);
   }
   async function check() {
+   const checkedRevision=revision;
+   const valid=()=>active&&revision===checkedRevision;
    if (!supabase) { if (active) { setSignedIn(false); setReady(true); } return; }
    try {
     const { data: { session } } = await supabase.auth.getSession();
     const started = await AsyncStorage.getItem(KEY);
+    if(!valid())return;
     if (!session) {
      await AsyncStorage.removeItem(KEY);
-     if (active) setSignedIn(false);
+     if (valid()) {setSessionOwner(null);setSignedIn(false);}
     } else if (started && Date.now() - Number(started) >= SEVEN_DAYS) {
      await endJobinSession();
-     if (active) setSignedIn(false);
+     if (valid()) {setSessionOwner(null);setSignedIn(false);}
     } else {
      if (!started) await startJobinSession();
      await checkUsername(session.user.id,session.user.user_metadata?.account_setup_completed!==true);
-     if (active) setSignedIn(true);
+     if (valid()&&(await supabase.auth.getSession()).data.session?.user.id===session.user.id&&valid()){setSessionOwner(session.user.id);setSignedIn(true);}
     }
-   } catch { if (active) setSignedIn(false); }
-   finally { if (active) setReady(true); }
+   } catch { if (valid()) {setSessionOwner(null);setSignedIn(false);} }
+   finally { if (valid()) setReady(true); }
   }
   async function handleOAuthUrl(url:string|null){
    if(!url || !url.startsWith("jobin:"))return false;
@@ -84,9 +90,12 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   const appSubscription = AppState.addEventListener("change", state => { if(state==="active" && !handlingOAuth) void check(); });
   const subscription = supabase?.auth.onAuthStateChange((event,session) => {
-   if(active)setSessionOwner(session?.user.id??null);
+   const nextOwner=session?.user.id??null;
+   if(nextOwner!==observedOwner){revision++;observedOwner=nextOwner;if(active){setSessionOwner(nextOwner);setNeedsUsername(false);}}
+   if(active&&event==="INITIAL_SESSION")setReady(true);
    if (event === "SIGNED_OUT") { void AsyncStorage.removeItem(KEY); if (active) setSignedIn(false); }
-   if (event === "SIGNED_IN") { if (active) setSignedIn(true); }
+   if (event === "SIGNED_IN"||event === "INITIAL_SESSION") { if (active) setSignedIn(!!session?.user); }
+   if(event==="SIGNED_IN"||event==="INITIAL_SESSION")setTimeout(()=>{if(active)void check();},0);
   });
   return () => { active = false;usernameCompleted=null; subscription?.data.subscription.unsubscribe(); appSubscription.remove(); linkSubscription.remove(); };
  }, []);
