@@ -1,3 +1,4 @@
+import {assertAccountOwner} from "./account-scope";
 import {requireSupabase} from "./supabase";
 export type ContactPreferences={show_email:boolean;show_phone:boolean};
 export async function loadContactPreferences():Promise<ContactPreferences>{
@@ -6,9 +7,11 @@ export async function loadContactPreferences():Promise<ContactPreferences>{
  const {data,error}=await (db as any).from("jcard_contact_preferences").select("show_email,show_phone").eq("owner_id",user.id).maybeSingle();
  if(error)throw error;return {show_email:!!data?.show_email,show_phone:!!data?.show_phone};
 }
-export async function saveContactPreferences(p:ContactPreferences){
+export async function saveContactPreferences(p:ContactPreferences,expectedOwner?:string){
  const db=requireSupabase();const {data:{user},error:authError}=await db.auth.getUser();
  if(authError||!user)throw new Error("Inicia sesión.");
+ if(expectedOwner&&user.id!==expectedOwner)throw new Error("La cuenta cambió.");
+ await assertAccountOwner(user.id);
  const {error}=await (db as any).from("jcard_contact_preferences").upsert({owner_id:user.id,...p,updated_at:new Date().toISOString()},{onConflict:"owner_id"});
  if(error)throw error;
 }
@@ -22,8 +25,10 @@ export async function loadPersonalContactDetails(ownerId?:string):Promise<Person
  const db=requireSupabase();
  const id=ownerId??(await db.auth.getUser()).data.user?.id;
  if(!id)return {email_primary:"",email_secondary:"",phone_primary:"",phone_secondary:""};
+ await assertAccountOwner(id);
  const {data,error}=await (db as any).from("jcard_personal_contacts").select("email_primary,email_secondary,phone_primary,phone_secondary").eq("owner_id",id).maybeSingle();
  if(error)throw error;
+ await assertAccountOwner(id);
  return {email_primary:data?.email_primary??"",email_secondary:data?.email_secondary??"",phone_primary:data?.phone_primary??"",phone_secondary:data?.phone_secondary??""};
 }
 export async function loadVisiblePersonalContactDetails(ownerId:string):Promise<PersonalContactDetails>{
@@ -31,9 +36,11 @@ export async function loadVisiblePersonalContactDetails(ownerId:string):Promise<
  if(error)throw error;
  return {email_primary:data?.email_primary??"",email_secondary:data?.email_secondary??"",phone_primary:data?.phone_primary??"",phone_secondary:data?.phone_secondary??""};
 }
-export async function savePersonalContactDetails(details:PersonalContactDetails):Promise<void>{
+export async function savePersonalContactDetails(details:PersonalContactDetails,expectedOwner?:string):Promise<void>{
  const db=requireSupabase();const {data:{user},error:authError}=await db.auth.getUser();
  if(authError||!user)throw new Error("Inicia sesión para guardar los contactos.");
+ if(expectedOwner&&user.id!==expectedOwner)throw new Error("La cuenta cambió.");
+ await assertAccountOwner(user.id);
  const {error}=await (db as any).from("jcard_personal_contacts").upsert({owner_id:user.id,...details,updated_at:new Date().toISOString()},{onConflict:"owner_id"});
  if(error)throw error;
 }
