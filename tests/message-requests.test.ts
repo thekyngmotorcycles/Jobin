@@ -7,7 +7,7 @@ test("Unknown professionals must create one initial message request before direc
  const chat=read("src/app/message.tsx");
  const api=read("src/lib/message-requests.ts");
  assert.ok(chat.includes('contactAccess.kind==="none"'));
- assert.ok(chat.includes("await sendContactRequest(user!,body,me)"));
+ assert.ok(chat.includes("await sendContactRequest(user!,body,me,scope)"));
  assert.ok(chat.includes('contactAccess.kind==="accepted"'));
  assert.ok(chat.includes('maxLength={!conversation&&contactAccess.kind==="none"?500:2000}'));
  assert.ok(api.includes('from("jobeen_message_requests"'));
@@ -53,7 +53,7 @@ test("Accepted requests or professional contacts permit normal chats; JShop rema
  assert.ok(migration.includes("jshop_conversation_id is not null and exists"));
  assert.ok(migration.includes("jobeen_jshop_spam"));
  assert.ok(migration.includes("jobeen_jshop_auto_spam"));
- assert.ok(chat.includes("markJShopSpam(conversation,!jshopSpam)"));
+ assert.ok(chat.includes("markJShopSpam(conversation,!jshopSpam,scope)"));
  assert.ok(chat.includes("reportMessageUser"));
  assert.ok(chat.includes("blockMessageUser"));
 });
@@ -65,7 +65,21 @@ test("Accepted contacts bypass duplicate message requests without changing conse
  assert.ok(api.includes('from("jobeen_contact_requests"'));
  assert.ok(api.includes('contacts.has(other)?"accepted":"none"'));
  assert.ok(api.includes('r.status!=="pending"||!contacts.has(r.sender_id)'));
- assert.ok(inbox.includes("loadChatRequestPreviews(user.id)"));
+ assert.ok(inbox.includes("loadChatRequestPreviews(user.id,scope)"));
  assert.ok(sql.includes('No redundant request for accepted contact'));
  assert.ok(sql.includes("p.requester_id = jobeen_direct_messages.sender_id"));
+});
+
+test("Messaging reads and actions carry the original authenticated session",()=>{
+ const scope=read("src/lib/message-session.ts");
+ const api=read("src/lib/message-requests.ts");
+ const chat=read("src/app/message.tsx");
+ const requests=read("src/app/message-requests.tsx");
+ assert.ok(scope.includes("expected.session!==session"));
+ assert.ok(scope.includes("await assertAccountOwner(owner,session)"));
+ assert.ok(api.includes("await assertMessageScope(scope)"));
+ assert.ok(chat.includes("if(revision.current!==generation)return;"));
+ assert.ok(chat.includes("scopeRef.current=scope;setMe(scope.owner)"));
+ assert.ok(requests.includes('decideMessageRequest(request.id,"accepted",scope)'));
+ assert.ok(requests.includes("if(scopeRef.current!==scope)return;"));
 });

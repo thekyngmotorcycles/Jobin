@@ -1,7 +1,7 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useFocusEffect,useLocalSearchParams} from "expo-router";
 import * as Linking from "expo-linking";
-import {useCallback,useState} from "react";
+import {useCallback,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Image,Pressable,Text,View} from "react-native";
 import {JShopButton,JShopEmpty,JShopIconButton,JShopPage,JShopPhoto,JShopTitle} from "../../../components/JShopUI";
 import {PublicProfileAvatar} from "../../../components/PublicProfileAvatar";
@@ -10,12 +10,14 @@ import {deleteJShopDraft,jshopAccountId,readJShopDrafts} from "../../../lib/jsho
 import {deleteJShopListing,loadJShopFavoriteIds,loadJShopListing,setJShopFavorite,setJShopListingStatus} from "../../../lib/jshop-api";
 import {formatJShopPrice,type JShopDraft,type JShopListing} from "../../../lib/jshop-model";
 import {startJShopConversation} from "../../../lib/jshop-messaging";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../../../lib/message-session";
 import {useTheme} from "../../../state/ThemeProvider";
 import {jobeenTokens} from "../../../theme/jobeen";
 
 export default function JShopItemDetail(){
  const {id}=useLocalSearchParams<{id:string}>();
  const {theme}=useTheme();const t=jobeenTokens(theme);
+ const scopeRef=useRef<MessageScope|null>(null);
  const [viewer,setViewer]=useState("");
  const [item,setItem]=useState<JShopListing|JShopDraft|null>(null);
  const [saved,setSaved]=useState(false);
@@ -25,18 +27,21 @@ export default function JShopItemDetail(){
  const [shareOpen,setShareOpen]=useState(false);
  const [busy,setBusy]=useState(false);
  useFocusEffect(useCallback(()=>{
-  let live=true;setLoading(true);
+  let live=true;scopeRef.current=null;setLoading(true);
   void(async()=>{
    try{
+    const scope=await captureMessageScope();
     const user=await jshopAccountId();
+    if(user!==scope.owner)throw Error("La sesión cambió.");
     let found:JShopListing|JShopDraft|null=await loadJShopListing(id);
     if(!found){const drafts=await readJShopDrafts(user);found=drafts.find(row=>row.id===id)??null;}
     const favorites=found&&!("ownerId" in found)?await loadJShopFavoriteIds(user):[];
-    if(live){setViewer(user);setItem(found);setSaved(favorites.includes(id));setSelectedPhoto(0);setError("");}
+    await assertMessageScope(scope);
+    if(live){scopeRef.current=scope;setViewer(user);setItem(found);setSaved(favorites.includes(id));setSelectedPhoto(0);setError("");}
    }catch(e){if(live){setItem(null);setError(e instanceof Error?e.message:"No se pudo abrir el artículo.");}}
    finally{if(live)setLoading(false);}
   })();
-  return()=>{live=false;};
+  return()=>{live=false;scopeRef.current=null;};
  },[id]));
  const listing=item&&!('ownerId' in item)?item:null;
  const draft=item&&'ownerId' in item?item:null;
@@ -69,10 +74,12 @@ export default function JShopItemDetail(){
   {text:"Cancelar",style:"cancel"},{text:"Eliminar",style:"destructive",onPress:()=>void deleteItem()}
  ]);
  async function contactSeller(){
-  if(!listing||owner||busy)return;
+  const scope=scopeRef.current;
+  if(!scope||!listing||owner||busy||scope.owner!==viewer)return;
   setBusy(true);setError("");
   try{
-   const conversation=await startJShopConversation(listing);
+   const conversation=await startJShopConversation(listing,scope);
+   if(scopeRef.current!==scope)return;
    router.push({pathname:"/message",params:{user:listing.sellerId,name:listing.sellerName,conversation:conversation.id}});
   }catch(e){setError(e instanceof Error?e.message:"No se pudo abrir la conversación con el vendedor.");}
   finally{setBusy(false);}

@@ -1,5 +1,6 @@
 import {requireSupabase} from "./supabase";
 import {loadPublicCard} from "./professional-api";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "./message-session";
 import {formatJShopPrice,type JShopCurrency,type JShopListing} from "./jshop-model";
 
 /** One private JShop thread per listing and buyer. Snapshot stays when listing is removed. */
@@ -25,51 +26,56 @@ function hydrate(row:ConversationRow):JShopConversation{
   photoUrl:row.listing_photo_path?requireSupabase().storage.from("jshop-photos").getPublicUrl(row.listing_photo_path).data.publicUrl:null,
   createdAt:row.created_at};
 }
-async function currentUser():Promise<string>{
- const {data:{user},error}=await requireSupabase().auth.getUser();
- if(error||!user)throw Error("Inicia sesión para contactar al vendedor.");
- return user.id;
-}
-export async function startJShopConversation(item:JShopListing):Promise<JShopConversation>{
- const owner=await currentUser(),db=requireSupabase();
+export async function startJShopConversation(item:JShopListing,expectedScope?:MessageScope):Promise<JShopConversation>{
+ const scope=await captureMessageScope(expectedScope),{owner}=scope,db=requireSupabase();
+ const checked=async(row:ConversationRow)=>{
+  await assertMessageScope(scope);
+  if(row.buyer_id!==owner||row.seller_id!==item.sellerId||row.listing_id!==item.id)throw Error("La conversación no corresponde al anuncio.");
+  return hydrate(row);
+ };
  if(item.sellerId===owner)throw Error("No puedes contactar tu propio anuncio.");
  if(item.status!=="published")throw Error("El anuncio no admite mensajes en este momento.");
  const {data:existing,error:readError}=await db.from("jshop_conversations" as never)
   .select(selection).eq("listing_id",item.id).eq("buyer_id",owner).maybeSingle();
  if(readError)throw readError;
- if(existing)return hydrate(existing as unknown as ConversationRow);
+ await assertMessageScope(scope);
+ if(existing)return checked(existing as unknown as ConversationRow);
  const {data,error}=await db.from("jshop_conversations" as never)
   .insert({listing_id:item.id,buyer_id:owner} as never).select(selection).single();
  if(error){
   // Concurrent taps or devices can create the same thread. Retrieve the unique result.
   if(error.code==="23505"){
+   await assertMessageScope(scope);
    const retry=await db.from("jshop_conversations" as never).select(selection)
     .eq("listing_id",item.id).eq("buyer_id",owner).single();
    if(retry.error)throw retry.error;
-   return hydrate(retry.data as unknown as ConversationRow);
+   return checked(retry.data as unknown as ConversationRow);
   }
   throw error;
  }
- return hydrate(data as unknown as ConversationRow);
+ return checked(data as unknown as ConversationRow);
 }
-export async function loadJShopConversation(id:string):Promise<JShopConversation>{
- const db=requireSupabase();const owner=await currentUser();
+export async function loadJShopConversation(id:string,expectedScope?:MessageScope):Promise<JShopConversation>{
+ const db=requireSupabase(),scope=await captureMessageScope(expectedScope),{owner}=scope;
  if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id))throw Error("Conversación inválida.");
  const {data,error}=await db.from("jshop_conversations" as never).select(selection).eq("id",id).maybeSingle();
  if(error)throw error;
  if(!data)throw Error("No tienes acceso a esta conversación.");
+ await assertMessageScope(scope);
  const hydrated=hydrate(data as unknown as ConversationRow);
  if(hydrated.buyerId!==owner&&hydrated.sellerId!==owner)throw Error("No tienes acceso a esta conversación.");
  return hydrated;
 }
-export async function loadJShopInbox():Promise<JShopInboxThread[]>{
- const db=requireSupabase(),owner=await currentUser();
+export async function loadJShopInbox(expectedScope?:MessageScope):Promise<JShopInboxThread[]>{
+ const db=requireSupabase(),scope=await captureMessageScope(expectedScope),{owner}=scope;
  const {data,error}=await db.from("jshop_conversations" as never)
   .select(selection).or(`buyer_id.eq.${owner},seller_id.eq.${owner}`).order("created_at",{ascending:false}).limit(100);
  if(error)throw error;
- const rows=(data??[]) as unknown as ConversationRow[];
+ await assertMessageScope(scope);
+ const rows=((data??[]) as unknown as ConversationRow[]).filter(r=>r.buyer_id===owner||r.seller_id===owner);
  if(!rows.length)return [];
  const ids=rows.map(row=>row.id);
+ await assertMessageScope(scope);
  const {data:messages,error:msgError}=await db.from("jobeen_direct_messages" as never)
   .select("jshop_conversation_id,body,created_at").in("jshop_conversation_id",ids)
   .order("created_at",{ascending:false}).limit(350);
@@ -83,6 +89,7 @@ export async function loadJShopInbox():Promise<JShopInboxThread[]>{
   const card=await loadPublicCard(id).catch(()=>null);
   return [id,card?.name??"Usuario de Jobeen"] as const;
  })));
+ await assertMessageScope(scope);
  return rows.map(row=>{
   const c=hydrate(row),otherId=row.buyer_id===owner?row.seller_id:row.buyer_id,latest=newest.get(row.id);
   return {...c,otherId,otherName:names.get(otherId)??"Usuario de Jobeen",

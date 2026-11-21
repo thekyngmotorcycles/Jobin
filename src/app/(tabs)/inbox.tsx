@@ -12,6 +12,7 @@ import {loadJShopInbox,jshopConversationPrice,type JShopInboxThread} from "../..
 import {loadChatRequestPreviews,loadIncomingRequests,loadJShopSpamIds} from "../../lib/message-requests";
 import {EXTENSION_MONTHS} from "../../lib/rules";
 import {requireSupabase} from "../../lib/supabase";
+import {assertMessageScope,captureMessageScope} from "../../lib/message-session";
 import {useJobinNotices} from "../../state/NoticeProvider";
 import {useTabClearance} from "../../theme/navigation";
 import {jobeenTokens} from "../../theme/jobeen";
@@ -49,11 +50,11 @@ export default function Messages(){
  const [error,setError]=useState("");
 
  useFocusEffect(useCallback(()=>{
-  let active=true;setLoading(true);setError("");
+  let active=true;setLoading(true);setError("");setDirectThreads([]);setShopThreads([]);setRequestCounts({pending:0,spam:0});setShopSpamIds(new Set());
   void(async()=>{
    try{
-    const db=requireSupabase();const {data:{user},error:authError}=await db.auth.getUser();
-    if(authError||!user){if(active){setDirectThreads([]);setShopThreads([]);setRequestCounts({pending:0,spam:0});setShopSpamIds(new Set());}return;}
+    const db=requireSupabase(),scope=await captureMessageScope(),user={id:scope.owner};
+    if(!active)return;
     const [direct,shop,incoming,spamFolders]=await Promise.allSettled([
      (async()=>{
       const {data,error:readError}=await db.from("jobeen_direct_messages" as never)
@@ -63,10 +64,11 @@ export default function Messages(){
       if(readError)throw readError;
       const recent=new Map<string,{body:string;createdAt:string}>();
       for(const row of (data??[]) as unknown as {sender_id:string;recipient_id:string;body:string;created_at:string}[]){
+       if(row.sender_id!==user.id&&row.recipient_id!==user.id)continue;
        const other=row.sender_id===user.id?row.recipient_id:row.sender_id;
        if(!recent.has(other))recent.set(other,{body:row.body,createdAt:row.created_at});
       }
-      for(const preview of await loadChatRequestPreviews(user.id)){
+      for(const preview of await loadChatRequestPreviews(user.id,scope)){
        const previous=recent.get(preview.id);
        if(!previous||Date.parse(preview.createdAt)>Date.parse(previous.createdAt))recent.set(preview.id,preview);
       }
@@ -75,12 +77,12 @@ export default function Messages(){
        return {id,name:card?.name??"Usuario de Jobeen",text:value.body,createdAt:value.createdAt};
       }));
      })(),
-     loadJShopInbox(),
-     loadIncomingRequests(),
-     loadJShopSpamIds()
+     loadJShopInbox(scope),
+     loadIncomingRequests(scope),
+     loadJShopSpamIds(scope)
     ]);
-    const {data:{user:current},error:sessionError}=await db.auth.getUser();
-    if(!active||sessionError||current?.id!==user.id)return;
+    await assertMessageScope(scope);
+    if(!active)return;
     if(direct.status==="fulfilled")setDirectThreads(direct.value);else setError("No se pudieron cargar los chats personales.");
     if(shop.status==="fulfilled")setShopThreads(shop.value);else setError(prev=>[prev,"No se pudieron cargar los mensajes de JShop."].filter(Boolean).join(" "));
     if(incoming.status==="fulfilled")setRequestCounts({pending:incoming.value.filter(r=>r.status==="pending").length,spam:incoming.value.filter(r=>r.status==="spam"||r.status==="reported").length});
