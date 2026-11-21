@@ -57,7 +57,7 @@ test("Public profile closes its existing menu before opening the branded share p
  assert.ok(profile.includes('link={url}'));
  assert.ok(!profile.includes('void Share.share('));
  assert.ok(profile.includes('"Bloquear perfil"'),"Keep existing block actions");
- assert.ok(profile.includes('"Denunciar perfil"'),"Keep existing report actions");
+ assert.ok(profile.includes("Denunciar perfil"),"Keep existing report actions");
 });
 
 test("Published feed keeps share counts confirmed and avoids overlapping action sheets",()=>{
