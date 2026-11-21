@@ -123,10 +123,10 @@ test("Visitor and owned profile headers share safe-area coordinates and premium 
  assert.ok(visitor.includes("backgroundColor:jt.bg"));
 });
 test("Visitor profile keeps global tabs while scrolling JCard and media sections",()=>{
- const root=read("src/app/_layout.tsx");
- const global=read("src/components/PersistentBottomTabs.tsx");
- const state=read("src/state/ScrollNavigation.tsx");
- const tabLayout=read("src/app/(tabs)/_layout.tsx");
+ const root=source("src/app/_layout.tsx");
+ const global=source("src/components/PersistentBottomTabs.tsx");
+ const state=source("src/state/ScrollNavigation.tsx");
+ const tabLayout=source("src/app/(tabs)/_layout.tsx");
  assert.ok(root.includes('pathname==="/jcard"'));
  assert.ok(root.includes("<PersistentBottomTabs/>"));
  assert.ok(global.includes('items.map(item=><Pressable'));
