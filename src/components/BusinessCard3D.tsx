@@ -82,7 +82,8 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
     [enabled]
   );
 
-  const tap=Gesture.Tap().enabled(enabled).maxDistance(12).runOnJS(true).onEnd(()=>{
+  // Reject a vertical pull early so the parent ScrollView starts moving immediately.
+  const tap=Gesture.Tap().enabled(enabled).maxDistance(7).maxDuration(240).runOnJS(true).onEnd(()=>{
     if(interactiveTouch.current)return;
     const next=side==="personal"?"business":"personal";
     cancelAnimation(previewAngle);previewAngle.value=0;
@@ -91,7 +92,7 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
     lastGestureSide.current=next;
     onSide(next);
   });
-  const pan=Gesture.Pan().enabled(enabled).activeOffsetX([-12,12]).failOffsetY([-18,18]).runOnJS(true)
+  const pan=Gesture.Pan().enabled(enabled).activeOffsetX([-16,16]).failOffsetY([-7,7]).runOnJS(true)
     .onBegin(()=>{
       if(interactiveTouch.current)return;
       cancelAnimation(angle);
@@ -116,8 +117,8 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
       onSide(next);
     })
     .onFinalize(()=>{
-      lift.value=withSpring(1,SPRING);
-      moving.value=false;
+      // Do not schedule a spring on every failed vertical-scroll gesture.
+      if(moving.value){lift.value=withSpring(1,SPRING);moving.value=false;}
     });
   const gesture=Gesture.Exclusive(pan,tap);
 
