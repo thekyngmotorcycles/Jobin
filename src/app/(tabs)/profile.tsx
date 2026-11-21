@@ -1,5 +1,6 @@
 import {consumePersonalPhotoChange} from "../../lib/personal-jcard-photo";
-import {menuChrome} from "../../theme/menu-chrome";
+import {jobeenModalTokens} from "../../theme/modals";
+import {JOBEEN_TYPE} from "../../theme/typography";
 import {jobeenTokens} from "../../theme/jobeen";
 import {useTheme} from "../../state/ThemeProvider";
 import {cvRequests,respondCV,revokeCV,type CVRequest} from "../../lib/cv-access";
@@ -49,7 +50,7 @@ function validPhoneLabel(value:string):boolean{
  return /^(?:[\p{Regional_Indicator}]{2}|[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?(?:\u200D[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?)*)$/u.test(label);
 }
 export default function Profile() {
-  const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {view,card}=useLocalSearchParams<{view?:string;card?:string}>();
+  const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme);const {contentBottom}=useTabClearance();const {view,card}=useLocalSearchParams<{view?:string;card?:string}>();
   const [mode,setMode]=useState<Mode>("home");
   const profileScroll=useRef<ScrollView|null>(null);
   const profileScrollY=useRef(new Animated.Value(0)).current;
@@ -243,13 +244,13 @@ export default function Profile() {
       </Animated.View>
       <Modal visible={profileToolsOpen} transparent animationType="none" onRequestClose={closeProfileMenu} statusBarTranslucent={false}>
         <View style={{flex:1,flexDirection:"row"}}>
-          <View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:colors.scrim}}/>
+          <View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:modal.scrim}}/>
           <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú de perfil" onPress={closeProfileMenu} style={{flex:1}}/>
-          <View style={{width:Math.min(screenWidth*0.88,410)}}><SafeAreaView edges={["top","bottom"]} style={{flex:1,backgroundColor:chrome.surfaceTranslucent,borderTopLeftRadius:18,borderBottomLeftRadius:18,overflow:"hidden"}}>
+          <View style={{width:Math.min(screenWidth*0.88,410)}}><SafeAreaView edges={["top","bottom"]} style={{flex:1,backgroundColor:modal.surface,borderTopLeftRadius:modal.radius.dialog,borderBottomLeftRadius:modal.radius.dialog,overflow:"hidden"}}>
             <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:22,paddingBottom:32,gap:10}}>
               <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingBottom:16}}>
-                <Text accessibilityRole="header" style={{color:chrome.text,fontWeight:"700",fontSize:22}}>Opciones del perfil</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={closeProfileMenu} style={{padding:8}}><Ionicons name="close" size={25} color={chrome.text}/></Pressable>
+                <Text accessibilityRole="header" style={{color:modal.text,fontWeight:"700",fontSize:JOBEEN_TYPE.modalTitle}}>Opciones del perfil</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={closeProfileMenu} style={{padding:8}}><Ionicons name="close" size={25} color={modal.text}/></Pressable>
               </View>
               <Button secondary title="Ver perfil ficticio (demo)" onPress={()=>{closeProfileMenu();router.push("/demo-profile");}}/>
               <Button secondary title="Reseñas de empresas" onPress={()=>{closeProfileMenu();router.push("/reviews");}}/>
