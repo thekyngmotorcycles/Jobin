@@ -8,7 +8,7 @@ import {businessCategoryArt} from "../lib/business-category-art";
 import {listSavedJCards,removeSavedJCard,setSavedJCardFavorite,type SavedJCard} from "../lib/saved-jcards";
 
 /** Saved JCards point to visible public profiles, never to stale contact snapshots. */
-export function SavedJCardsGallery(){
+export function SavedJCardsGallery({owner}:{owner:string}){
  const {theme}=useTheme();const colors=jobeenTokens(theme);
  const [items,setItems]=useState<SavedJCard[]>([]);
  const [query,setQuery]=useState("");
@@ -17,16 +17,16 @@ export function SavedJCardsGallery(){
  const [error,setError]=useState("");
  const [busy,setBusy]=useState("");
  const refresh=useCallback(async()=>{
-  const next=await listSavedJCards();setItems(next);setError("");
- },[]);
+  const next=await listSavedJCards(owner);setItems(next);setError("");
+ },[owner]);
  useFocusEffect(useCallback(()=>{
   let active=true;
   setLoading(true);
-  void listSavedJCards().then(result=>{if(active){setItems(result);setError("");}})
+  void listSavedJCards(owner).then(result=>{if(active){setItems(result);setError("");}})
    .catch(e=>{if(active)setError(e instanceof Error?e.message:"No pudimos cargar tus JCards.");})
    .finally(()=>{if(active)setLoading(false);});
   return()=>{active=false;};
- },[]));
+ },[owner]));
  const visible=useMemo(()=>items.filter(item=>{
   if(filter==="favorites"&&!item.favorite)return false;
   const key=(item.title+" "+item.subtitle).toLocaleLowerCase("es");
@@ -34,13 +34,13 @@ export function SavedJCardsGallery(){
  }),[items,filter,query]);
  const changeFavorite=async(item:SavedJCard)=>{
   if(busy)return;setBusy(item.targetId+item.side);
-  try{await setSavedJCardFavorite(item.targetId,item.side,!item.favorite);await refresh();}
+  try{await setSavedJCardFavorite(item.targetId,item.side,!item.favorite,owner);await refresh();}
   catch(e){Alert.alert("Mis JCards",e instanceof Error?e.message:"No se pudo actualizar la tarjeta.");}
   finally{setBusy("");}
  };
  const remove=async(item:SavedJCard)=>{
   if(busy)return;setBusy(item.targetId+item.side);
-  try{await removeSavedJCard(item.targetId,item.side);await refresh();}
+  try{await removeSavedJCard(item.targetId,item.side,owner);await refresh();}
   catch(e){Alert.alert("Mis JCards",e instanceof Error?e.message:"No se pudo quitar la tarjeta.");}
   finally{setBusy("");}
  };
