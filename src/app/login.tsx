@@ -39,7 +39,7 @@ export default function Login(){
    const {data,error:authError}=await requireSupabase().auth.signInWithPassword({email:email.trim().toLowerCase(),password});
    if(authError)throw authError;
    if(!data.session)throw new Error("No se pudo iniciar la sesión.");
-   await startJobinSession();setPassword("");router.replace("/videos");
+   await startJobinSession(data.session.user.id);setPassword("");router.replace("/videos");
   }catch(e){setError(e instanceof Error?e.message:"No se pudo iniciar sesión.");}
   finally{setBusy(false);}
  }
