@@ -6,6 +6,7 @@ import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
 import {JOBEEN_TYPE} from "../theme/typography";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {MAX_POST_DRAFTS,type PostDraft,type PostDraftPhoto} from "../lib/post-drafts";
 import type {FeedAudience,FeedPostKind} from "../lib/social-content";
 
@@ -27,11 +28,13 @@ export function PostComposerSheets(p:Props){
  const altPhoto=p.photos.find(x=>x.id===p.altPhotoId);
  const action=(label:string,icon:React.ComponentProps<typeof Ionicons>["name"],onPress:()=>void,primary=false)=>
   <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
-   style={{minHeight:52,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:10,
+   style={{minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
+   <View style={{width:"100%",height:JOBEEN_CONTROL.visualAction+2,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8,
     backgroundColor:primary?modal.accent:modal.inner,borderWidth:primary?0:1,borderColor:label==="Descartar cambios"?danger.icon:modal.border,
-    borderRadius:16,paddingHorizontal:15}}>
-   <Ionicons name={icon} size={19} color={label==="Descartar cambios"?danger.icon:modal.text}/>
-   <Text style={{fontSize:14,fontWeight:"700",color:label==="Descartar cambios"?danger.icon:modal.text}}>{label}</Text>
+    borderRadius:modal.radius.control,paddingHorizontal:15}}>
+    <Ionicons name={icon} size={18} color={label==="Descartar cambios"?danger.icon:modal.text}/>
+    <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"700",color:label==="Descartar cambios"?danger.icon:modal.text}}>{label}</Text>
+   </View>
   </Pressable>;
  const backdrop=(onPress:()=>void)=><Pressable accessibilityRole="button" accessibilityLabel="Cerrar ventana"
   onPress={onPress} style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:modal.scrim}}/>;
@@ -84,7 +87,7 @@ export function PostComposerSheets(p:Props){
    {floatingCard("Borradores",p.onCloseDrafts,
     <ScrollView showsVerticalScrollIndicator contentContainerStyle={{paddingHorizontal:15,paddingBottom:18,gap:12}}>
      <Text style={{fontSize:12,color:t.ink2}}>{p.drafts.length} de {MAX_POST_DRAFTS} borradores</Text>
-     {!p.drafts.length&&<View style={{minHeight:135,alignItems:"center",justifyContent:"center",gap:10}}>
+     {!p.drafts.length&&<View style={{minHeight:92,alignItems:"center",justifyContent:"center",gap:9}}>
       <Ionicons name="albums-outline" size={36} color={t.ink2}/>
       <Text style={{color:t.ink2,fontSize:13}}>Aún no tienes borradores guardados.</Text>
      </View>}
@@ -158,7 +161,7 @@ export function PostComposerSheets(p:Props){
        <Ionicons name="bookmark-outline" size={22} color={t.ink}/>
       </View>
      </View>
-     <Text style={{fontSize:12,color:t.ink2,paddingHorizontal:16}}>Vista de ejemplo. Tu publicación todavía no es visible para otros usuarios.</Text>
+     <Text style={{fontSize:JOBEEN_TYPE.secondary,color:t.ink2,paddingHorizontal:16}}>Vista de ejemplo. Tu publicación todavía no es visible para otros usuarios.</Text>
      <View style={{paddingHorizontal:16}}>{action("Volver a editar","create-outline",p.onClosePreview,true)}</View>
     </ScrollView>)}
   </Modal>
