@@ -15,20 +15,16 @@ export async function readBusinessExcellence(ownerId:string){const db=requireSup
 export async function checkBusinessHandleAvailable(handle:string):Promise<boolean>{
  const candidate=handle.trim().toLowerCase().replace(/^@/,"");
  if(!BUSINESS_HANDLE_PATTERN.test(candidate))return false;
- const db=requireSupabase(),owner=await cloudOwner();
- const [businesses,personal]=await Promise.all([
-  db.from("jcard_business_details" as never).select("owner_id").eq("business_handle",candidate).limit(1),
-  db.from("jcard_profiles").select("profile_id").in("handle",[candidate,"@"+candidate]).limit(1)
- ]);
- if(businesses.error)throw businesses.error;
- if(personal.error)throw personal.error;
- return !((businesses.data??[]) as unknown as {owner_id:string}[]).some(x=>x.owner_id!==owner) && !(personal.data??[]).length;
+ const db=requireSupabase();
+ const {data,error}=await db.rpc("jobeen_business_handle_available" as never,{candidate} as never);
+ if(error)throw error;
+ return data===true;
 }
 
 /** The public JCard RPC returns the personal face; this loads the business face separately. */
 export async function readPublicBusinessCard(ownerId:string):Promise<BusinessCardData|null>{
  const db=requireSupabase();
- const {data,error}=await db.from("jcard_business_details" as never)
+ const {data,error}=await db.from("jobeen_public_business_cards" as never)
   .select("name,business_handle,opened,closed,services,location,category,email,email_secondary,phone,phone_secondary,phone_label,phone_secondary_label,banner_url,avatar_url")
   .eq("owner_id",ownerId).maybeSingle();
  if(error)throw error;
