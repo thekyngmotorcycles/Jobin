@@ -68,7 +68,7 @@ test("Existing dual JCards can appear as companies without converting account ty
  assert.ok(presence.includes("allowedKinds"));
  assert.ok(presence.includes('from("jcard_business_details"'));
  assert.ok(settings.includes("allowedKinds.map"));
- assert.ok(feed.includes('from("jcard_business_details"'));
+ assert.ok(feed.includes('from("jobeen_public_business_cards"'));
  assert.ok(sql.includes("to_regclass('public.jcard_business_details')"));
  assert.ok(sql.includes("coalesce(nullif(btrim(b.name)"));
  assert.ok(sql.includes("security invoker"));
