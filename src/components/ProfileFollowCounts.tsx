@@ -1,8 +1,9 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
-import {useCallback,useEffect,useState} from "react";
+import {useCallback,useEffect,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Pressable,Text,TextInput,View} from "react-native";
 import {requireSupabase} from "../lib/supabase";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
 import {contactCount,myContacts,replyContactRequest,removeContactRequest,type ContactPerson} from "../lib/professional-contacts";
 import {useUi} from "./ui";
 import {BottomSheet} from "./social-ui";
@@ -14,6 +15,7 @@ type ListType="followers"|"following"|"contacts";
 type Connection={id:string;name:string;following:boolean};
 export function ProfileFollowCounts({userId,refreshKey=0}:{userId:string;refreshKey?:number}){
  const {colors,s}=useUi();const {theme}=useTheme();const jt=jobeenTokens(theme);
+ const scopeRef=useRef<MessageScope|null>(null),countRevision=useRef(0),listRevision=useRef(0);
  const [viewer,setViewer]=useState("");
  const [counts,setCounts]=useState<{followers:number;following:number;contacts:number}|null>(null);
  const [sheet,setSheet]=useState(false);
@@ -25,30 +27,35 @@ export function ProfileFollowCounts({userId,refreshKey=0}:{userId:string;refresh
  const [busy,setBusy]=useState("");
  const [error,setError]=useState("");
  const refreshCounts=useCallback(async()=>{
+  const generation=++countRevision.current;
   if(!userId)return;
   try{
    const db=requireSupabase();
-   const {data:{user}}=await db.auth.getUser();
-   setViewer(user?.id??"");
+   const scope=await captureMessageScope();
    const [followers,following,contacts]=await Promise.all([
     db.from("profile_follows" as never).select("*",{head:true,count:"exact"}).eq("followed_id",userId),
     db.from("profile_follows" as never).select("*",{head:true,count:"exact"}).eq("follower_id",userId),
     contactCount(userId)
    ]);
    if(followers.error||following.error)throw new Error("No se pudieron cargar los contadores.");
-   setCounts({followers:followers.count??0,following:following.count??0,contacts});
-  }catch{setCounts(null);}
+   await assertMessageScope(scope);
+   if(countRevision.current===generation){scopeRef.current=scope;setViewer(scope.owner);setCounts({followers:followers.count??0,following:following.count??0,contacts});}
+  }catch{if(countRevision.current===generation){scopeRef.current=null;setViewer("");setCounts(null);}}
  },[userId]);
- useFocusEffect(useCallback(()=>{void refreshCounts();},[refreshCounts]));
+ useFocusEffect(useCallback(()=>{void refreshCounts();return()=>{scopeRef.current=null;countRevision.current++;listRevision.current++;setSheet(false);setRows([]);setContactRows([]);};},[refreshCounts]));
  useEffect(()=>{void refreshCounts();},[refreshCounts,refreshKey]);
  const isOwner=!!viewer&&viewer===userId;
 
  async function loadConnections(kind:ListType){
-  if(!isOwner)return;
+  const scope=scopeRef.current,generation=++listRevision.current;
+  if(!isOwner||!scope||scope.owner!==userId)return;
+  const active=()=>listRevision.current===generation&&scopeRef.current?.session===scope.session;
   setLoading(true);setError("");setRows([]);setContactRows([]);
   try{
+   await captureMessageScope(scope);
    if(kind==="contacts"){
-    setContactRows(await myContacts());
+    const contacts=await myContacts(scope);
+    if(active())setContactRows(contacts);
     return;
    }
    const db=requireSupabase();
@@ -59,7 +66,8 @@ export function ProfileFollowCounts({userId,refreshKey=0}:{userId:string;refresh
     .order("created_at",{ascending:false}).limit(200);
    if(linkError)throw linkError;
    const ids=(links??[]).map((item:any)=>item[other] as string);
-   if(!ids.length){setRows([]);return;}
+   if(!ids.length){if(active())setRows([]);return;}
+   await assertMessageScope(scope);
    const [names,following]=await Promise.all([
     db.from("profiles").select("id,display_name").in("id",ids),
     db.from("profile_follows" as never).select("followed_id").eq("follower_id",viewer)
@@ -67,42 +75,51 @@ export function ProfileFollowCounts({userId,refreshKey=0}:{userId:string;refresh
    if(names.error||following.error)throw names.error??following.error;
    const byId=new Map((names.data??[]).map(x=>[x.id,x.display_name]));
    const followed=new Set(((following.data??[]) as unknown as {followed_id:string}[]).map(x=>x.followed_id));
-   setRows(ids.map(id=>({id,name:byId.get(id)??"Usuario de Jobeen",following:followed.has(id)})));
-  }catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar las conexiones.");}
-  finally{setLoading(false);}
+   await assertMessageScope(scope);
+   if(active())setRows(ids.map(id=>({id,name:byId.get(id)??"Usuario de Jobeen",following:followed.has(id)})));
+  }catch(e){if(active())setError(e instanceof Error?e.message:"No se pudieron cargar las conexiones.");}
+  finally{if(active())setLoading(false);}
  }
  function openList(kind:ListType){
   if(!isOwner)return;
   setTab(kind);setQuery("");setSheet(true);void loadConnections(kind);
  }
  async function toggleFollow(person:Connection){
+  const scope=scopeRef.current;if(!scope||scope.owner!==viewer||scope.owner!==userId)return;
   setError("");
   try{
    const db=requireSupabase();
+   await captureMessageScope(scope);
+   if(scopeRef.current?.session!==scope.session)return;
    const request=person.following?
     db.from("profile_follows" as never).delete().eq("follower_id",viewer).eq("followed_id",person.id):
     db.from("profile_follows" as never).insert({follower_id:viewer,followed_id:person.id} as never);
    const {error:followError}=await request;
    if(followError)throw followError;
+   await assertMessageScope(scope);
+   if(scopeRef.current?.session!==scope.session)return;
    setRows(current=>current.map(row=>row.id===person.id?{...row,following:!person.following}:row));
    void refreshCounts();
   }catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar el seguimiento.");}
  }
- async function contactAction(person:ContactPerson,approve?:boolean){
-  if(busy)return;
+ async function contactAction(person:ContactPerson,approve?:boolean,expectedScope=scopeRef.current){
+  const scope=expectedScope;
+  if(!scope||scopeRef.current?.session!==scope.session||scope.owner!==userId||busy)return;
   setBusy(person.requestId);setError("");
   try{
-   if(person.direction==="incoming")await replyContactRequest(person.requestId,approve===true);
-   else await removeContactRequest(person.requestId);
+   if(person.direction==="incoming")await replyContactRequest(person.requestId,approve===true,scope);
+   else await removeContactRequest(person.requestId,scope);
+   if(scopeRef.current?.session!==scope.session)return;
    await loadConnections("contacts");
    await refreshCounts();
   }catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar la relación profesional.");}
   finally{setBusy("");}
  }
  function confirmRemove(person:ContactPerson){
+  const scope=scopeRef.current;if(!scope)return;
   Alert.alert("Eliminar contacto","Se eliminará la relación profesional para ambos perfiles.",[
    {text:"Cancelar",style:"cancel"},
-   {text:"Eliminar",style:"destructive",onPress:()=>void contactAction(person)}
+   {text:"Eliminar",style:"destructive",onPress:()=>void contactAction(person,undefined,scope)}
   ]);
  }
  function changeTab(next:ListType){setTab(next);setQuery("");void loadConnections(next);}

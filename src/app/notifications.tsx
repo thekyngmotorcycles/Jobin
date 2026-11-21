@@ -1,13 +1,13 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useFocusEffect} from "expo-router";
-import {useCallback,useState,type ComponentProps} from "react";
+import {useCallback,useRef,useState,type ComponentProps} from "react";
 import {ActivityIndicator,Pressable,ScrollView,Text,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useJobinNotices} from "../state/NoticeProvider";
 import {cvRequests,respondCV,type CVRequest} from "../lib/cv-access";
 import {myContacts,replyContactRequest,type ContactPerson} from "../lib/professional-contacts";
 import {loadActivityNotifications,markActivityNotificationsRead,noticeDescription,type ActivityNotice} from "../lib/activity-notifications";
-import {requireSupabase} from "../lib/supabase";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 
@@ -23,39 +23,48 @@ function dateText(date:string){
 export default function Notifications(){
  const {theme}=useTheme();const t=jobeenTokens(theme);
  const {notices:temporary,markActivityRead}=useJobinNotices();
+ const scopeRef=useRef<MessageScope|null>(null),revision=useRef(0);
  const [tab,setTab]=useState<Tab>("Todas");
  const [items,setItems]=useState<ActivityNotice[]>([]);
  const [legacyCV,setLegacyCV]=useState<CVRequest[]>([]);
  const [pendingContacts,setPendingContacts]=useState<ContactPerson[]>([]);
  const [loading,setLoading]=useState(true),[error,setError]=useState(""),[busy,setBusy]=useState("");
  const load=useCallback(async()=>{
-  setLoading(true);setError("");
+  const generation=++revision.current;scopeRef.current=null;setItems([]);setLegacyCV([]);setPendingContacts([]);setLoading(true);setError("");
   try{
-   const db=requireSupabase();const {data:{user}}=await db.auth.getUser();
-   if(!user){setItems([]);setLegacyCV([]);setPendingContacts([]);return;}
-   const [rows,requests,contacts]=await Promise.all([loadActivityNotifications(),cvRequests(),myContacts()]);
-   setItems(rows);
+   const scope=await captureMessageScope(),user={id:scope.owner};
+   const [rows,requests,contacts]=await Promise.all([loadActivityNotifications(100,scope),cvRequests(),myContacts(scope)]);
+   await assertMessageScope(scope);
+   if(revision.current!==generation)return;
+   scopeRef.current=scope;setItems(rows);
    setPendingContacts(contacts.filter(person=>person.direction==="incoming"));
    setLegacyCV(requests.filter(req=>req.owner_id===user.id&&req.status==="pending"&&
     !rows.some(n=>n.kind==="cv_request"&&payloadId(n,"request_id")===req.id)));
-  }catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar las notificaciones.");}
-  finally{setLoading(false);}
+  }catch(e){if(revision.current===generation)setError(e instanceof Error?e.message:"No se pudieron cargar las notificaciones.");}
+  finally{if(revision.current===generation)setLoading(false);}
  },[]);
- useFocusEffect(useCallback(()=>{void load();},[load]));
+ useFocusEffect(useCallback(()=>{void load();return()=>{revision.current++;scopeRef.current=null;};},[load]));
  async function markAll(){
+  const scope=scopeRef.current;if(!scope)return;
   setBusy("all");
   try{
-   await markActivityNotificationsRead();
+   await markActivityNotificationsRead(undefined,scope);
+   if(scopeRef.current!==scope)return;
    setItems(current=>current.map(n=>({...n,readAt:n.readAt??new Date().toISOString()})));
    markActivityRead();
   }catch(e){setError(e instanceof Error?e.message:"No se pudieron marcar como leídas.");}
   finally{setBusy("");}
  }
  async function openNotice(n:ActivityNotice){
+  const scope=scopeRef.current;if(!scope)return;
+  try{await captureMessageScope(scope);}catch{return;}
+  if(scopeRef.current!==scope)return;
   if(!n.readAt){
-   try{await markActivityNotificationsRead([n.id]);setItems(current=>current.map(x=>x.id===n.id?{...x,readAt:new Date().toISOString()}:x));}
+   try{await markActivityNotificationsRead([n.id],scope);if(scopeRef.current!==scope)return;setItems(current=>current.map(x=>x.id===n.id?{...x,readAt:new Date().toISOString()}:x));}
    catch(e){setError(e instanceof Error?e.message:"No se pudo marcar como leída.");}
   }
+  try{await assertMessageScope(scope);}catch{return;}
+  if(scopeRef.current!==scope)return;
   const actor=payloadId(n,"actor_id");
   const post=payloadId(n,"post_id");
   if((n.kind==="post_like"||n.kind==="post_comment")&&post)router.push({pathname:"/post/[id]",params:{id:post}});
@@ -73,13 +82,15 @@ export default function Notifications(){
   finally{setBusy("");}
  }
  async function respondContact(id:string,approve:boolean){
-  if(busy)return;
+  const scope=scopeRef.current;
+  if(!scope||busy||!pendingContacts.some(p=>p.requestId===id&&p.direction==="incoming"))return;
   setBusy(id);setError("");
   try{
-   await replyContactRequest(id,approve);
+   await replyContactRequest(id,approve,scope);
+   if(scopeRef.current!==scope)return;
    const notices=items.filter(n=>n.kind==="contact_request"&&payloadId(n,"request_id")===id).map(n=>n.id);
-   if(notices.length)await markActivityNotificationsRead(notices);
-   await load();
+   if(notices.length)await markActivityNotificationsRead(notices,scope);
+   if(scopeRef.current===scope)await load();
   }catch(e){setError(e instanceof Error?e.message:"No se pudo responder la invitación.");}
   finally{setBusy("");}
  }
