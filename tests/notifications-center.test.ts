@@ -27,7 +27,9 @@ test("Notifications show real account activity, filters, read status and routing
  const api=file("src/lib/activity-notifications.ts");
  assert.ok(screen.includes('["Todas","Solicitudes","Sistema"]'));
  assert.ok(screen.includes("markActivityNotificationsRead("));
- assert.ok(screen.includes("loadActivityNotifications()"));
+ assert.ok(screen.includes("loadActivityNotifications(100,scope)"));
+ assert.ok(screen.includes("await assertMessageScope(scope)"),"Notifications are checked against the originating session");
+ assert.ok(screen.includes("markActivityNotificationsRead(undefined,scope)"),"Mark all must not operate on a new account");
  assert.ok(screen.includes('"/message-requests"'));
  assert.ok(screen.includes('pathname:"/post/[id]"'));
  assert.ok(screen.includes('pathname:"/jcard"'));
