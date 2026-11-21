@@ -20,9 +20,9 @@ export function JobeenNoticeDialog({visible,title,description,tone="neutral",con
  const icon=tone==="danger"?"alert-circle-outline":tone==="warning"?"warning-outline":
   tone==="success"?"checkmark-circle-outline":tone==="info"?"information-circle-outline":"help-circle-outline";
  const destructive=tone==="danger";
- return <Modal transparent visible={visible} animationType="fade" statusBarTranslucent={false} onRequestClose={onCancel}>
+ return <Modal transparent visible={visible} animationType="fade" statusBarTranslucent={false} onRequestClose={()=>{if(!busy)onCancel();}}>
   <View style={{flex:1,justifyContent:"center",alignItems:"center",paddingHorizontal:18,paddingVertical:inset.top+20}}>
-   <Pressable accessibilityRole="button" accessibilityLabel="Cerrar aviso" onPress={onCancel}
+   <Pressable accessibilityRole="button" accessibilityLabel="Cerrar aviso" disabled={busy} onPress={onCancel}
     style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:t.scrim}}/>
    <View accessibilityViewIsModal style={{width:"100%",maxWidth:Math.min(420,width-36),borderRadius:t.radius.dialog,
     backgroundColor:t.surface,borderColor:t.border,borderWidth:1,padding:19,gap:14}}>
