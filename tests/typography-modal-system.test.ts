@@ -33,7 +33,7 @@ test("Premium Jobeen share sheet uses common type scale and compact accessible s
 test("Shared bottom sheets reuse the same compact heading while retaining theme and gestures",()=>{
  const sheet=src("src/components/social-ui.tsx");
  assert.ok(sheet.includes("fontSize:JOBEEN_TYPE.modalTitle"));
- assert.ok(sheet.includes("const chrome=menuChrome(theme,colors)"));
- assert.ok(sheet.includes('borderTopLeftRadius:26,borderTopRightRadius:26'));
+ assert.ok(sheet.includes("const modal=jobeenModalTokens(theme)"));
+ assert.ok(sheet.includes('borderTopLeftRadius:modal.radius.sheet,borderTopRightRadius:modal.radius.sheet'));
  assert.ok(sheet.includes('statusBarTranslucent={false}'));
 });
