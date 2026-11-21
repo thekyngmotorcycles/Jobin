@@ -48,7 +48,7 @@ test("Creator Home uses real published work without inventing live viewers",()=>
  assert.ok(owner.includes('mode==="jcards"&&<SavedJCardsGallery/>'));
  assert.ok(visitor.includes('section==="grid"'));
  assert.ok(owner.includes('ProfileOwnedPosts filter="all"'));
- assert.ok(visitor.includes('ProfilePublicPosts userId={resource.data.id} filter="all"'));
+ assert.ok(visitor.includes('ProfilePublicPosts userId={resource.data.id} filter={section==="grid"?"all"'));
  assert.ok(posts.includes("tiles.slice(0,limit)"));
  assert.ok(posts.includes('accessibilityLabel="Ver todas las publicaciones"'));
  assert.ok(owner.includes('Sin transmisión activa verificada'));
