@@ -6,7 +6,7 @@ const src=(path:string)=>readFileSync(path,"utf8");
 
 test("One provisional Premium Warm surface is shared by all major Jobeen windows",()=>{
  const theme=src("src/theme/modals.ts");
- assert.ok(theme.includes('const surface=light?LIGHT_JOBEEN.bg:t.surface'));
+ assert.ok(theme.includes('const surface=light?\"#FCF9F4\":t.surface'));
  assert.ok(theme.includes('const inner=light?LIGHT_JOBEEN.surface:t.bg'));
  assert.ok(theme.includes('const border=light?LIGHT_JOBEEN.line:t.line'));
  assert.ok(theme.includes('const accent=light?LIGHT_JOBEEN.yellow:t.yellow'));
@@ -54,9 +54,9 @@ test("The user-facing typography and touch targets stay compact and accessible",
  assert.ok(typography.includes("action:14"));
  const share=src("src/components/JCardShareSheet.tsx");
  assert.ok(share.includes("style={{flexShrink:1}}"),"scrollable actions remain reachable above the send button");
- assert.ok(share.includes("minHeight:48,marginHorizontal:13"));
+ assert.ok(share.includes("minHeight:JOBEEN_CONTROL.touchTarget,marginHorizontal:13"));
  const notice=src("src/components/JobeenNoticeDialog.tsx");
- assert.ok(notice.includes("minHeight:46"));
+ assert.ok(notice.includes("minHeight:JOBEEN_CONTROL.touchTarget"));
  assert.ok(notice.includes("statusBarTranslucent={false}"));
 });
 test("Jobeen permanent style rules are not finalized until screenshots are approved",()=>{
