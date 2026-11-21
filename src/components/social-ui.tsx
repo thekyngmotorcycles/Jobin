@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState } from "react";
 import {opacity} from "../theme/color";
 import {menuChrome} from "../theme/menu-chrome";
+import {JOBEEN_TYPE} from "../theme/typography";
 import {jobeenTokens} from "../theme/jobeen";
 import { useTheme } from "../state/ThemeProvider";
 export type IconName=ComponentProps<typeof Ionicons>["name"];
@@ -31,7 +32,7 @@ export function BottomSheet({visible,onClose,title,children,translucent=false}:{
    <Pressable accessibilityRole="button" accessibilityLabel="Close panel" onPress={onClose} style={{flex:1,backgroundColor:colors.scrim}}/>
    <View accessibilityViewIsModal style={{maxHeight:"85%",minHeight:180,maxWidth:700,width:"100%",alignSelf:"center",backgroundColor:translucent?opacity(chrome.action,0.9):chrome.action,borderTopLeftRadius:26,borderTopRightRadius:26,borderWidth:1,borderColor:chrome.border,paddingHorizontal:20,paddingBottom:Math.max(inset.bottom,16)}}>
     <View style={{width:38,height:4,backgroundColor:chrome.border,borderRadius:4,alignSelf:"center",marginTop:10}}/>
-    <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingVertical:8}}><Text accessibilityRole="header" style={{fontSize:18,fontWeight:"700",color:chrome.text}}>{title}</Text><IconButton icon="close" label="Close panel" onPress={onClose}/></View>
+    <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingVertical:8}}><Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.modalTitle,fontWeight:"700",color:chrome.text}}>{title}</Text><IconButton icon="close" label="Close panel" onPress={onClose}/></View>
     <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets={false} nestedScrollEnabled showsVerticalScrollIndicator contentContainerStyle={{paddingBottom:16,flexGrow:0}}>
      {children}
     </ScrollView>
