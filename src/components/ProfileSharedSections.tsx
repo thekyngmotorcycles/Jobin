@@ -11,11 +11,11 @@ import {JOBEEN_TYPE} from "../theme/typography";
 
 export type ProfileSection="home"|"grid"|"cv"|"videos"|"live";
 const tabs=[
- {id:"home",icon:"home-outline",label:"Inicio"},
- {id:"grid",icon:"grid-outline",label:"Todo"},
- {id:"videos",icon:"play-outline",label:"Videos"},
- {id:"live",icon:"radio-outline",label:"En vivo"},
- {id:"cv",icon:"briefcase-outline",label:"Acerca de"}
+ {id:"home",label:"Inicio"},
+ {id:"grid",label:"Todo"},
+ {id:"videos",label:"Videos"},
+ {id:"live",label:"En vivo"},
+ {id:"cv",label:"Acerca de"}
 ] as const;
 
 /** Accessible horizontally scrollable tabs, pinned by the parent ScrollView. */
@@ -34,16 +34,15 @@ export function ProfileSectionTabs({section,onSelect,pinned=false}:{section:Prof
   elevation:pinned?3:0,shadowColor:jt.ink,shadowOffset:{width:0,height:2},shadowOpacity:pinned?0.09:0,
   shadowRadius:pinned?5:0,zIndex:5}}>
   <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always"
-   onLayout={event=>setViewportWidth(event.nativeEvent.layout.width)} ref={scroller} contentContainerStyle={{alignItems:"center",paddingHorizontal:4,gap:4}}>
+   onLayout={event=>setViewportWidth(event.nativeEvent.layout.width)} ref={scroller} contentContainerStyle={{flexGrow:1,alignItems:"center",paddingHorizontal:4,gap:4}}>
    {tabs.map(tab=>{
     const selected=section===tab.id;
     return <Pressable key={tab.id} accessibilityRole="tab" accessibilityLabel={tab.label}
       accessibilityState={{selected}} onPress={()=>onSelect(tab.id)}
       onLayout={event=>{tabLayouts.current[tab.id]=event.nativeEvent.layout;if(selected)scrollToSection(tab.id);}}
-      style={{minHeight:50,paddingHorizontal:12,minWidth:92,flexDirection:"row",gap:6,alignItems:"center",justifyContent:"center",
+      style={{minHeight:50,minWidth:54,flexGrow:1,paddingHorizontal:9,alignItems:"center",justifyContent:"center",
        borderBottomWidth:3,borderBottomColor:selected?jt.yellow:jt.bg}}>
-     <Ionicons name={tab.icon} size={18} color={jt.ink}/>
-     <Text numberOfLines={1} style={{fontSize:JOBEEN_TYPE.input,fontWeight:selected?"700":"600",color:jt.ink}}>{tab.label}</Text>
+     <Text numberOfLines={2} style={{fontSize:JOBEEN_TYPE.input,fontWeight:selected?"700":"600",color:jt.ink,textAlign:"center"}}>{tab.label}</Text>
     </Pressable>;
    })}
   </ScrollView>

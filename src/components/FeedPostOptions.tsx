@@ -1,66 +1,67 @@
-import {Ionicons} from "@expo/vector-icons";
-import {useEffect,useState,type ComponentProps} from "react";
-import {ActivityIndicator,Alert,Pressable,Text,View} from "react-native";
+import {useEffect,useState} from "react";
+import {ActivityIndicator,Text,View} from "react-native";
 import {getSavedPostIds,hidePostFromHome,setSavedPost} from "../lib/feed-preferences";
 import {useTheme} from "../state/ThemeProvider";
-import {jobeenTokens} from "../theme/jobeen";
+import {jobeenModalTokens} from "../theme/modals";
+import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {BottomSheet} from "./social-ui";
+import {SettingsMenuRow} from "./SettingsMenuRow";
 
 export function FeedPostOptions({visible,onClose,postId,viewerId,onHidden,onShareLink,onSaveChanged}:{
  visible:boolean;onClose:()=>void;postId:string;viewerId:string;onHidden:()=>void;onShareLink:()=>Promise<void>;onSaveChanged?:(saved:boolean)=>void;
 }){
- const {theme}=useTheme();const t=jobeenTokens(theme);
+ const {theme}=useTheme();const modal=jobeenModalTokens(theme);
  const [saved,setSaved]=useState(false);
  const [busy,setBusy]=useState(false);
+ const [actionError,setActionError]=useState("");
+ const [whyExpanded,setWhyExpanded]=useState(false);
  useEffect(()=>{
   let active=true;
   if(visible)void getSavedPostIds(viewerId).then(ids=>{if(active)setSaved(ids.includes(postId));}).catch(()=>{});
   return()=>{active=false;};
  },[visible,viewerId,postId]);
- function fail(e:unknown){
-  Alert.alert("Opciones de publicación",e instanceof Error?e.message:"No se pudo completar la acción.");
- }
+ const close=()=>{if(!busy){setWhyExpanded(false);setActionError("");onClose();}};
+ function fail(e:unknown){setActionError(e instanceof Error?e.message:"No se pudo completar la acción.");}
  async function toggleSaved(){
   if(busy)return;
-  setBusy(true);
+  setBusy(true);setActionError("");
   try{await setSavedPost(viewerId,postId,!saved);onSaveChanged?.(!saved);setSaved(v=>!v);onClose();}
   catch(e){fail(e);}
   finally{setBusy(false);}
  }
  async function hide(){
   if(busy)return;
-  setBusy(true);
+  setBusy(true);setActionError("");
   try{await hidePostFromHome(viewerId,postId);onHidden();onClose();}
   catch(e){fail(e);}
   finally{setBusy(false);}
  }
  async function shareLink(){
   if(busy)return;
-  setBusy(true);
-  try{
-   await onShareLink();
-   onClose();
-  }catch(e){fail(e);}
+  setBusy(true);setActionError("");
+  try{await onShareLink();onClose();}
+  catch(e){fail(e);}
   finally{setBusy(false);}
  }
- function whyVisible(){
-  onClose();
-  Alert.alert("¿Por qué veo esta publicación?","Home muestra publicaciones públicas relacionadas con el ámbito profesional o educativo. Las publicaciones recientes se ordenan por fecha.");
- }
- const option=(icon:ComponentProps<typeof Ionicons>["name"],label:string,run:()=>void)=>(
-  <Pressable key={label} accessibilityRole="button" accessibilityLabel={label} disabled={busy} onPress={run}
-   style={({pressed})=>({minHeight:54,flexDirection:"row",gap:14,alignItems:"center",paddingHorizontal:13,borderRadius:14,backgroundColor:pressed?t.cream:t.surface,opacity:busy?0.6:1})}>
-   <Ionicons name={icon} size={22} color={t.ink}/>
-   <Text style={{color:t.ink,fontSize:15,fontWeight:"600",flex:1}}>{label}</Text>
-   {busy&&<ActivityIndicator color={t.ink} size="small"/>}
-  </Pressable>
- );
- return <BottomSheet visible={visible} onClose={onClose} title="Opciones de publicación">
-  <View style={{gap:3,paddingVertical:8}}>
-   {option(saved?"bookmark":"bookmark-outline",saved?"Quitar de guardados":"Guardar publicación",()=>void toggleSaved())}
-   {option("share-social-outline","Compartir enlace",()=>void shareLink())}
-   {option("remove-circle-outline","Ocultar publicación",()=>void hide())}
-   {option("information-circle-outline","¿Por qué veo esta publicación?",whyVisible)}
+ return <BottomSheet visible={visible} onClose={close} title="Opciones de publicación">
+  <View style={{gap:8,paddingVertical:8}}>
+   <SettingsMenuRow variant="action" icon={saved?"bookmark":"bookmark-outline"}
+    title={saved?"Quitar de guardados":"Guardar publicación"} disabled={busy} onPress={()=>void toggleSaved()}/>
+   <SettingsMenuRow variant="action" icon="share-social-outline"
+    title="Compartir enlace" disabled={busy} onPress={()=>void shareLink()}/>
+   <SettingsMenuRow variant="action" icon="remove-circle-outline"
+    title="Ocultar publicación" disabled={busy} onPress={()=>void hide()}/>
+   <SettingsMenuRow variant="action" icon="information-circle-outline"
+    title="¿Por qué veo esta publicación?" disabled={busy} onPress={()=>setWhyExpanded(v=>!v)}/>
+   {whyExpanded&&<View style={{backgroundColor:modal.inner,borderColor:modal.border,borderWidth:1,
+    borderRadius:modal.radius.control,padding:12}}>
+    <Text style={{color:modal.muted,fontSize:JOBEEN_TYPE.secondary,lineHeight:JOBEEN_LINE_HEIGHT.secondary}}>
+     Home muestra publicaciones públicas relacionadas con el ámbito profesional o educativo. Las publicaciones recientes se ordenan por fecha.
+    </Text>
+   </View>}
+   {!!actionError&&<Text accessibilityLiveRegion="polite" style={{color:modal.text,
+    fontSize:JOBEEN_TYPE.secondary,lineHeight:JOBEEN_LINE_HEIGHT.secondary}}>{actionError}</Text>}
+   {busy&&<ActivityIndicator color={modal.text} size="small"/>}
   </View>
  </BottomSheet>;
 }
