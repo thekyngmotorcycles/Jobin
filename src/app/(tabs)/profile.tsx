@@ -24,7 +24,7 @@ import { ProfessionPicker } from "../../components/ProfessionPicker";
 import { useProfessionalData } from "../../state/useProfessionalData";
 import { useCallback,useEffect,useState } from "react";
 import {getEmployerLinks} from "../../lib/employer-links";
-import { Animated, Keyboard, Modal, Share, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
+import { Animated, Keyboard, Modal, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { SafeAreaView,useSafeAreaInsets } from "react-native-safe-area-context";
 import { NAVIGATION_ROW_HEIGHT } from "../../theme/navigation";
 import Svg,{Defs,LinearGradient,Rect,Stop} from "react-native-svg";
@@ -34,6 +34,7 @@ import { BottomSheet } from "../../components/social-ui";
 
 import {JobeenCreateMenu} from "../../components/JobeenCreateMenu";
 import { JobinCard } from "../../components/JobinCard";
+import {JobeenShareSheet} from "../../components/JCardShareSheet";
 
 import type { BusinessCardData, JCardSeal } from "../../lib/jcard";
 import { Button, Notice, useUi } from "../../components/ui";
@@ -82,11 +83,12 @@ export default function Profile() {
   const {width:screenWidth,height:screenHeight}=useWindowDimensions();
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
   const [history, setHistory] = useState<EmploymentEntry[]>([]);
+  const [cvShareOpen,setCvShareOpen]=useState(false);
   const [incomingCV,setIncomingCV]=useState<CVRequest[]>([]);
   async function refreshCV(){try{const id=await cloudOwner();setIncomingCV((await cvRequests()).filter(r=>r.owner_id===id));}catch(e){setNotice(e instanceof Error?e.message:"No se pudieron cargar solicitudes.");}}
   async function answerCV(id:string,approve:boolean){try{await respondCV(id,approve);await refreshCV();}catch(e){setNotice(String(e));}}
   async function cancelCV(id:string){try{await revokeCV(id);await refreshCV();}catch(e){setNotice(String(e));}}
-  async function shareCV(){const message=["Historial profesional de Jobin",...history.map(e=>`${e.role} · ${e.company} · ${e.from}/${e.fromMonth??1} - ${e.to??"Actualidad"}/${e.toMonth??12}`)].join("\n");try{await Share.share({message});}catch(e){setNotice(String(e));}}
+  function shareCV(){setCvShareOpen(true);}
   useEffect(()=>{void refreshCV();},[]);
   const [historyLoaded,setHistoryLoaded] = useState(false);
   const [employerLink,setEmployerLink]=useState<{id:string;name:string;handle:string}|null>(null);
@@ -383,6 +385,10 @@ export default function Profile() {
           <Button title="Guardar" onPress={add} />
         </View>
       </BottomSheet>
+      <JobeenShareSheet visible={cvShareOpen} onClose={()=>setCvShareOpen(false)} label="Currículum"
+       theme={theme} contentTitle="Historial profesional"
+       contentMessage={["Historial profesional de Jobeen",...history.map(e=>`${e.role} · ${e.company} · ${e.from}/${e.fromMonth??1} - ${e.to??"Actualidad"}/${e.toMonth??12}`)].join("\n")}
+       onError={setNotice}/>
     </SafeAreaView>
   );
 }
