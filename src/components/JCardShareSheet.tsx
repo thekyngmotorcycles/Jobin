@@ -16,9 +16,9 @@ const OPTIONS=[
 ] as const;
 
 /** Jobeen-owned bottom share sheet with real URL and QR. No invented contacts. */
-export function JCardShareSheet({visible,onClose,label,link="",theme,side="personal",contentTitle,contentMessage,onShared}:{
+export function JCardShareSheet({visible,onClose,label,link="",theme,side="personal",contentTitle,contentMessage,onShared,onError}:{
  visible:boolean;onClose:()=>void;label:string;link?:string;theme:ThemeName;side?:"personal"|"business";
- contentTitle?:string;contentMessage?:string;onShared?:()=>void;
+ contentTitle?:string;contentMessage?:string;onShared?:()=>void;onError?:(reason:string)=>void;
 }){
  const t=jobeenTokens(theme);
  const {width}=useWindowDimensions();
@@ -33,7 +33,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
   try{
    const result=await Share.share({message,title:shareTitle+" · "+label});
    if(result.action===Share.sharedAction)onShared?.();
-  }catch{}
+  }catch{onError?.("No se pudo compartir. Inténtalo de nuevo.");}
  }
  async function openExternal(url:string){
   try{await Linking.openURL(url);}catch{await shareNative();}
