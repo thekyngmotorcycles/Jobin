@@ -17,7 +17,7 @@ import {JOBEEN_TYPE} from "../../theme/typography";
 export default function SaleLocationPicker(){
  const {target,session}=useLocalSearchParams<{target?:string;session?:string}>();
  const article=target==="article"&&typeof session==="string"&&session.length>0&&session.length<120;
- const {theme,colors}=useTheme(),t=jobeenTokens(theme),modal=jobeenModalTokens(theme),insets=useSafeAreaInsets();
+ const {theme}=useTheme(),t=jobeenTokens(theme),modal=jobeenModalTokens(theme),insets=useSafeAreaInsets();
  const [owner,setOwner]=useState("");
  const [chosen,setChosen]=useState<SaleLocation|null>(null);
  const [center,setCenter]=useState<MapPoint>({lat:0,lon:0});
