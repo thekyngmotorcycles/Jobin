@@ -54,7 +54,7 @@ test("Personal and business JCard editors use compact accessible accordion secti
  assert.ok(personal.includes('fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined,color:sunflower?colors.glassText:colors.ink}]}>Apariencia'),"Personal appearance row uses section typography");
  assert.ok(business.includes('fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined}]}>Apariencia'),"Business appearance row uses section typography");
  assert.ok(personal.includes("backgroundColor:modal.scrim"));
- assert.ok(business.includes("saveJCardVisibility(visibility)"),"Business privacy persistence untouched");
+ assert.ok(business.includes("saveJCardVisibility(visibility,editorOwner)"),"Business privacy persistence untouched");
  assert.ok(business.includes('minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name="lock-closed-outline" size={23}'),"Business privacy row matches the other accessible editor sections");
  assert.ok(business.includes('fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined}]}>Privacidad'),"Privacy section matches editor typography");
 });
