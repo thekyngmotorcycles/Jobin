@@ -62,7 +62,10 @@ test("Composer keeps draft and media preview behavior while using compact action
  const s=src("src/components/PostComposerSheets.tsx");
  assert.ok(s.includes("height:JOBEEN_CONTROL.visualAction+2"));
  assert.ok(s.includes("minHeight:JOBEEN_CONTROL.touchTarget"));
- assert.ok(s.includes("minHeight:92"));
+ assert.ok(s.includes("p.drafts.length?<ScrollView"),"Draft lists remain scrollable when populated");
+ assert.ok(s.includes("minHeight:52,flexDirection:\"row\""),"Empty-state content is compact");
+ assert.ok(s.includes("paddingBottom:20,gap:10"),"Empty dialog hugs its content");
+ assert.ok(!s.includes("minHeight:92"),"Do not reserve an oversized empty panel");
  assert.ok(s.includes("onRestore(draft)"));
  assert.ok(s.includes("p.onClosePreview"));
 });
