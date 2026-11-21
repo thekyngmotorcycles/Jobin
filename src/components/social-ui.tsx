@@ -26,7 +26,7 @@ export function Avatar({uri,name,size=44,height=size,shape="circle",initials,emp
  </View>;
 }
 export function BottomSheet({visible,onClose,title,children,translucent=false}:{visible:boolean;onClose:()=>void;title:string;children:ReactNode;translucent?:boolean}){
- const {theme,colors}=useTheme();const modal=jobeenModalTokens(theme);const inset=useSafeAreaInsets();
+ const {theme}=useTheme();const modal=jobeenModalTokens(theme);const inset=useSafeAreaInsets();
  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent={false}>
   <KeyboardAvoidingView style={{flex:1,justifyContent:"flex-end"}} behavior={Platform.OS==="ios"?"padding":undefined}>
    <Pressable accessibilityRole="button" accessibilityLabel="Close panel" onPress={onClose} style={{flex:1,backgroundColor:modal.scrim}}/>
