@@ -81,8 +81,19 @@ select pg_temp.expect_denial($q$
  values (auth.uid(),'c3333333-3333-4333-8333-333333333333','Wrong seller','e5555555-5555-4555-8555-555555555555')
 $q$);
 
+-- Seed historical inconsistent records as the privileged test fixture only.
+reset role;
+insert into public.jobeen_direct_messages(sender_id,recipient_id,body,jshop_conversation_id)
+values ('a1111111-1111-4111-8111-111111111111','c3333333-3333-4333-8333-333333333333',
+ 'Legacy inconsistent message','e5555555-5555-4555-8555-555555555555');
+insert into public.jobeen_jshop_spam(conversation_id,owner_id,is_spam)
+values ('e5555555-5555-4555-8555-555555555555','c3333333-3333-4333-8333-333333333333',true);
+set local role authenticated;
 select set_config('request.jwt.claim.sub','c3333333-3333-4333-8333-333333333333',true);
-select pg_temp.assert_message(not exists(select 1 from public.jobeen_direct_messages),'C sees no A/B messages');
+select pg_temp.assert_message(not exists(select 1 from public.jobeen_direct_messages),'C cannot read A/B or inconsistent historical messages');
+select pg_temp.assert_message(not exists(select 1 from public.jobeen_jshop_spam),'C cannot read an unrelated legacy spam marker');
+with changed as (update public.jobeen_jshop_spam set is_spam=false returning 1)
+select pg_temp.assert_message(not exists(select 1 from changed),'C cannot alter an unrelated legacy spam marker');
 select pg_temp.assert_message(not exists(select 1 from public.jshop_conversations),'C sees no A/B conversations');
 select pg_temp.expect_denial($q$
  insert into public.jobeen_direct_messages(sender_id,recipient_id,body,jshop_conversation_id)
@@ -92,6 +103,32 @@ $q$);
 select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
 select pg_temp.assert_message((select count(*) from public.jobeen_direct_messages)=3,'A retains exactly its own test conversation messages');
 select pg_temp.assert_message(not has_table_privilege('authenticated','public.jobeen_direct_messages','TRUNCATE'),'client cannot truncate messages');
+-- Validate minimum table privileges even when legacy RLS would deny writes.
+select pg_temp.assert_message(not exists (
+ select 1 from unnest(array['jobeen_direct_messages','jshop_conversations','jobeen_message_requests',
+ 'jobeen_contact_requests','jobeen_message_privacy','jobeen_jshop_spam']) t(name)
+ cross join unnest(array['TRUNCATE','TRIGGER','REFERENCES','UPDATE']) p(privilege)
+ where has_table_privilege('authenticated','public.'||t.name,p.privilege)
+), 'authenticated has no broad table mutation privileges');
+select pg_temp.assert_message(not exists (
+ select 1 from unnest(array['jobeen_direct_messages','jshop_conversations','jobeen_message_requests',
+ 'jobeen_message_privacy','jobeen_jshop_spam']) t(name)
+ where has_table_privilege('authenticated','public.'||t.name,'DELETE')
+), 'only contacts allow client deletion');
+select pg_temp.expect_denial($q$ update public.jobeen_direct_messages set body='Tampered' $q$);
+select pg_temp.expect_denial($q$ update public.jshop_conversations set seller_id='c3333333-3333-4333-8333-333333333333' $q$);
+-- The real participant can still manage their own spam flag and privacy.
+insert into public.jobeen_jshop_spam(conversation_id,owner_id,is_spam)
+values ('e5555555-5555-4555-8555-555555555555',auth.uid(),true);
+update public.jobeen_jshop_spam set is_spam=false where owner_id=auth.uid();
+select pg_temp.assert_message(exists(select 1 from public.jobeen_jshop_spam where owner_id=auth.uid() and not is_spam),
+ 'participant retains spam folder controls');
+select pg_temp.expect_denial($q$ update public.jobeen_jshop_spam set conversation_id=gen_random_uuid() $q$);
+insert into public.jobeen_message_privacy(user_id,requests_from) values(auth.uid(),'all');
+update public.jobeen_message_privacy set filter_spam=false where user_id=auth.uid();
+select pg_temp.assert_message(exists(select 1 from public.jobeen_message_privacy where user_id=auth.uid() and not filter_spam),
+ 'owner retains privacy settings');
+select pg_temp.expect_denial($q$ update public.jobeen_message_privacy set user_id='c3333333-3333-4333-8333-333333333333' $q$);
 -- Contact-only permission: pending is not enough, acceptance is bidirectional.
 insert into public.jobeen_contact_requests(requester_id,recipient_id)
 values(auth.uid(),'c3333333-3333-4333-8333-333333333333');
@@ -132,4 +169,9 @@ select pg_temp.expect_denial($q$
  values(auth.uid(),'c3333333-3333-4333-8333-333333333333','Blocked contact')
 $q$);
 reset role;
+select pg_temp.assert_message(not exists (
+ select 1 from unnest(array['jobeen_direct_messages','jshop_conversations','jobeen_message_requests',
+ 'jobeen_contact_requests','jobeen_message_privacy','jobeen_jshop_spam']) t(name)
+ where has_table_privilege('anon','public.'||t.name,'SELECT')
+), 'anonymous role cannot read any private messaging table');
 rollback;

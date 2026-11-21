@@ -99,4 +99,58 @@ with check (not exists (
  and ((p.requester_id=jobeen_message_requests.sender_id and p.recipient_id=jobeen_message_requests.recipient_id)
   or (p.requester_id=jobeen_message_requests.recipient_id and p.recipient_id=jobeen_message_requests.sender_id))
 ));
+-- The hosted project grants all table privileges to authenticated by default.
+-- Revoke unnecessary table privileges while retaining intended client operations.
+-- Service-role/administrative grants are not changed.
+revoke all on public.jobeen_direct_messages, public.jshop_conversations,
+ public.jobeen_message_requests, public.jobeen_contact_requests,
+ public.jobeen_message_privacy, public.jobeen_jshop_spam
+ from public, anon, authenticated;
+grant select, insert on public.jobeen_direct_messages, public.jshop_conversations,
+ public.jobeen_message_requests, public.jobeen_contact_requests,
+ public.jobeen_message_privacy, public.jobeen_jshop_spam to authenticated;
+grant delete on public.jobeen_contact_requests to authenticated;
+-- Explicitly revoke column-level mutation privileges too.
+revoke update (id,sender_id,recipient_id,body,created_at,jshop_conversation_id)
+ on public.jobeen_direct_messages from public, anon, authenticated;
+revoke update (id,listing_id,buyer_id,seller_id,listing_title,listing_price,listing_currency,listing_photo_path,created_at)
+ on public.jshop_conversations from public, anon, authenticated;
+revoke update (id,requester_id,recipient_id,status,created_at,responded_at)
+ on public.jobeen_contact_requests from public, anon, authenticated;
+revoke update (user_id,requests_from,filter_spam,updated_at)
+ on public.jobeen_message_privacy from public, anon, authenticated;
+revoke update (conversation_id,owner_id,is_spam,updated_at)
+ on public.jobeen_jshop_spam from public, anon, authenticated;
+grant update (status) on public.jobeen_contact_requests, public.jobeen_message_requests to authenticated;
+grant update (requests_from,filter_spam) on public.jobeen_message_privacy to authenticated;
+grant update (is_spam) on public.jobeen_jshop_spam to authenticated;
+
+-- A historical row with mismatched JShop participants must not expose its body.
+-- Preserve the row for audit; legitimate threads, including deleted listings, still work.
+create policy "Read exact conversation participants guard"
+on public.jobeen_direct_messages as restrictive for select to authenticated
+using (
+ (sender_id=(select auth.uid()) or recipient_id=(select auth.uid()))
+ and (jshop_conversation_id is null or exists (
+  select 1 from public.jshop_conversations c
+   where c.id=jobeen_direct_messages.jshop_conversation_id
+    and ((c.buyer_id=jobeen_direct_messages.sender_id and c.seller_id=jobeen_direct_messages.recipient_id)
+      or (c.seller_id=jobeen_direct_messages.sender_id and c.buyer_id=jobeen_direct_messages.recipient_id))
+ ))
+);
+
+-- Spam folder entries are private and must refer to a conversation of their owner.
+create policy "Spam marker exact owner guard"
+on public.jobeen_jshop_spam as restrictive for all to authenticated
+using (
+ owner_id=(select auth.uid()) and exists (
+  select 1 from public.jshop_conversations c where c.id=jobeen_jshop_spam.conversation_id
+   and (c.buyer_id=jobeen_jshop_spam.owner_id or c.seller_id=jobeen_jshop_spam.owner_id)
+ ))
+with check (
+ owner_id=(select auth.uid()) and exists (
+  select 1 from public.jshop_conversations c where c.id=jobeen_jshop_spam.conversation_id
+   and (c.buyer_id=jobeen_jshop_spam.owner_id or c.seller_id=jobeen_jshop_spam.owner_id)
+ ));
+
 commit;
