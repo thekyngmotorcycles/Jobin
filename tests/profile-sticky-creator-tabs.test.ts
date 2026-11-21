@@ -21,6 +21,10 @@ test("Creator profiles use a scrollable five-section tab bar with accessible nam
  assert.ok(tabs.includes('fontWeight:selected?"700":"600",color:jt.ink'),"Inactive labels stay readable");
  assert.ok(tabs.includes('size={18} color={jt.ink}'),"Tab icons use balanced contrast and size");
  assert.ok(tabs.includes("minWidth:92"),"Five profile controls share minimum width");
+ assert.ok(tabs.includes("tabLayouts=useRef<Partial<Record<ProfileSection,{x:number;width:number}>>>"),"Measure actual tab widths");
+ assert.ok(tabs.includes("layout.x+layout.width/2-width/2"),"Center using the measured position");
+ assert.ok(tabs.includes("onLayout={event=>{tabLayouts.current[tab.id]"),"Capture real button geometry");
+ assert.ok(!tabs.includes("selectedIndex*104"),"Avoid fixed assumptions that misalign long labels");
  assert.ok(tabs.includes("useReducedMotion()"));
 });
 test("Both own and public profile have separate scrolling hero, sticky tabs and section body",()=>{
