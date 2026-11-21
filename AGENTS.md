@@ -18,6 +18,13 @@ Este archivo es la fuente de referencia para asistentes y desarrolladores que co
 - Reutilizar `JobeenMessageIcon` en el botón Chats de la pantalla Mensajes. Mantener la navegación, el acordeón, las áreas táctiles y el respeto por safe-area al modificar solo los dibujos.
 - Para cambios visuales usar **EAS OTA en la rama `development`** cuando el binario sea compatible. No compilar ni generar un APK sin autorización explícita del usuario. No publicar cambios de diseño sin aprobación previa.
 
+## Norma global de compartir Jobeen (aprobada)
+- Todos los botones **Compartir** en JCard personal/de negocio, perfiles públicos, publicaciones, videos/Flashes, JShop y CV deben usar **el mismo menú redondeado y minimalista** de Jobeen (componente compartido `JCardShareSheet` / `JobeenShareSheet`).
+- Adaptar título, texto y enlace al contenido; mostrar **QR solo si existe un enlace**, y mantener WhatsApp, SMS y **Más opciones** para el selector nativo de contactos y apps del teléfono.
+- Evitar abrir el selector nativo encima de otro modal: cerrar primero el menú de origen.
+- No inventar contactos de Jobeen ni el éxito de un envío. Los contadores solo se incrementan cuando el sistema devuelve una acción de compartir confirmada; preservar contadores y permisos actuales.
+- Los futuros botones de compartir deberán reutilizar este control; no introducir variantes visuales separadas sin consulta y aprobación.
+
 ## Política de ramas (obligatoria)
 1. `main` es la rama estable. NUNCA hacer commits, pushes, merges, cherry-picks ni despliegues de producción a `main` sin autorización explícita del usuario para esa acción.
 2. `development` es la rama de integración y pruebas. Los arreglos pequeños pueden aplicarse allí, siempre con verificación.
