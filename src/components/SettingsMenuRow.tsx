@@ -32,8 +32,8 @@ export function SettingsMenuRow({
    {settingId?<JobinSettingsIcon id={settingId} size={21} color={iconColor}/>:<Ionicons name={icon??"settings-outline"} size={23} color={iconColor}/>}
   </View>
   <View style={{flex:1,gap:3}}>
-   <Text numberOfLines={2} style={{fontSize:JOBEEN_TYPE.body,fontWeight:"700",color:chrome.text}}>{title}</Text>
-   {!!description&&<Text numberOfLines={2} style={{fontSize:JOBEEN_TYPE.secondary,lineHeight:17,color:chrome.muted}}>{description}</Text>}
+   <Text style={{fontSize:JOBEEN_TYPE.body,fontWeight:"700",color:chrome.text}}>{title}</Text>
+   {!!description&&<Text style={{fontSize:JOBEEN_TYPE.secondary,lineHeight:17,color:chrome.muted}}>{description}</Text>}
   </View>
   {variant==="navigation"&&<Ionicons name="chevron-forward" size={18} color={chrome.muted}/>}
  </Pressable>;
