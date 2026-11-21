@@ -7,6 +7,9 @@ Jobeen es la plataforma **mobile-first de transmisiones EN VIVO de personas most
 
 **Norma vinculante:** consultar primero `AGENTS.md` y `docs/JOBEEN_PRODUCT_VISION.md`. La nueva revisión de UX es **por fases**, con menús principales unificados (Configuración, perfil propio y perfil público), pestañas interiores del perfil propio Todo/JCards/Videos/En vivo/Acerca de solo texto, con JCards privadas y barra global inferior de cinco iconos INTACTA. Usar Mobbin/X solo para distribución y limpieza, sin copiar el estilo. Mantener mismas columnas en Jelly y teléfonos mayores. No confundir la visión de regalos o gafas con capacidades ya implementadas.
 
+## BLOQUEO ACTUAL: seguridad de cuentas
+Opción 2 aprobada: aislamiento reforzado. Leer AGENTS.md y docs/ACCOUNT_ISOLATION.md antes de continuar. Incidente de historial/JCard cruzados; UX suspendida hasta contención, pruebas y recuperación segura. No confundir código de revisión con protección ya publicada.
+
 ## Referencias
 - GitHub: https://github.com/thekyngmotorcycles/Jobin
 - Rama de trabajo: development. Rama estable: main (NO modificar sin aprobación explícita).
