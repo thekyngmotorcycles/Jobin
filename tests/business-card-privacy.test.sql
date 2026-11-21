@@ -22,10 +22,18 @@ insert into public.jcard_business_details(owner_id,name,business_handle,email,em
 insert into public.jcard_visibility(owner_id,personal_enabled,business_enabled,business_show_email,business_show_phone) values
  ('a1111111-1111-4111-8111-111111111111',true,true,false,false),
  ('b2222222-2222-4222-8222-222222222222',true,false,true,true);
-\ir ../supabase/security-review/business-card-privacy.sql
 create function pg_temp.privacy_assert(ok boolean,label text) returns void language plpgsql as $assert$
 begin if not coalesce(ok,false) then raise exception 'BUSINESS PRIVACY TEST: %',label; end if; end
 $assert$;
+-- The legacy client uses the base table; a corrected client cannot load
+-- the new contract until the additive stage is installed.
+select pg_temp.privacy_assert(to_regclass('public.jobeen_public_business_cards') is null,'legacy schema lacks the client projection');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.privacy_assert(exists(select 1 from public.jcard_business_details
+ where owner_id='a1111111-1111-4111-8111-111111111111'),'legacy lookup reads another valid business before the cutover');
+reset role;
+\ir ../supabase/security-review/business-card-privacy.sql
 select pg_temp.privacy_assert(not has_table_privilege('anon','public.jcard_business_details','SELECT'),'anonymous raw reads denied');
 select pg_temp.privacy_assert(not has_table_privilege('anon','public.jobeen_public_business_cards','SELECT'),'anonymous projection denied');
 select pg_temp.privacy_assert(not has_table_privilege('authenticated','public.jcard_business_details','TRUNCATE'),'authenticated cannot truncate table');

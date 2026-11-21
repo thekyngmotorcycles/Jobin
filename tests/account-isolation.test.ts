@@ -75,7 +75,8 @@ test("Draft photo links are scoped to the initiating account and session",()=>{
  assert.ok(scope.includes("expectedSession&&session!==expectedSession"));
  assert.ok(restore.includes('paths.some(path=>!path.startsWith(owner+"/"))'));
  assert.ok(restore.indexOf("await assertAccountOwner(owner,session)")>restore.indexOf("createSignedUrls"));
- assert.ok(editor.includes("restorePostDraftPhotoUrls(d.photos,author)"));
+ assert.ok(editor.includes("refreshDraftPhotoPreviews(d.photos)"));
+ assert.ok(editor.includes("restorePostDraftPhotoUrls(selectedPhotos,author)"));
  assert.ok(editor.includes("restorePostDraftPhotoUrls(draft.photos,author)"));
  assert.ok(editor.includes("item.id===photo.id&&item.backupPath===photo.backupPath"));
  assert.ok(editor.includes("item.id===draft.id&&item.updatedAt===draft.updatedAt"));

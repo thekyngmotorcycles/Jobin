@@ -3,9 +3,10 @@ import {assertAccountOwner} from "./account-scope";
 import {requireSupabase} from "./supabase";
 import type {FeedAudience,FeedPostKind} from "./social-content";
 import type {PostBusinessMention} from "./post-mentions";
+import {DRAFT_PREVIEW_TTL_SECONDS,toStoredDraftPhoto,type PostDraftPhoto} from "./post-draft-photo";
 
 export const DRAFT_PHOTO_BUCKET="jobeen-post-draft-photos";
-export type PostDraftPhoto={id:string;uri:string;backupPath?:string;altText:string};
+export type {PostDraftPhoto} from "./post-draft-photo";
 export type PostDraft={
  id:string;updatedAt:number;body:string;kind:FeedPostKind;photos:PostDraftPhoto[];
  mediaId:string;audience:FeedAudience;audienceFollowers:boolean;audienceContacts:boolean;
@@ -35,7 +36,10 @@ export async function readPostDrafts(owner:string):Promise<PostDraft[]>{
   if(!Array.isArray(data))return [];
   return data.filter((v):v is PostDraft=>Boolean(v&&typeof v==="object"&&
    typeof (v as PostDraft).id==="string"&&typeof (v as PostDraft).body==="string"&&
-   Array.isArray((v as PostDraft).photos))).sort((a,b)=>b.updatedAt-a.updatedAt);
+   Array.isArray((v as PostDraft).photos))).map(draft=>({
+   ...draft,
+   photos:draft.photos.filter(photo=>photo&&typeof photo.id==="string").map(toStoredDraftPhoto),
+  })).sort((a,b)=>b.updatedAt-a.updatedAt);
  }catch{return [];}
 }
 export async function savePostDraft(owner:string,draft:PostDraft){
@@ -44,7 +48,7 @@ export async function savePostDraft(owner:string,draft:PostDraft){
  const previous=await readPostDrafts(owner);
  if(!previous.some(x=>x.id===draft.id)&&previous.length>=MAX_POST_DRAFTS)
   throw Error("Has alcanzado el límite de "+MAX_POST_DRAFTS+" borradores. Elimina uno de los anteriores para guardar otro.");
- const next=[{...draft,updatedAt:Date.now()},...previous.filter(x=>x.id!==draft.id)];
+ const next=[{...draft,photos:draft.photos.map(toStoredDraftPhoto),updatedAt:Date.now()},...previous.filter(x=>x.id!==draft.id)];
  await assertAccountOwner(owner,session);
  await AsyncStorage.setItem(key(owner),JSON.stringify(next));
 }
@@ -67,9 +71,10 @@ export async function restorePostDraftPhotoUrls(photos:PostDraftPhoto[],owner:st
  if(!backed.length)return photos;
  const paths=backed.map(p=>p.backupPath!);
  if(paths.some(path=>!path.startsWith(owner+"/")))throw new Error("No se pudo verificar la propiedad de las fotos.");
- const {data,error}=await requireSupabase().storage.from(DRAFT_PHOTO_BUCKET).createSignedUrls(paths,3600);
+ const {data,error}=await requireSupabase().storage.from(DRAFT_PHOTO_BUCKET).createSignedUrls(paths,DRAFT_PREVIEW_TTL_SECONDS);
  await assertAccountOwner(owner,session);
  if(error)throw error;
- const urls=new Map((data??[]).filter(x=>!!x.signedUrl&&!!x.path).map(x=>[x.path!,x.signedUrl]));
- return photos.map(p=>p.backupPath?{...p,uri:urls.get(p.backupPath)??p.uri}:p);
+ const urls=new Map<string,string>();
+ for(const link of data??[])if(link.path&&link.signedUrl)urls.set(link.path,link.signedUrl);
+ return photos.map(p=>p.backupPath?{...p,previewUri:urls.get(p.backupPath)}:p);
 }

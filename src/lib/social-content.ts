@@ -121,7 +121,12 @@ export async function uploadPhoto(owner:string,uri:string,bucket:string){
  for(let i=0;i<data.length;i++)bytes[i]=data.charCodeAt(i);
  if(bytes.byteLength>10*1024*1024)throw Error("La fotografía supera 10 MB.");
  const path=owner+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,11)+".jpg";
- const {error}=await requireSupabase().storage.from(bucket).upload(path,bytes,{contentType:"image/jpeg",upsert:false});
+ // Limit browser reuse for new private files. CDN caching and authorization
+ // are controlled separately. Keep the public bucket's existing defaults.
+ const {error}=await requireSupabase().storage.from(bucket).upload(path,bytes,{
+  contentType:"image/jpeg",upsert:false,
+  ...(bucket===POSTS_BUCKET?{}:{cacheControl:"0"}),
+ });
  if(error)throw error;
  return path;
 }

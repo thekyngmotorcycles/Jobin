@@ -56,7 +56,9 @@ test("Private draft image backups are saved and published without making origina
  assert.ok(migration.includes('Jobeen draft photo owner insert'));
  assert.ok(migration.includes('Jobeen draft photo owner select'));
  assert.ok(editor.includes('uploadPhoto(author,photo.uri,DRAFT_PHOTO_BUCKET)'));
- assert.ok(drafts.includes('createSignedUrls(paths,3600)'));
+ assert.ok(drafts.includes('createSignedUrls(paths,DRAFT_PREVIEW_TTL_SECONDS)'));
+ assert.ok(drafts.includes('photos:draft.photos.map(toStoredDraftPhoto)'));
+ assert.ok(feed.includes('bucket===POSTS_BUCKET?{}:{cacheControl:"0"}'));
  assert.ok(feed.includes('db.storage.from(DRAFT_POSTS_BUCKET).copy(saved,path,{destinationBucket:bucket})'));
  assert.ok(!feed.includes('await blob.arrayBuffer()'));
  assert.ok(feed.includes('if(!saved.startsWith(owner+"/"))'));

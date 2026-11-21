@@ -65,7 +65,7 @@ export default function VerifyIdentity(){
    const prefix=user.id+"/"+Date.now()+"-"+Math.random().toString(36).slice(2);
    async function upload(image:Picked,side:string){
     const path=prefix+"-"+side+".jpg";
-    const {error}=await db.storage.from("identity-documents").upload(path,bytes(image.base64) as any,{contentType:"image/jpeg",upsert:false});
+    const {error}=await db.storage.from("identity-documents").upload(path,bytes(image.base64) as any,{contentType:"image/jpeg",upsert:false,cacheControl:"0"});
     if(error)throw error;uploaded.push(path);return path;
    }
    const frontPath=await upload(front,"front");

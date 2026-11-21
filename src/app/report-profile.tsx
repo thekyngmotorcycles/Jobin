@@ -31,7 +31,7 @@ export default function ReportProfile(){
     if(bytes.byteLength>10*1024*1024)throw Error("La imagen supera 10 MB.");
     const ext=proof.mime==="image/png"?"png":proof.mime==="image/webp"?"webp":"jpg";
     const path=me.id+"/"+Date.now()+"-"+Math.random().toString(36).slice(2)+"."+ext;
-    const {error}=await client.storage.from("profile-report-evidence").upload(path,bytes,{contentType:proof.mime,upsert:false});
+    const {error}=await client.storage.from("profile-report-evidence").upload(path,bytes,{contentType:proof.mime,upsert:false,cacheControl:"0"});
     if(error)throw error;
     evidence="\nPrueba adjunta (almacenamiento privado): "+path;
    }

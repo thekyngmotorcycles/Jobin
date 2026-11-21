@@ -51,7 +51,7 @@ export async function submitEmployerReport(media:string,description:string,file:
  const mime=file.mimeType||"application/pdf";
  const path=user.id+"/"+Date.now()+"-"+Math.random().toString(36).slice(2)+(mime==="image/png"?".png":mime==="image/jpeg"?".jpg":".pdf");
  const response=await fetch(file.uri);if(!response.ok)throw new Error("No se pudo leer la prueba.");
- const {error}=await client.storage.from("employer-report-evidence").upload(path,await response.arrayBuffer(),{contentType:mime,upsert:false});if(error)throw new Error(error.message);
+ const {error}=await client.storage.from("employer-report-evidence").upload(path,await response.arrayBuffer(),{contentType:mime,upsert:false,cacheControl:"0"});if(error)throw new Error(error.message);
  return safetyMutation("jobin_report_employer",{media,path,description});
 }
 export const WORK_ACTIVITIES=[

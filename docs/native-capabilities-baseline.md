@@ -1,36 +1,20 @@
-# Jobin — Android native capabilities baseline (Expo SDK 54)
+# Jobeen · Inventario para la futura base nativa
 
-## Audited existing dependencies
-- Installed: expo-image-picker (camera/gallery), expo-media-library (photo gallery), expo-image-manipulator (image crops), expo-document-picker (system document picker), expo-video (playback), expo-updates (OTA), expo-dev-client.
-- Missing: expo-notifications (remote push registration/handling), expo-camera (in-app camera / live preview), optional expo-file-system (file cache/upload lifecycle).
-- No real live-stream transport SDK or native video editing/export SDK is installed.
-- Existing notification screen is in-app only; it is not Android remote push delivery.
-- Existing live screen requests supervised live and a provider URL; it is not a native broadcaster.
-- Video upload/editing has a trim preview but no on-device rendered export.
-- Moderation worker and professional policy exist; multimodal professional-relevance AI is not deployed.
+Inventario de `package.json`, lockfile, árbol instalado, plugins de Expo y consumidores del repositorio. La base es Expo SDK 54, React Native 0.81.5 y New Architecture. El lockfile registra Expo 54.0.38. La presencia en el repositorio no acredita que un módulo esté incluido en la APK del Jelly 2. Este inventario no añade dependencias ni autoriza una compilación.
 
-## Decision: native dependencies
-1. Add expo-notifications with Android channels, notification icon and explicit runtime opt-in. Register device tokens only after login and user consent. Never put provider server credentials in the client.
-2. Add expo-camera for controlled camera recording and a future broadcaster preview. Ask permissions only when the camera/mic feature is used.
-3. Keep expo-document-picker for Android Storage Access Framework; add expo-file-system only if concrete upload/caching needs require it. Avoid broad MANAGE_EXTERNAL_STORAGE.
-4. Keep expo-video for playback. Prefer server-side video trim/transcoding, captions rendering and delivery; add an on-device encoder only if offline editing is a firm requirement.
-5. For native live streaming, evaluate a compatible Expo SDK 54 WebRTC/RTMP provider SDK, Android foreground service behavior, permissions, moderation sampling and fail-closed stream termination before selecting/installing it. Do not imply that expo-camera alone provides live broadcast.
+| Capacidad | Disponible en el repositorio | Trabajo futuro y criterio para añadir dependencias |
+| --- | --- | --- |
+| Almacenamiento seguro de tokens | La sesión de Supabase utiliza AsyncStorage. No está instalado `expo-secure-store`. | Evaluar SecureStore para secretos pequeños protegidos por Android Keystore e iOS Keychain. Verificar límites, restauración, reinstalación, invalidación y cierre por cuenta. Preferir una reautenticación controlada para migrar. No transferir tokens sin titularidad comprobada. |
+| Cifrado de datos locales | Hay persistencia en AsyncStorage. `expo-file-system` 19.0.24 ya está instalado transitivamente a través de Expo. | Minimizar la persistencia. Para datos sensibles que deban sobrevivir offline, seleccionar cifrado autenticado evaluado, con claves por cuenta protegidas por el sistema y metadatos versionados. Validar recuperación y borrado de claves. Evitar cifrado casero, copias en claro y módulos de archivos duplicados. |
+| Biometría | No está instalado `expo-local-authentication`. | Evaluar LocalAuthentication para desbloqueo local voluntario, con alternativa de acceso y pruebas de cambio de biometría y bloqueo del dispositivo. La autorización de operaciones sensibles seguirá en servidor. |
+| Directos verticales y horizontales | `orientation: "default"`, cámara disponible en el árbol, pantallas de directo supervisado y reproductor. No hay SDK de emisión WebRTC o RTMP. | Elegir un solo transporte tras definir proveedor, latencia, resolución, costo y moderación. Probar las dos orientaciones, giro durante la emisión, red degradada, permisos y detención. Añadir un módulo de orientación si el control del giro lo requiere. |
+| Cámara, micrófono y audio externo | `expo-camera` 17.0.10, `expo-image-picker` 17.0.11, `expo-image-manipulator`, `expo-media-library` 18.2.1 y `expo-document-picker` 14.0.8. El plugin de cámara declara audio Android. | Reusar cámara y permisos contextuales. Probar audio integrado, USB y Bluetooth, cambios de ruta, desconexiones, interrupciones y sincronía. Añadir un puente nativo solo si la plataforma o el SDK elegido lo exige. |
+| Bluetooth y manos libres | Sin integración Bluetooth ni SDK de gafas o dispositivos externos. | Delimitar control, ruta de audio y transmisión de cámara. Probar primero las rutas del sistema. Elegir módulo o SDK de hardware para un dispositivo y una función confirmados. Solicitar los permisos Android al usar la función. |
+| Notificaciones | `expo-notifications` 0.32.17, plugin, canal Android y utilidades de permiso, token y apertura. Registro de dispositivo y envío siguen separados. | Reusar el módulo si la APK compatible lo contiene. Implementar registro por instalación y cuenta, desvinculación al cerrar sesión y autorización de rutas. Omitir datos privados de mensajes visibles con pantalla bloqueada. Probar permisos, primer plano, segundo plano y toque. |
+| Compras integradas y suscripciones | Sin SDK de facturación nativa. Hay tablas de pagos con acceso limitado. No hay un flujo de retiro verificado. | Confirmar catálogo, reglas de tiendas y modelo de derechos. Elegir una integración única para bienes digitales. Verificar compras, restauración, reembolsos y derechos en servidor. Tratar servicios profesionales y movimientos de fondos como flujos separados con reautenticación. |
+| Contenido educativo | `expo-video` 3.0.16 y pantallas de reproducción. | Reusar el reproductor para video bajo demanda y transmisiones compatibles. Probar subtítulos, rotación, interrupciones, accesibilidad y Jelly 2. Considerar DRM o descargas protegidas solo con un requisito y proveedor confirmados. |
+| Compatibilidad OTA | `expo-updates` 29.0.20 y `expo-dev-client` 6.0.21. `runtimeVersion.policy` es `fingerprint`. Perfiles internos apuntan a `development`. | Registrar runtime, canal y update reales. Comparar fingerprint con la configuración de EAS y usar un backend y un canal aislados. Cambios de módulos, plugins o permisos nativos requieren nueva APK. JS y servidor pueden usar un runtime compatible. |
 
-## Server-only integrations (do not need an APK)
-- Public AI assistant: authenticated edge/backend proxy, per-user quotas, abuse prevention, scoped context, no service keys on device.
-- Video moderation AI: server worker obtains private signed media; extracts frames, text and speech; combines multimodal professional relevance with existing safety rules. Keep uncertain/outage cases private/pending, allow appeal and retain audit trail.
-- Push delivery: server-side notifications pipeline and secure token registry. Client needs native expo-notifications in its installed binary; notification content/rules can update OTA/backend.
+Priorizar protección de credenciales, persistencia y recuperación para la primera base nativa. Las dependencias de emisión, Bluetooth, facturación y orientación quedan sujetas a requisitos comprobados. La aceptación debe cubrir Jelly 2, inicio, reapertura, cambio de cuenta, permisos denegados, revocación y recuperación de conexión.
 
-## OTA / rebuild contract
-- Native package addition, plugin/permission change, Android manifest change, or native SDK change => rebuild APK and verify EAS runtime fingerprint.
-- JS/TS interface, API integration, moderation rules and server-side model changes => OTA/backend deployment only, provided native modules and runtime remain compatible.
-- Do not ship a final baseline APK until native dependencies, provider choices and CI checks are validated.
-
-## Acceptance checks
-- Android 13+ notification permission and channel; foreground/background/tapped notification navigation; token refresh and logout cleanup.
-- Camera photo/video recording and denied-permission behavior; gallery limited access.
-- Document selection of PDF/image/video, content:// URI handling, size/type validation and safe upload.
-- Video preview/trim request with server-side actual export and playback of processed asset.
-- Live publish/stop, reconnection, background transitions, moderation-provider failure stopping stream.
-- Public assistant privacy, rate limits, and safe error states.
-- Moderation false-positive appeal, AI disclosure and educational-not-verified notice.
+[Expo SecureStore](https://docs.expo.dev/versions/v54.0.0/sdk/securestore/) · [Expo LocalAuthentication](https://docs.expo.dev/versions/v54.0.0/sdk/local-authentication/) · [Expo Updates Runtime Versions](https://docs.expo.dev/eas-update/runtime-versions/)

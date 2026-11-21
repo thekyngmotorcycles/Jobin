@@ -90,3 +90,15 @@ Supabase RLS: https://supabase.com/docs/guides/database/postgres/row-level-secur
 ### Requiere una APK nueva
 
 - Integrar y validar KeyStore/Keychain para tokens y cifrado autenticado o eliminación controlada de persistencia sensible, con pruebas de migración y recuperación. Se mantiene pendiente cualquier cambio nativo hasta autorización expresa.
+
+## Cierre de la etapa sin APK
+
+| Estado | Resultado o condición pendiente |
+| --- | --- |
+| Resuelto y verificado | La vista previa firmada de borradores queda en memoria, solicita 300 s, y conserva la foto local y la referencia de respaldo. Las URL heredadas no se vuelven a mostrar ni a persistir. Nuevas cargas privadas y sensibles desde los flujos auditados solicitan caché sin tiempo de frescura. Storage local con JWT reales confirmó acceso cruzado denegado, publicación legítima, reautorización en origen y un bucket sintético que admite descarga autenticada sin emitir enlaces. GoTrue confirmó los límites del nonce, la contraseña actual y AAL2. |
+| Pendiente de despliegue coordinado | Los contratos empresariales, privilegios de verificación, CV, Storage y cambios JS requieren un ensayo con el esquema equivalente y una OTA compatible autorizada. El esquema compartido sigue sin proyección empresarial ni guardas candidatas. Falta comprobar Smart CDN, objetos preexistentes y el procedimiento de purga. [Plan](SECURITY_DEPLOYMENT.md) |
+| Pendiente de prueba manual | Identificar la APK, runtime, canal y update reales del Jelly 2. Ejecutar A→B→A, reconexión y restauración de borradores en la APK instalada y repetir con el cliente candidato y backend aislado. [Protocolo](ANDROID_SECURITY_JELLY2.md) |
+| Requiere nueva APK | Proteger los tokens con almacenamiento seguro del sistema y cifrar o eliminar de forma controlada la persistencia sensible. Verificar migración y recuperación sin cruzar cuentas. [Inventario nativo](native-capabilities-baseline.md) |
+| Requiere decisión de arquitectura | Imponer un reto de un solo uso por operación en Auth con el origen protegido. Resolver la entrega revocable de documentos sensibles sin una ruta directa alternativa. Conservar evidencia de datos cruzados hasta confirmar titulares y aprobar una reparación aparte. |
+
+El bloqueo de privacidad sigue vigente. Los ensayos aislados no aplicaron SQL ni cambiaron Auth en el proyecto compartido. No se publicó OTA ni se construyó una APK.

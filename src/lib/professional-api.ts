@@ -85,7 +85,7 @@ export async function uploadCredential(file:{uri:string;name:string;mimeType?:st
  const response=await fetch(file.uri);
  if(!response.ok)throw new Error("No se pudo leer el documento seleccionado.");
  const bytes=await response.arrayBuffer();
- const uploaded=await client.storage.from("professional-certificates").upload(path,bytes,{contentType:mime,upsert:false});
+ const uploaded=await client.storage.from("professional-certificates").upload(path,bytes,{contentType:mime,upsert:false,cacheControl:"0"});
  if(uploaded.error)throw new Error(uploaded.error.message);
  try { await professionalMutation("jobin_submit_credential",{profession,path}); }
  catch(cause) { throw new Error("El archivo se subió, pero la solicitud no se registró: "+(cause instanceof Error?cause.message:String(cause))+". Ruta para reintentar: "+path); }

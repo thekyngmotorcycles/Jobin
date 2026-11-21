@@ -7,6 +7,7 @@ import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
 import {JOBEEN_TYPE} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
+import {draftPhotoDisplayUri} from "../lib/post-draft-photo";
 import {MAX_POST_DRAFTS,type PostDraft,type PostDraftPhoto} from "../lib/post-drafts";
 import type {FeedAudience,FeedPostKind} from "../lib/social-content";
 
@@ -93,7 +94,7 @@ export function PostComposerSheets(p:Props){
        <Pressable accessibilityRole="button" accessibilityLabel={"Continuar borrador "+(index+1)}
         onPress={()=>p.onRestore(draft)}>
         <View style={{height:94,alignItems:"center",justifyContent:"center",backgroundColor:t.cream}}>
-         {draft.photos[0]?.uri?<Image source={{uri:draft.photos[0].uri}}
+         {draftPhotoDisplayUri(draft.photos[0])?<Image source={{uri:draftPhotoDisplayUri(draft.photos[0])}}
           style={{width:"100%",height:"100%"}} resizeMode="cover"/>:
           <Ionicons name={draft.kind==="video"||draft.kind==="live"?"videocam-outline":"document-text-outline"}
            size={32} color={t.ink2}/>}
@@ -139,7 +140,7 @@ export function PostComposerSheets(p:Props){
       </View>
       {p.kind==="photos"&&!!p.photos.length&&<View style={{width:photoWidth,alignSelf:"center"}}>
        <ScrollView horizontal pagingEnabled nestedScrollEnabled showsHorizontalScrollIndicator={false}>
-        {p.photos.map((photo,i)=><Image key={photo.id} source={{uri:photo.uri}}
+        {p.photos.map((photo,i)=><Image key={photo.id} source={{uri:draftPhotoDisplayUri(photo)}}
          accessibilityLabel={photo.altText||"Fotografía "+(i+1)}
          style={{width:photoWidth,height:photoWidth,backgroundColor:t.cream}} resizeMode="cover"/>)}
        </ScrollView>
@@ -167,7 +168,7 @@ export function PostComposerSheets(p:Props){
   <Modal transparent visible={!!p.altPhotoId} animationType="fade" onRequestClose={p.onCloseAlt} statusBarTranslucent={false}>
    {floatingCard("Describir foto",p.onCloseAlt,
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:16,gap:12}}>
-     {!!altPhoto&&<Image source={{uri:altPhoto.uri}} resizeMode="contain"
+     {!!altPhoto&&<Image source={{uri:draftPhotoDisplayUri(altPhoto)}} resizeMode="contain"
       style={{width:"100%",height:150,borderRadius:12,backgroundColor:t.cream}}/>}
      <Text style={{color:t.ink2,fontSize:12,lineHeight:18}}>
       Esta descripción opcional ayuda a las personas que usan lectores de pantalla a comprender la fotografía.

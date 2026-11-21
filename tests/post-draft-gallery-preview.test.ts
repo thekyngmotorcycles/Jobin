@@ -58,7 +58,7 @@ test("Existing drafts are retained; no automatic dropping once capacity is reach
  assert.ok(!store.includes(".slice(0,30)"));
  assert.ok(store.includes("previous.length>=MAX_POST_DRAFTS"));
  assert.ok(store.includes('Elimina uno de los anteriores para guardar otro.'));
- assert.ok(store.includes("const next=[{...draft,updatedAt:Date.now()},...previous.filter(x=>x.id!==draft.id)]"));
+ assert.ok(store.includes("const next=[{...draft,photos:draft.photos.map(toStoredDraftPhoto),updatedAt:Date.now()},...previous.filter(x=>x.id!==draft.id)]"));
 });
 
 test("Preview has a floating feed-style card with real author info and photos above description",()=>{

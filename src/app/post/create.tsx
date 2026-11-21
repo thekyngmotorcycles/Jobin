@@ -9,6 +9,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {PublicProfileAvatar} from "../../components/PublicProfileAvatar";
 import {currentSocialUser,publishHomePost,shareApprovedMedia,uploadPhoto,type FeedPostKind,type FeedAudience} from "../../lib/social-content";
 import {PostComposerSheets} from "../../components/PostComposerSheets";
+import {draftPhotoDisplayUri} from "../../lib/post-draft-photo";
 import {DRAFT_PHOTO_BUCKET,emptyPostDraft,hasDraftContent,readPostDrafts,savePostDraft,deletePostDraft,restorePostDraftPhotoUrls,type PostDraft,type PostDraftPhoto} from "../../lib/post-drafts";
 import {searchPostMentions,type PostMention,type PostBusinessMention} from "../../lib/post-mentions";
 import {requireSupabase} from "../../lib/supabase";
@@ -90,9 +91,13 @@ export default function PostCreate(){
   setPhotos(d.photos);setMediaId(d.mediaId);setAudience(d.audience);
   setAudienceFollowers(d.audienceFollowers);setAudienceContacts(d.audienceContacts);
   setConsent(d.consent);setMentionedProfileIds(d.mentionedProfileIds??[]);setBusinessMentions(d.businessMentions??[]);
-  void restorePostDraftPhotoUrls(d.photos,author).then(restored=>setPhotos(current=>current.map(photo=>{
+  refreshDraftPhotoPreviews(d.photos);
+ }
+ function refreshDraftPhotoPreviews(selectedPhotos:PostDraftPhoto[]){
+  if(!selectedPhotos.some(photo=>photo.backupPath))return;
+  void restorePostDraftPhotoUrls(selectedPhotos,author).then(restored=>setPhotos(current=>current.map(photo=>{
    const refreshed=restored.find(item=>item.id===photo.id&&item.backupPath===photo.backupPath);
-   return refreshed?{...photo,uri:refreshed.uri}:photo;
+   return refreshed?{...photo,previewUri:refreshed.previewUri}:photo;
   }))).catch(()=>{
    setError("Algunas fotos necesitan conexión o volver a seleccionarse.");
   });
@@ -404,7 +409,7 @@ export default function PostCreate(){
       accessibilityLabel="Fotografías seleccionadas, deslizar horizontalmente"
       contentContainerStyle={{flexDirection:"row",gap:9,paddingVertical:2}}>
       {photos.map((photo,i)=><View key={photo.id} style={{width:104,height:104,borderRadius:13,overflow:"hidden"}}>
-       <Image source={{uri:photo.uri}} accessibilityLabel={photo.altText||"Foto "+(i+1)} style={{width:104,height:104}} resizeMode="cover"/>
+       <Image source={{uri:draftPhotoDisplayUri(photo)}} accessibilityLabel={photo.altText||"Foto "+(i+1)} style={{width:104,height:104}} resizeMode="cover"/>
        <Pressable accessibilityRole="button" accessibilityLabel={"Quitar foto "+(i+1)}
         onPress={()=>setPhotos(current=>current.filter((_,j)=>j!==i))}
         style={{position:"absolute",top:4,right:4,width:34,height:34,alignItems:"center",
@@ -459,7 +464,7 @@ export default function PostCreate(){
        <Text style={{fontSize:11,fontWeight:"800",color:t.ink}}>{draftCount}</Text>
       </View>}
      </Pressable>
-     <Pressable accessibilityRole="button" accessibilityLabel="Vista previa" onPress={()=>setPreviewOpen(true)}
+     <Pressable accessibilityRole="button" accessibilityLabel="Vista previa" onPress={()=>{refreshDraftPhotoPreviews(photos);setPreviewOpen(true);}}
       style={{minHeight:49,flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",
        gap:7,borderRadius:15,borderWidth:1,borderColor:t.silver,backgroundColor:t.surface,paddingHorizontal:8}}>
       <Ionicons name="eye-outline" size={19} color={t.ink}/>

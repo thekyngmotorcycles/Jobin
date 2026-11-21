@@ -15,3 +15,17 @@ Usar la APK instalada y dos cuentas de prueba A y B con datos ficticios en un en
 Repetir la matriz con el cliente del PR mediante un update de prueba compatible y con el SQL candidato en el entorno aislado, ambos previamente autorizados. Confirmar otra vez A→B→A, restauración de fotos tras reconectar y que resultados antiguos no sustituyen las fotos del borrador activo. Comprobar el CV autorizado y revocado, la visibilidad y los contactos de la JCard de terceros, las reseñas y el mapa. Una APK existente solo demuestra las correcciones si carga el update que las contiene y usa el backend correspondiente.
 
 Almacenamiento seguro para tokens y cifrado de cachés y borradores requieren integración nativa y una APK nueva aprobada para su validación. El Jelly 2 con la APK actual puede aportar evidencia de comportamiento, pero la reautenticación obligatoria y los permisos directos se comprueban también contra Auth, REST y Storage.
+
+## Criterios definitivos de aceptación
+
+Registrar la versión de APK que muestra Android y el canal, runtime e ID del update activo cuando estén disponibles mediante los datos del build o del update. Marcar los valores desconocidos. Distinguir la APK sin correcciones de la misma APK con el cliente candidato cargado desde el canal aislado. Preparar una publicación privada de A compartida con B y un borrador solo de A, con datos e imágenes ficticios.
+
+| Caso | APK instalada | Cliente candidato y backend aislado |
+| --- | --- | --- |
+| Cierre y A→B→A | Registrar qué se ve al cerrar, reabrir o cambiar cuentas. | Una respuesta tardía de otra sesión no reaparece. Revisar perfil, JCards visibles y guardadas, historial, mensajes y notificaciones. |
+| Borrador, fotografía y reconexión | Probar creación, guardado, modo avión y reapertura tras reconectar. | Conservar texto, descripción accesible y foto local de A. Volver a abrir borrador y vista previa después de cinco minutos para recuperar el respaldo autorizado. Confirmar que A puede publicar desde ese respaldo y B no puede firmarlo ni verlo. |
+| Contenido compartido y revocación | Registrar el acceso que permite el backend en uso. | B ve la publicación autorizada. Revocar y abrir de nuevo tras cerrar y reconectar. Un acceso nuevo debe quedar denegado. Anotar aparte imágenes ya descargadas o cacheadas. |
+| CV, reseñas y JCards | Registrar qué depende del esquema heredado. | Confirmar CV autorizado y revocado, proyección empresarial, contacto oculto, reseñas y mapa. Repetir A→B→A con sesión expirada y verificar titularidad del historial. |
+| Arranque offline | Cerrar y reabrir sin Wi‑Fi ni datos móviles. Observar al reconectar. | Verificar primero el update activo. La recuperación no copia borradores, mensajes, historiales o tarjetas privadas entre cuentas. |
+
+Vincular cada resultado a un binario, runtime, update y esquema identificados. La reautenticación obligatoria, el CDN y la revocación estricta de documentos requieren también pruebas de servidor.
