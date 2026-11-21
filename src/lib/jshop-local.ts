@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {assertAccountOwner} from "./account-scope";
 import {requireSupabase} from "./supabase";
 import type {JShopDraft} from "./jshop-model";
 
@@ -11,6 +12,7 @@ export async function jshopAccountId():Promise<string>{
  return data.user.id;
 }
 export async function readJShopDrafts(ownerId:string):Promise<JShopDraft[]>{
+ await assertAccountOwner(ownerId);
  const raw=await AsyncStorage.getItem(draftsKey(ownerId));
  if(!raw)return [];
  try{
@@ -22,21 +24,29 @@ export async function readJShopDrafts(ownerId:string):Promise<JShopDraft[]>{
 }
 export async function saveJShopDraft(ownerId:string,draft:JShopDraft):Promise<void>{
  if(draft.ownerId!==ownerId)throw new Error("No puedes modificar anuncios de otra cuenta.");
+ await assertAccountOwner(ownerId);
+ await assertAccountOwner(ownerId);
  const drafts=await readJShopDrafts(ownerId);
+ await assertAccountOwner(ownerId);
  await AsyncStorage.setItem(draftsKey(ownerId),JSON.stringify([draft,...drafts.filter(x=>x.id!==draft.id)]));
 }
 export async function deleteJShopDraft(ownerId:string,id:string):Promise<void>{
+ await assertAccountOwner(ownerId);
  const drafts=await readJShopDrafts(ownerId);
+ await assertAccountOwner(ownerId);
  await AsyncStorage.setItem(draftsKey(ownerId),JSON.stringify(drafts.filter(x=>x.id!==id)));
 }
 export async function readJShopFavorites(ownerId:string):Promise<string[]>{
+ await assertAccountOwner(ownerId);
  const raw=await AsyncStorage.getItem(favoritesKey(ownerId));
  if(!raw)return [];
  try{const ids:unknown=JSON.parse(raw);return Array.isArray(ids)?ids.filter((id):id is string=>typeof id==="string"):[];}catch{return [];}
 }
 export async function toggleJShopFavorite(ownerId:string,id:string):Promise<boolean>{
+ await assertAccountOwner(ownerId);
  const ids=await readJShopFavorites(ownerId);
  const has=ids.includes(id);
+ await assertAccountOwner(ownerId);
  await AsyncStorage.setItem(favoritesKey(ownerId),JSON.stringify(has?ids.filter(key=>key!==id):[id,...ids]));
  return !has;
 }
