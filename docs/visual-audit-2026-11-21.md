@@ -24,6 +24,14 @@ Referencia: opción Premium limpia de Compartir aprobada en chat. Comparación c
 - **Estados:** modo claro y oscuro; tamaño de fuente estándar y aumentado; errores, confirmaciones y acciones destructivas.
 - **Regresión funcional:** borrar/cancelar, aceptar/salir, guardar, contactar, enviar a contactos, navegación y back Android.
 
+## Verificación concreta del workflow y hallazgos visuales
+- **CI automatizada:** `.github/workflows/check.yml` ejecuta instalación, Expo dependency check, lint, TypeScript, tests, exportación web y pruebas SQL en PostgreSQL 17. La ejecución **44879317527** terminó verde en `validate` y `database`.
+- **Límite de CI:** la exportación web **no demuestra** el resultado visual en Android o iOS; no hay comparación automática de capturas, tamaños ópticos, contraste real ni verificación de safe areas.
+- **Estado vacío de Borradores:** mantener el marco crema y sus esquinas; cuando no hay borradores el contenido debe ocupar solo la altura necesaria para contador, icono y mensaje, sin bloque vacío de 92 dp. Verificar con 0, 1 y varios borradores.
+- **Navegación de JCard de negocio y personal:** las etiquetas inactivas deben ser legibles en tema claro y oscuro, iconos alineados y cinco controles equilibrados, sin alterar el acordeón, las rutas ni la JCard. Verificar desplazamiento horizontal, selección y textos completos.
+- **Pantalla principal de referencia:** revisar primero 360–430 dp de ancho (incluidos Galaxy S22 e iPhone 14), y luego Jelly como compatibilidad; comprobar además fuente del sistema aumentada.
+- **Evidencia pendiente:** capturas reales comparables de estado vacío y navegación de perfil, en temas claro/oscuro. Hasta recibirlas y aprobarlas, los ajustes permanecen **provisionales**.
+
 ## Criterio de cierre
 Los PRs deben tener CI verde, las capturas del Android deben ser revisadas por el propietario y sus ajustes aprobados expresamente antes de integrar en `development`. Después de la aprobación visual se podrán trasladar los tokens definitivos a `AGENTS.md` y documentación de diseño.
 
