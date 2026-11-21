@@ -60,6 +60,12 @@ select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111'
 update public.jcard_visibility set business_enabled=false where owner_id='a1111111-1111-4111-8111-111111111111';
 select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
 select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_public_business_cards where business_handle='private_hvac'),'visibility revocation immediately blocks projection');
+-- Blocks are symmetric for visibility, without exposing any hidden card data.
+reset role;
+insert into public.blocks(blocker_id,blocked_id) values('b2222222-2222-4222-8222-222222222222','c3333333-3333-4333-8333-333333333333');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_public_business_cards where business_handle='legacy_company'),'blocked business cannot be read');
 select set_config('request.jwt.claim.sub','',true);
 select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_public_business_cards),'missing JWT identity denied even with authenticated role');
 rollback;
