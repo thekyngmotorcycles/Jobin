@@ -4,6 +4,7 @@ import {useCallback,useMemo,useState} from "react";
 import {ActivityIndicator,Alert,Pressable,Text,TextInput,View} from "react-native";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
+import {businessCategoryArt} from "../lib/business-category-art";
 import {listSavedJCards,removeSavedJCard,setSavedJCardFavorite,type SavedJCard} from "../lib/saved-jcards";
 
 /** Saved JCards point to visible public profiles, never to stale contact snapshots. */
@@ -73,7 +74,7 @@ export function SavedJCardsGallery(){
     <View style={{flex:1,borderRadius:16,borderWidth:1,borderColor:colors.line,backgroundColor:colors.surface,overflow:"hidden"}}>
      <Pressable accessibilityRole="button" disabled={!item.available} accessibilityLabel={"Abrir "+item.title} onPress={()=>router.push({pathname:"/jcard",params:{user:item.targetId,card:item.side}})}
       style={{minHeight:114,padding:12,gap:6,justifyContent:"center",opacity:item.available?1:0.7}}>
-      <Ionicons name={item.available?item.side==="business"?"business-outline":"person-circle-outline":"eye-off-outline"} size={24} color={colors.ink}/>
+      <Ionicons name={!item.available?"eye-off-outline":item.side==="business"?businessCategoryArt(item.subtitle).icon:"person-circle-outline"} size={24} color={colors.ink}/>
       <Text numberOfLines={2} style={{fontSize:14,fontWeight:"700",color:colors.ink}}>{item.title}</Text>
       <Text numberOfLines={2} style={{fontSize:11,color:colors.ink2}}>{item.subtitle}</Text>
      </Pressable>
