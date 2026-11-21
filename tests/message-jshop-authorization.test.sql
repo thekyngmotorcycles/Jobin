@@ -23,10 +23,12 @@ end;
 $$;
 
 -- Seed a real listing owned by B; A must not be able to name C as seller.
-insert into public.jshop_listings(id, seller_id, title, category, item_condition, price, currency, photo_paths)
+insert into public.jshop_seller_locations(seller_id,city,label,location_lat,location_lon)
+values ('b2222222-2222-4222-8222-222222222222','Test city','Test city',0,0);
+insert into public.jshop_listings(id, seller_id, title, category, item_condition, price, currency, photo_paths, location, location_lat, location_lon)
 values ('d4444444-4444-4444-8444-444444444444',
  'b2222222-2222-4222-8222-222222222222', 'Test tool', 'Herramientas', 'Nuevo', 15, 'USD',
- array['b2222222-2222-4222-8222-222222222222/test.jpg']);
+ array['b2222222-2222-4222-8222-222222222222/test.jpg'], 'Test city',0,0);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
@@ -62,13 +64,16 @@ select pg_temp.expect_denial($q$
  insert into public.jobeen_direct_messages(sender_id,recipient_id,body)
  values (auth.uid(),'c3333333-3333-4333-8333-333333333333','Other recipient')
 $q$);
-select pg_temp.expect_denial($q$
- insert into public.jshop_conversations(listing_id,buyer_id,seller_id,listing_title,listing_price,listing_currency)
- values ('d4444444-4444-4444-8444-444444444444',auth.uid(),'c3333333-3333-4333-8333-333333333333','Test tool',15,'USD')
-$q$);
+-- The existing BEFORE INSERT trigger replaces forged seller and listing details.
+-- Assert the stored relationship, then prove no message can target the forged seller.
 insert into public.jshop_conversations(id,listing_id,buyer_id,seller_id,listing_title,listing_price,listing_currency)
 values ('e5555555-5555-4555-8555-555555555555','d4444444-4444-4444-8444-444444444444',auth.uid(),
- 'b2222222-2222-4222-8222-222222222222','Test tool',15,'USD');
+ 'c3333333-3333-4333-8333-333333333333','Forged title',1,'ARS');
+select pg_temp.assert_message(exists(
+ select 1 from public.jshop_conversations where id='e5555555-5555-4555-8555-555555555555'
+ and seller_id='b2222222-2222-4222-8222-222222222222'
+ and buyer_id=auth.uid() and listing_title='Test tool' and listing_price=15 and listing_currency='USD'
+), 'snapshot trigger must use real seller and listing details, not supplied values');
 insert into public.jobeen_direct_messages(sender_id,recipient_id,body,jshop_conversation_id)
 values (auth.uid(),'b2222222-2222-4222-8222-222222222222','JShop message','e5555555-5555-4555-8555-555555555555');
 select pg_temp.expect_denial($q$
