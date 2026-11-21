@@ -162,7 +162,7 @@ export function HomePublishedPosts({filter="all",featuredPostId=""}:{filter?:Hom
     const [follows,businesses,businessCards]=await Promise.all([
      user?db.from("profile_follows" as never).select("followed_id").eq("follower_id",user):Promise.resolve({data:[],error:null}),
      authorIds.length?db.from("profiles").select("id").in("id",authorIds).eq("account_type","company"):Promise.resolve({data:[],error:null}),
-     authorIds.length?db.from("jcard_business_details" as never).select("owner_id").in("owner_id",authorIds):Promise.resolve({data:[],error:null})
+     authorIds.length?db.from("jobeen_public_business_cards" as never).select("owner_id").in("owner_id",authorIds):Promise.resolve({data:[],error:null})
     ]);
     if(follows.error)throw follows.error;
     if(businesses.error)throw businesses.error;
