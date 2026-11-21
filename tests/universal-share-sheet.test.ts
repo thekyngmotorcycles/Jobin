@@ -39,7 +39,7 @@ test("Universal chooser keeps messaging apps and native system share behind More
 });
 
 test("QR is offered for real links, never for CV or text-only demo posts",()=>{
- assert.ok(sheet.includes('(item.id!=="qr"||!!link.trim())'));
+ assert.ok(sheet.includes('item.id!=="qr"||!!link.trim()'));
  assert.ok(sheet.includes('if(action==="qr"){if(link.trim())setShowQr(true);return;}'));
  assert.ok(sheet.includes('<QRCode value={link}'));
  const cv=source("src/app/(tabs)/profile.tsx");
