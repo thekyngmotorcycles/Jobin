@@ -6,6 +6,7 @@ import QRCode from "react-native-qrcode-svg";
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
 import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {jcardCommon} from "../theme/jcard";
 import {PublicProfileAvatar} from "./PublicProfileAvatar";
 import {loadShareRecipients,sendToShareRecipients,type ShareRecipient} from "../lib/share-contacts";
@@ -42,7 +43,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
  const message=contentMessage??(cardType+" de "+label+": "+link);
  const matchingContacts=contacts.filter(c=>c.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
  const options=OPTIONS.filter(item=>item.id!=="qr"||!!link.trim());
- const actionSize=Math.max(48,Math.min(56,(width-70)/4));
+ const actionSize=Math.max(48,Math.min(JOBEEN_CONTROL.optionDiameter,(width-70)/4));
  useEffect(()=>{
   if(!visible)return;
   let active=true;
@@ -119,7 +120,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
      </View>:<>
      <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}
       style={{flexShrink:1}} contentContainerStyle={{paddingHorizontal:18,paddingBottom:18,gap:10}}>
-      <View style={{minHeight:42,borderWidth:1,borderColor:t.line,borderRadius:22,backgroundColor:t.cream,
+      <View style={{minHeight:JOBEEN_CONTROL.inputHeight,borderWidth:1,borderColor:t.line,borderRadius:22,backgroundColor:t.cream,
        flexDirection:"row",alignItems:"center",gap:10,paddingHorizontal:16}}>
        <Ionicons name="search-outline" size={20} color={t.ink2}/>
        <TextInput value={query} onChangeText={setQuery} placeholder="Buscar contactos de Jobeen"
@@ -180,9 +181,9 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
      </ScrollView>
      {!!selected.length&&<Pressable accessibilityRole="button"
        accessibilityLabel={"Enviar a "+selected.length+" contactos"} disabled={sending}
-       onPress={()=>void sendSelected()} style={{minHeight:48,marginHorizontal:13,marginTop:2,marginBottom:8,
+       onPress={()=>void sendSelected()} style={{minHeight:JOBEEN_CONTROL.touchTarget,marginHorizontal:13,marginTop:2,marginBottom:8,
         alignItems:"center",justifyContent:"center",opacity:sending?0.6:1}}>
-       <View style={{height:40,width:"100%",backgroundColor:t.yellow,borderRadius:20,
+       <View style={{height:JOBEEN_CONTROL.visualAction,width:"100%",backgroundColor:t.yellow,borderRadius:20,
         alignItems:"center",justifyContent:"center",flexDirection:"row",gap:8}}>
         {sending?<ActivityIndicator color={t.ink}/>:<Ionicons name="paper-plane-outline" color={t.ink} size={19}/>}
         <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"700",color:t.ink}}>{sending?"Enviando...":"Enviar a "+selected.length+" contacto"+(selected.length===1?"":"s")}</Text>
