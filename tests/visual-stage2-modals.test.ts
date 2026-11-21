@@ -63,8 +63,10 @@ test("Composer keeps draft and media preview behavior while using compact action
  assert.ok(s.includes("height:JOBEEN_CONTROL.visualAction+2"));
  assert.ok(s.includes("minHeight:JOBEEN_CONTROL.touchTarget"));
  assert.ok(s.includes("p.drafts.length?<ScrollView"),"Draft lists remain scrollable when populated");
- assert.ok(s.includes("minHeight:52,flexDirection:\"row\""),"Empty-state content is compact");
- assert.ok(s.includes("paddingBottom:20,gap:10"),"Empty dialog hugs its content");
+ assert.ok(s.includes("paddingHorizontal:18,paddingTop:6,paddingBottom:20"),"Empty dialog hugs a single message");
+ assert.ok(s.includes('fontSize:JOBEEN_TYPE.body,lineHeight:21}}>Aún no tienes borradores guardados.'),"Empty-state message uses shared typography");
+ assert.ok(!s.includes("0 de {MAX_POST_DRAFTS} borradores"),"Empty state should not repeat a counter");
+ assert.ok(!s.includes('name="albums-outline"'),"Empty state should not consume extra height with a decorative icon");
  assert.ok(!s.includes("minHeight:92"),"Do not reserve an oversized empty panel");
  assert.ok(s.includes("onRestore(draft)"));
  assert.ok(s.includes("p.onClosePreview"));
