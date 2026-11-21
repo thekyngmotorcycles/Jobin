@@ -22,10 +22,12 @@ export function ProfileSectionTabs({section,onSelect,pinned=false}:{section:Prof
  const {theme}=useTheme();const jt=jobeenTokens(theme);
  const {width}=useWindowDimensions();const reducedMotion=useReducedMotion();
  const scroller=useRef<ScrollView|null>(null);
- const selectedIndex=Math.max(0,tabs.findIndex(tab=>tab.id===section));
- useEffect(()=>{
-  scroller.current?.scrollTo({x:Math.max(0,selectedIndex*104-width/2+52),animated:!reducedMotion});
- },[selectedIndex,width,reducedMotion]);
+ const tabLayouts=useRef<Partial<Record<ProfileSection,{x:number;width:number}>>>({});
+ const scrollToSection=(id:ProfileSection)=>{
+  const layout=tabLayouts.current[id];
+  if(layout)scroller.current?.scrollTo({x:Math.max(0,layout.x+layout.width/2-width/2),animated:!reducedMotion});
+ };
+ useEffect(()=>{scrollToSection(section);},[section,width,reducedMotion]);
  return <View style={{backgroundColor:jt.bg,borderBottomWidth:1,borderBottomColor:jt.line,
   elevation:pinned?3:0,shadowColor:jt.ink,shadowOffset:{width:0,height:2},shadowOpacity:pinned?0.09:0,
   shadowRadius:pinned?5:0,zIndex:5}}>
@@ -35,6 +37,7 @@ export function ProfileSectionTabs({section,onSelect,pinned=false}:{section:Prof
     const selected=section===tab.id;
     return <Pressable key={tab.id} accessibilityRole="tab" accessibilityLabel={tab.label}
       accessibilityState={{selected}} onPress={()=>onSelect(tab.id)}
+      onLayout={event=>{tabLayouts.current[tab.id]=event.nativeEvent.layout;if(selected)scrollToSection(tab.id);}}
       style={{minHeight:50,paddingHorizontal:12,minWidth:92,flexDirection:"row",gap:6,alignItems:"center",justifyContent:"center",
        borderBottomWidth:3,borderBottomColor:selected?jt.yellow:jt.bg}}>
      <Ionicons name={tab.icon} size={18} color={jt.ink}/>
