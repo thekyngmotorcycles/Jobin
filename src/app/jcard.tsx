@@ -110,13 +110,12 @@ export default function PublicJCard(){
    </Animated.View>
    <Animated.ScrollView ref={profileScroll} stickyHeaderIndices={resource.data?[1]:undefined}
     scrollEventThrottle={16} showsVerticalScrollIndicator={false}
-    // Avoid Android overscroll stretch; use the same top clearance as the owner profile.
     style={{flex:1}} overScrollMode="never" bounces={false} alwaysBounceVertical={false}
     contentContainerStyle={{paddingTop:NAVIGATION_ROW_HEIGHT+12,paddingBottom:contentBottom,width:"100%",maxWidth:1180,alignSelf:"center"}}
     onScroll={Animated.event([{nativeEvent:{contentOffset:{y:profileScrollY}}}],{
      useNativeDriver:true,
      listener:(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
-            const pinned=tabOffset>0&&event.nativeEvent.contentOffset.y>=tabOffset-2;
+      const pinned=tabOffset>0&&event.nativeEvent.contentOffset.y>=tabOffset-2;
       setTabsPinned(previous=>previous===pinned?previous:pinned);
      }
     })}>
