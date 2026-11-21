@@ -12,7 +12,7 @@ import {useTheme} from "../state/ThemeProvider";
 import {JobeenShareSheet} from "./JCardShareSheet";
 import {JobeenNoticeDialog} from "./JobeenNoticeDialog";
 import {SettingsMenuRow} from "./SettingsMenuRow";
-export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void}){
+export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose,onToggleSaved,savedJCard=false,savingJCard=false,visibleCardSide="personal"}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void;onToggleSaved?:()=>void;savedJCard?:boolean;savingJCard?:boolean;visibleCardSide?:"personal"|"business"}){
  const {s,colors}=useUi();const {theme}=useTheme();const modal=jobeenModalTokens(theme);const insets=useSafeAreaInsets();const {width}=useWindowDimensions();const jobeen=jobeenTokens("light");const [shareOpen,setShareOpen]=useState(false);const [confirm,setConfirm]=useState<"remove"|"block"|null>(null);const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
  const [contact,setContact]=useState<ContactRequest|null>(null),[viewer,setViewer]=useState("");
  useFocusEffect(useCallback(()=>{let active=true;void contactState(user).then(value=>{if(active){setContact(value.request);setViewer(value.mine);}}).catch(()=>{if(active)setContact(null);});return()=>{active=false;};},[user]));
@@ -83,6 +83,7 @@ export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClos
     <Pressable accessibilityLabel="Cerrar opciones del perfil" onPress={()=>onMenuClose?.()} style={StyleSheet.absoluteFill}/>
     <View style={{width:Math.min(330,width-32),padding:8,borderWidth:1,borderColor:modal.border,
      backgroundColor:modal.surface,borderRadius:modal.radius.popover,gap:6}}>
+     {onToggleSaved&&<SettingsMenuRow variant="action" title={savingJCard?"Actualizando…":savedJCard?"Quitar de mis JCards":visibleCardSide==="business"?"Guardar JCard empresarial":"Guardar JCard personal"} description="Añade o elimina esta tarjeta de tu colección privada." icon={savedJCard?"bookmark":"bookmark-outline"} disabled={savingJCard} onPress={()=>{onMenuClose?.();onToggleSaved();}}/>}
      <SettingsMenuRow variant="action" title="Compartir perfil"
       description="Envía la JCard de este profesional." icon="share-social-outline"
       onPress={()=>{onMenuClose?.();setTimeout(()=>setShareOpen(true),350);}}/>

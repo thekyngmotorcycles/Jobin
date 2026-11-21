@@ -26,7 +26,7 @@ Un electricista puede enseñar una instalación, un mecánico una reparación y 
 - Usar **exclusivamente** los tokens tipográficos, de color, iconografía de marca y radios de Jobeen que ya estén aprobados. Mobbin/X son referencias de **distribución y reducción del ruido visual**, no de colores, pesos, tamaños, marcas ni funcionalidades.
 - Menús principales (Configuración Home, menú de opciones del perfil propio, menú de opciones del perfil público) comparten el **mismo lenguaje de superficie, filas, jerarquía y espacios**. Contenido y forma pueden diferir: Configuración necesita búsqueda y grupos; acciones contextuales no.
 - Iconos solo cuando facilitan reconocer una acción; una fila admite uno, no una colección. Evitar iconos en opciones de navegación que ya se reconocen por el texto. Flecha solamente si navega.
-- **Cinco pestañas interiores del perfil: solo texto** `Inicio | Todo | Videos | En vivo | Acerca de`. Quitar los iconos interiores, conservar las opciones y el desplazamiento horizontal. **No tocar la barra global inferior de cinco iconos** ni el acordeón.
+- **Cinco pestañas interiores del perfil propio: solo texto; la galería JCards es privada y no figura en el visitante** `Todo | JCards | Videos | En vivo | Acerca de`. Quitar los iconos interiores, conservar las opciones y el desplazamiento horizontal. **No tocar la barra global inferior de cinco iconos** ni el acordeón.
 - Teléfonos pequeños y grandes deben conservar el mismo número de columnas y la misma estructura; adaptar medidas sin ocultar controles o cortar texto. Material Design 3 se consulta para ergonomía y accesibilidad, manteniendo la decisión específica de Jobeen sobre composición estable.
 
 ## Plan de correcciones aprobadas, por fases
