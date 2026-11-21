@@ -7,6 +7,7 @@ export async function readRecentSearches(ownerId:string):Promise<string[]>{
  if(!ownerId)return [];
  await assertAccountOwner(ownerId);
  const data=await AsyncStorage.getItem(keyFor(ownerId));
+ await assertAccountOwner(ownerId);
  if(!data)return [];
  try{
   const parsed:unknown=JSON.parse(data);
