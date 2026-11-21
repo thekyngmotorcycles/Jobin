@@ -45,7 +45,7 @@ export default function Account() {
     const {data:owned}=await client.from("usernames").select("username").eq("user_id",session.user.id).maybeSingle();
     if(owned?.username!==handle)throw new Error("El nombre de usuario ya está ocupado. Cambia tu usuario desde el perfil.");
    }
-   await startJobinSession(session.user.id);
+   await startJobinSession(session.user.id,session.access_token);
    setPassword("");setConfirmPassword("");
    router.replace("/videos");
   }catch(error){setNotice(error instanceof Error?error.message:"No se pudo completar el registro.");}
