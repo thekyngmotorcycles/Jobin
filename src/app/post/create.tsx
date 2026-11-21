@@ -90,7 +90,10 @@ export default function PostCreate(){
   setPhotos(d.photos);setMediaId(d.mediaId);setAudience(d.audience);
   setAudienceFollowers(d.audienceFollowers);setAudienceContacts(d.audienceContacts);
   setConsent(d.consent);setMentionedProfileIds(d.mentionedProfileIds??[]);setBusinessMentions(d.businessMentions??[]);
-  void restorePostDraftPhotoUrls(d.photos).then(setPhotos).catch(()=>{
+  void restorePostDraftPhotoUrls(d.photos,author).then(restored=>setPhotos(current=>current.map(photo=>{
+   const refreshed=restored.find(item=>item.id===photo.id&&item.backupPath===photo.backupPath);
+   return refreshed?{...photo,uri:refreshed.uri}:photo;
+  }))).catch(()=>{
    setError("Algunas fotos necesitan conexión o volver a seleccionarse.");
   });
  }
@@ -206,9 +209,12 @@ export default function PostCreate(){
    // Private draft photos may have temporary local URIs; refresh covers without
    // delaying opening the gallery or exposing any private bucket publicly.
    void Promise.all(saved.map(async draft=>{
-    try{return {...draft,photos:await restorePostDraftPhotoUrls(draft.photos)};}
+    try{return {...draft,photos:await restorePostDraftPhotoUrls(draft.photos,author)};}
     catch{return draft;}
-   })).then(setDrafts).catch(()=>{});
+   })).then(refreshed=>setDrafts(current=>current.map(draft=>{
+    const match=refreshed.find(item=>item.id===draft.id&&item.updatedAt===draft.updatedAt);
+    return match??draft;
+   }))).catch(()=>{});
   }catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar los borradores.");}
  }
  async function deleteDraft(d:PostDraft){

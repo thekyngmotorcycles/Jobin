@@ -20,9 +20,14 @@ test("Changing authenticated identity remounts state providers and rejects previ
  const auth=src("src/components/AuthGate.tsx");
  const layout=src("src/app/_layout.tsx");
  const cache=src("src/state/useProfessionalData.ts");
- assert.ok(auth.includes('key={sessionOwner??"signed-out"}'));
+ assert.ok(auth.includes('key={sessionScope??"signed-out"}'));
  assert.ok(auth.includes("revision++"));
  assert.ok(auth.includes("revision===checkedRevision"));
+ assert.ok(auth.includes("const checkedRevision=++revision"));
+ assert.ok(auth.includes("sessionMarkerKey(owner,current.data.session.access_token)!==key"));
+ assert.ok(auth.includes("setSessionScope(key)"));
+ assert.ok(auth.includes('event==="TOKEN_REFRESHED"'));
+ assert.equal((auth.match(/setSessionScope\(key\)/g)??[]).length,1);
  assert.ok(layout.includes("<AuthGate><AppProvider><SocialProvider><NoticeProvider>"));
  assert.ok(cache.includes("generation.current===requestGeneration"));
  assert.ok(cache.includes("await sameOwner()"));
@@ -59,4 +64,19 @@ test("Saved-card actions and collections are bound to the account that rendered 
  assert.ok(gallery.includes("listSavedJCards(owner)"));
  assert.ok(gallery.includes("removeSavedJCard(item.targetId,item.side,owner)"));
  assert.ok(visitor.includes("saveVisibleJCard(user,activeCardSide,viewer)"));
+});
+
+test("Draft photo links are scoped to the initiating account and session",()=>{
+ const scope=src("src/lib/account-scope.ts");
+ const drafts=src("src/lib/post-drafts.ts");
+ const editor=src("src/app/post/create.tsx");
+ const restore=drafts.slice(drafts.indexOf("export async function restorePostDraftPhotoUrls"));
+ assert.ok(scope.includes("sessionMarkerKey(owner,data.session.access_token)"));
+ assert.ok(scope.includes("expectedSession&&session!==expectedSession"));
+ assert.ok(restore.includes('paths.some(path=>!path.startsWith(owner+"/"))'));
+ assert.ok(restore.indexOf("await assertAccountOwner(owner,session)")>restore.indexOf("createSignedUrls"));
+ assert.ok(editor.includes("restorePostDraftPhotoUrls(d.photos,author)"));
+ assert.ok(editor.includes("restorePostDraftPhotoUrls(draft.photos,author)"));
+ assert.ok(editor.includes("item.id===photo.id&&item.backupPath===photo.backupPath"));
+ assert.ok(editor.includes("item.id===draft.id&&item.updatedAt===draft.updatedAt"));
 });

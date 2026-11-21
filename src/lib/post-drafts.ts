@@ -26,9 +26,9 @@ export function emptyPostDraft():PostDraft{
 }
 export async function readPostDrafts(owner:string):Promise<PostDraft[]>{
  if(!owner)return [];
- await assertAccountOwner(owner);
+ const session=await assertAccountOwner(owner);
  const raw=await AsyncStorage.getItem(key(owner));
- await assertAccountOwner(owner);
+ await assertAccountOwner(owner,session);
  if(!raw)return [];
  try{
   const data:unknown=JSON.parse(raw);
@@ -40,31 +40,35 @@ export async function readPostDrafts(owner:string):Promise<PostDraft[]>{
 }
 export async function savePostDraft(owner:string,draft:PostDraft){
  if(!owner||!hasDraftContent(draft))return;
- await assertAccountOwner(owner);
+ const session=await assertAccountOwner(owner);
  const previous=await readPostDrafts(owner);
  if(!previous.some(x=>x.id===draft.id)&&previous.length>=MAX_POST_DRAFTS)
   throw Error("Has alcanzado el límite de "+MAX_POST_DRAFTS+" borradores. Elimina uno de los anteriores para guardar otro.");
  const next=[{...draft,updatedAt:Date.now()},...previous.filter(x=>x.id!==draft.id)];
- await assertAccountOwner(owner);
+ await assertAccountOwner(owner,session);
  await AsyncStorage.setItem(key(owner),JSON.stringify(next));
 }
 export async function deletePostDraft(owner:string,id:string,removePhotos=true){
  if(!owner)return;
- await assertAccountOwner(owner);
+ const session=await assertAccountOwner(owner);
  const previous=await readPostDrafts(owner);
  const found=previous.find(x=>x.id===id);
- await assertAccountOwner(owner);
+ await assertAccountOwner(owner,session);
  await AsyncStorage.setItem(key(owner),JSON.stringify(previous.filter(x=>x.id!==id)));
  if(removePhotos&&found){
   const paths=found.photos.map(x=>x.backupPath).filter((x):x is string=>!!x&&x.startsWith(owner+"/"));
-  if(paths.length)await requireSupabase().storage.from(DRAFT_PHOTO_BUCKET).remove(paths).catch(()=>{});
+  if(paths.length)await assertAccountOwner(owner,session)
+   .then(()=>requireSupabase().storage.from(DRAFT_PHOTO_BUCKET).remove(paths)).catch(()=>{});
  }
 }
-export async function restorePostDraftPhotoUrls(photos:PostDraftPhoto[]):Promise<PostDraftPhoto[]>{
+export async function restorePostDraftPhotoUrls(photos:PostDraftPhoto[],owner:string):Promise<PostDraftPhoto[]>{
+ const session=await assertAccountOwner(owner);
  const backed=photos.filter(p=>p.backupPath);
  if(!backed.length)return photos;
  const paths=backed.map(p=>p.backupPath!);
+ if(paths.some(path=>!path.startsWith(owner+"/")))throw new Error("No se pudo verificar la propiedad de las fotos.");
  const {data,error}=await requireSupabase().storage.from(DRAFT_PHOTO_BUCKET).createSignedUrls(paths,3600);
+ await assertAccountOwner(owner,session);
  if(error)throw error;
  const urls=new Map((data??[]).filter(x=>!!x.signedUrl&&!!x.path).map(x=>[x.path!,x.signedUrl]));
  return photos.map(p=>p.backupPath?{...p,uri:urls.get(p.backupPath)??p.uri}:p);

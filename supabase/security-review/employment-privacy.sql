@@ -23,6 +23,9 @@ drop policy if exists employment_owner_update on public.jcard_employment_history
 -- Client already uses request/respond/revoke RPCs for writes.
 alter table public.employment_access_requests enable row level security;
 revoke all on public.employment_access_requests from public,anon,authenticated;
+revoke update (status) on public.employment_access_requests from public,anon,authenticated;
+drop policy if exists employment_requests_insert on public.employment_access_requests;
+drop policy if exists employment_requests_owner_update on public.employment_access_requests;
 grant select on public.employment_access_requests to authenticated;
 drop policy if exists jobeen_cv_participants_boundary on public.employment_access_requests;
 create policy jobeen_cv_participants_boundary on public.employment_access_requests
@@ -56,3 +59,76 @@ create or replace function public.read_approved_employment(p_owner uuid)
  as $api$ select * from jobeen_private.approved_employment(p_owner) $api$;
 revoke all on function public.read_approved_employment(uuid) from public,anon,authenticated;
 grant execute on function public.read_approved_employment(uuid) to authenticated;
+
+-- Keep the existing RPC contracts while enforcing the consent state machine.
+create or replace function jobeen_private.request_employment_access(p_owner uuid)
+returns uuid language plpgsql security definer set search_path='' as $request$
+declare
+ requester uuid := auth.uid();
+ request_id uuid;
+begin
+ if requester is null or p_owner is null or requester=p_owner
+    or private.is_blocked(p_owner,requester)
+    or (select count(*) from public.profiles where id in (p_owner,requester) and deactivated_at is null)<>2 then
+  raise insufficient_privilege using message='CV request unavailable';
+ end if;
+
+ insert into public.employment_access_requests(owner_id,requester_id,status)
+ values(p_owner,requester,'pending')
+ on conflict(owner_id,requester_id) do update set status='pending',updated_at=now()
+ where public.employment_access_requests.status in ('denied','revoked')
+ returning id into request_id;
+
+ if request_id is null then
+  select id into request_id from public.employment_access_requests
+  where owner_id=p_owner and requester_id=requester;
+ end if;
+ return request_id;
+end
+$request$;
+
+create or replace function jobeen_private.respond_employment_access(p_request uuid,p_approve boolean)
+returns void language plpgsql security definer set search_path='' as $respond$
+begin
+ update public.employment_access_requests r
+ set status=case when p_approve then 'approved' else 'denied' end,updated_at=now()
+ where p_approve is not null and r.id=p_request and r.owner_id=(select auth.uid())
+  and r.status='pending'
+  and not private.is_blocked(r.owner_id,r.requester_id)
+  and (select count(*) from public.profiles where id in (r.owner_id,r.requester_id) and deactivated_at is null)=2;
+ if not found then
+  raise insufficient_privilege using message='Pending CV request unavailable';
+ end if;
+end
+$respond$;
+
+create or replace function jobeen_private.revoke_employment_access(p_request uuid)
+returns void language plpgsql security definer set search_path='' as $revoke$
+begin
+ update public.employment_access_requests
+ set status='revoked',updated_at=now()
+ where id=p_request and owner_id=(select auth.uid()) and status='approved';
+ if not found then
+  raise insufficient_privilege using message='Approved CV request unavailable';
+ end if;
+end
+$revoke$;
+
+create or replace function public.request_employment_access(p_owner uuid)
+returns uuid language sql security invoker set search_path=''
+as $$select jobeen_private.request_employment_access(p_owner)$$;
+create or replace function public.respond_employment_access(p_request uuid,p_approve boolean)
+returns void language sql security invoker set search_path=''
+as $$select jobeen_private.respond_employment_access(p_request,p_approve)$$;
+create or replace function public.revoke_employment_access(p_request uuid)
+returns void language sql security invoker set search_path=''
+as $$select jobeen_private.revoke_employment_access(p_request)$$;
+
+revoke all on function jobeen_private.request_employment_access(uuid),
+ jobeen_private.respond_employment_access(uuid,boolean),jobeen_private.revoke_employment_access(uuid),
+ public.request_employment_access(uuid),public.respond_employment_access(uuid,boolean),
+ public.revoke_employment_access(uuid) from public,anon,authenticated;
+grant execute on function jobeen_private.request_employment_access(uuid),
+ jobeen_private.respond_employment_access(uuid,boolean),jobeen_private.revoke_employment_access(uuid),
+ public.request_employment_access(uuid),public.respond_employment_access(uuid,boolean),
+ public.revoke_employment_access(uuid) to authenticated;

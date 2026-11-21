@@ -15,6 +15,7 @@ create table if not exists public.employment_access_requests(
 alter table public.jcard_employment_history enable row level security;
 alter table public.employment_access_requests enable row level security;
 grant all on public.jcard_employment_history,public.employment_access_requests to authenticated,anon;
+grant update (status) on public.employment_access_requests to authenticated;
 create policy "Owner reads employment history" on public.jcard_employment_history for select to authenticated using(owner_id=auth.uid());
 create policy "Owner deletes employment history" on public.jcard_employment_history for delete to authenticated using(owner_id=auth.uid());
 create policy "Owner inserts employment history" on public.jcard_employment_history for insert to authenticated with check(owner_id=auth.uid() and verified_by is null);
@@ -40,6 +41,10 @@ begin if not coalesce(ok,false) then raise exception 'CV PRIVACY TEST: %',label;
 $assert$;
 select pg_temp.cv_assert(not has_table_privilege('anon','public.jcard_employment_history','SELECT'),'anonymous table read denied');
 select pg_temp.cv_assert(not has_function_privilege('anon','public.read_approved_employment(uuid)','EXECUTE'),'anonymous RPC denied');
+select pg_temp.cv_assert(not has_column_privilege('authenticated','public.employment_access_requests','status','UPDATE'),'legacy column grant revoked');
+select pg_temp.cv_assert(not has_function_privilege('anon','public.request_employment_access(uuid)','EXECUTE'),'anonymous request RPC denied');
+select pg_temp.cv_assert(not has_function_privilege('anon','public.respond_employment_access(uuid,boolean)','EXECUTE'),'anonymous response RPC denied');
+select pg_temp.cv_assert(not has_function_privilege('anon','public.revoke_employment_access(uuid)','EXECUTE'),'anonymous revoke RPC denied');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
 select pg_temp.cv_assert((select count(*)=1 from public.jcard_employment_history),'B reads only own history directly');
@@ -81,12 +86,86 @@ insert into public.blocks(blocker_id,blocked_id) values('a1111111-1111-4111-8111
 set local role authenticated;
 select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
 select pg_temp.cv_assert(not exists(select 1 from public.read_approved_employment('a1111111-1111-4111-8111-111111111111')),'block overrides earlier approval');
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+select public.revoke_employment_access((select id from public.employment_access_requests
+ where requester_id='b2222222-2222-4222-8222-222222222222'));
+select pg_temp.cv_assert((select status='revoked' from public.employment_access_requests),'A may revoke B access during a block');
+
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+do $assert$
+begin
+ begin
+  perform public.request_employment_access('a1111111-1111-4111-8111-111111111111');
+  raise exception 'Blocked B could reopen the request';
+ exception when insufficient_privilege then null;
+ end;
+end
+$assert$;
+select pg_temp.cv_assert(not exists(select 1 from public.read_approved_employment('a1111111-1111-4111-8111-111111111111')),'revocation denies CV access');
+
 reset role;
 delete from public.blocks where blocker_id='a1111111-1111-4111-8111-111111111111';
-update public.employment_access_requests set status='revoked';
 set local role authenticated;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+do $assert$
+begin
+ begin
+  perform public.respond_employment_access((select id from public.employment_access_requests),true);
+  raise exception 'A could reapprove a revoked request without a new request';
+ exception when insufficient_privilege then null;
+ end;
+end
+$assert$;
+
 select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
-select pg_temp.cv_assert(not exists(select 1 from public.read_approved_employment('a1111111-1111-4111-8111-111111111111')),'revocation immediately denies CV access');
+select public.request_employment_access('a1111111-1111-4111-8111-111111111111');
+select pg_temp.cv_assert((select status='pending' from public.employment_access_requests),'B can request access again after unblock');
+select pg_temp.cv_assert(not exists(select 1 from public.read_approved_employment('a1111111-1111-4111-8111-111111111111')),'pending request does not grant access');
+do $assert$
+begin
+ begin
+  perform public.respond_employment_access((select id from public.employment_access_requests),true);
+  raise exception 'B could approve own request';
+ exception when insufficient_privilege then null;
+ end;
+end
+$assert$;
+
+reset role;
+insert into public.blocks(blocker_id,blocked_id) values('b2222222-2222-4222-8222-222222222222','a1111111-1111-4111-8111-111111111111');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+do $assert$
+begin
+ begin
+  perform public.respond_employment_access((select id from public.employment_access_requests),true);
+  raise exception 'A could approve after B blocked A';
+ exception when insufficient_privilege then null;
+ end;
+end
+$assert$;
+
+reset role;
+delete from public.blocks where blocker_id='b2222222-2222-4222-8222-222222222222';
+update public.profiles set deactivated_at=now() where id='b2222222-2222-4222-8222-222222222222';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+do $assert$
+begin
+ begin
+  perform public.respond_employment_access((select id from public.employment_access_requests),true);
+  raise exception 'A could approve an inactive account';
+ exception when insufficient_privilege then null;
+ end;
+end
+$assert$;
+reset role;
+update public.profiles set deactivated_at=null where id='b2222222-2222-4222-8222-222222222222';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+select public.respond_employment_access((select id from public.employment_access_requests),true);
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.cv_assert((select count(*)=1 from public.read_approved_employment('a1111111-1111-4111-8111-111111111111')),'A can approve B and restore access after a new request');
 select set_config('request.jwt.claim.sub','',true);
 select pg_temp.cv_assert(not exists(select 1 from public.read_approved_employment('a1111111-1111-4111-8111-111111111111')),'no identity denied');
 rollback;
