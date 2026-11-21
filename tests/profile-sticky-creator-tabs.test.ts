@@ -100,7 +100,7 @@ test("Creator tabs replace top navigation in three stages and respect the status
  assert.ok(owner.includes('top:insets.top,left:0,right:0,zIndex:10'),"Do not overlap Android status-bar indicators");
  assert.ok(visitor.includes('<Stack.Screen options={{headerShown:false}}/>'),"The public native stack bar must not block sticky tabs");
  assert.ok(visitor.includes('accessibilityLabel="Volver"'),"Public profile retains a back action");
- assert.ok(visitor.includes("paddingTop:NAVIGATION_ROW_HEIGHT+20"));
+ assert.ok(visitor.includes("paddingTop:NAVIGATION_ROW_HEIGHT+12"));
 });
 
 test("Floating brand chrome starts below status bar without changing the approved JCard scroll",()=>{
@@ -135,13 +135,26 @@ test("Visitor profile keeps global tabs while scrolling JCard and media sections
  assert.ok(state.includes("amount.current+controlledDelta/SCROLL_HIDE_DISTANCE"));
  assert.ok(state.includes("progress.setValue(amount.current)"));
  assert.ok(tabLayout.includes('<BottomTabBar {...props}/>'));
- for(const page of [visitor,owner])assert.ok(page.includes("if(focused)reportScroll(event.nativeEvent.contentOffset.y)"),"Only the focused profile may drive the shared bottom nav");
+ for(const page of [visitor,owner])assert.ok(!page.includes("reportScroll("),"Profile scroll must not hide bottom navigation");
+ assert.ok(global.includes('return <View pointerEvents="auto"'),"Public navigation is fixed");
+ assert.ok(!global.includes("progress.interpolate"),"Public navigation must never fade on scroll");
 });
-test("Primary feeds progressively retract and reveal navigation on scroll",()=>{
- for(const path of ["src/app/(tabs)/index.tsx","src/app/jshop.tsx","src/app/(tabs)/inbox.tsx","src/app/(tabs)/videos.tsx","src/app/search.tsx"]){
+test("Only Home feed retracts navigation; all other pages keep bottom bar static",()=>{
+ const home=source("src/app/(tabs)/index.tsx");
+ const tabLayout=source("src/app/(tabs)/_layout.tsx");
+ const global=source("src/components/PersistentBottomTabs.tsx");
+ assert.ok(home.includes("useScrollNavigation"));
+ assert.ok(home.includes("if(focused)reportScroll(e.nativeEvent.contentOffset.y)"));
+ assert.ok(tabLayout.includes('const homeFeed=pathname==="/"||pathname==="/index"||pathname==="/(tabs)/index"'));
+ assert.ok(tabLayout.includes('pointerEvents={homeFeed&&hidden?"none":"auto"}'));
+ assert.ok(tabLayout.includes('opacity:homeFeed?progress.interpolate('));
+ assert.ok(tabLayout.includes('translateY:homeFeed?progress.interpolate('));
+ assert.ok(global.includes('<View pointerEvents="auto"'));
+ assert.ok(!global.includes("useScrollNavigation"));
+ for(const path of ["src/app/jshop.tsx","src/app/(tabs)/inbox.tsx","src/app/(tabs)/videos.tsx","src/app/search.tsx","src/app/(tabs)/profile.tsx","src/app/jcard.tsx"]){
   const page=source(path);
-  assert.ok(page.includes("useScrollNavigation"),path+" needs shared scroll state");
-  assert.ok(page.includes(path.includes("(tabs)/index.tsx")?"if(focused)reportScroll(e.nativeEvent.contentOffset.y)":"onScroll={e=>reportScroll(e.nativeEvent.contentOffset.y)}"),path+" needs scroll listener");
+  assert.ok(!page.includes("reportScroll("),path+" must not hide bottom navigation");
+  assert.ok(!page.includes("useScrollNavigation"),path+" must not subscribe to Home scroll");
  }
 });
 
@@ -161,8 +174,8 @@ test("Tab transitions reveal bottom chrome progressively without a snap or stale
  assert.ok(state.includes("SCROLL_HIDE_DISTANCE=160"));
  assert.ok(state.includes("const controlledDelta=Math.max(-20,Math.min(20,delta))"),"A single fling must not hide navigation in one frame");
  assert.ok(homePage.includes("if(focused)reportScroll("));
- assert.ok(ownerPage.includes("if(focused)reportScroll("));
- assert.ok(visitor.includes("if(focused)reportScroll("));
+ assert.ok(!ownerPage.includes("reportScroll("));
+ assert.ok(!visitor.includes("reportScroll("));
 });
 test("JCard vertical dragging is released early while horizontal flips remain intact",()=>{
  const card=source("src/components/BusinessCard3D.tsx");
@@ -171,4 +184,14 @@ test("JCard vertical dragging is released early while horizontal flips remain in
  assert.ok(card.includes("Gesture.Exclusive(pan,tap)"));
  assert.ok(card.includes("if(moving.value){lift.value=withSpring(1,SPRING);moving.value=false;}"));
  assert.ok(card.includes("onSide(next)"));
+});
+
+test("Public JCard aligns with owner profile and stays reachable above fixed tabs",()=>{
+ assert.ok(visitor.includes('style={{flex:1}} overScrollMode="never" bounces={false} alwaysBounceVertical={false}'));
+ assert.ok(visitor.includes('paddingTop:NAVIGATION_ROW_HEIGHT+12,paddingBottom:contentBottom'));
+ assert.ok(visitor.includes('paddingTop:20,paddingBottom:20,minHeight:screenHeight'));
+ assert.ok(visitor.includes('stickyHeaderIndices={resource.data?[1]:undefined}'));
+ assert.ok(visitor.includes('accessibilityLabel="Volver"'));
+ assert.ok(visitor.includes('menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}'));
+ assert.ok(visitor.includes('transform:[{translateY:smoothHeroParallax}]'));
 });

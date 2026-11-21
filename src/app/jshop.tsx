@@ -11,13 +11,12 @@ import type {JShopPlace} from "../lib/jshop-location-core";
 import {loadJShopListings,loadJShopListingsNear,loadJShopFavoriteIds,setJShopFavorite} from "../lib/jshop-api";
 import {DEFAULT_JSHOP_FILTERS,filterJShopListings,parseJShopPrice,type JShopDraft,type JShopListing,type JShopFilters,type JShopOrder} from "../lib/jshop-model";
 import {useTabClearance} from "../theme/navigation";
-import {useScrollNavigation} from "../state/ScrollNavigation";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 
 /** Live JShop catalogue and per-account drafts. */
 export default function JShop(){
- const {theme}=useTheme();const t=jobeenTokens(theme);const {contentBottom}=useTabClearance();const {reportScroll}=useScrollNavigation();
+ const {theme}=useTheme();const t=jobeenTokens(theme);const {contentBottom}=useTabClearance();
  const [query,setQuery]=useState("");
  const [category,setCategory]=useState<JShopFilters["category"]>("Todo");
  const [activeFilters,setActiveFilters]=useState<JShopFilters>(DEFAULT_JSHOP_FILTERS);
@@ -77,7 +76,7 @@ export default function JShop(){
   setActiveFilters(pending);setFiltersOpen(false);
  };
  return <SafeAreaView edges={["top","left","right"]} style={{flex:1,backgroundColor:t.bg}}>
-  <ScrollView keyboardShouldPersistTaps="handled" scrollEventThrottle={16} onScroll={e=>reportScroll(e.nativeEvent.contentOffset.y)} contentContainerStyle={{paddingHorizontal:16,paddingTop:18,paddingBottom:contentBottom+20,gap:18,maxWidth:980,width:"100%",alignSelf:"center"}} showsVerticalScrollIndicator={false}>
+  <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingHorizontal:16,paddingTop:18,paddingBottom:contentBottom+20,gap:18,maxWidth:980,width:"100%",alignSelf:"center"}} showsVerticalScrollIndicator={false}>
    <JShopTitle title="JShop" right={<View style={{flexDirection:"row",gap:7}}>
     <JShopIconButton icon="heart-outline" label="Mis guardados" onPress={()=>router.push("/jshop/favorites")}/>
     <JShopIconButton icon="location-outline" label="Elegir ubicación de búsqueda" selected={!!searchArea} onPress={()=>router.push("/jshop/location")}/>

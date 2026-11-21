@@ -4,7 +4,6 @@ import {useCallback,useEffect,useRef,useState} from "react";
 import {Animated,Pressable,ScrollView,Text,View,useWindowDimensions,type NativeScrollEvent,type NativeSyntheticEvent} from "react-native";
 import Svg,{Defs,LinearGradient,Rect,Stop} from "react-native-svg";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
-import {useScrollNavigation} from "../state/ScrollNavigation";
 import {useTabClearance} from "../theme/navigation";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
@@ -13,7 +12,6 @@ import {NAVIGATION_ROW_HEIGHT} from "../theme/navigation";
 import {jobeenTokens} from "../theme/jobeen";
 import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../components/ProfileSharedSections";
 import {useReducedMotion} from "react-native-reanimated";
-import {useIsFocused} from "@react-navigation/native";
 import {ProfilePublicPosts} from "../components/ProfileOwnedPosts";
 import {router,Stack} from "expo-router";
 import { approvedCV,cvRequests,requestCV } from "../lib/cv-access";
@@ -32,7 +30,7 @@ export default function PublicJCard(){
  const {user,card}=useLocalSearchParams<{user?:string;card?:string}>();
  const {colors,s}=useUi();
  const {theme}=useTheme();const jt=jobeenTokens(theme);
- const insets=useSafeAreaInsets();const {contentBottom}=useTabClearance();const {reportScroll}=useScrollNavigation();const focused=useIsFocused();
+ const insets=useSafeAreaInsets();const {contentBottom}=useTabClearance();
  const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;
  const {height:screenHeight}=useWindowDimensions();
  const [viewer,setViewer]=useState("");
@@ -112,11 +110,11 @@ export default function PublicJCard(){
    </Animated.View>
    <Animated.ScrollView ref={profileScroll} stickyHeaderIndices={resource.data?[1]:undefined}
     scrollEventThrottle={16} showsVerticalScrollIndicator={false}
-    contentContainerStyle={{paddingTop:NAVIGATION_ROW_HEIGHT+20,paddingBottom:0,width:"100%",maxWidth:1180,alignSelf:"center"}}
+    style={{flex:1}} overScrollMode="never" bounces={false} alwaysBounceVertical={false}
+    contentContainerStyle={{paddingTop:NAVIGATION_ROW_HEIGHT+12,paddingBottom:contentBottom,width:"100%",maxWidth:1180,alignSelf:"center"}}
     onScroll={Animated.event([{nativeEvent:{contentOffset:{y:profileScrollY}}}],{
      useNativeDriver:true,
      listener:(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
-      if(focused)reportScroll(event.nativeEvent.contentOffset.y);
       const pinned=tabOffset>0&&event.nativeEvent.contentOffset.y>=tabOffset-2;
       setTabsPinned(previous=>previous===pinned?previous:pinned);
      }
@@ -133,7 +131,7 @@ export default function PublicJCard(){
     style={{zIndex:3,backgroundColor:jt.bg,borderTopLeftRadius:18,borderTopRightRadius:18}}>
     <ProfileSectionTabs section={section} onSelect={selectSection} pinned={tabsPinned}/>
    </View>}
-   {!!resource.data&&<View style={{gap:14,paddingHorizontal:20,paddingTop:20,paddingBottom:contentBottom,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
+   {!!resource.data&&<View style={{gap:14,paddingHorizontal:20,paddingTop:20,paddingBottom:20,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
     {section==="home"&&<ProfilePublicPosts userId={resource.data.id} filter="all" limit={6} heading="Trabajo reciente" onSeeAll={()=>selectSection("grid")}/>}
     {section==="cv"&&<View style={{marginVertical:4,gap:10}}>
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,minHeight:48,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
