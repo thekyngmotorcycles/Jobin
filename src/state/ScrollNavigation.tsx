@@ -40,7 +40,9 @@ export function ScrollNavigationProvider({children}:{children:ReactNode}){
   if(previous===null)return;
   const delta=current-previous;
   if(Math.abs(delta)<0.5)return;
-  amount.current=Math.min(1,Math.max(0,amount.current+delta/SCROLL_HIDE_DISTANCE));
+  // Even a large fling must not make the whole bar disappear in one frame.
+  const controlledDelta=Math.max(-20,Math.min(20,delta));
+  amount.current=Math.min(1,Math.max(0,amount.current+controlledDelta/SCROLL_HIDE_DISTANCE));
   progress.setValue(amount.current);
   setHidden(value=>value===(amount.current>0.98)?value:amount.current>0.98);
  },[progress]);
