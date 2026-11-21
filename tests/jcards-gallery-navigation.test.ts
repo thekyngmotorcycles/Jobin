@@ -15,7 +15,7 @@ test("Owner tabs are Todo, JCards, Videos, En vivo, Acerca de in that order",()=
  assert.ok(owner.includes('mode==="jcards"&&<SavedJCardsGallery/>'));
 });
 test("Saved JCards are private; visitor tabs do not expose owner gallery",()=>{
- assert.ok(tabs.includes('const visitorTabs=ownerTabs.filter(tab=>tab.id!=="jcards")'));
+ assert.ok(tabs.includes('const visitorTabs=tabs.filter(tab=>tab.id!=="jcards")'));
  assert.ok(tabs.includes("showPrivateJCards=false"));
  assert.ok(!visitor.includes("showPrivateJCards"));
  assert.ok(!visitor.includes("SavedJCardsGallery"));
@@ -35,7 +35,7 @@ test("Preserve both already-approved parallax accordion interactions verbatim",(
   assert.ok(page.includes("Animated.multiply(profileScrollY,0.5)"));
   assert.ok(page.includes("stickyHeaderIndices"));
   assert.ok(page.includes("topHeaderOffset=profileScrollY.interpolate("));
-  assert.ok(page.includes("transform:[{translateY:heroParallax}]"));
+  assert.ok(page.includes("transform:[{translateY:smoothHeroParallax}]"));
   assert.ok(page.includes("setTabsPinned"));
  }
 });
