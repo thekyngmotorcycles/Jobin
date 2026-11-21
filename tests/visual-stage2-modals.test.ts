@@ -31,6 +31,12 @@ test("Message privacy uses common sheet radius, colors, handle and scrollable sa
  assert.ok(s.includes("fontSize:JOBEEN_TYPE.modalTitle"));
  assert.ok(s.includes("saveMessagePrivacy(next)"),"Do not change privacy persistence");
 });
+test("Confirmation dialogs stay open while an action is processing",()=>{
+ const s=src("src/components/JobeenNoticeDialog.tsx");
+ assert.ok(s.includes("onRequestClose={()=>{if(!busy)onCancel();}}"),"Android Back must not dismiss an in-progress confirmation");
+ assert.ok(s.includes('accessibilityLabel="Cerrar aviso" disabled={busy} onPress={onCancel}'),"Backdrop tap must not dismiss while busy");
+ assert.ok(s.includes("minHeight:JOBEEN_CONTROL.touchTarget"),"Both choices preserve accessible controls");
+});
 test("Message requests controls have uniform accessible 48dp targets",()=>{
  const s=src("src/app/message-requests.tsx");
  assert.ok(s.includes('width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget'),"Privacy settings trigger has a full touch target");
