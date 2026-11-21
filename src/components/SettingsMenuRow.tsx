@@ -9,10 +9,10 @@ import {JobinSettingsIcon} from "./JobinSettingsIcon";
 
 /** One settings row for the side drawer and full settings pages. */
 export function SettingsMenuRow({
- title,description,onPress,settingId,icon,variant="navigation",tone="normal"
+ title,description,onPress,settingId,icon,variant="navigation",tone="normal",disabled=false
 }:{
  title:string;description?:string;onPress:()=>void;settingId?:string;icon?:keyof typeof Ionicons.glyphMap;
- variant?:"navigation"|"action";tone?:"normal"|"danger";
+ variant?:"navigation"|"action";tone?:"normal"|"danger";disabled?:boolean;
 }){
  const {theme,colors}=useTheme();
  const chrome=menuChrome(theme,colors);
@@ -22,15 +22,17 @@ export function SettingsMenuRow({
   accessibilityRole="button"
   accessibilityLabel={title}
   onPress={onPress}
+  disabled={disabled}
   style={({pressed})=>({
+   opacity:disabled?0.55:1,
    flexDirection:"row",alignItems:"center",gap:11,minHeight:JOBEEN_CONTROL.settingsRowMinHeight,
    paddingHorizontal:12,paddingVertical:9,borderRadius:18,
    backgroundColor:pressed?chrome.selected:chrome.action,
    borderWidth:1,borderColor:chrome.border
   })}>
-  <View style={{width:38,height:38,borderRadius:14,alignItems:"center",justifyContent:"center",backgroundColor:chrome.iconSurface}}>
+  {(settingId||icon||variant==="navigation")&&<View style={{width:38,height:38,borderRadius:14,alignItems:"center",justifyContent:"center",backgroundColor:chrome.iconSurface}}>
    {settingId?<JobinSettingsIcon id={settingId} size={21} color={iconColor}/>:<Ionicons name={icon??"settings-outline"} size={23} color={iconColor}/>}
-  </View>
+  </View>}
   <View style={{flex:1,gap:3}}>
    <Text style={{fontSize:JOBEEN_TYPE.body,fontWeight:"700",color:chrome.text}}>{title}</Text>
    {!!description&&<Text style={{fontSize:JOBEEN_TYPE.secondary,lineHeight:17,color:chrome.muted}}>{description}</Text>}
