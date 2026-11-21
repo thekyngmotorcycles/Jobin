@@ -1,6 +1,6 @@
 import { useTabClearance } from "../theme/navigation";
 import { useEffect,useRef,useState } from "react";
-import { AccessibilityInfo,Animated,AppState,Pressable,ScrollView,Share,Text,TextInput,View } from "react-native";
+import { AccessibilityInfo,Animated,AppState,Pressable,ScrollView,Text,TextInput,View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useVideoPlayer,VideoView } from "expo-video";
 import { router } from "expo-router";
@@ -11,6 +11,7 @@ import { professionals } from "../lib/data";
 import { useSocial } from "../state/SocialProvider";
 import { useApp } from "../state/AppProvider";
 import { useTheme } from "../state/ThemeProvider";
+import {JobeenShareSheet} from "./JCardShareSheet";
 import { Avatar,BottomSheet,IconButton,useOverlayStyles,type IconName } from "./social-ui";
 import { Button,useUi } from "./ui";
 function SoundLine({text,active}:{text:string;active:boolean}){
@@ -34,9 +35,9 @@ function RailAction({icon,label,count,onPress,selected=false,color}:{icon:IconNa
  </Pressable>;
 }
 export function FeedVideo({active,height,clip}:{active:boolean;height:number;clip:FeedClip}){
- const {colors}=useTheme();const overlayStyles=useOverlayStyles();const {barHeight}=useTabClearance();const {s}=useUi();const {name}=useApp();const social=useSocial();
+ const {colors,theme}=useTheme();const overlayStyles=useOverlayStyles();const {barHeight}=useTabClearance();const {s}=useUi();const {name}=useApp();const social=useSocial();
  const [error,setError]=useState("");const [muted,setMuted]=useState(true);const [paused,setPaused]=useState(false);
- const [sheet,setSheet]=useState<"comments"|"creator"|null>(null);const [draft,setDraft]=useState("");const [shareError,setShareError]=useState("");
+ const [sheet,setSheet]=useState<"comments"|"creator"|null>(null);const [draft,setDraft]=useState("");const [shareError,setShareError]=useState("");const [shareOpen,setShareOpen]=useState(false);
  const [expanded,setExpanded]=useState(false);
  const [disclosureVisible,setDisclosureVisible]=useState(true);
  useEffect(()=>{setDisclosureVisible(true);if(!active)return;const timer=setTimeout(()=>setDisclosureVisible(false),4500);return()=>clearTimeout(timer);},[active,clip.postId]);
@@ -56,7 +57,7 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  }),[playing,player]);
  useEffect(()=>{player.muted=muted;},[player,muted]);
  useEffect(()=>{if(!playing)return;const animation=Animated.loop(Animated.timing(disc,{toValue:1,duration:8500,useNativeDriver:true,isInteraction:false}));animation.start();return()=>{animation.stop();disc.setValue(0);};},[playing,disc]);
- async function share(){try{const result=await Share.share({message:"A demo work story from @"+clip.handle+" on Jobin. "+clip.video});if(result.action===Share.sharedAction)social.addShare(clip.postId);}catch{setShareError("Sharing is unavailable here. Try opening Jobin on your phone.");}}
+ function share(){setShareError("");setShareOpen(true);}
  function sendComment(){if(!draft.trim())return;social.addComment(clip.postId,name||"You",draft);setDraft("");}
  return <View style={{height,width:"100%",backgroundColor:colors.paper,overflow:"hidden"}}>
  <VideoView player={player} style={{position:"absolute",inset:0}} contentFit="cover" nativeControls={false} surfaceType="textureView" pointerEvents="none"/>
@@ -113,5 +114,9 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  <Button title={following?"Following":"Follow"} secondary={following} selected={following} onPress={()=>social.toggleFollow(clip.creatorId)}/>
  <Button secondary title="View service" onPress={()=>{setSheet(null);router.push({pathname:"/services",params:{professional:clip.creatorId}});}}/><Text style={s.muted}>Demo creator profile</Text></View>
  </BottomSheet>
+ <JobeenShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} theme={theme}
+  label={"@"+clip.handle} link={clip.video} contentTitle="Video profesional"
+  contentMessage={"Video profesional de @"+clip.handle+" en Jobeen. "+clip.video}
+  onShared={()=>social.addShare(clip.postId)} onError={setShareError}/>
  </View>;
 }
