@@ -16,7 +16,8 @@ Referencia: opción Premium limpia de Compartir aprobada en chat. Comparación c
 - Publicar OTA o generar APK. Nunca APK sin autorización expresa.
 
 ## Pruebas visuales para aprobación
-- **Teléfono pequeño (Jelly):** compartir JCard y perfil público; selección de 0, 1 y varios contactos; texto largo; QR/WhatsApp/SMS/Más opciones; verificar que todo sigue visible y desplazable con teclado y sin él.
+- **Prioridad de diseño (iPhone 14 / Galaxy S22, aproximadamente 360–430 dp lógicos):** comparar primero jerarquía tipográfica, iconos, radios, composición y controles con la referencia. El diseño principal debe verse equilibrado en este rango; no reducir toda la interfaz para acomodarla al Jelly.
+- **Compatibilidad de teléfono pequeño (Jelly):** compartir JCard y perfil público; selección de 0, 1 y varios contactos; texto largo; QR/WhatsApp/SMS/Más opciones; verificar que todo sigue visible y desplazable con teclado y sin él.
 - **Teléfono estándar de 390–430 dp o emulación equivalente:** contraste con la referencia: tamaños ópticos, alineación centrada de nombres bajo avatar, check completo dentro del margen, botón 40 dp visible.
 - **Ventanas:** Vista previa, Borradores vacíos y con contenido, descartar cambios, privacidad de mensajes (opciones y switch), menú de perfil; contrastar radio, crema y tipografía.
 - **Pantallas:** Cuenta y seguridad, Configuración lateral, Solicitudes de mensajes, JCard personal y negocio en edición cerrada y expandida; evitar encabezados duplicados, cortes y scroll abrupto.
