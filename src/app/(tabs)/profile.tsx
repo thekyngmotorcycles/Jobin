@@ -265,7 +265,7 @@ export default function Profile() {
         onScroll={Animated.event([{nativeEvent:{contentOffset:{y:profileScrollY}}}],{
           useNativeDriver:true,
           listener:(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
-                        const pinned=tabOffset>0&&event.nativeEvent.contentOffset.y>=tabOffset-2;
+            const pinned=tabOffset>0&&event.nativeEvent.contentOffset.y>=tabOffset-2;
             setTabsPinned(previous=>previous===pinned?previous:pinned);
           }
         })}
