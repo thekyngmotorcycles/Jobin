@@ -11,6 +11,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { employmentMonths,experienceLabel } from "../../lib/employment";
 import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness,readBusinessRating,readBusinessExcellence } from "../../lib/jcard-cloud";
 import { useTabClearance } from "../../theme/navigation";
+import {useScrollNavigation} from "../../state/ScrollNavigation";
 import {opacity} from "../../theme/color";
 import {useRef} from "react";
 import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../../components/ProfileSharedSections";
@@ -48,7 +49,7 @@ function validPhoneLabel(value:string):boolean{
  return /^(?:[\p{Regional_Indicator}]{2}|[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?(?:\u200D[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?)*)$/u.test(label);
 }
 export default function Profile() {
-  const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {view,card}=useLocalSearchParams<{view?:string;card?:string}>();
+  const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {reportScroll}=useScrollNavigation();const {view,card}=useLocalSearchParams<{view?:string;card?:string}>();
   const [mode,setMode]=useState<Mode>("home");
   const profileScroll=useRef<ScrollView|null>(null);
   const profileScrollY=useRef(new Animated.Value(0)).current;
@@ -263,6 +264,7 @@ export default function Profile() {
         onScroll={Animated.event([{nativeEvent:{contentOffset:{y:profileScrollY}}}],{
           useNativeDriver:true,
           listener:(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
+            reportScroll(event.nativeEvent.contentOffset.y);
             const pinned=tabOffset>0&&event.nativeEvent.contentOffset.y>=tabOffset-2;
             setTabsPinned(previous=>previous===pinned?previous:pinned);
           }

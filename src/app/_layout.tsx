@@ -4,7 +4,10 @@ import { NoticeProvider } from "../state/NoticeProvider";
 import { AuthGate } from "../components/AuthGate";
 import { SafetyAccountGate } from "../components/SafetyAccountGate";
 import { JobinWordmark } from "../components/JobinWordmark";
-import { Stack } from "expo-router";
+import { Stack,usePathname } from "expo-router";
+import {useEffect} from "react";
+import {PersistentBottomTabs} from "../components/PersistentBottomTabs";
+import {ScrollNavigationProvider,useScrollNavigation} from "../state/ScrollNavigation";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts,loadAsync } from "expo-font";
 import { useState,type ReactNode } from "react";
@@ -24,6 +27,9 @@ function IconFontGate({children}:{children:ReactNode}){
 }
 function Navigation() {
  const {theme,colors}=useTheme();const jt=jobeenTokens(theme);const shellBackground=theme==="light"?jt.bg:colors.paper;
+ const pathname=usePathname();const {reset}=useScrollNavigation();
+ useEffect(()=>reset(),[pathname,reset]);
+ const isBrowserPage=pathname==="/jcard"||pathname==="/search"||pathname==="/notifications"||pathname.startsWith("/post/")||pathname.startsWith("/work-media/")||pathname.startsWith("/jshop/item/")||pathname==="/jshop/favorites";
  return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:shellBackground},headerTintColor:colors.ink,contentStyle:{backgroundColor:shellBackground}}}>
  <Stack.Screen name="(tabs)" options={{headerShown:false}}/>
  <Stack.Screen name="map-presence" options={{title:"Mi zona profesional"}}/>
@@ -79,8 +85,8 @@ function Navigation() {
  <Stack.Screen name="live" options={{title:"Live",presentation:"modal"}}/>
  <Stack.Screen name="services" options={{title:"Servicios"}}/>
  <Stack.Screen name="communities" options={{title:"Comunidades"}}/>
- </Stack></>;
+ </Stack>{isBrowserPage&&<PersistentBottomTabs/>}</>;
 }
 export default function RootLayout() {
- return <GestureHandlerRootView style={{flex:1}}><SafeAreaProvider><ThemeProvider><AppProvider><SocialProvider><NoticeProvider><IconFontGate><AuthGate><SafetyAccountGate><Navigation/></SafetyAccountGate></AuthGate></IconFontGate></NoticeProvider></SocialProvider></AppProvider></ThemeProvider></SafeAreaProvider></GestureHandlerRootView>;
+ return <GestureHandlerRootView style={{flex:1}}><SafeAreaProvider><ThemeProvider><AppProvider><SocialProvider><NoticeProvider><IconFontGate><AuthGate><SafetyAccountGate><ScrollNavigationProvider><Navigation/></ScrollNavigationProvider></SafetyAccountGate></AuthGate></IconFontGate></NoticeProvider></SocialProvider></AppProvider></ThemeProvider></SafeAreaProvider></GestureHandlerRootView>;
 }

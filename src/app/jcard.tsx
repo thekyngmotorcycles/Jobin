@@ -2,6 +2,10 @@ import { ProfileCommunityActions } from "../components/ProfileCommunityActions";
 import { ProfessionalTrustMark } from "../components/ProfessionalTrustMark";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {Animated,Pressable,ScrollView,Text,View,useWindowDimensions,type NativeScrollEvent,type NativeSyntheticEvent} from "react-native";
+import Svg,{Defs,LinearGradient,Rect,Stop} from "react-native-svg";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
+import {useScrollNavigation} from "../state/ScrollNavigation";
+import {useTabClearance} from "../theme/navigation";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
 import {Ionicons} from "@expo/vector-icons";
@@ -27,6 +31,8 @@ export default function PublicJCard(){
  const {user,card}=useLocalSearchParams<{user?:string;card?:string}>();
  const {colors,s}=useUi();
  const {theme}=useTheme();const jt=jobeenTokens(theme);
+ const insets=useSafeAreaInsets();const {contentBottom}=useTabClearance();const {reportScroll}=useScrollNavigation();
+ const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;
  const {height:screenHeight}=useWindowDimensions();
  const [viewer,setViewer]=useState("");
  const [profileMenuOpen,setProfileMenuOpen]=useState(false);
@@ -71,21 +77,35 @@ export default function PublicJCard(){
  },[user]));
  return <>
   <Stack.Screen options={{headerShown:false}}/>
-  <SafeAreaView edges={["top","left","right"]} style={s.screen}>
+  <SafeAreaView edges={["top","left","right"]} style={[s.screen,{backgroundColor:jt.bg}]}>
    <Animated.View pointerEvents={tabsPinned?"none":"auto"}
-    style={{position:"absolute",top:10,left:0,right:0,height:NAVIGATION_ROW_HEIGHT,zIndex:10,
-     flexDirection:"row",alignItems:"center",gap:12,paddingHorizontal:12,
-     backgroundColor:jt.bar,transform:[{translateY:topHeaderOffset}],opacity:topHeaderOpacity}}>
+    style={{position:"absolute",top:insets.top,left:0,right:0,zIndex:10,height:NAVIGATION_ROW_HEIGHT,
+     flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:16,paddingVertical:8,
+     transform:[{translateY:topHeaderOffset}],opacity:topHeaderOpacity}}>
+    <View pointerEvents="none" style={{position:"absolute",top:0,left:0,right:0,height:fadeHeight}}>
+     <Svg width="100%" height="100%" accessible={false}>
+      <Defs><LinearGradient id="publicProfileTopFade" x1="0%" y1="0%" x2="0%" y2="100%">
+       <Stop offset="0" stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={0.92}/>
+       <Stop offset={1-fadeCenter} stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={0.72}/>
+       <Stop offset={1-fadeCenter*.4} stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={.09}/>
+       <Stop offset="1" stopColor={theme==="light"?jt.bg:colors.paper} stopOpacity={0}/>
+      </LinearGradient>
+      <LinearGradient id="publicProfileTopShade" x1="0%" y1="0%" x2="0%" y2="100%">
+       <Stop offset="0" stopColor={jt.ink} stopOpacity={theme==="light"?.11:.08}/>
+       <Stop offset=".55" stopColor={jt.ink} stopOpacity={0}/>
+      </LinearGradient></Defs>
+      <Rect width="100%" height="100%" fill="url(#publicProfileTopFade)"/>
+      <Rect width="100%" height="100%" fill="url(#publicProfileTopShade)"/>
+     </Svg>
+    </View>
     <Pressable accessibilityRole="button" accessibilityLabel="Volver" onPress={()=>router.back()}
-     style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
+     style={{width:44,height:44,alignItems:"center",justifyContent:"center",opacity:.62}}>
      <Ionicons name="arrow-back" size={26} color={colors.ink}/>
     </Pressable>
-    <Text numberOfLines={1} style={{color:colors.ink,fontSize:19,fontWeight:"700",flex:1}}>
-     {resource.data?.handle?`@${resource.data.handle.replace(/^@/,"")}`:resource.data?.name??"Perfil"}
-    </Text>
-    {!!resource.data&&<Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" onPress={()=>setProfileMenuOpen(true)}
-     style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
-     <Ionicons name="ellipsis-horizontal" size={24} color={colors.ink}/>
+    <View style={{flex:1}}/>
+    {!!resource.data&&<Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil"
+     onPress={()=>setProfileMenuOpen(true)} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}>
+     <Ionicons name="ellipsis-horizontal" size={23} color={colors.ink}/>
     </Pressable>}
    </Animated.View>
    <Animated.ScrollView ref={profileScroll} stickyHeaderIndices={resource.data?[1]:undefined}
@@ -94,6 +114,7 @@ export default function PublicJCard(){
     onScroll={Animated.event([{nativeEvent:{contentOffset:{y:profileScrollY}}}],{
      useNativeDriver:true,
      listener:(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
+      reportScroll(event.nativeEvent.contentOffset.y);
       const pinned=tabOffset>0&&event.nativeEvent.contentOffset.y>=tabOffset-2;
       setTabsPinned(previous=>previous===pinned?previous:pinned);
      }
@@ -110,7 +131,7 @@ export default function PublicJCard(){
     style={{zIndex:3,backgroundColor:jt.bg,borderTopLeftRadius:18,borderTopRightRadius:18}}>
     <ProfileSectionTabs section={section} onSelect={selectSection} pinned={tabsPinned}/>
    </View>}
-   {!!resource.data&&<View style={{gap:14,paddingHorizontal:20,paddingTop:20,paddingBottom:40,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
+   {!!resource.data&&<View style={{gap:14,paddingHorizontal:20,paddingTop:20,paddingBottom:contentBottom,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
     {section==="home"&&<ProfilePublicPosts userId={resource.data.id} filter="all" limit={6} heading="Trabajo reciente" onSeeAll={()=>selectSection("grid")}/>}
     {section==="cv"&&<View style={{marginVertical:4,gap:10}}>
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,minHeight:48,borderRadius:12,borderWidth:1,borderColor:colors.line}}>

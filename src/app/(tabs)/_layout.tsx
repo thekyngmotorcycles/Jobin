@@ -1,4 +1,6 @@
-import { Platform, Pressable, Text, View, useWindowDimensions } from "react-native";
+import { Animated,Platform, Pressable, Text, View, useWindowDimensions } from "react-native";
+import {BottomTabBar} from "@react-navigation/bottom-tabs";
+import {useScrollNavigation} from "../../state/ScrollNavigation";
 import { router, usePathname } from "expo-router";
 import { JobinWordmark } from "../../components/JobinWordmark";
 import { useJobinNotices } from "../../state/NoticeProvider";
@@ -18,9 +20,10 @@ const routes=[
 ] as const;
 export default function TabLayout(){
  const {colors}=useTheme();const inset=useSafeAreaInsets();const {unreadInbox}=useJobinNotices();
+ const {progress,hidden}=useScrollNavigation();
  const {width}=useWindowDimensions();const desktop=Platform.OS==="web"&&width>=1100;const pathname=usePathname();
  const nav=(name:string,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=> <Pressable key={name} accessibilityRole="link" onPress={()=>router.push(name as never)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:14,paddingHorizontal:16,borderRadius:12,backgroundColor:pathname===name?colors.line:colors.transparent}}><Ionicons name={icon} size={22} color={colors.ink}/><Text style={{fontSize:15,color:colors.ink,fontWeight:pathname===name?"700":"500"}}>{title}</Text></Pressable>;
- const tabs=<Tabs initialRouteName="videos" screenOptions={{
+ const tabs=<Tabs initialRouteName="videos" tabBar={props=><Animated.View pointerEvents={hidden?"none":"auto"} style={{position:"absolute",bottom:0,left:0,right:0,height:NAVIGATION_ROW_HEIGHT+inset.bottom,opacity:progress.interpolate({inputRange:[0,1],outputRange:[1,0]}),transform:[{translateY:progress.interpolate({inputRange:[0,1],outputRange:[0,NAVIGATION_ROW_HEIGHT+inset.bottom]})}]}}><BottomTabBar {...props}/></Animated.View>} screenOptions={{
   headerShown:false,tabBarShowLabel:false,tabBarActiveTintColor:colors.ink,tabBarInactiveTintColor:colors.ink,
   tabBarHideOnKeyboard:true,tabBarItemStyle:{minHeight:48,justifyContent:"center",alignItems:"center",backgroundColor:colors.transparent},
   tabBarActiveBackgroundColor:colors.transparent,tabBarInactiveBackgroundColor:colors.transparent,

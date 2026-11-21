@@ -110,3 +110,36 @@ test("Floating brand chrome starts below status bar without changing the approve
  assert.ok(owner.includes("outputRange:[0,0,-NAVIGATION_ROW_HEIGHT]"));
  assert.ok(owner.includes("stickyHeaderIndices={[1]}"));
 });
+
+test("Visitor and owned profile headers share safe-area coordinates and premium gradient",()=>{
+ assert.ok(visitor.includes("top:insets.top,left:0,right:0,zIndex:10"));
+ assert.ok(visitor.includes("paddingHorizontal:16,paddingVertical:8"));
+ assert.ok(visitor.includes('id="publicProfileTopFade"'));
+ assert.ok(visitor.includes("stopOpacity={0.92}"));
+ assert.ok(visitor.includes("stopOpacity={0}"));
+ assert.ok(visitor.includes("opacity:.62"));
+ assert.ok(visitor.includes('accessibilityLabel="Volver"'));
+ assert.ok(!visitor.includes('resource.data?.handle?`@'));
+ assert.ok(visitor.includes("backgroundColor:jt.bg"));
+});
+test("Visitor profile keeps global tabs while scrolling JCard and media sections",()=>{
+ const root=source("src/app/_layout.tsx");
+ const global=source("src/components/PersistentBottomTabs.tsx");
+ const state=source("src/state/ScrollNavigation.tsx");
+ const tabLayout=source("src/app/(tabs)/_layout.tsx");
+ assert.ok(root.includes('pathname==="/jcard"'));
+ assert.ok(root.includes("<PersistentBottomTabs/>"));
+ assert.ok(global.includes('items.map(item=><Pressable'));
+ for(const label of ["Casa","JShop","Videos","Mensajes","Perfil"])assert.ok(global.includes('label:"'+label+'"'));
+ assert.ok(state.includes("amount.current+delta/100"));
+ assert.ok(state.includes("progress.setValue(amount.current)"));
+ assert.ok(tabLayout.includes('<BottomTabBar {...props}/>'));
+ for(const page of [visitor,owner])assert.ok(page.includes("reportScroll(event.nativeEvent.contentOffset.y)"));
+});
+test("Primary feeds progressively retract and reveal navigation on scroll",()=>{
+ for(const path of ["src/app/(tabs)/index.tsx","src/app/jshop.tsx","src/app/(tabs)/inbox.tsx","src/app/(tabs)/videos.tsx","src/app/search.tsx"]){
+  const page=source(path);
+  assert.ok(page.includes("useScrollNavigation"),path+" needs shared scroll state");
+  assert.ok(page.includes("onScroll={e=>reportScroll(e.nativeEvent.contentOffset.y)}"),path+" needs scroll listener");
+ }
+});
