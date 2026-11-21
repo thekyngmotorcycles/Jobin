@@ -13,9 +13,11 @@ import {mapRadiusForViewport,mapZoomForRadius} from "../../lib/jshop-geo";
 import type {JShopPlace,MapPoint} from "../../lib/jshop-location-core";
 import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
+import {jobeenModalTokens} from "../../theme/modals";
+import {JOBEEN_TYPE} from "../../theme/typography";
 type MapSize={width:number;height:number};
 export default function JShopLocationPicker(){
- const {theme,colors}=useTheme(),t=jobeenTokens(theme),insets=useSafeAreaInsets();
+ const {theme}=useTheme(),t=jobeenTokens(theme),modal=jobeenModalTokens(theme),insets=useSafeAreaInsets();
  const [owner,setOwner]=useState("guest"),[chosen,setChosen]=useState<JShopPlace|null>(null);
  const [center,setCenter]=useState<MapPoint>({lat:0,lon:-25}),[zoom,setZoom]=useState(2);
  const [viewport,setViewport]=useState<MapSize>({width:320,height:300});
@@ -117,13 +119,13 @@ export default function JShopLocationPicker(){
  return <>
   <Stack.Screen options={{headerShown:false,presentation:"transparentModal",animation:"slide_from_bottom"}}/>
   <KeyboardAvoidingView behavior={Platform.OS==="ios"?"padding":undefined}
-   style={{flex:1,backgroundColor:colors.scrim,justifyContent:"flex-end"}}>
+   style={{flex:1,backgroundColor:modal.scrim,justifyContent:"flex-end"}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Cerrar sin guardar" onPress={()=>router.back()} style={{flex:1}}/>
-   <View accessibilityViewIsModal style={{height:"96%",backgroundColor:t.bg,borderTopLeftRadius:27,
-    borderTopRightRadius:27,overflow:"hidden",paddingBottom:Math.max(10,insets.bottom)}}>
+   <View accessibilityViewIsModal style={{height:"96%",backgroundColor:modal.surface,borderTopLeftRadius:modal.radius.sheet,
+    borderTopRightRadius:modal.radius.sheet,overflow:"hidden",paddingBottom:Math.max(10,insets.bottom)}}>
     <View style={{width:40,height:5,borderRadius:3,alignSelf:"center",backgroundColor:t.line,marginTop:9,marginBottom:5}}/>
     <View style={{paddingHorizontal:16,paddingBottom:5,flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
-     <Text accessibilityRole="header" style={{fontSize:20,fontWeight:"800",color:t.ink}}>Ubicación</Text>
+     <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.modalTitle,fontWeight:"800",color:modal.text}}>Ubicación</Text>
      <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" onPress={()=>router.back()}
       style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
       <Ionicons name="close" size={24} color={t.ink}/>

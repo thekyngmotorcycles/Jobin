@@ -4,6 +4,8 @@ import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {PublicProfileAvatar} from "./PublicProfileAvatar";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
+import {jobeenModalTokens} from "../theme/modals";
+import {JOBEEN_TYPE} from "../theme/typography";
 import {MAX_POST_DRAFTS,type PostDraft,type PostDraftPhoto} from "../lib/post-drafts";
 import type {FeedAudience,FeedPostKind} from "../lib/social-content";
 
@@ -18,7 +20,7 @@ type Props={
  altPhotoId:string|null;onCloseAlt:()=>void;onAlt:(id:string,text:string)=>void;
 };
 export function PostComposerSheets(p:Props){
- const {theme}=useTheme();const t=jobeenTokens(theme);
+ const {theme}=useTheme();const t=jobeenTokens(theme);const modal=jobeenModalTokens(theme);const danger=jobeenModalTokens(theme,"danger");
  const {width:screenWidth}=useWindowDimensions();const safe=useSafeAreaInsets();
  const cardWidth=Math.min(screenWidth-32,500);
  const photoWidth=cardWidth-2;
@@ -26,22 +28,22 @@ export function PostComposerSheets(p:Props){
  const action=(label:string,icon:React.ComponentProps<typeof Ionicons>["name"],onPress:()=>void,primary=false)=>
   <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
    style={{minHeight:52,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:10,
-    backgroundColor:primary?t.ink:t.cream,borderWidth:primary?0:1,borderColor:t.line,
+    backgroundColor:primary?modal.accent:modal.inner,borderWidth:primary?0:1,borderColor:label==="Descartar cambios"?danger.icon:modal.border,
     borderRadius:16,paddingHorizontal:15}}>
-   <Ionicons name={icon} size={19} color={primary?t.surface:t.ink}/>
-   <Text style={{fontSize:14,fontWeight:"700",color:primary?t.surface:t.ink}}>{label}</Text>
+   <Ionicons name={icon} size={19} color={label==="Descartar cambios"?danger.icon:modal.text}/>
+   <Text style={{fontSize:14,fontWeight:"700",color:label==="Descartar cambios"?danger.icon:modal.text}}>{label}</Text>
   </Pressable>;
  const backdrop=(onPress:()=>void)=><Pressable accessibilityRole="button" accessibilityLabel="Cerrar ventana"
-  onPress={onPress} style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:t.uploadScrim}}/>;
+  onPress={onPress} style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:modal.scrim}}/>;
  const floatingCard=(title:string,onClose:()=>void,children:React.ReactNode)=>(
   <KeyboardAvoidingView style={{flex:1,alignItems:"center",justifyContent:"center",paddingHorizontal:16}}
    behavior={Platform.OS==="ios"?"padding":undefined}>
    {backdrop(onClose)}
-   <View accessibilityViewIsModal style={{width:cardWidth,maxHeight:"82%",borderRadius:26,overflow:"hidden",
-    backgroundColor:t.surface,shadowColor:t.floatingCardShadow,shadowOpacity:0.2,shadowRadius:25,
+   <View accessibilityViewIsModal style={{width:cardWidth,maxHeight:"82%",borderRadius:modal.radius.dialog,overflow:"hidden",
+    backgroundColor:modal.surface,shadowColor:t.floatingCardShadow,shadowOpacity:0.2,shadowRadius:25,
     shadowOffset:{width:0,height:10},elevation:18}}>
     <View style={{paddingHorizontal:16,paddingTop:12,paddingBottom:8,flexDirection:"row",alignItems:"center",gap:9}}>
-     <Text accessibilityRole="header" style={{flex:1,fontSize:19,fontWeight:"800",color:t.ink}}>{title}</Text>
+     <Text accessibilityRole="header" style={{flex:1,fontSize:JOBEEN_TYPE.modalTitle,fontWeight:"800",color:modal.text}}>{title}</Text>
      <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" onPress={onClose}
       style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
       <Ionicons name="close" size={22} color={t.ink}/>
@@ -56,11 +58,11 @@ export function PostComposerSheets(p:Props){
    <View style={{flex:1,justifyContent:"flex-end"}}>
     {backdrop(p.onContinue)}
     <View accessibilityViewIsModal style={{maxWidth:700,width:"100%",alignSelf:"center",
-     backgroundColor:t.surface,borderTopLeftRadius:30,borderTopRightRadius:30,overflow:"hidden",
+     backgroundColor:modal.surface,borderTopLeftRadius:modal.radius.sheet,borderTopRightRadius:modal.radius.sheet,overflow:"hidden",
      paddingHorizontal:20,paddingTop:12,paddingBottom:Math.max(safe.bottom,22),
      shadowColor:t.floatingCardShadow,shadowOpacity:0.2,shadowRadius:20,elevation:20}}>
-     <View style={{width:42,height:5,backgroundColor:t.silver,borderRadius:5,alignSelf:"center",marginBottom:18}}/>
-     <Text accessibilityRole="header" style={{fontSize:21,lineHeight:28,color:t.ink,fontWeight:"800",marginBottom:8}}>
+     <View style={{width:42,height:5,backgroundColor:modal.handle,borderRadius:5,alignSelf:"center",marginBottom:18}}/>
+     <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.modalTitle,lineHeight:22,color:modal.text,fontWeight:"800",marginBottom:8}}>
       ¿Guardar tu publicación?
      </Text>
      <Text style={{fontSize:13,lineHeight:20,color:t.ink2,marginBottom:22}}>

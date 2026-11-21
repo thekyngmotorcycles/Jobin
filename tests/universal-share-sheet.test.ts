@@ -7,7 +7,7 @@ const sheet=source("src/components/JCardShareSheet.tsx");
 
 test("All sharing contexts reuse the original rounded Jobeen share surface",()=>{
  assert.ok(sheet.includes("export const JobeenShareSheet=JCardShareSheet"));
- assert.ok(sheet.includes("borderTopLeftRadius:30,borderTopRightRadius:30"));
+ assert.ok(sheet.includes("borderTopLeftRadius:modal.radius.sheet,borderTopRightRadius:modal.radius.sheet"));
  assert.ok(sheet.includes('animationType="slide"'));
  assert.ok(sheet.includes("contentTitle,contentMessage,onShared,onError"));
  assert.ok(sheet.includes('const shareTitle=contentTitle??"Compartir "+cardType'));

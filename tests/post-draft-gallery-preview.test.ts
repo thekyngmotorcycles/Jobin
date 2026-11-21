@@ -46,7 +46,7 @@ test("The two balanced secondary controls don't compete with Publish",()=>{
 test("Draft library is a dimmed, floating, two-column grid with manual removal",()=>{
  assert.ok(sheets.includes('floatingCard("Borradores"'));
  assert.ok(sheets.includes('animationType="fade"'));
- assert.ok(sheets.includes('borderRadius:26,overflow:"hidden"'));
+ assert.ok(sheets.includes('borderRadius:modal.radius.dialog,overflow:"hidden"'));
  assert.ok(sheets.includes('flexDirection:"row",flexWrap:"wrap",gap:10'));
  assert.ok(sheets.includes('width:"48%"'));
  assert.ok(sheets.includes('onPress={()=>p.onRestore(draft)}'));
@@ -74,7 +74,7 @@ test("Preview has a floating feed-style card with real author info and photos ab
 
 test("The exit sheet clips its real rounded corners and keeps the three decisions",()=>{
  assert.ok(sheets.includes('animationType="slide"'));
- assert.ok(sheets.includes('borderTopLeftRadius:30,borderTopRightRadius:30,overflow:"hidden"'));
+ assert.ok(sheets.includes('borderTopLeftRadius:modal.radius.sheet,borderTopRightRadius:modal.radius.sheet,overflow:"hidden"'));
  for(const action of ["Guardar borrador","Descartar cambios","Continuar editando"])assert.ok(sheets.includes(action));
 });
 
