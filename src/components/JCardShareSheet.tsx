@@ -27,6 +27,8 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
  const nativeSharePending=useRef(false);
  const cardType=side==="business"?"JCard de negocios":"JCard personal";
  const shareTitle=contentTitle??cardType;
+ const qrHeading=contentTitle?"Código QR":"Mi código QR";
+ const qrLabel=contentTitle?"Código QR":"Mi QR";
  const options=OPTIONS.filter(item=>(item.id!=="qr"||!!link.trim())&&item.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
  const message=contentMessage??(cardType+" de "+label+": "+link);
  async function shareNative(){
@@ -61,7 +63,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
     </View>
     <View style={{paddingHorizontal:20,gap:14,paddingTop:10,paddingBottom:20}}>
      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
-      <Text style={{fontSize:19,fontWeight:"800",color:t.ink}}>{showQr?"Mi código QR":shareTitle}</Text>
+      <Text style={{fontSize:19,fontWeight:"800",color:t.ink}}>{showQr?qrHeading:shareTitle}</Text>
       <Pressable accessibilityRole="button" accessibilityLabel={showQr?"Volver a compartir":"Cerrar panel de compartir"}
        onPress={()=>showQr?setShowQr(false):dismiss()} style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
        <Ionicons name={showQr?"arrow-back":"close"} size={23} color={t.ink}/>
@@ -86,14 +88,14 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{gap:16,paddingVertical:4,paddingRight:12}}>
         {options.map(option=><Pressable key={option.id} accessibilityRole="button"
-         accessibilityLabel={option.id==="qr"?"Mostrar mi código QR":option.label}
+         accessibilityLabel={option.id==="qr"?"Mostrar código QR":option.label}
          onPress={()=>choose(option.id)} style={{width:76,alignItems:"center",gap:8,minHeight:100}}>
          <View style={{width:62,height:62,borderRadius:31,justifyContent:"center",alignItems:"center",
           backgroundColor:option.id==="whatsapp"?t.okBackground:t.cream,
           borderColor:option.id==="qr"?t.yellow:t.line,borderWidth:option.id==="qr"?2:1}}>
           <Ionicons name={option.icon} size={27} color={option.id==="whatsapp"?t.okText:t.ink}/>
          </View>
-         <Text numberOfLines={2} style={{fontSize:12,color:t.ink,textAlign:"center"}}>{option.label}</Text>
+         <Text numberOfLines={2} style={{fontSize:12,color:t.ink,textAlign:"center"}}>{option.id==="qr"?qrLabel:option.label}</Text>
         </Pressable>)}
         {options.length===0&&<Text style={{color:t.ink2,paddingVertical:24}}>No hay opciones con ese nombre.</Text>}
        </ScrollView>
