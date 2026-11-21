@@ -386,7 +386,7 @@ export default function Profile() {
         </View>
       </BottomSheet>
       <JobeenShareSheet visible={cvShareOpen} onClose={()=>setCvShareOpen(false)} label="Currículum"
-       theme={theme} contentTitle="Historial profesional"
+       theme={theme} contentTitle="Compartir CV"
        contentMessage={["Historial profesional de Jobeen",...history.map(e=>`${e.role} · ${e.company} · ${e.from}/${e.fromMonth??1} - ${e.to??"Actualidad"}/${e.toMonth??12}`)].join("\n")}
        onError={setNotice}/>
     </SafeAreaView>

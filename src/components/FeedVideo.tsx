@@ -115,7 +115,7 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  <Button secondary title="View service" onPress={()=>{setSheet(null);router.push({pathname:"/services",params:{professional:clip.creatorId}});}}/><Text style={s.muted}>Demo creator profile</Text></View>
  </BottomSheet>
  <JobeenShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} theme={theme}
-  label={"@"+clip.handle} link={clip.video} contentTitle="Video profesional"
+  label={"@"+clip.handle} link={clip.video} contentTitle="Compartir video"
   contentMessage={"Video profesional de @"+clip.handle+" en Jobeen. "+clip.video}
   onShared={()=>social.addShare(clip.postId)} onError={setShareError}/>
  </View>;
