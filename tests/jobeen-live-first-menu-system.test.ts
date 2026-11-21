@@ -43,7 +43,7 @@ test("Creator profile section strip has five text-only choices while global bott
  const global=src("src/components/JobinTabIcon.tsx");
  const layout=src("src/app/(tabs)/_layout.tsx");
  const chunk=sections.slice(sections.indexOf("const tabs=["),sections.indexOf("export type ProfileTile"));
- const matches=chunk.match(/label:"(?:Inicio|Todo|Videos|En vivo|Acerca de)"/g)??[];
+ const matches=chunk.match(/label:"(?:Todo|JCards|Videos|En vivo|Acerca de)"/g)??[];
  assert.equal(matches.length,5);
  assert.ok(chunk.includes("minWidth:54,flexGrow:1"));
  assert.ok(chunk.includes("numberOfLines={2}"),"Long text labels may wrap but not be hidden on Jelly");
