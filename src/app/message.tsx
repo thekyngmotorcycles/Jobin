@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useState} from "react";
-import {ActivityIndicator,Alert,Image,KeyboardAvoidingView,Platform,Pressable,ScrollView,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Image,KeyboardAvoidingView,Platform,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {router,useLocalSearchParams} from "expo-router";
 import {Ionicons} from "@expo/vector-icons";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -7,6 +7,8 @@ import {requireSupabase} from "../lib/supabase";
 import {useUi} from "../components/ui";
 import {jobeenTokens} from "../theme/jobeen";
 import {useTheme} from "../state/ThemeProvider";
+import {JobeenActionDialog} from "../components/JobeenActionDialog";
+import {JobeenNoticeDialog} from "../components/JobeenNoticeDialog";
 import {loadJShopConversation,jshopConversationPrice,type JShopConversation} from "../lib/jshop-messaging";
 import {blockMessageUser,loadContactAccess,loadJShopSpamIds,markJShopSpam,reportMessageUser,sendContactRequest,type ContactAccess} from "../lib/message-requests";
 
@@ -19,6 +21,10 @@ export default function DirectMessage(){
  const [listingThread,setListingThread]=useState<JShopConversation|null>(null);
  const [contactAccess,setContactAccess]=useState<ContactAccess>({kind:"none",request:null});
  const [jshopSpam,setJshopSpam]=useState(false);
+ const [menuStep,setMenuStep]=useState<"options"|"report"|null>(null);
+ const [menuBusy,setMenuBusy]=useState(false);const [menuError,setMenuError]=useState("");
+ const [blockOpen,setBlockOpen]=useState(false);const [blockError,setBlockError]=useState("");
+ const [notice,setNotice]=useState("");
  const valid=!!user&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user);
  const validConversation=!conversation||/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(conversation);
  const canCompose=!!conversation?!!listingThread:contactAccess.kind==="none"||contactAccess.kind==="accepted";
@@ -77,34 +83,53 @@ export default function DirectMessage(){
   }catch(e){setError(e instanceof Error?e.message:"No se pudo enviar el mensaje.");}
   finally{setBusy(false);}
  }
+ async function toggleSpam(){
+  if(!conversation||menuBusy)return;
+  setMenuBusy(true);setMenuError("");
+  try{
+   await markJShopSpam(conversation,!jshopSpam);
+   setJshopSpam(!jshopSpam);setMenuStep(null);
+  }catch(e){setMenuError(e instanceof Error?e.message:"No se pudo modificar la carpeta.");}
+  finally{setMenuBusy(false);}
+ }
+ async function reportConversation(reason:"spam"|"estafa"|"acoso"){
+  if(!user||menuBusy)return;
+  setMenuBusy(true);setMenuError("");
+  try{
+   await reportMessageUser(user,reason);
+   let feedback="Reporte enviado. El reporte será revisado.";
+   if(conversation){
+    try{await markJShopSpam(conversation,true);setJshopSpam(true);}
+    catch{feedback="Reporte enviado, pero no se pudo mover esta conversación a Spam.";}
+   }
+   setNotice(feedback);setMenuStep(null);
+  }catch(e){setMenuError(e instanceof Error?e.message:"No se pudo reportar.");}
+  finally{setMenuBusy(false);}
+ }
+ function openBlockConfirmation(){
+  setMenuStep(null);setBlockError("");
+  setTimeout(()=>setBlockOpen(true),300);
+ }
+ async function blockConversation(){
+  if(!user||menuBusy)return;
+  setMenuBusy(true);setBlockError("");
+  try{await blockMessageUser(user);setBlockOpen(false);router.back();}
+  catch(e){setBlockError(e instanceof Error?e.message:"No se pudo bloquear.");}
+  finally{setMenuBusy(false);}
+ }
  return <SafeAreaView style={{flex:1,backgroundColor:brand.bg}} edges={["top","left","right","bottom"]}>
   <KeyboardAvoidingView behavior={Platform.OS==="ios"?"padding":undefined} style={{flex:1}}>
    <View style={{paddingHorizontal:16,paddingVertical:12,flexDirection:"row",alignItems:"center",gap:12,borderBottomWidth:1,borderBottomColor:brand.line}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Volver" onPress={()=>router.back()} style={{padding:6}}><Ionicons name="arrow-back" size={24} color={colors.ink}/></Pressable>
     <Text numberOfLines={1} style={{flex:1,fontSize:18,fontWeight:"700",color:colors.ink}}>{name||"Mensaje"}</Text>
     <Pressable accessibilityRole="button" accessibilityLabel="Opciones de seguridad del chat"
-     onPress={()=>Alert.alert("Opciones de conversación","Elige cómo gestionar esta conversación.",[
-      {text:"Cancelar",style:"cancel"},
-      ...(conversation?[{text:jshopSpam?"Quitar de Spam":"Mover a Spam",onPress:()=>{void(async()=>{
-       try{await markJShopSpam(conversation,!jshopSpam);setJshopSpam(!jshopSpam);}catch(e){setError(e instanceof Error?e.message:"No se pudo modificar la carpeta.");}
-      })();}}]:[]),
-      {text:"Reportar",onPress:()=>Alert.alert("Reportar","¿Por qué quieres reportar esta conversación?",[
-       {text:"Cancelar",style:"cancel"},
-       ...(["spam","estafa","acoso"] as const).map(reason=>({text:reason,onPress:()=>{void(async()=>{
-        try{await reportMessageUser(user!,reason);if(conversation){await markJShopSpam(conversation,true);setJshopSpam(true);}Alert.alert("Reporte enviado","El reporte será revisado.");}
-        catch(e){setError(e instanceof Error?e.message:"No se pudo reportar.");}
-       })();}}))
-      ])},
-      {text:"Bloquear",style:"destructive",onPress:()=>Alert.alert("Bloquear usuario","No podrá enviarte más mensajes.",[
-       {text:"Cancelar",style:"cancel"},{text:"Bloquear",style:"destructive",onPress:()=>{void(async()=>{
-        try{await blockMessageUser(user!);router.back();}
-        catch(e){setError(e instanceof Error?e.message:"No se pudo bloquear.");}
-       })();}}
-      ])}
-     ])} style={{padding:8}}>
+     onPress={()=>{setMenuError("");setMenuStep("options");}}
+     style={{width:48,height:48,alignItems:"center",justifyContent:"center"}}>
      <Ionicons name="ellipsis-horizontal" size={24} color={brand.ink}/>
     </Pressable>
    </View>
+   {!!notice&&<Text accessibilityLiveRegion="polite" style={{paddingHorizontal:16,paddingTop:8,
+    color:brand.ink2,fontSize:12}}>{notice}</Text>}
    {listingThread&&<Pressable accessibilityRole="button" accessibilityLabel={listingThread.listingId?"Ver artículo "+listingThread.title:"Anuncio eliminado"}
     disabled={!listingThread.listingId}
     onPress={()=>listingThread.listingId&&router.push({pathname:"/jshop/item/[id]",params:{id:listingThread.listingId}})}
@@ -146,5 +171,29 @@ export default function DirectMessage(){
     </Pressable>
    </View>
   </KeyboardAvoidingView>
+  <JobeenActionDialog visible={menuStep!==null} title={menuStep==="report"?"Reportar conversación":"Opciones de conversación"}
+   description={menuStep==="report"?"Selecciona el motivo del reporte.":"Gestiona esta conversación profesional."}
+   busy={menuBusy} error={menuError}
+   onClose={()=>{setMenuError("");setMenuStep(null);}}
+   actions={menuStep==="report"
+    ?(["spam","estafa","acoso"] as const).map(reason=>({
+      label:reason==="spam"?"Spam":reason==="estafa"?"Estafa":"Acoso",
+      onPress:()=>void reportConversation(reason)
+     }))
+    :[
+      ...(conversation?[{
+       label:jshopSpam?"Quitar de Spam":"Mover a Spam",
+       description:jshopSpam?"Devuelve el chat a JShop.":"Oculta esta conversación de la bandeja principal.",
+       icon:"mail-unread-outline" as const,onPress:()=>void toggleSpam()
+      }]:[]),
+      {label:"Reportar",description:"Informa sobre Spam, estafa o acoso.",
+       icon:"flag-outline" as const,onPress:()=>{setMenuError("");setMenuStep("report");}},
+      {label:"Bloquear",description:"Evita que esta cuenta vuelva a escribirte.",
+       icon:"ban-outline" as const,tone:"danger" as const,onPress:openBlockConfirmation}
+     ]}/>
+  <JobeenNoticeDialog visible={blockOpen} title="Bloquear usuario"
+   description={blockError||"No podrá enviarte más mensajes."} tone="danger"
+   confirmLabel="Bloquear" onConfirm={()=>void blockConversation()} busy={menuBusy}
+   onCancel={()=>{setBlockOpen(false);setBlockError("");}}/>
  </SafeAreaView>;
 }
