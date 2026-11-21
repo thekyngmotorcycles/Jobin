@@ -26,6 +26,7 @@ export function jobeenModalTokens(theme:ThemeName,tone:JobeenNoticeTone="neutral
  } as const;
  return {
   surface,inner,border,accent,text,muted,soft:t.cream,
+  destructiveOnColor:light?LIGHT_JOBEEN.surface:text,
   scrim:light?"rgba(0,0,0,0.48)":"rgba(0,0,0,0.62)",
   handle:t.silver,
   ...accents[tone],
