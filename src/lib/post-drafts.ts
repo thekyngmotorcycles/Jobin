@@ -28,6 +28,7 @@ export async function readPostDrafts(owner:string):Promise<PostDraft[]>{
  if(!owner)return [];
  await assertAccountOwner(owner);
  const raw=await AsyncStorage.getItem(key(owner));
+ await assertAccountOwner(owner);
  if(!raw)return [];
  try{
   const data:unknown=JSON.parse(raw);
