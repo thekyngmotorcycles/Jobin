@@ -1,3 +1,4 @@
+import {assertAccountOwner} from "../lib/account-scope";
 import {consumePersonalPhotoChange} from "../lib/personal-jcard-photo";
 import {appearanceOwner} from "../lib/jcard-appearance";
 import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
@@ -108,13 +109,15 @@ export default function Professional() {
   ...(privacyDirty?["privacy" as const]:[])
  ];
  const saveSections=(targets:SaveTarget[])=>{
-  if(action.busy||!targets.length)return;
+  if(action.busy||!targets.length||!w?.card.id)return;
+  const owner=w.card.id;
   const saveIdentity=targets.includes("identity");
   const saveLanguages=targets.includes("languages");
   const savePrivacy=targets.includes("privacy");
   void action.run(async()=>{
+   await assertAccountOwner(owner);
    if(saveIdentity||saveLanguages){
-    const fresh=await loadWorkspace();if(!fresh)throw new Error("No se pudieron cargar los datos actuales.");
+    const fresh=await loadWorkspace();if(!fresh||fresh.card.id!==owner)throw new Error("La cuenta cambió.");
     const legalName=saveIdentity?name.trim().replace(/\s+/g," "):fresh.card.name;
     if(saveIdentity){
      if(!/^[\p{L}\p{M}]+(?:[ \u0027\u2019-][\p{L}\p{M}]+)*$/u.test(legalName)||Array.from(legalName).length>30)
@@ -129,6 +132,7 @@ export default function Professional() {
      throw new Error("Completa el idioma y selecciona un nivel válido.");
     if(new Set(nextLanguages.map(l=>canonicalLanguage(l.name))).size!==nextLanguages.length)
      throw new Error("No puedes agregar el mismo idioma dos veces.");
+    await assertAccountOwner(owner);
     await professionalMutation("jobin_save_jcard",{
      legal_name:legalName,handle:saveIdentity?handle:fresh.card.handle,
      city:saveIdentity?city:(fresh.profile.city??""),
@@ -136,11 +140,11 @@ export default function Professional() {
      availability:saveIdentity?availability:fresh.card.status,
      languages:nextLanguages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))
     });
-    if(saveIdentity)await savePersonalContactDetails(personalContacts);
+    if(saveIdentity)await savePersonalContactDetails(personalContacts,owner);
    }
    if(savePrivacy){
-    await saveContactPreferences({show_email:showEmail,show_phone:showPhone});
-    await saveJCardVisibility(visibility);
+    await saveContactPreferences({show_email:showEmail,show_phone:showPhone},owner);
+    await saveJCardVisibility(visibility,owner);
    }
   },"").then(ok=>{
    if(!ok)return;
