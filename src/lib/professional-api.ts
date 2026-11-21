@@ -49,6 +49,7 @@ export async function loadWorkspace():Promise<ProfessionalWorkspace|null> {
  const {data,error}=await client.rpc("jobin_professional_workspace");
  const result=decode<ProfessionalWorkspace>(data,error);
  if(!result.card)throw new Error("El perfil no está disponible.");
+ if(result.card.id!==user.id||(await client.auth.getSession()).data.session?.user.id!==user.id)throw new Error("La sesión cambió. Vuelve a cargar el perfil.");
  const professions=result.professions.map(p=>({...p,label:professionDisplayName(p.profession_code,p.label)}));
  const primary=professions.find(p=>p.primary_profession);
  return {...result,professions,card:primary?{...result.card,role:primary.label}:result.card};
