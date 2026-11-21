@@ -7,7 +7,7 @@ create table public.jcard_employment_history(
  from_year integer not null,from_month integer not null,to_year integer,to_month integer,verified_by text,
  updated_at timestamptz not null default now(),unique(owner_id,client_id)
 );
-create table public.employment_access_requests(
+create table if not exists public.employment_access_requests(
  id uuid primary key default gen_random_uuid(),owner_id uuid not null,requester_id uuid not null,
  status text not null default 'pending',created_at timestamptz default now(),updated_at timestamptz default now(),
  unique(owner_id,requester_id)
@@ -21,7 +21,9 @@ create policy "Owner inserts employment history" on public.jcard_employment_hist
 create policy "Owner updates employment history" on public.jcard_employment_history for update to authenticated using(owner_id=auth.uid()) with check(owner_id=auth.uid() and verified_by is null);
 create policy employment_owner_insert on public.jcard_employment_history for insert to authenticated with check(owner_id=auth.uid());
 create policy employment_owner_update on public.jcard_employment_history for update to authenticated using(owner_id=auth.uid()) with check(owner_id=auth.uid());
+drop policy if exists employment_requests_read on public.employment_access_requests;
 create policy employment_requests_read on public.employment_access_requests for select to authenticated using(owner_id=auth.uid() or requester_id=auth.uid());
+drop policy if exists employment_requests_owner_update on public.employment_access_requests;
 create policy employment_requests_owner_update on public.employment_access_requests for update to authenticated using(owner_id=auth.uid()) with check(owner_id=auth.uid());
 insert into auth.users(id,raw_user_meta_data) values
  ('a1111111-1111-4111-8111-111111111111','{"display_name":"CV owner A"}'),
