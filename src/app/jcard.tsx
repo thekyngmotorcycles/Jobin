@@ -13,6 +13,7 @@ import {NAVIGATION_ROW_HEIGHT} from "../theme/navigation";
 import {jobeenTokens} from "../theme/jobeen";
 import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../components/ProfileSharedSections";
 import {useReducedMotion} from "react-native-reanimated";
+import {useIsFocused} from "@react-navigation/native";
 import {ProfilePublicPosts} from "../components/ProfileOwnedPosts";
 import {router,Stack} from "expo-router";
 import { approvedCV,cvRequests,requestCV } from "../lib/cv-access";
@@ -31,7 +32,7 @@ export default function PublicJCard(){
  const {user,card}=useLocalSearchParams<{user?:string;card?:string}>();
  const {colors,s}=useUi();
  const {theme}=useTheme();const jt=jobeenTokens(theme);
- const insets=useSafeAreaInsets();const {contentBottom}=useTabClearance();const {reportScroll}=useScrollNavigation();
+ const insets=useSafeAreaInsets();const {contentBottom}=useTabClearance();const {reportScroll}=useScrollNavigation();const focused=useIsFocused();
  const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;
  const {height:screenHeight}=useWindowDimensions();
  const [viewer,setViewer]=useState("");
@@ -44,6 +45,7 @@ export default function PublicJCard(){
  const [tabOffset,setTabOffset]=useState(0);
  const [tabsPinned,setTabsPinned]=useState(false);
  const heroParallax=Animated.multiply(profileScrollY,0.5);
+  const smoothHeroParallax=heroParallax.interpolate({inputRange:[0,320],outputRange:[0,320],extrapolate:"clamp"});
  const retreatStart=Math.max(1,tabOffset-NAVIGATION_ROW_HEIGHT);
  const retreatEnd=Math.max(retreatStart+1,tabOffset);
  const topHeaderOffset=profileScrollY.interpolate({
@@ -114,12 +116,12 @@ export default function PublicJCard(){
     onScroll={Animated.event([{nativeEvent:{contentOffset:{y:profileScrollY}}}],{
      useNativeDriver:true,
      listener:(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
-      reportScroll(event.nativeEvent.contentOffset.y);
+      if(focused)reportScroll(event.nativeEvent.contentOffset.y);
       const pinned=tabOffset>0&&event.nativeEvent.contentOffset.y>=tabOffset-2;
       setTabsPinned(previous=>previous===pinned?previous:pinned);
      }
     })}>
-   <Animated.View style={{gap:14,paddingHorizontal:20,paddingBottom:20,zIndex:0,transform:[{translateY:heroParallax}]}}>
+   <Animated.View style={{gap:14,paddingHorizontal:20,paddingBottom:20,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
     {resource.data?<ProfileIdentityHeader
      card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??resource.data.business}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"}/>}
      actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}/>}
