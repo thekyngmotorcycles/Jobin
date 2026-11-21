@@ -14,10 +14,12 @@ test("Share, composer, notices and message privacy share the same touch metrics"
   "src/components/PostComposerSheets.tsx",
   "src/components/JobeenNoticeDialog.tsx",
   "src/app/message-requests.tsx",
-  "src/components/ProfileCommunityActions.tsx",
+  "src/components/SettingsMenuRow.tsx",
  ]){
+
   assert.ok(src(p).includes("JOBEEN_CONTROL"),p);
  }
+ assert.ok(src("src/components/ProfileCommunityActions.tsx").includes("<SettingsMenuRow"),"Visitor menu inherits the shared control targets");
 });
 test("Message privacy uses common sheet radius, colors, handle and scrollable safe area",()=>{
  const s=src("src/app/message-requests.tsx");
