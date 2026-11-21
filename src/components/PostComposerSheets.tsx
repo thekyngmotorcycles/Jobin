@@ -113,12 +113,8 @@ export function PostComposerSheets(p:Props){
        </Pressable>
       </View>)}
      </View>
-    </ScrollView>:<View style={{paddingHorizontal:18,paddingBottom:20,gap:10}}>
-     <Text style={{fontSize:12,color:t.ink2}}>0 de {MAX_POST_DRAFTS} borradores</Text>
-     <View style={{minHeight:52,flexDirection:"row",alignItems:"center",gap:10}}>
-      <Ionicons name="albums-outline" size={24} color={t.ink2}/>
-      <Text style={{color:t.ink2,fontSize:JOBEEN_TYPE.secondary,flex:1}}>Aún no tienes borradores guardados.</Text>
-     </View>
+    </ScrollView>:<View style={{paddingHorizontal:18,paddingTop:6,paddingBottom:20}}>
+     <Text style={{color:modal.muted,fontSize:JOBEEN_TYPE.body,lineHeight:21}}>Aún no tienes borradores guardados.</Text>
     </View>)}
   </Modal>
 
