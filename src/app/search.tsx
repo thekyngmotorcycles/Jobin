@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from "react";
 import {ActivityIndicator,Pressable,ScrollView,Text,TextInput,View} from "react-native";
+import {useScrollNavigation} from "../state/ScrollNavigation";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {router,useLocalSearchParams} from "expo-router";
 import {Avatar,IconButton} from "../components/social-ui";
@@ -18,6 +19,7 @@ import {ProfessionalMapExplorer} from "../components/ProfessionalMapExplorer";
 
 type SearchKind="Todo"|"Profesionales"|"Personas"|"Empresas"|"Flashes"|"Streams";
 export default function Search(){
+ const {reportScroll}=useScrollNavigation();
  const {mode,view}=useLocalSearchParams<{mode?:string;view?:string}>();
  const [viewMode,setViewMode]=useState<"list"|"map">(view==="map"?"map":"list");
  useEffect(()=>{setViewMode(view==="map"?"map":"list");},[view]);
@@ -141,7 +143,7 @@ export default function Search(){
      color:kind===option?colors.paper:colors.ink,fontWeight:kind===option?"700":"500"}}>{option}</Text>
    </Pressable>)}
   </ScrollView>
-  <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:20,gap:16}}>
+  <ScrollView keyboardShouldPersistTaps="handled" scrollEventThrottle={16} onScroll={e=>reportScroll(e.nativeEvent.contentOffset.y)} contentContainerStyle={{padding:20,gap:16,paddingBottom:100}}>
    {(effectiveKind==="Todo"||effectiveKind==="Profesionales"||effectiveKind==="Empresas"||effectiveKind==="Personas")?<>
     <Text style={s.h3}>{effectiveKind==="Todo"?"Busca en todas las cuentas de Jobeen":effectiveKind==="Personas"?"Encuentra personas por nombre, usuario o ciudad":effectiveKind==="Empresas"?"Encuentra empresas por sector, servicio y ciudad":"Encuentra profesionales por profesión, especialidad y ciudad"}</Text>
     <Text style={s.muted}>{effectiveKind==="Todo"?"Busca personas, profesionales y negocios por nombre, usuario, profesión o ciudad.":effectiveKind==="Personas"?"Usuarios que no han agregado ninguna profesión a su JCard. Pueden ver videos, streams y buscar profesionales.":"Describe lo que necesitas: «Técnico de aire acondicionado especializado en VRF en Miami»."}</Text>
