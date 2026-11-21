@@ -129,3 +129,6 @@ No se desplegaron estos cambios. Las pruebas de archivos usaron datos ficticios 
 
 ### Sesiones en contactos y notificaciones
 - a6eb76e superó validación y base de datos (run 44957204286). La nueva etapa amplía la barrera de sesión a las acciones de contacto desde JCard, Mi red y Notificaciones, las lecturas de contactos y las marcas de notificaciones. Comprobar UUID/session_id, participantes y generación de carga; las confirmaciones diferidas conservan el ámbito original. Sin rediseño ni cambios en Supabase compartido. Pendiente CI y ensayo A→B→A en Android y HTTP real.
+
+### Continuidad de la sesión en el historial profesional
+- 367c768 superó validate y database (run 44958091176). Se extiende la protección al cliente de solicitudes CV, el perfil propio, la JCard visitante y Notificaciones: comprobar UUID y session_id, filtrar participantes, invalidar respuestas tras pérdida de foco, consultar nuevamente el permiso al abrir el CV y no presentar datos de otro perfil o sesión tras una espera. La autorización definitiva sigue en las RPC del servidor; no equivale a revocación instantánea de datos ya visibles. Sin modificar SQL de producción, APK ni OTA. Validación automatizada y ensayo Android pendientes.

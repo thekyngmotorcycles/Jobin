@@ -13,8 +13,9 @@ import {jobeenTokens} from "../theme/jobeen";
 import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../components/ProfileSharedSections";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfilePublicPosts} from "../components/ProfileOwnedPosts";
-import {router,Stack} from "expo-router";
+import {router,Stack,useFocusEffect} from "expo-router";
 import { approvedCV,cvRequests,requestCV } from "../lib/cv-access";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
 import { requireSupabase } from "../lib/supabase";
 import {identityVerified} from "../lib/identity-status";
 import { useLocalSearchParams } from "expo-router";
@@ -76,13 +77,44 @@ export default function PublicJCard(){
  const [followerCount,setFollowerCount]=useState<number|null>(null);
  useEffect(()=>{if(!user)return;let live=true;void requireSupabase().from("profile_follows" as never).select("*",{count:"exact",head:true}).eq("followed_id",user).then(({count})=>{if(live)setFollowerCount(count??0);});return()=>{live=false;};},[user]);
  useEffect(()=>{if(user&&viewer&&user===viewer)router.replace({pathname:"/(tabs)/profile",params:card==="business"?{card:"business"}:{}});},[user,viewer,card]);
+ const cvScope=useRef<MessageScope|null>(null),cvRevision=useRef(0),cvTarget=useRef("");
  const [cvStatus,setCvStatus]=useState("");
  const [cvRows,setCvRows]=useState<{company:string;role:string;from_year:number;to_year:number|null}[]>([]);
  const [cvMessage,setCvMessage]=useState("");
  const [cvOpen,setCvOpen]=useState(false);
- useEffect(()=>{let active=true;void requireSupabase().auth.getUser().then(({data})=>{if(active)setViewer(data.user?.id??"");});return()=>{active=false;};},[]);
- useEffect(()=>{if(!user||!viewer||user===viewer)return;let active=true;void cvRequests().then(rows=>{if(active)setCvStatus(rows.find(r=>r.owner_id===user&&r.requester_id===viewer)?.status??"");}).catch(()=>{});return()=>{active=false;};},[user,viewer]);
- async function openCV(){if(!user)return;setCvOpen(true);if(user===viewer||cvStatus==="approved"){try{setCvRows(await approvedCV(user));}catch(e){setCvMessage(e instanceof Error?e.message:"No se pudo consultar el historial.");}}}
+ useFocusEffect(useCallback(()=>{
+  const generation=++cvRevision.current;
+  cvTarget.current=user??"";cvScope.current=null;setViewer("");setCvStatus("");setCvRows([]);setCvMessage("");setCvOpen(false);
+  void(async()=>{try{
+   const scope=await captureMessageScope();
+   const requests=user&&user!==scope.owner?await cvRequests(scope):[];
+   await assertMessageScope(scope);
+   if(cvRevision.current!==generation)return;
+   cvScope.current=scope;setViewer(scope.owner);
+   setCvStatus(requests.find(r=>r.owner_id===user&&r.requester_id===scope.owner)?.status??"");
+  }catch{if(cvRevision.current===generation){setViewer("");setCvRows([]);}}})();
+  return()=>{cvRevision.current++;cvScope.current=null;cvTarget.current="";setCvRows([]);setCvOpen(false);};
+ },[user]));
+ async function openCV(){
+  const scope=cvScope.current,generation=++cvRevision.current;
+  if(!scope||!user||cvTarget.current!==user||scope.owner!==viewer)return;
+  setCvRows([]);setCvMessage("");setCvOpen(!cvOpen);
+  if(cvOpen)return;
+  try{
+   const status=user===scope.owner?"approved":(await cvRequests(scope)).find(r=>r.owner_id===user&&r.requester_id===scope.owner)?.status??"";
+   if(cvRevision.current!==generation||cvScope.current!==scope)return;
+   setCvStatus(status);
+   if(status!=="approved")return;
+   const rows=await approvedCV(user,scope);
+   if(cvRevision.current===generation&&cvScope.current===scope)setCvRows(rows);
+  }catch(e){if(cvRevision.current===generation){setCvStatus("");setCvRows([]);setCvMessage(e instanceof Error?e.message:"No se pudo consultar el historial.");}}
+ }
+ async function sendCVRequest(){
+  const scope=cvScope.current,generation=cvRevision.current;
+  if(!scope||!user||cvTarget.current!==user||scope.owner!==viewer||cvStatus==="pending")return;
+  try{await requestCV(user,scope);if(cvRevision.current===generation&&cvScope.current===scope){setCvStatus("pending");setCvMessage("Solicitud enviada.");}}
+  catch(e){if(cvRevision.current===generation)setCvMessage(String(e));}
+ }
  useEffect(()=>{
   if(!user||!viewer||viewer===user||!cardVisibilityReady||!sideIsPublic){setCardSaved(false);return;}
   let live=true;setCardSaved(false);
@@ -168,10 +200,10 @@ export default function PublicJCard(){
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,minHeight:48,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
        <Text style={{fontWeight:"700",color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text>
       </Pressable>
-      {cvOpen&&<View style={{gap:8,padding:12}}>
+      {cvOpen&&cvTarget.current===user&&<View style={{gap:8,padding:12}}>
        {user!==viewer&&cvStatus!=="approved"?<>
         <Text style={{color:colors.ink}}>El currículum es privado. El propietario debe autorizar tu solicitud.</Text>
-        <Pressable disabled={cvStatus==="pending"} accessibilityRole="button" onPress={()=>void requestCV(user!).then(()=>{setCvStatus("pending");setCvMessage("Solicitud enviada.");}).catch(e=>setCvMessage(String(e)))}
+        <Pressable disabled={cvStatus==="pending"} accessibilityRole="button" onPress={()=>void sendCVRequest()}
          style={{minHeight:48,justifyContent:"center"}}>
          <Text style={{fontWeight:"700",color:colors.ink}}>{cvStatus==="pending"?"Solicitud pendiente":"Solicitar CV"}</Text>
         </Pressable>

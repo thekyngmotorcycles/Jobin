@@ -33,7 +33,7 @@ export default function Notifications(){
   const generation=++revision.current;scopeRef.current=null;setItems([]);setLegacyCV([]);setPendingContacts([]);setLoading(true);setError("");
   try{
    const scope=await captureMessageScope(),user={id:scope.owner};
-   const [rows,requests,contacts]=await Promise.all([loadActivityNotifications(100,scope),cvRequests(),myContacts(scope)]);
+   const [rows,requests,contacts]=await Promise.all([loadActivityNotifications(100,scope),cvRequests(scope),myContacts(scope)]);
    await assertMessageScope(scope);
    if(revision.current!==generation)return;
    scopeRef.current=scope;setItems(rows);
@@ -76,8 +76,10 @@ export default function Notifications(){
   else if(n.kind==="identity_verification")router.push("/verify-identity");
  }
  async function respond(id:string,approve:boolean){
+  const scope=scopeRef.current;
+  if(!scope||busy||!legacyCV.some(r=>r.id===id&&r.owner_id===scope.owner&&r.status==="pending"))return;
   setBusy(id);setError("");
-  try{await respondCV(id,approve);await load();}
+  try{await respondCV(id,approve,scope);if(scopeRef.current===scope)await load();}
   catch(e){setError(e instanceof Error?e.message:"No se pudo responder la solicitud.");}
   finally{setBusy("");}
  }

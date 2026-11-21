@@ -4,6 +4,7 @@ import {JOBEEN_TYPE} from "../../theme/typography";
 import {jobeenTokens} from "../../theme/jobeen";
 import {useTheme} from "../../state/ThemeProvider";
 import {cvRequests,respondCV,revokeCV,type CVRequest} from "../../lib/cv-access";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../../lib/message-session";
 import {identityVerified} from "../../lib/identity-status";
 import {pickBusinessGalleryPhoto,uploadBusinessPhoto} from "../../lib/business-media";
 import {cloudOwner} from "../../lib/jcard-cloud";
@@ -86,10 +87,29 @@ export default function Profile() {
   const {width:screenWidth,height:screenHeight}=useWindowDimensions();
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
   const [cvShareOpen,setCvShareOpen]=useState(false);
+  const cvScope=useRef<MessageScope|null>(null),cvRevision=useRef(0);
   const [incomingCV,setIncomingCV]=useState<CVRequest[]>([]);
-  async function refreshCV(){try{const id=await cloudOwner();setIncomingCV((await cvRequests()).filter(r=>r.owner_id===id));}catch(e){setNotice(e instanceof Error?e.message:"No se pudieron cargar solicitudes.");}}
-  async function answerCV(id:string,approve:boolean){try{await respondCV(id,approve);await refreshCV();}catch(e){setNotice(String(e));}}
-  async function cancelCV(id:string){try{await revokeCV(id);await refreshCV();}catch(e){setNotice(String(e));}}
+  async function refreshCV(expected?:MessageScope){
+   const generation=++cvRevision.current;
+   cvScope.current=null;setIncomingCV([]);
+   try{
+    const scope=await captureMessageScope(expected);
+    if(scope.owner!==ownerId)throw Error("La sesión cambió.");
+    const rows=await cvRequests(scope);
+    await assertMessageScope(scope);
+    if(cvRevision.current===generation){cvScope.current=scope;setIncomingCV(rows.filter(r=>r.owner_id===scope.owner));}
+   }catch(e){if(cvRevision.current===generation)setNotice(e instanceof Error?e.message:"No se pudieron cargar solicitudes.");}
+  }
+  async function answerCV(id:string,approve:boolean){
+   const scope=cvScope.current;
+   if(!scope||scope.owner!==ownerId||!incomingCV.some(r=>r.id===id&&r.owner_id===scope.owner&&r.status==="pending"))return;
+   try{await respondCV(id,approve,scope);if(cvScope.current===scope)await refreshCV(scope);}catch(e){setNotice(String(e));}
+  }
+  async function cancelCV(id:string){
+   const scope=cvScope.current;
+   if(!scope||scope.owner!==ownerId||!incomingCV.some(r=>r.id===id&&r.owner_id===scope.owner&&r.status==="approved"))return;
+   try{await revokeCV(id,scope);if(cvScope.current===scope)await refreshCV(scope);}catch(e){setNotice(String(e));}
+  }
   function shareCV(){setCvShareOpen(true);}
   
   const [employerLink,setEmployerLink]=useState<{id:string;name:string;handle:string}|null>(null);
@@ -183,7 +203,7 @@ export default function Profile() {
   useFocusEffect(useCallback(()=>{let live=true;void getEmployerLinks().then(rows=>{if(live){const verified=rows.find(row=>row.worker_id===workspace.data?.card.id&&row.status==="approved");setEmployerLink(verified?{id:verified.company_id,name:verified.name,handle:verified.handle}:null);}}).catch(()=>{if(live)setEmployerLink(null);});return()=>{live=false;};},[workspace.data?.card.id]));
   useEffect(()=>{let live=true;void readBusinessRating(workspace.data?.card.id??"").then(value=>{if(live)setBusinessRating(value);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
   useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void readBusinessExcellence(id).then(data=>{if(live)setBusinessExcellence(data);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
-  useEffect(()=>{if(ownerId)void refreshCV();},[ownerId]);
+  useFocusEffect(useCallback(()=>{if(ownerId)void refreshCV();return()=>{cvRevision.current++;cvScope.current=null;setIncomingCV([]);};},[ownerId]));
   const p = DEMO_PROFILE;
 
   function send(company: string) {
@@ -358,7 +378,7 @@ export default function Profile() {
                 </View>
               </View>
             ))}
-            <View style={{gap:8}}><Button secondary title="Actualizar solicitudes de CV" onPress={()=>void refreshCV()}/>{incomingCV.map(req=><View key={req.id} style={{gap:6,padding:10,borderWidth:1,borderColor:colors.line,borderRadius:10}}><Text style={s.text}>Solicitud {req.requester_id.slice(0,8)} · {req.status}</Text>{req.status==="pending"&&<View style={s.row}><Button title="Autorizar" onPress={()=>void answerCV(req.id,true)}/><Button secondary title="Rechazar" onPress={()=>void answerCV(req.id,false)}/></View>}{req.status==="approved"&&<Button secondary title="Revocar acceso" onPress={()=>void cancelCV(req.id)}/>}</View>)}</View>
+            <View style={{gap:8}}><Button secondary title="Actualizar solicitudes de CV" onPress={()=>void refreshCV()}/>{incomingCV.filter(req=>req.owner_id===ownerId).map(req=><View key={req.id} style={{gap:6,padding:10,borderWidth:1,borderColor:colors.line,borderRadius:10}}><Text style={s.text}>Solicitud {req.requester_id.slice(0,8)} · {req.status}</Text>{req.status==="pending"&&<View style={s.row}><Button title="Autorizar" onPress={()=>void answerCV(req.id,true)}/><Button secondary title="Rechazar" onPress={()=>void answerCV(req.id,false)}/></View>}{req.status==="approved"&&<Button secondary title="Revocar acceso" onPress={()=>void cancelCV(req.id)}/>}</View>)}</View>
             <View style={s.row}>
               <Button secondary title="Compartir CV" onPress={() => void shareCV()} />
               <Button title="Agregar" onPress={() => openEmployment()} />
