@@ -58,3 +58,9 @@ test("Previously published posts and personal mentions remain compatible",()=>{
  assert.ok(editor.includes("setMentionedProfileIds"));
  assert.ok(caption.includes('Profesionales y empresas etiquetados'));
 });
+
+test("Business reviews discover companies through the privacy-filtered projection",()=>{
+ const reviews=read("src/app/reviews.tsx");
+ assert.ok(reviews.includes('db.from("jobeen_public_business_cards" as never).select("name")'));
+ assert.ok(!reviews.includes('from("jcard_business_details")'));
+});

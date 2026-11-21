@@ -10,7 +10,26 @@ const EXCELLENCE=[{key:"service",label:"Atención al cliente"},{key:"prices",lab
 type Review={id:string;rating:number;comment:string;created_at:string;reviewer_id:string};
 export default function BusinessReviews(){
  const {s,colors}=useUi();const [viewerId,setViewerId]=useState("");useEffect(()=>{void requireSupabase().auth.getUser().then(({data})=>setViewerId(data.user?.id??"")).catch(()=>{});},[]);const [reviewPanelOpen,setReviewPanelOpen]=useState(false);const [votes,setVotes]=useState<string[]>([]);const [reviewPhotos,setReviewPhotos]=useState<{uri:string;name:string;mimeType:string;size:number}[]>([]);const [evidence,setEvidence]=useState<{uri:string;name:string;mimeType:string;size:number}[]>([]);const [handle,setHandle]=useState(""),[owner,setOwner]=useState(""),[name,setName]=useState(""),[reviews,setReviews]=useState<Review[]>([]),[rating,setRating]=useState(5),[comment,setComment]=useState(""),[notice,setNotice]=useState(""),[busy,setBusy]=useState(false),[dispute,setDispute]=useState<string|null>(null),[reason,setReason]=useState("");
- async function search(){setNotice("");try{const db=requireSupabase();const {data:identity,error:lookup}=await db.from("usernames").select("user_id").eq("username",handle.trim().replace(/^@/,"").toLowerCase()).maybeSingle();if(lookup)throw lookup;if(!identity){setNotice("No se encontró esa cuenta.");return;}const {data:business,error:be}=await (db as any).from("jcard_business_details").select("name").eq("owner_id",identity.user_id).maybeSingle();if(be)throw be;if(!business?.name?.trim()){setNotice("Esta cuenta no tiene un perfil empresarial activo.");return;}setOwner(identity.user_id);setName(business.name);await refresh(identity.user_id);}catch(e){setNotice(e instanceof Error?e.message:"No se pudo consultar la empresa.");}}
+ async function search(){
+  setNotice("");
+  try{
+   const db=requireSupabase();
+   const username=handle.trim().replace(/^@/,"").toLowerCase();
+   const {data:identity,error:lookup}=await db.from("usernames").select("user_id")
+    .eq("username",username).maybeSingle();
+   if(lookup)throw lookup;
+   if(!identity){setNotice("No se encontró esa cuenta.");return;}
+   const {data:business,error}=await db.from("jobeen_public_business_cards" as never).select("name")
+    .eq("owner_id",identity.user_id).maybeSingle<{name:string}>();
+   if(error)throw error;
+   if(!business?.name?.trim()){setNotice("Esta cuenta no tiene un perfil empresarial activo.");return;}
+   setOwner(identity.user_id);
+   setName(business.name);
+   await refresh(identity.user_id);
+  }catch(e){
+   setNotice(e instanceof Error?e.message:"No se pudo consultar la empresa.");
+  }
+ }
  async function refresh(id:string){const {data,error}=await (requireSupabase() as any).from("jcard_business_reviews").select("id,rating,comment,created_at,reviewer_id").eq("business_owner_id",id).order("created_at",{ascending:false});if(error)throw error;setReviews(data??[]);}
  async function publish(){if(!owner)return;setBusy(true);setNotice("");try{const db=requireSupabase(),{data:{user}}=await db.auth.getUser();if(!user)throw Error("Debes iniciar sesión.");if(user.id===owner)throw Error("No puedes calificar tu propia empresa.");const photoPaths:string[]=[];for(const photo of reviewPhotos){const uploaded=await uploadBusinessPhoto("business-review-photos",user.id,photo,"review");photoPaths.push(uploaded.path);}const {error}=await (db as any).from("jcard_business_reviews").insert({business_owner_id:owner,reviewer_id:user.id,rating,comment:comment.trim(),excellence_votes:votes,photo_paths:photoPaths});if(error)throw error;setComment("");setVotes([]);setReviewPhotos([]);setNotice("Reseña publicada.");setReviewPanelOpen(false);await refresh(owner);}catch(e){setNotice(e instanceof Error?e.message:"No se pudo publicar. Solo se permite una reseña por persona y empresa.");}finally{setBusy(false);}}
  async function chooseEvidence(){try{const result=await DocumentPicker.getDocumentAsync({type:["image/jpeg","image/png","image/webp","video/mp4","video/quicktime"],multiple:true,copyToCacheDirectory:true});if(result.canceled)return;const files=result.assets.map(a=>({uri:a.uri,name:a.name,mimeType:a.mimeType??"",size:a.size??0}));if(files.length+evidence.length>5||files.some(f=>f.size>26214400||!["image/jpeg","image/png","image/webp","video/mp4","video/quicktime"].includes(f.mimeType)))throw Error("Máximo 5 fotos o videos, hasta 25 MB cada uno (JPG, PNG, WEBP, MP4 o MOV).");setEvidence(prev=>[...prev,...files]);}catch(e){setNotice(e instanceof Error?e.message:"No se pudo seleccionar la prueba.");}}

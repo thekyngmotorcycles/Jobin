@@ -1,5 +1,7 @@
 \set ON_ERROR_STOP on
 begin;
+-- Reproduce broader grants found on the hosted view.
+grant insert,update,delete on public.verified_companies to anon,authenticated;
 \ir ../supabase/security-review/company-verification-privacy.sql
 
 insert into auth.users(id, raw_user_meta_data) values
@@ -27,6 +29,9 @@ create function pg_temp.verification_assert() returns void language plpgsql as $
 begin
  if has_any_column_privilege(current_user, 'public.company_verifications', 'SELECT') then
   raise exception 'Internal company verification columns remain readable';
+ end if;
+ if has_table_privilege(current_user, 'public.verified_companies', 'INSERT,UPDATE,DELETE') then
+  raise exception 'Public badge view must be read-only';
  end if;
  if (select array_agg(company_id) from public.verified_companies
      where company_id in ('a1111111-1111-4111-8111-111111111111', 'b2222222-2222-4222-8222-222222222222',
