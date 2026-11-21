@@ -25,7 +25,9 @@ test("Premium Jobeen share sheet uses common type scale and compact accessible s
  assert.ok(sheet.includes("JOBEEN_TYPE.modalAction"));
  assert.ok(sheet.includes("minHeight:JOBEEN_CONTROL.touchTarget,marginHorizontal:13"));
  assert.ok(sheet.includes("paddingBottom:18,gap:10"));
- assert.ok(sheet.includes("flex:1,fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle"));
+ assert.ok(sheet.includes("flex:1,fontSize:headerSize,lineHeight:compact?JOBEEN_LINE_HEIGHT.modalTitle:26"));
+ assert.ok(sheet.includes("const compact=width<360"));
+ assert.ok(sheet.includes("const headerSize=compact?JOBEEN_TYPE.modalTitle:20"));
  assert.ok(sheet.includes("contentTitle??\"Compartir \"+cardType"));
  assert.ok(sheet.includes("if(result.sent.length)onShared?.()"));
  assert.ok(sheet.includes('name="checkmark" color={t.ink} size={16}'));
