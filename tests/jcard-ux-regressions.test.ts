@@ -95,32 +95,33 @@ test("More options invokes Android native share chooser after closing custom she
  assert.ok(sheet.indexOf('{id:"qr",label:"Mi QR"')<sheet.indexOf('{id:"whatsapp",label:"WhatsApp"'));
 });
 
-test("Shared avatars use a Jobeen gold framed rounded square, including owner and visitor",()=>{
+test("Shared avatars are circular by default with the Jobeen gold ring in every small-profile context",()=>{
  const shared=src("src/components/social-ui.tsx");
  const account=src("src/components/AccountAvatar.tsx");
  const publicAvatar=src("src/components/PublicProfileAvatar.tsx");
- assert.ok(shared.includes('const corner=Math.max(6,Math.round(size*0.2))'));
+ assert.ok(shared.includes('shape="circle"'));
+ assert.ok(shared.includes('shape==="circle"?size/2'));
  assert.ok(shared.includes('borderColor:t.yellow'));
- assert.ok(shared.includes('width:"100%",height:"100%",borderRadius:Math.max(4,corner-border-2)'));
- assert.ok(!shared.includes('borderRadius:size/2'));
+ assert.ok(shared.includes('height,width:size'));
  assert.ok(account.includes('<Avatar uri={identity?.avatar'));
  assert.ok(publicAvatar.includes('<Avatar uri={uri}'));
+ assert.ok(publicAvatar.includes('shape={shape}'));
+ assert.ok(src("src/components/HomePublishedPosts.tsx").includes('<PublicProfileAvatar userId={post.authorId}'));
+ assert.ok(src("src/app/(tabs)/inbox.tsx").includes('<AccountAvatar accountId={thread.id}'));
 });
-test("Story rings are rounded squares with gold stroke for owner and visitors",()=>{
+test("Stories are 20 percent taller portrait cards with one Jobeen gold keyline",()=>{
  const stories=src("src/components/StoryStrip.tsx");
- assert.equal(stories.split('width:66,height:66,borderRadius:16,borderWidth:2,borderColor:t.yellow').length-1,2);
- assert.ok(stories.includes('<PublicProfileAvatar userId={userId}'));
- assert.ok(stories.includes('<PublicProfileAvatar userId={story.authorId}'));
- assert.ok(!stories.includes('borderRadius:33'));
+ assert.equal(stories.split('width:66,height:79,borderRadius:16,borderWidth:2,borderColor:t.yellow').length-1,2);
+ assert.equal(stories.split('height={65} shape="portrait" framed={false}').length-1,2);
+ assert.ok(stories.includes('top:54,width:25,height:25'));
 });
-test("JCard personal and business photos have matching softened gold corners",()=>{
- assert.ok(business.includes('borderRadius:18,borderWidth:3,borderColor:jobeen.yellow'));
- assert.ok(business.includes('width:64,height:64,borderRadius:14,borderWidth:2,borderColor:jobeen.yellow'));
- assert.ok(business.includes('width:60,height:60,borderRadius:11'));
- assert.ok(!business.includes('borderRadius:32,borderWidth:2,borderColor:jobeen.yellow'));
+test("JCard personal and business portraits are 10 percent taller without changing photo width",()=>{
+ assert.ok(business.includes('height={theme==="light"?88:jcardLayout.avatar*1.1} shape="portrait" framed={false}'));
+ assert.ok(business.includes('width:theme==="light"?90:jcardLayout.avatar+10,height:theme==="light"?99:jcardLayout.avatar*1.1+10,borderRadius:18,borderWidth:3,borderColor:jobeen.yellow'));
+ assert.ok(business.includes('width:64,height:70.4,borderRadius:14,borderWidth:2,borderColor:jobeen.yellow'));
+ assert.ok(business.includes('width:60,height:66,borderRadius:11'));
 });
-
-test("Nested JCard and story photos use a single clean gold frame, not doubled borders",()=>{
+test("Story and JCard portraits keep one frame, while all ordinary avatars stay circular",()=>{
  const shared=src("src/components/social-ui.tsx");
  const publicAvatar=src("src/components/PublicProfileAvatar.tsx");
  const stories=src("src/components/StoryStrip.tsx");
@@ -128,5 +129,6 @@ test("Nested JCard and story photos use a single clean gold frame, not doubled b
  assert.ok(shared.includes("const border=framed?Math.max"));
  assert.ok(publicAvatar.includes("framed={framed}"));
  assert.equal(stories.split("framed={false}").length-1,2);
- assert.ok(business.includes('size={theme==="light"?80:jcardLayout.avatar} framed={false}'));
+ assert.ok(business.includes('shape="portrait" framed={false}'));
+ assert.ok(src("src/components/HomePublishedPosts.tsx").includes('<PublicProfileAvatar userId={comment.authorId}'));
 });
