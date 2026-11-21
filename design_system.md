@@ -106,3 +106,20 @@ This document is a living reference. **Changes to the design system itself also 
 Material Design 3: https://m3.material.io/
 
 Use the official specification as a guide, adapting it to Jobeen rather than applying visual defaults blindly.
+
+## 11. Reglas permanentes de colaboración y entregas (aprobadas 2026-11-21)
+
+- **Comunicación eficiente:** no enviar informes de progreso repetitivos ni mensajes por cada consulta, prueba, revisión de logs o llamada a herramientas. Informar únicamente al finalizar una etapa, cuando exista un bloqueo o decisión que requiera al usuario, o cuando sea indispensable solicitar aprobación. Mantener los informes breves: cambios reales, pruebas, pendientes y estado de OTA.
+- **Mayor esfuerzo de razonamiento:** si el trabajo requiere cambiar a Medium o High, avisar al usuario **antes de comenzar** para que pueda elegir el nivel. No afirmar que el asistente puede cambiar esa configuración por sí mismo.
+- **APK:** jamás generar ni solicitar un APK nuevo sin consulta y aprobación explícita del usuario. La APK actual se actualiza mediante **Expo OTA en el canal/branch development**. No reemplazar este flujo sin autorización.
+- **Publicación:** preparar y validar en ramas de trabajo; publicar o fusionar en `development` solo con autorización explícita para esa entrega. No confundir un despliegue web con una actualización OTA móvil.
+- **Diseño:** antes de cada cambio visual, presentar **tres opciones** concretas para revisión y obtener la selección del usuario. No producir bocetos ni imágenes innecesarias; cuando se solicite una vista previa, mostrarla antes de integrar el cambio completo en `development`.
+- **Mobbin:** consultar referencias de diseño en Mobbin para **páginas nuevas y menús nuevos**, sin copiar branding ni activos ajenos. Mantener el sistema visual Jobeen.
+- **Iconos:** minimalistas, coherentes, con esquinas y trazos redondeados. En la navegación inferior, contorno cuando inactivos y relleno cuando activos, sin círculo amarillo grande, según aprobación previa.
+- **Ventanas, diálogos y avisos:** bordes redondeados y sistema unificado de tipografía, escala, colores, fondos y botones. Reservar énfasis cromático mayor para avisos realmente importantes. Respetar los tokens aprobados y las decisiones visuales ya validadas.
+- **Adaptabilidad:** diseñar para móviles pequeños y grandes; el Jelly 2 es un dispositivo de prueba, **no** una escala fija que deba agrandar la tipografía de toda la aplicación. Probar safe areas, legibilidad, targets y ausencia de recortes.
+- **Imágenes de perfil:** circulares en publicaciones, mensajes y demás superficies; solo las imágenes de perfil de JCard (10 % más altas) y las historias (20 % más altas) conservan formato rectangular vertical, con aro Jobeen aprobado.
+- **Navegación:** el menú inferior solo se oculta con scroll en el feed de Inicio; permanece estático en las demás pantallas, según la decisión aprobada.
+- **Recuperación entre chats:** al retomar Jobeen, leer este documento, revisar PR/ramas/CI y el estado de `development` antes de actuar. No inferir que una tarea quedó publicada solo por existir un PR o un commit.
+
+Estas reglas se agregan al protocolo de aprobación del apartado 2 y a las decisiones previas; no autorizan modificaciones adicionales por sí mismas.
