@@ -104,4 +104,6 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
   </View>
  </Modal>;
 }
-\n/** The same approved Jobeen share surface for profiles, posts, videos, JShop and CV. */\nexport const JobeenShareSheet=JCardShareSheet;\n
+
+/** The same approved Jobeen share surface for profiles, posts, videos, JShop and CV. */
+export const JobeenShareSheet=JCardShareSheet;
