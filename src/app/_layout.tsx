@@ -18,6 +18,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppProvider } from "../state/AppProvider";
 import { ThemeProvider, useTheme } from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
+import {JOBEEN_TYPE} from "../theme/typography";
 function IconFontGate({children}:{children:ReactNode}){
  const [loaded,error]=useFonts(Ionicons.font);const [recovered,setRecovered]=useState(false);const [retrying,setRetrying]=useState(false);const {colors}=useTheme();
  if(loaded||recovered)return children;
@@ -30,7 +31,7 @@ function Navigation() {
  const pathname=usePathname();const {reset}=useScrollNavigation();
  useEffect(()=>reset(),[pathname,reset]);
  const isBrowserPage=pathname==="/jcard"||pathname==="/search"||pathname==="/notifications"||pathname.startsWith("/post/")||pathname.startsWith("/work-media/")||pathname.startsWith("/jshop/item/")||pathname==="/jshop/favorites";
- return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:shellBackground},headerTintColor:colors.ink,contentStyle:{backgroundColor:shellBackground}}}>
+ return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:shellBackground},headerTintColor:colors.ink,headerTitleStyle:{fontSize:JOBEEN_TYPE.navigationTitle,fontWeight:"600"},contentStyle:{backgroundColor:shellBackground}}}>
  <Stack.Screen name="(tabs)" options={{headerShown:false}}/>
  <Stack.Screen name="map-presence" options={{title:"Mi zona profesional"}}/>
  <Stack.Screen name="post/create" options={{title:"Nueva publicación"}}/>
