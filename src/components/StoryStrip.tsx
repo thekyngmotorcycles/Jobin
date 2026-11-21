@@ -32,8 +32,8 @@ export function StoryStrip(){
    <View style={{width:72,alignItems:"center",gap:6}}>
     <Pressable accessibilityRole="button" accessibilityLabel={own?"Ver mi historia":"Crear mi historia"}
      onPress={()=>router.push(own?{pathname:"/story/[id]",params:{id:own.id}}:"/story/create")}
-     style={{width:66,height:66,borderRadius:33,borderWidth:2,borderColor:t.yellow,padding:3,alignItems:"center",justifyContent:"center"}}>
-     {userId?<PublicProfileAvatar userId={userId} name="Yo" size={54}/>:<Ionicons name="person-circle-outline" size={51} color={t.ink}/>}
+     style={{width:66,height:66,borderRadius:16,borderWidth:2,borderColor:t.yellow,padding:3,alignItems:"center",justifyContent:"center"}}>
+     {userId?<PublicProfileAvatar userId={userId} name="Yo" size={54}/>:<Ionicons name="person-outline" size={40} color={t.ink}/>}
     </Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel="Añadir historia" onPress={()=>router.push("/story/create")}
      style={{position:"absolute",right:2,top:41,width:25,height:25,borderRadius:13,backgroundColor:t.yellow,borderWidth:2,borderColor:t.surface,alignItems:"center",justifyContent:"center"}}>
@@ -44,7 +44,7 @@ export function StoryStrip(){
    {others.map(story=><Pressable key={story.authorId} accessibilityRole="button"
     accessibilityLabel={"Ver historia de "+story.authorName} onPress={()=>router.push({pathname:"/story/[id]",params:{id:story.id}})}
     style={{width:72,alignItems:"center",gap:6}}>
-    <View style={{width:66,height:66,borderRadius:33,borderWidth:2,borderColor:t.ink,padding:3,alignItems:"center",justifyContent:"center"}}>
+    <View style={{width:66,height:66,borderRadius:16,borderWidth:2,borderColor:t.yellow,padding:3,alignItems:"center",justifyContent:"center"}}>
      <PublicProfileAvatar userId={story.authorId} name={story.authorName} size={54}/>
     </View>
     <Text numberOfLines={1} style={{fontSize:12,color:t.ink2}}>{story.authorName}</Text>
