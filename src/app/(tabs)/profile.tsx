@@ -17,6 +17,7 @@ import {useRef} from "react";
 import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../../components/ProfileSharedSections";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfileOwnedPosts} from "../../components/ProfileOwnedPosts";
+import {SettingsMenuRow} from "../../components/SettingsMenuRow";
 import {NotificationBell} from "../../components/NotificationBell";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import {JCardLoadState,JCardOfflineNotice,isJCardConnectivityError} from "../../components/JCardConnectionState";
@@ -246,22 +247,33 @@ export default function Profile() {
         <View style={{flex:1,flexDirection:"row"}}>
           <View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:modal.scrim}}/>
           <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú de perfil" onPress={closeProfileMenu} style={{flex:1}}/>
-          <View style={{width:Math.min(screenWidth*0.88,410)}}><SafeAreaView edges={["top","bottom"]} style={{flex:1,backgroundColor:modal.surface,borderTopLeftRadius:modal.radius.dialog,borderBottomLeftRadius:modal.radius.dialog,overflow:"hidden"}}>
-            <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:22,paddingBottom:32,gap:10}}>
-              <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingBottom:16}}>
-                <Text accessibilityRole="header" style={{color:modal.text,fontWeight:"700",fontSize:JOBEEN_TYPE.modalTitle}}>Opciones del perfil</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={closeProfileMenu} style={{padding:8}}><Ionicons name="close" size={25} color={modal.text}/></Pressable>
+          <View style={{width:Math.min(screenWidth*0.88,410)}}><SafeAreaView edges={["top","bottom"]}
+           style={{flex:1,backgroundColor:modal.surface,borderTopLeftRadius:modal.radius.dialog,borderBottomLeftRadius:modal.radius.dialog,overflow:"hidden"}}>
+            <ScrollView contentContainerStyle={{paddingHorizontal:18,paddingTop:16,paddingBottom:30,gap:8}}>
+              <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingBottom:8,gap:8}}>
+                <Text accessibilityRole="header" style={{flex:1,color:modal.text,fontWeight:"700",fontSize:JOBEEN_TYPE.modalTitle}}>Opciones del perfil</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={closeProfileMenu}
+                 style={{width:48,height:48,alignItems:"center",justifyContent:"center"}}>
+                 <Ionicons name="close" size={24} color={modal.text}/>
+                </Pressable>
               </View>
-              <Button secondary title="Ver perfil ficticio (demo)" onPress={()=>{closeProfileMenu();router.push("/demo-profile");}}/>
-              <Button secondary title="Reseñas de empresas" onPress={()=>{closeProfileMenu();router.push("/reviews");}}/>
-              <Button secondary title="Certificados y sellos" onPress={()=>{closeProfileMenu();router.push("/certificates");}}/>
-              <Button secondary title="Oportunidades laborales" onPress={()=>{closeProfileMenu();router.push("/opportunities");}}/>
-              {!!workspace.data?.organization&&<Button secondary title="Mi empresa o institución" onPress={()=>{closeProfileMenu();router.push("/company");}}/>}
-              {!!workspace.data?.reviewer&&<Button secondary title="Revisar acreditaciones" onPress={()=>{closeProfileMenu();router.push("/credential-review");}}/>}
+              <SettingsMenuRow title="Reseñas de empresas" description="Consulta opiniones sobre empresas."
+               icon="star-outline" onPress={()=>{closeProfileMenu();router.push("/reviews");}}/>
+              <SettingsMenuRow title="Certificados y sellos" description="Credenciales y reconocimientos profesionales."
+               icon="ribbon-outline" onPress={()=>{closeProfileMenu();router.push("/certificates");}}/>
+              <SettingsMenuRow title="Oportunidades laborales" description="Explora trabajos y colaboraciones."
+               icon="briefcase-outline" onPress={()=>{closeProfileMenu();router.push("/opportunities");}}/>
+              {!!workspace.data?.organization&&<SettingsMenuRow title="Mi empresa o institución" description="Administra tu presencia empresarial."
+               icon="business-outline" onPress={()=>{closeProfileMenu();router.push("/company");}}/>}
+              {!!workspace.data?.reviewer&&<SettingsMenuRow title="Revisar acreditaciones" description="Consulta solicitudes de validación."
+               icon="shield-checkmark-outline" onPress={()=>{closeProfileMenu();router.push("/credential-review");}}/>}
+              <SettingsMenuRow title="Ver perfil ficticio (demo)" description="Explora un perfil de demostración."
+               icon="eye-outline" onPress={()=>{closeProfileMenu();router.push("/demo-profile");}}/>
             </ScrollView>
           </SafeAreaView></View>
         </View>
       </Modal>
+
       <Animated.ScrollView ref={profileScroll} stickyHeaderIndices={[1]} scrollEventThrottle={16}
         style={{flex:1}}
         contentContainerStyle={{paddingTop:NAVIGATION_ROW_HEIGHT+12,paddingBottom:0}}
