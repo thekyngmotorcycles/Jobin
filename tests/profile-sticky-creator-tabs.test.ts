@@ -132,7 +132,7 @@ test("Visitor profile keeps global tabs while scrolling JCard and media sections
  assert.ok(root.includes("<PersistentBottomTabs/>"));
  assert.ok(global.includes('items.map(item=><Pressable'));
  for(const label of ["Casa","JShop","Videos","Mensajes","Perfil"])assert.ok(global.includes('label:"'+label+'"'));
- assert.ok(state.includes("amount.current+delta/SCROLL_HIDE_DISTANCE"));
+ assert.ok(state.includes("amount.current+controlledDelta/SCROLL_HIDE_DISTANCE"));
  assert.ok(state.includes("progress.setValue(amount.current)"));
  assert.ok(tabLayout.includes('<BottomTabBar {...props}/>'));
  for(const page of [visitor,owner])assert.ok(page.includes("if(focused)reportScroll(event.nativeEvent.contentOffset.y)"),"Only the focused profile may drive the shared bottom nav");
@@ -159,6 +159,7 @@ test("Tab transitions reveal bottom chrome progressively without a snap or stale
  assert.ok(state.includes("transitioning.current"));
  assert.ok(state.includes("if(transitioning.current){last.current=current;return;}"));
  assert.ok(state.includes("SCROLL_HIDE_DISTANCE=160"));
+ assert.ok(state.includes("const controlledDelta=Math.max(-20,Math.min(20,delta))"),"A single fling must not hide navigation in one frame");
  assert.ok(homePage.includes("if(focused)reportScroll("));
  assert.ok(ownerPage.includes("if(focused)reportScroll("));
  assert.ok(visitor.includes("if(focused)reportScroll("));
