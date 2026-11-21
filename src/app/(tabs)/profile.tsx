@@ -331,7 +331,7 @@ export default function Profile() {
           <ProfileSectionTabs section={mode} onSelect={selectSection} pinned={tabsPinned} showPrivateJCards/>
         </View>
         <View style={{gap:16,paddingHorizontal:16,paddingTop:20,paddingBottom:contentBottom,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
-        {mode==="jcards"&&<SavedJCardsGallery/>}
+        {mode==="jcards"&&ownerId&&<SavedJCardsGallery key={ownerId} owner={ownerId}/>}
         {mode==="live"&&<View style={{gap:12,padding:14,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
           <Text style={s.h3}>Transmisiones en vivo</Text>
           <Text style={s.muted}>Cuando este perfil transmita, aparecerá aquí la vista previa para entrar al directo.</Text>
