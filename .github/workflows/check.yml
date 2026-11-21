@@ -56,3 +56,4 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f tests/database.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/catalog-migration-idempotence.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/jcards-save-rls.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/business-card-privacy.test.sql
