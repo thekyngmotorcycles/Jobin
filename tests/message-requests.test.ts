@@ -7,7 +7,7 @@ test("Unknown professionals must create one initial message request before direc
  const chat=read("src/app/message.tsx");
  const api=read("src/lib/message-requests.ts");
  assert.ok(chat.includes('contactAccess.kind==="none"'));
- assert.ok(chat.includes("await sendContactRequest(user!,body)"));
+ assert.ok(chat.includes("await sendContactRequest(user!,body,me)"));
  assert.ok(chat.includes('contactAccess.kind==="accepted"'));
  assert.ok(chat.includes('maxLength={!conversation&&contactAccess.kind==="none"?500:2000}'));
  assert.ok(api.includes('from("jobeen_message_requests"'));
@@ -45,7 +45,7 @@ test("Privacy uses following-relationship options and recipient-controlled reque
  assert.ok(migration.includes("grant update(status)"));
  assert.ok(migration.includes("Recipient decides requests"));
 });
-test("Only accepted requests permit normal chats; JShop remains item-scoped and can be spammed",()=>{
+test("Accepted requests or professional contacts permit normal chats; JShop remains item-scoped and can be spammed",()=>{
  const migration=read("supabase/migrations/20261117190500_jobeen_requests_spam_privacy.sql");
  const chat=read("src/app/message.tsx");
  assert.ok(migration.includes("r.status='accepted'"));
@@ -56,4 +56,16 @@ test("Only accepted requests permit normal chats; JShop remains item-scoped and 
  assert.ok(chat.includes("markJShopSpam(conversation,!jshopSpam)"));
  assert.ok(chat.includes("reportMessageUser"));
  assert.ok(chat.includes("blockMessageUser"));
+});
+
+test("Accepted contacts bypass duplicate message requests without changing consent records",()=>{
+ const api=read("src/lib/message-requests.ts");
+ const sql=read("supabase/security-review/message-jshop-authorization.sql");
+ const inbox=read("src/app/(tabs)/inbox.tsx");
+ assert.ok(api.includes('from("jobeen_contact_requests"'));
+ assert.ok(api.includes('contacts.has(other)?"accepted":"none"'));
+ assert.ok(api.includes('r.status!=="pending"||!contacts.has(r.sender_id)'));
+ assert.ok(inbox.includes("loadChatRequestPreviews(user.id)"));
+ assert.ok(sql.includes('No redundant request for accepted contact'));
+ assert.ok(sql.includes("p.requester_id = jobeen_direct_messages.sender_id"));
 });

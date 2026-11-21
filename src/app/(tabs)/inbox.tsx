@@ -9,7 +9,7 @@ import {SocialHeader} from "../../components/SocialHeader";
 import {Button,useUi} from "../../components/ui";
 import {loadPublicCard} from "../../lib/professional-api";
 import {loadJShopInbox,jshopConversationPrice,type JShopInboxThread} from "../../lib/jshop-messaging";
-import {loadIncomingRequests,loadJShopSpamIds} from "../../lib/message-requests";
+import {loadChatRequestPreviews,loadIncomingRequests,loadJShopSpamIds} from "../../lib/message-requests";
 import {EXTENSION_MONTHS} from "../../lib/rules";
 import {requireSupabase} from "../../lib/supabase";
 import {useJobinNotices} from "../../state/NoticeProvider";
@@ -66,7 +66,11 @@ export default function Messages(){
        const other=row.sender_id===user.id?row.recipient_id:row.sender_id;
        if(!recent.has(other))recent.set(other,{body:row.body,createdAt:row.created_at});
       }
-      return await Promise.all([...recent].map(async([id,value])=>{
+      for(const preview of await loadChatRequestPreviews(user.id)){
+       const previous=recent.get(preview.id);
+       if(!previous||Date.parse(preview.createdAt)>Date.parse(previous.createdAt))recent.set(preview.id,preview);
+      }
+      return await Promise.all([...recent].sort((a,b)=>Date.parse(b[1].createdAt)-Date.parse(a[1].createdAt)).map(async([id,value])=>{
        const card=await loadPublicCard(id).catch(()=>null);
        return {id,name:card?.name??"Usuario de Jobeen",text:value.body,createdAt:value.createdAt};
       }));
@@ -75,7 +79,8 @@ export default function Messages(){
      loadIncomingRequests(),
      loadJShopSpamIds()
     ]);
-    if(!active)return;
+    const {data:{user:current},error:sessionError}=await db.auth.getUser();
+    if(!active||sessionError||current?.id!==user.id)return;
     if(direct.status==="fulfilled")setDirectThreads(direct.value);else setError("No se pudieron cargar los chats personales.");
     if(shop.status==="fulfilled")setShopThreads(shop.value);else setError(prev=>[prev,"No se pudieron cargar los mensajes de JShop."].filter(Boolean).join(" "));
     if(incoming.status==="fulfilled")setRequestCounts({pending:incoming.value.filter(r=>r.status==="pending").length,spam:incoming.value.filter(r=>r.status==="spam"||r.status==="reported").length});

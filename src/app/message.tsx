@@ -1,6 +1,6 @@
-import {useCallback,useEffect,useState} from "react";
+import {useCallback,useState} from "react";
 import {ActivityIndicator,Image,KeyboardAvoidingView,Platform,Pressable,ScrollView,Text,TextInput,View} from "react-native";
-import {router,useLocalSearchParams} from "expo-router";
+import {router,useFocusEffect,useLocalSearchParams} from "expo-router";
 import {Ionicons} from "@expo/vector-icons";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {requireSupabase} from "../lib/supabase";
@@ -27,7 +27,7 @@ export default function DirectMessage(){
  const [notice,setNotice]=useState("");
  const valid=!!user&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user);
  const validConversation=!conversation||/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(conversation);
- const canCompose=!!conversation?!!listingThread:contactAccess.kind==="none"||contactAccess.kind==="accepted";
+ const canCompose=!loading&&(!conversation?(contactAccess.kind==="none"||contactAccess.kind==="accepted"):!!listingThread);
  const reload=useCallback(async()=>{
   if(!valid||!validConversation){setError("Conversación inválida.");setLoading(false);return;}
   setLoading(true);
@@ -63,18 +63,27 @@ export default function DirectMessage(){
     messages.push({id:"request-"+r.id,sender_id:r.senderId,recipient_id:r.recipientId,body:r.body,created_at:r.createdAt});
     messages.sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at));
    }
+   const {data:{user:current},error:sessionError}=await db.auth.getUser();
+   if(sessionError||current?.id!==session.id)throw Error("La sesión cambió.");
    setItems(messages);setError("");
   }catch(e){setError(e instanceof Error?e.message:"No se pudo abrir la conversación.");}
   finally{setLoading(false);}
  },[user,valid,conversation,validConversation]);
- useEffect(()=>{void reload();},[reload]);
+ useFocusEffect(useCallback(()=>{void reload();},[reload]));
  async function send(){
-  const body=draft.trim();if(!body||!valid||!me||busy||(!!conversation&&!listingThread))return;
+  const body=draft.trim();if(!body||!valid||!me||busy||loading||(!!conversation&&!listingThread))return;
   if(!conversation&&contactAccess.kind!=="accepted"&&contactAccess.kind!=="none")return;
   setBusy(true);setError("");
   try{
+   const db=requireSupabase();
+   const {data:{user:current},error:sessionError}=await db.auth.getUser();
+   if(sessionError||current?.id!==me)throw Error("La sesión cambió.");
+   if(!conversation){
+    const fresh=await loadContactAccess(user!);
+    if(fresh.kind!==contactAccess.kind){setContactAccess(fresh);throw Error("El permiso de mensajes cambió. Revisa la conversación y vuelve a enviar.");}
+   }
    if(!conversation&&contactAccess.kind==="none"){
-    await sendContactRequest(user!,body);
+    await sendContactRequest(user!,body,me);
    }else{
     const {error:sendError}=await requireSupabase().from("jobeen_direct_messages" as never).insert({sender_id:me,recipient_id:user,body,jshop_conversation_id:conversation||null} as never);
     if(sendError)throw sendError;

@@ -30,10 +30,12 @@ values ('d4444444-4444-4444-8444-444444444444',
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
-select pg_temp.expect_denial($q$
- insert into public.jobeen_message_requests(sender_id,recipient_id,body,status)
- values (auth.uid(),'c3333333-3333-4333-8333-333333333333','Fake consent','accepted')
-$q$);
+-- The existing BEFORE INSERT classifier normalizes a supplied status to pending/spam.
+insert into public.jobeen_message_requests(sender_id,recipient_id,body,status)
+values (auth.uid(),'c3333333-3333-4333-8333-333333333333','Fake consent','accepted');
+select pg_temp.assert_message(exists(select 1 from public.jobeen_message_requests
+ where recipient_id='c3333333-3333-4333-8333-333333333333' and status='pending'),
+ 'sender supplied accepted status is not consent');
 insert into public.jobeen_message_requests(sender_id,recipient_id,body)
 values (auth.uid(),'b2222222-2222-4222-8222-222222222222','Request');
 select pg_temp.expect_denial($q$
@@ -46,7 +48,7 @@ select pg_temp.expect_denial($q$
  update public.jobeen_message_requests set sender_id='c3333333-3333-4333-8333-333333333333'
  where recipient_id=auth.uid()
 $q$);
-update public.jobeen_message_requests set status='accepted',decided_at=now()
+update public.jobeen_message_requests set status='accepted'
 where sender_id='a1111111-1111-4111-8111-111111111111' and recipient_id=auth.uid();
 select pg_temp.assert_message(exists(select 1 from public.jobeen_message_requests where status='accepted'),
  'intended recipient can accept a request');
@@ -85,5 +87,44 @@ $q$);
 select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
 select pg_temp.assert_message((select count(*) from public.jobeen_direct_messages)=3,'A retains exactly its own test conversation messages');
 select pg_temp.assert_message(not has_table_privilege('authenticated','public.jobeen_direct_messages','TRUNCATE'),'client cannot truncate messages');
+-- Contact-only permission: pending is not enough, acceptance is bidirectional.
+insert into public.jobeen_contact_requests(requester_id,recipient_id)
+values(auth.uid(),'c3333333-3333-4333-8333-333333333333');
+select pg_temp.expect_denial($q$
+ insert into public.jobeen_direct_messages(sender_id,recipient_id,body)
+ values(auth.uid(),'c3333333-3333-4333-8333-333333333333','Pending contact')
+$q$);
+select set_config('request.jwt.claim.sub','c3333333-3333-4333-8333-333333333333',true);
+update public.jobeen_contact_requests set status='accepted' where recipient_id=auth.uid();
+insert into public.jobeen_direct_messages(sender_id,recipient_id,body)
+values(auth.uid(),'a1111111-1111-4111-8111-111111111111','Contact reply');
+select pg_temp.expect_denial($q$
+ insert into public.jobeen_message_requests(sender_id,recipient_id,body)
+ values(auth.uid(),'a1111111-1111-4111-8111-111111111111','Redundant request')
+$q$);
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+insert into public.jobeen_direct_messages(sender_id,recipient_id,body)
+values(auth.uid(),'c3333333-3333-4333-8333-333333333333','Contact message');
+select pg_temp.assert_message(exists(select 1 from public.jobeen_message_requests
+ where recipient_id='c3333333-3333-4333-8333-333333333333' and status='pending'),
+ 'contact permission did not permanently accept message request');
+delete from public.jobeen_contact_requests where requester_id=auth.uid();
+select pg_temp.expect_denial($q$
+ insert into public.jobeen_direct_messages(sender_id,recipient_id,body)
+ values(auth.uid(),'c3333333-3333-4333-8333-333333333333','Removed contact')
+$q$);
+select pg_temp.assert_message(exists(select 1 from public.jobeen_direct_messages where body='Contact message'),
+ 'removal preserves existing messages');
+-- Restore contact and then block. Blocking wins over any consent.
+insert into public.jobeen_contact_requests(requester_id,recipient_id)
+values(auth.uid(),'c3333333-3333-4333-8333-333333333333');
+select set_config('request.jwt.claim.sub','c3333333-3333-4333-8333-333333333333',true);
+update public.jobeen_contact_requests set status='accepted' where recipient_id=auth.uid();
+insert into public.blocks(blocker_id,blocked_id) values(auth.uid(),'a1111111-1111-4111-8111-111111111111');
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+select pg_temp.expect_denial($q$
+ insert into public.jobeen_direct_messages(sender_id,recipient_id,body)
+ values(auth.uid(),'c3333333-3333-4333-8333-333333333333','Blocked contact')
+$q$);
 reset role;
 rollback;
