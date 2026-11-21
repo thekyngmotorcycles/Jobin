@@ -35,6 +35,7 @@ test("Home settings, owned profile, and visitor profile reuse the same menu-row 
  assert.ok(shared.includes('tone==="danger"?danger.icon:chrome.iconText'),"Only the danger icon changes tone");
  assert.ok(shared.includes('fontSize:JOBEEN_TYPE.body'),"Keep existing Jobeen typography");
  assert.ok(shared.includes("menuChrome(theme,colors)"),"Preserve the brand palette");
+ assert.ok(!shared.includes("numberOfLines={2}"),"Long menu titles and descriptions should wrap, not truncate on small phones");
 });
 
 test("Creator profile section strip has five text-only choices while global bottom icons remain",()=>{
@@ -45,6 +46,7 @@ test("Creator profile section strip has five text-only choices while global bott
  const matches=chunk.match(/label:"(?:Inicio|Todo|Videos|En vivo|Acerca de)"/g)??[];
  assert.equal(matches.length,5);
  assert.ok(chunk.includes("minWidth:54,flexGrow:1"));
+ assert.ok(chunk.includes("numberOfLines={2}"),"Long text labels may wrap but not be hidden on Jelly");
  assert.ok(chunk.includes("onLayout={event=>{tabLayouts.current[tab.id]"),"Keep scrolling to measured selected tab");
  assert.ok(!chunk.includes('name={tab.icon}'),"No decorative icons in five creator tabs");
  assert.ok(global.includes('JobeenMessageIcon'),"Global tab icon language stays unchanged");
