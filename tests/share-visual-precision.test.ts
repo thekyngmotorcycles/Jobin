@@ -12,9 +12,9 @@ test("Premium sharing follows approved screenshot density without shrinking the 
  assert.ok(sheet.includes("fontSize:JOBEEN_TYPE.modalSectionTitle"));
  assert.ok(sheet.includes("fontSize:JOBEEN_TYPE.modalRecipient"));
  assert.ok(sheet.includes("fontSize:JOBEEN_TYPE.modalAction"));
- assert.ok(sheet.includes("height:40,width:\"100%\""),"Visible send button is compact");
- assert.ok(sheet.includes("minHeight:48,marginHorizontal:13"),"Touch target remains accessible");
- assert.ok(sheet.includes("actionSize=Math.max(48,Math.min(56"));
+ assert.ok(sheet.includes("height:JOBEEN_CONTROL.visualAction,width:\"100%\""),"Visible send button is compact");
+ assert.ok(sheet.includes("minHeight:JOBEEN_CONTROL.touchTarget,marginHorizontal:13"),"Touch target remains accessible");
+ assert.ok(sheet.includes("actionSize=Math.max(48,Math.min(JOBEEN_CONTROL.optionDiameter"));
  assert.ok(sheet.includes("width:62,height:62"));
  assert.ok(sheet.includes('size={52} framed={false}'));
  assert.ok(sheet.includes("width:23,height:23"));
