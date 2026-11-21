@@ -89,7 +89,7 @@ export default function Professional() {
  const w=workspace.data;
 
  useEffect(()=>{if(!w)return;setName(w.card.name);setHandle(w.card.handle);setCity(w.profile.city||"");setRegion(w.profile.region||"");setAvailability(w.card.status);setLanguages(w.card.languages.map(l=>({name:l.name,fluency:String(l.fluency)})));},[w]);
- const input={color:colors.ink,borderColor:colors.line,borderWidth:1,borderRadius:10,padding:12,minHeight:44};
+ const input={color:colors.ink,borderColor:colors.line,borderWidth:1,borderRadius:10,padding:12,minHeight:JOBEEN_CONTROL.touchTarget};
  function choose(code:string){setProfession(code);setSpecialties(w?.professions.find(p=>p.profession_code===code)?.specialties??[]);const pp=w?.professions.find(p=>p.profession_code===code);setTraining(pp?.training_status??"graduado");setInstitution(pp?.institution_id??null);}
  const sectionRow=(id:Section,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:JOBEEN_CONTROL.accordionRowVerticalPadding,minHeight:JOBEEN_CONTROL.touchTarget}}>
   <Ionicons name={icon} size={23} color={sunflower&&section!==id?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined,color:sunflower&&section!==id?colors.glassText:colors.ink}]}>{title}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={sunflower&&section!==id?colors.glassMuted:colors.muted}/>
@@ -163,7 +163,7 @@ export default function Professional() {
    <Pressable accessibilityRole="button" accessibilityLabel="Guardar cambios de JCard"
     accessibilityState={{disabled:action.busy}} disabled={action.busy}
     onPress={()=>saveSections(pendingTargets)}
-    style={{minWidth:72,minHeight:44,justifyContent:"center",alignItems:"center"}}>
+    style={{minWidth:72,minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center",alignItems:"center"}}>
     <Text style={{fontSize:15,fontWeight:"700",color:colors.ink}}>{action.busy?"Guardando…":"Guardar"}</Text>
    </Pressable>
   ):undefined}}/>
