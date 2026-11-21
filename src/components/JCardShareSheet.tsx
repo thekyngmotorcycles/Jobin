@@ -6,6 +6,7 @@ import QRCode from "react-native-qrcode-svg";
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
 import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {jcardCommon} from "../theme/jcard";
 import {PublicProfileAvatar} from "./PublicProfileAvatar";
 import {loadShareRecipients,sendToShareRecipients,type ShareRecipient} from "../lib/share-contacts";
@@ -42,7 +43,12 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
  const message=contentMessage??(cardType+" de "+label+": "+link);
  const matchingContacts=contacts.filter(c=>c.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
  const options=OPTIONS.filter(item=>item.id!=="qr"||!!link.trim());
- const actionSize=Math.max(52,Math.min(64,(width-56-36)/4));
+ // Match the reference proportions on standard Android widths without clipping the Jelly layout.
+ const compact=width<360;
+ const headerSize=compact?JOBEEN_TYPE.modalTitle:20;
+ const sectionSize=compact?JOBEEN_TYPE.modalSectionTitle:15;
+ const recipientSize=compact?JOBEEN_TYPE.modalRecipient:12;
+ const actionSize=Math.max(44,Math.min(compact?48:62,(width-70)/4));
  useEffect(()=>{
   if(!visible)return;
   let active=true;
@@ -101,13 +107,13 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
     <View style={{alignItems:"center",paddingTop:10,paddingBottom:5}}>
      <View style={{width:42,height:5,borderRadius:3,backgroundColor:modal.handle}}/>
     </View>
-    <View style={{paddingHorizontal:18,flexDirection:"row",alignItems:"center",gap:10,paddingTop:8,paddingBottom:10}}>
+    <View style={{paddingHorizontal:18,flexDirection:"row",alignItems:"center",gap:10,paddingTop:7,paddingBottom:9}}>
      <View style={{width:39,height:39,borderRadius:13,alignItems:"center",justifyContent:"center",backgroundColor:t.yellow}}>
       <Ionicons name="share-social-outline" color={t.ink} size={24}/>
      </View>
-     <Text numberOfLines={2} style={{flex:1,fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle,fontWeight:"800",color:t.ink}}>{showQr?qrHeading:shareTitle}</Text>
+     <Text numberOfLines={2} style={{flex:1,fontSize:headerSize,lineHeight:compact?JOBEEN_LINE_HEIGHT.modalTitle:26,fontWeight:"800",color:t.ink}}>{showQr?qrHeading:shareTitle}</Text>
      <Pressable accessibilityRole="button" accessibilityLabel={showQr?"Volver a compartir":"Cerrar panel de compartir"}
-      onPress={()=>showQr?setShowQr(false):dismiss()} style={{width:44,height:44,justifyContent:"center",alignItems:"center"}}>
+      onPress={()=>showQr?setShowQr(false):dismiss()} style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,justifyContent:"center",alignItems:"center"}}>
       <Ionicons name={showQr?"arrow-back":"close"} size={24} color={t.ink}/>
      </Pressable>
     </View>
@@ -119,39 +125,39 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
      </View>:<>
      <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}
       style={{flexShrink:1}} contentContainerStyle={{paddingHorizontal:18,paddingBottom:18,gap:10}}>
-      <View style={{minHeight:45,borderWidth:1,borderColor:t.line,borderRadius:25,backgroundColor:t.cream,
+      <View style={{minHeight:JOBEEN_CONTROL.inputHeight,borderWidth:1,borderColor:t.line,borderRadius:22,backgroundColor:t.cream,
        flexDirection:"row",alignItems:"center",gap:10,paddingHorizontal:16}}>
-       <Ionicons name="search-outline" size={22} color={t.ink2}/>
+       <Ionicons name="search-outline" size={20} color={t.ink2}/>
        <TextInput value={query} onChangeText={setQuery} placeholder="Buscar contactos de Jobeen"
         accessibilityLabel="Buscar contactos de Jobeen" placeholderTextColor={t.ink2}
-        autoCapitalize="none" style={{flex:1,fontSize:JOBEEN_TYPE.input,color:t.ink,paddingVertical:9}}/>
+        autoCapitalize="none" style={{flex:1,fontSize:JOBEEN_TYPE.input,color:t.ink,paddingVertical:7}}/>
       </View>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8,marginTop:4}}>
        <View style={{flexDirection:"row",gap:8,alignItems:"center",flexShrink:1}}>
-        <Ionicons name="people-outline" size={21} color={t.yellow}/>
-        <Text numberOfLines={1} style={{fontSize:JOBEEN_TYPE.sectionTitle,fontWeight:"800",color:t.ink}}>Contactos Jobeen</Text>
+        <Ionicons name="people-outline" size={19} color={t.yellow}/>
+        <Text numberOfLines={1} style={{fontSize:sectionSize,fontWeight:"800",color:t.ink}}>Contactos Jobeen</Text>
        </View>
-       <Text style={{fontSize:12,color:selected.length?t.ink:t.ink2,fontWeight:selected.length?"800":"500"}}>
+       <Text style={{fontSize:JOBEEN_TYPE.secondary,color:selected.length?t.ink:t.yellow,fontWeight:selected.length?"700":"700"}}>
         {selected.length?"Seleccionados: "+selected.length:"Seleccionar varios"}
        </Text>
       </View>
       {loading?<ActivityIndicator color={t.yellow} style={{height:76}}/>:matchingContacts.length?
        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{gap:14,paddingHorizontal:2,paddingTop:8,paddingBottom:7}}>
+        contentContainerStyle={{gap:14,paddingHorizontal:2,paddingTop:7,paddingBottom:6}}>
         {matchingContacts.map(contact=>{
          const active=selected.includes(contact.id);
          return <Pressable key={contact.id} accessibilityRole="checkbox"
           accessibilityLabel={"Seleccionar "+contact.name} accessibilityState={{checked:active}}
-          onPress={()=>toggleRecipient(contact.id)} style={{width:78,alignItems:"center",gap:8}}>
-          <View style={{width:70,height:70,alignItems:"center",justifyContent:"center",
-           borderRadius:35,borderWidth:active?3:2,borderColor:t.yellow,padding:2}}>
-           <PublicProfileAvatar userId={contact.id} name={contact.name} size={60} framed={false}/>
-           {active&&<View style={{position:"absolute",right:-4,top:-5,width:27,height:27,borderRadius:14,
+          onPress={()=>toggleRecipient(contact.id)} style={{width:72,alignItems:"center",gap:7,paddingVertical:2}}>
+          <View style={{width:62,height:62,alignItems:"center",justifyContent:"center",
+           borderRadius:31,borderWidth:active?3:2,borderColor:t.yellow,padding:2}}>
+           <PublicProfileAvatar userId={contact.id} name={contact.name} size={52} framed={false}/>
+           {active&&<View style={{position:"absolute",right:-4,top:-5,width:23,height:23,borderRadius:12,
             backgroundColor:t.yellow,borderWidth:2,borderColor:modal.surface,alignItems:"center",justifyContent:"center"}}>
-            <Ionicons name="checkmark" color={t.ink} size={18}/>
+            <Ionicons name="checkmark" color={t.ink} size={16}/>
            </View>}
           </View>
-          <Text numberOfLines={2} style={{fontSize:12,textAlign:"center",fontWeight:active?"800":"600",color:t.ink,lineHeight:16}}>{contact.name}</Text>
+          <Text numberOfLines={2} style={{fontSize:recipientSize,textAlign:"center",fontWeight:active?"800":"600",color:t.ink,lineHeight:15}}>{contact.name}</Text>
          </Pressable>;
         })}
        </ScrollView>:
@@ -162,8 +168,8 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
       {!!status&&<Text accessibilityLiveRegion="polite" style={{fontSize:12,color:t.ink}}>{status}</Text>}
       <View style={{height:1,backgroundColor:t.line,marginVertical:4}}/>
       <View style={{flexDirection:"row",alignItems:"center",gap:9}}>
-       <Ionicons name="layers-outline" size={20} color={t.yellow}/>
-       <Text style={{fontSize:JOBEEN_TYPE.sectionTitle,fontWeight:"800",color:t.ink}}>Compartir mediante</Text>
+       <Ionicons name="layers-outline" size={18} color={t.yellow}/>
+       <Text style={{fontSize:sectionSize,fontWeight:"800",color:t.ink}}>Compartir mediante</Text>
       </View>
       <View style={{flexDirection:"row",justifyContent:"space-between",gap:6,marginBottom:4}}>
        {options.map(option=><Pressable key={option.id} accessibilityRole="button"
@@ -172,18 +178,21 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
         <View style={{height:actionSize,width:actionSize,borderRadius:actionSize/2,
          borderWidth:option.id==="qr"?2:1,borderColor:option.id==="qr"?t.yellow:t.line,
          backgroundColor:option.id==="whatsapp"?t.okBackground:t.cream,alignItems:"center",justifyContent:"center"}}>
-         <Ionicons name={option.icon} size={25} color={option.id==="whatsapp"?t.okText:t.ink}/>
+         <Ionicons name={option.icon} size={23} color={option.id==="whatsapp"?t.okText:t.ink}/>
         </View>
-        <Text numberOfLines={2} style={{textAlign:"center",fontSize:11.5,color:t.ink}}>{option.id==="qr"?qrLabel:option.label}</Text>
+        <Text numberOfLines={2} style={{textAlign:"center",fontSize:recipientSize,color:t.ink}}>{option.id==="qr"?qrLabel:option.label}</Text>
        </Pressable>)}
       </View>
      </ScrollView>
      {!!selected.length&&<Pressable accessibilityRole="button"
        accessibilityLabel={"Enviar a "+selected.length+" contactos"} disabled={sending}
-       onPress={()=>void sendSelected()} style={{minHeight:46,marginHorizontal:13,marginTop:4,marginBottom:10,
-        backgroundColor:t.yellow,borderRadius:23,alignItems:"center",justifyContent:"center",flexDirection:"row",gap:9,opacity:sending?0.6:1}}>
-       {sending?<ActivityIndicator color={t.ink}/>:<Ionicons name="paper-plane-outline" color={t.ink} size={22}/>}
-       <Text style={{fontSize:JOBEEN_TYPE.action,fontWeight:"700",color:t.ink}}>{sending?"Enviando...":"Enviar a "+selected.length+" contacto"+(selected.length===1?"":"s")}</Text>
+       onPress={()=>void sendSelected()} style={{minHeight:JOBEEN_CONTROL.touchTarget,marginHorizontal:13,marginTop:2,marginBottom:8,
+        alignItems:"center",justifyContent:"center",opacity:sending?0.6:1}}>
+       <View style={{height:JOBEEN_CONTROL.visualAction,width:"100%",backgroundColor:t.yellow,borderRadius:20,
+        alignItems:"center",justifyContent:"center",flexDirection:"row",gap:8}}>
+        {sending?<ActivityIndicator color={t.ink}/>:<Ionicons name="paper-plane-outline" color={t.ink} size={19}/>}
+        <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"700",color:t.ink}}>{sending?"Enviando...":"Enviar a "+selected.length+" contacto"+(selected.length===1?"":"s")}</Text>
+       </View>
       </Pressable>}
      </>}
    </SafeAreaView>

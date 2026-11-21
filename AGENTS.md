@@ -18,6 +18,14 @@ Este archivo es la fuente de referencia para asistentes y desarrolladores que co
 - Reutilizar `JobeenMessageIcon` en el botón Chats de la pantalla Mensajes. Mantener la navegación, el acordeón, las áreas táctiles y el respeto por safe-area al modificar solo los dibujos.
 - Para cambios visuales usar **EAS OTA en la rama `development`** cuando el binario sea compatible. No compilar ni generar un APK sin autorización explícita del usuario. No publicar cambios de diseño sin aprobación previa.
 
+## Regla visual responsive de Jobeen (aprobada por el propietario)
+- **Misma composición en todos los teléfonos** (incluidos Jelly, iPhone y Galaxy): mantener el mismo número de columnas, orden de los elementos, jerarquía, controles e interacciones en los anchos de teléfono. Una cuadrícula de dos columnas continúa siendo de **dos columnas**; nunca convertirla a una sola solo por detectar una pantalla estrecha.
+- Adaptar de manera proporcional el ancho de tarjetas, fotos, iconos, márgenes, separaciones y tipografía según el espacio disponible, sin deformar imágenes (respetar `aspectRatio`) ni introducir cortes o solapamientos. Emplear dimensiones flexibles y medidas reales del contenedor en vez de suponer un modelo de teléfono.
+- Mantener accesibilidad: targets de interacción apropiados, escalado de texto del sistema, contrastes y desplazamiento cuando sea necesario. Si no cabe el contenido de manera legible, priorizar scroll, distribución del espacio disponible y prueba de tamaños de contenido; **no cambiar la estructura ni ocultar elementos** sin autorización expresa.
+- Basar medidas y adaptación en las guías oficiales de Material Design 3 / Android para diseño adaptativo; esta **invariante de Jobeen para teléfonos** es una decisión específica del producto, no un mandato literal de Material 3. Las clases de tamaño de ventana sirven para evaluar y probar restricciones, no autorizan por sí solas cambios en la composición aprobada.
+- Para tablets/web o pantallas realmente expandidas, proponer cualquier estructura alternativa al propietario antes de implementarla. Comprobar siempre ancho lógico pequeño, normal y grande, y ambos temas. No convertir una optimización de Jelly en un rediseño para otros dispositivos.
+- Ninguna norma visual provisional de la auditoría se considera definitiva hasta comparar capturas reales y obtener la aprobación de su propietario.
+
 ## Norma global de compartir Jobeen (aprobada)
 - Todos los botones **Compartir** en JCard personal/de negocio, perfiles públicos, publicaciones, videos/Flashes, JShop y CV deben usar **el mismo menú redondeado y minimalista** de Jobeen (componente compartido `JCardShareSheet` / `JobeenShareSheet`).
 - Adaptar título, texto y enlace al contenido; mostrar **QR solo si existe un enlace**, y mantener WhatsApp, SMS y **Más opciones** para el selector nativo de contactos y apps del teléfono.

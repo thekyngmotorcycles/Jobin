@@ -48,7 +48,7 @@ test("Draft library is a dimmed, floating, two-column grid with manual removal",
  assert.ok(sheets.includes('animationType="fade"'));
  assert.ok(sheets.includes('borderRadius:modal.radius.dialog,overflow:"hidden"'));
  assert.ok(sheets.includes('flexDirection:"row",flexWrap:"wrap",gap:10'));
- assert.ok(sheets.includes('width:"48%"'));
+ assert.ok(sheets.includes('width:"48%"'),"Preserve two photo columns on all phones, including Jelly");
  assert.ok(sheets.includes('onPress={()=>p.onRestore(draft)}'));
  assert.ok(sheets.includes('onPress={()=>p.onDelete(draft)}'));
 });

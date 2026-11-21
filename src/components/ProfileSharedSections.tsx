@@ -1,12 +1,13 @@
 import {Ionicons} from "@expo/vector-icons";
 import {Image,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
-import {useEffect,useRef} from "react";
+import {useCallback,useEffect,useRef,useState} from "react";
 import {useReducedMotion} from "react-native-reanimated";
 import type {ReactNode,ComponentProps} from "react";
 import {ProfileFollowCounts} from "./ProfileFollowCounts";
 import {MediaThumbnail} from "./MediaThumbnail";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
+import {JOBEEN_TYPE} from "../theme/typography";
 
 export type ProfileSection="home"|"grid"|"cv"|"videos"|"live";
 const tabs=[
@@ -21,24 +22,28 @@ const tabs=[
 export function ProfileSectionTabs({section,onSelect,pinned=false}:{section:ProfileSection;onSelect:(section:ProfileSection)=>void;pinned?:boolean}){
  const {theme}=useTheme();const jt=jobeenTokens(theme);
  const {width}=useWindowDimensions();const reducedMotion=useReducedMotion();
+ const [viewportWidth,setViewportWidth]=useState(width);
  const scroller=useRef<ScrollView|null>(null);
- const selectedIndex=Math.max(0,tabs.findIndex(tab=>tab.id===section));
- useEffect(()=>{
-  scroller.current?.scrollTo({x:Math.max(0,selectedIndex*104-width/2+52),animated:!reducedMotion});
- },[selectedIndex,width,reducedMotion]);
+ const tabLayouts=useRef<Partial<Record<ProfileSection,{x:number;width:number}>>>({});
+ const scrollToSection=useCallback((id:ProfileSection)=>{
+  const layout=tabLayouts.current[id];
+  if(layout)scroller.current?.scrollTo({x:Math.max(0,layout.x+layout.width/2-viewportWidth/2),animated:!reducedMotion});
+ },[viewportWidth,reducedMotion]);
+ useEffect(()=>{scrollToSection(section);},[section,scrollToSection]);
  return <View style={{backgroundColor:jt.bg,borderBottomWidth:1,borderBottomColor:jt.line,
   elevation:pinned?3:0,shadowColor:jt.ink,shadowOffset:{width:0,height:2},shadowOpacity:pinned?0.09:0,
   shadowRadius:pinned?5:0,zIndex:5}}>
   <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always"
-   ref={scroller} contentContainerStyle={{alignItems:"center",paddingHorizontal:4,gap:4}}>
+   onLayout={event=>setViewportWidth(event.nativeEvent.layout.width)} ref={scroller} contentContainerStyle={{alignItems:"center",paddingHorizontal:4,gap:4}}>
    {tabs.map(tab=>{
     const selected=section===tab.id;
     return <Pressable key={tab.id} accessibilityRole="tab" accessibilityLabel={tab.label}
       accessibilityState={{selected}} onPress={()=>onSelect(tab.id)}
-      style={{minHeight:50,paddingHorizontal:11,minWidth:90,flexDirection:"row",gap:5,alignItems:"center",justifyContent:"center",
-       borderBottomWidth:selected?3:0,borderBottomColor:jt.yellow}}>
-     <Ionicons name={tab.icon} size={17} color={selected?jt.ink:jt.ink2}/>
-     <Text numberOfLines={1} style={{fontSize:13,fontWeight:selected?"700":"500",color:selected?jt.ink:jt.ink2}}>{tab.label}</Text>
+      onLayout={event=>{tabLayouts.current[tab.id]=event.nativeEvent.layout;if(selected)scrollToSection(tab.id);}}
+      style={{minHeight:50,paddingHorizontal:12,minWidth:92,flexDirection:"row",gap:6,alignItems:"center",justifyContent:"center",
+       borderBottomWidth:3,borderBottomColor:selected?jt.yellow:jt.bg}}>
+     <Ionicons name={tab.icon} size={18} color={jt.ink}/>
+     <Text numberOfLines={1} style={{fontSize:JOBEEN_TYPE.input,fontWeight:selected?"700":"600",color:jt.ink}}>{tab.label}</Text>
     </Pressable>;
    })}
   </ScrollView>

@@ -6,6 +6,7 @@ import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
 import {JOBEEN_TYPE} from "../theme/typography";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {MAX_POST_DRAFTS,type PostDraft,type PostDraftPhoto} from "../lib/post-drafts";
 import type {FeedAudience,FeedPostKind} from "../lib/social-content";
 
@@ -27,11 +28,13 @@ export function PostComposerSheets(p:Props){
  const altPhoto=p.photos.find(x=>x.id===p.altPhotoId);
  const action=(label:string,icon:React.ComponentProps<typeof Ionicons>["name"],onPress:()=>void,primary=false)=>
   <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
-   style={{minHeight:52,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:10,
+   style={{minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
+   <View style={{width:"100%",height:JOBEEN_CONTROL.visualAction+2,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8,
     backgroundColor:primary?modal.accent:modal.inner,borderWidth:primary?0:1,borderColor:label==="Descartar cambios"?danger.icon:modal.border,
-    borderRadius:16,paddingHorizontal:15}}>
-   <Ionicons name={icon} size={19} color={label==="Descartar cambios"?danger.icon:modal.text}/>
-   <Text style={{fontSize:14,fontWeight:"700",color:label==="Descartar cambios"?danger.icon:modal.text}}>{label}</Text>
+    borderRadius:modal.radius.control,paddingHorizontal:15}}>
+    <Ionicons name={icon} size={18} color={label==="Descartar cambios"?danger.icon:modal.text}/>
+    <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"700",color:label==="Descartar cambios"?danger.icon:modal.text}}>{label}</Text>
+   </View>
   </Pressable>;
  const backdrop=(onPress:()=>void)=><Pressable accessibilityRole="button" accessibilityLabel="Cerrar ventana"
   onPress={onPress} style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:modal.scrim}}/>;
@@ -45,7 +48,7 @@ export function PostComposerSheets(p:Props){
     <View style={{paddingHorizontal:16,paddingTop:12,paddingBottom:8,flexDirection:"row",alignItems:"center",gap:9}}>
      <Text accessibilityRole="header" style={{flex:1,fontSize:JOBEEN_TYPE.modalTitle,fontWeight:"800",color:modal.text}}>{title}</Text>
      <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" onPress={onClose}
-      style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
+      style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
       <Ionicons name="close" size={22} color={t.ink}/>
      </Pressable>
     </View>
@@ -72,7 +75,7 @@ export function PostComposerSheets(p:Props){
       {action("Guardar borrador","bookmark-outline",p.onSaveExit,true)}
       {action("Descartar cambios","trash-outline",p.onDiscardExit)}
       <Pressable accessibilityRole="button" accessibilityLabel="Continuar editando" onPress={p.onContinue}
-       style={{minHeight:46,alignItems:"center",justifyContent:"center"}}>
+       style={{minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
        <Text style={{color:t.ink2,fontSize:14,fontWeight:"600"}}>Continuar editando</Text>
       </Pressable>
      </View>
@@ -82,14 +85,10 @@ export function PostComposerSheets(p:Props){
 
   <Modal transparent visible={p.draftsOpen} animationType="fade" onRequestClose={p.onCloseDrafts} statusBarTranslucent={false}>
    {floatingCard("Borradores",p.onCloseDrafts,
-    <ScrollView showsVerticalScrollIndicator contentContainerStyle={{paddingHorizontal:15,paddingBottom:18,gap:12}}>
-     <Text style={{fontSize:12,color:t.ink2}}>{p.drafts.length} de {MAX_POST_DRAFTS} borradores</Text>
-     {!p.drafts.length&&<View style={{minHeight:135,alignItems:"center",justifyContent:"center",gap:10}}>
-      <Ionicons name="albums-outline" size={36} color={t.ink2}/>
-      <Text style={{color:t.ink2,fontSize:13}}>Aún no tienes borradores guardados.</Text>
-     </View>}
+    p.drafts.length?<ScrollView showsVerticalScrollIndicator contentContainerStyle={{paddingHorizontal:JOBEEN_CONTROL.modalHorizontalPadding,paddingBottom:18,gap:12}}>
+     <Text style={{fontSize:JOBEEN_TYPE.secondary,color:modal.muted}}>{p.drafts.length} de {MAX_POST_DRAFTS} borradores</Text>
      <View style={{flexDirection:"row",flexWrap:"wrap",gap:10}}>
-      {p.drafts.map((draft,index)=><View key={draft.id} style={{width:"48%",borderRadius:16,
+      {p.drafts.map((draft,index)=><View key={draft.id} style={{width:"48%",borderRadius:modal.radius.control,
        borderWidth:1,borderColor:t.line,backgroundColor:t.surface,overflow:"hidden"}}>
        <Pressable accessibilityRole="button" accessibilityLabel={"Continuar borrador "+(index+1)}
         onPress={()=>p.onRestore(draft)}>
@@ -100,21 +99,23 @@ export function PostComposerSheets(p:Props){
            size={32} color={t.ink2}/>}
         </View>
         <View style={{padding:9,gap:4,minHeight:61}}>
-         <Text numberOfLines={1} style={{color:t.ink,fontSize:12,fontWeight:"700"}}>
+         <Text numberOfLines={1} style={{color:t.ink,fontSize:JOBEEN_TYPE.secondary,fontWeight:"700"}}>
           {draft.body.trim()||"Publicación sin descripción"}</Text>
-         <Text numberOfLines={1} style={{color:t.ink2,fontSize:10}}>
+         <Text numberOfLines={1} style={{color:modal.muted,fontSize:JOBEEN_TYPE.caption}}>
           {new Date(draft.updatedAt).toLocaleDateString("es")} · {draft.photos.length} fotos</Text>
         </View>
        </Pressable>
        <Pressable accessibilityRole="button" accessibilityLabel={"Eliminar borrador "+(index+1)}
         onPress={()=>p.onDelete(draft)}
-        style={{position:"absolute",top:3,right:3,width:38,height:38,borderRadius:20,
+        style={{position:"absolute",top:3,right:3,width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,borderRadius:24,
          alignItems:"center",justifyContent:"center",backgroundColor:t.surface}}>
         <Ionicons name="trash-outline" size={19} color={t.ink}/>
        </Pressable>
       </View>)}
      </View>
-    </ScrollView>)}
+    </ScrollView>:<View style={{paddingHorizontal:18,paddingTop:6,paddingBottom:20}}>
+     <Text style={{color:modal.muted,fontSize:JOBEEN_TYPE.body,lineHeight:21}}>Aún no tienes borradores guardados.</Text>
+    </View>)}
   </Modal>
 
   <Modal transparent visible={p.previewOpen} animationType="fade" onRequestClose={p.onClosePreview} statusBarTranslucent={false}>
@@ -158,7 +159,7 @@ export function PostComposerSheets(p:Props){
        <Ionicons name="bookmark-outline" size={22} color={t.ink}/>
       </View>
      </View>
-     <Text style={{fontSize:12,color:t.ink2,paddingHorizontal:16}}>Vista de ejemplo. Tu publicación todavía no es visible para otros usuarios.</Text>
+     <Text style={{fontSize:JOBEEN_TYPE.secondary,color:t.ink2,paddingHorizontal:16}}>Vista de ejemplo. Tu publicación todavía no es visible para otros usuarios.</Text>
      <View style={{paddingHorizontal:16}}>{action("Volver a editar","create-outline",p.onClosePreview,true)}</View>
     </ScrollView>)}
   </Modal>

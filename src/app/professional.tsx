@@ -18,6 +18,9 @@ import {canonicalLanguage} from "../lib/languages";
 import {Ionicons} from "@expo/vector-icons";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
+import {jobeenModalTokens} from "../theme/modals";
+import {JOBEEN_TYPE} from "../theme/typography";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {ProfessionGlyph} from "../components/ProfessionGlyph";
 import type { JCardStatus } from "../lib/jcard";
@@ -25,7 +28,7 @@ import type { JCardStatus } from "../lib/jcard";
 export default function Professional() {
  const {s,colors}=useUi();
  const {theme}=useTheme();
- const jt=jobeenTokens(theme);
+ const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme);
  const insets=useSafeAreaInsets();
  const sunflower=theme==="sunflower";
  const glassPanel=(expanded:boolean)=>sunflower&&!expanded?{backgroundColor:colors.glassPanel,borderColor:colors.glassBorder,shadowColor:colors.glassShadow,shadowOpacity:0.27,shadowRadius:16,shadowOffset:{width:0,height:7},elevation:6}:undefined;
@@ -86,10 +89,10 @@ export default function Professional() {
  const w=workspace.data;
 
  useEffect(()=>{if(!w)return;setName(w.card.name);setHandle(w.card.handle);setCity(w.profile.city||"");setRegion(w.profile.region||"");setAvailability(w.card.status);setLanguages(w.card.languages.map(l=>({name:l.name,fluency:String(l.fluency)})));},[w]);
- const input={color:colors.ink,borderColor:colors.line,borderWidth:1,borderRadius:10,padding:12,minHeight:44};
+ const input={color:colors.ink,borderColor:colors.line,borderWidth:1,borderRadius:10,padding:12,minHeight:JOBEEN_CONTROL.touchTarget};
  function choose(code:string){setProfession(code);setSpecialties(w?.professions.find(p=>p.profession_code===code)?.specialties??[]);const pp=w?.professions.find(p=>p.profession_code===code);setTraining(pp?.training_status??"graduado");setInstitution(pp?.institution_id??null);}
- const sectionRow=(id:Section,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}>
-  <Ionicons name={icon} size={25} color={sunflower&&section!==id?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined,color:sunflower&&section!==id?colors.glassText:colors.ink}]}>{title}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={sunflower&&section!==id?colors.glassMuted:colors.muted}/>
+ const sectionRow=(id:Section,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:JOBEEN_CONTROL.accordionRowVerticalPadding,minHeight:JOBEEN_CONTROL.touchTarget}}>
+  <Ionicons name={icon} size={23} color={sunflower&&section!==id?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined,color:sunflower&&section!==id?colors.glassText:colors.ink}]}>{title}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={sunflower&&section!==id?colors.glassMuted:colors.muted}/>
  </Pressable>;
  type SaveTarget="identity"|"languages"|"privacy";
  const identityDirty=!!w&&(name!==w.card.name||handle!==w.card.handle||city!==(w.profile.city??"")||
@@ -160,7 +163,7 @@ export default function Professional() {
    <Pressable accessibilityRole="button" accessibilityLabel="Guardar cambios de JCard"
     accessibilityState={{disabled:action.busy}} disabled={action.busy}
     onPress={()=>saveSections(pendingTargets)}
-    style={{minWidth:72,minHeight:44,justifyContent:"center",alignItems:"center"}}>
+    style={{minWidth:72,minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center",alignItems:"center"}}>
     <Text style={{fontSize:15,fontWeight:"700",color:colors.ink}}>{action.busy?"Guardando…":"Guardar"}</Text>
    </Pressable>
   ):undefined}}/>
@@ -168,7 +171,7 @@ export default function Professional() {
   {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
    {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
    <View style={{gap:6,paddingTop:0,paddingBottom:8}}>
-    <View onLayout={e=>{positions.current.identity=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="identity")]}>
+    <View onLayout={e=>{positions.current.identity=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap},glassPanel(section==="identity")]}>
      {sectionRow("identity","Datos principales","person-outline")}
      {section==="identity"&&<View style={{gap:12,paddingBottom:12}}>
       <Button secondary title={"Cambiar foto de JCard personal"} onPress={changePhoto}/>
@@ -182,7 +185,7 @@ export default function Professional() {
       <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("identity")}/>
      </View>}
     </View>
-    <View onLayout={e=>{positions.current.languages=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="languages")]}>
+    <View onLayout={e=>{positions.current.languages=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap},glassPanel(section==="languages")]}>
      {sectionRow("languages","Idiomas","globe-outline")}
      {section==="languages"&&<View style={{gap:16,paddingBottom:12}}>
       <Text style={s.muted}>El aro indica visualmente tu nivel. Se guarda como una puntuación compatible con tu JCard actual.</Text>
@@ -201,7 +204,7 @@ export default function Professional() {
       <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("languages")}/>
      </View>}
     </View>
-    {w.card.accountType==="personal"&&<View onLayout={e=>{positions.current.professions=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="professions")]}>
+    {w.card.accountType==="personal"&&<View onLayout={e=>{positions.current.professions=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap},glassPanel(section==="professions")]}>
      {sectionRow("professions","Profesiones y formación","school-outline")}
      {section==="professions"&&<View style={{gap:14,paddingBottom:12}}>
       <Text style={s.muted}>Puedes declarar tus profesiones sin un límite global. Una es principal y las demás secundarias. Declarar una profesión no verifica tus credenciales: los certificados se revisan por separado.</Text>
@@ -233,17 +236,17 @@ export default function Professional() {
       </View>}
      </View>}
     </View>}
-    <View onLayout={e=>{positions.current.privacy=e.nativeEvent.layout.y;}} style={[s.panel,glassPanel(section==="privacy")]}>
+    <View onLayout={e=>{positions.current.privacy=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap},glassPanel(section==="privacy")]}>
      {sectionRow("privacy","Privacidad de contacto","lock-closed-outline")}
      {section==="privacy"&&<View style={{gap:18,paddingBottom:12}}>
       <Text style={s.muted}>Ambos datos permanecen ocultos por defecto.</Text>
-      <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showEmail}} onPress={()=>setShowEmail(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={showEmail?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar correo en mi JCard</Text></Pressable>
-      <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showPhone}} onPress={()=>setShowPhone(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={showPhone?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar teléfono en mi JCard</Text></Pressable>
-       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:visibility.personal_enabled}} onPress={()=>{if(visibility.personal_enabled&&!visibility.business_enabled){Alert.alert("Al menos una JCard activa","Debes conservar activa la JCard personal o la de negocio.");return;}setVisibility(v=>({...v,personal_enabled:!v.personal_enabled}));}} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Ionicons name={visibility.personal_enabled?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar mi JCard personal en el perfil</Text></Pressable>
+      <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showEmail}} onPress={()=>setShowEmail(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name={showEmail?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar correo en mi JCard</Text></Pressable>
+      <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showPhone}} onPress={()=>setShowPhone(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name={showPhone?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar teléfono en mi JCard</Text></Pressable>
+       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:visibility.personal_enabled}} onPress={()=>{if(visibility.personal_enabled&&!visibility.business_enabled){Alert.alert("Al menos una JCard activa","Debes conservar activa la JCard personal o la de negocio.");return;}setVisibility(v=>({...v,personal_enabled:!v.personal_enabled}));}} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name={visibility.personal_enabled?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar mi JCard personal en el perfil</Text></Pressable>
       <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("privacy")}/>
      </View>}
     </View>
-    <View style={[s.panel,glassPanel(false)]}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:16}}><Ionicons name="color-palette-outline" size={25} color={sunflower?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:18,fontStyle:"normal",fontFamily:undefined,color:sunflower?colors.glassText:colors.ink}]}>Apariencia</Text></View><Ionicons name="chevron-forward" size={20} color={sunflower?colors.glassMuted:colors.muted}/></Pressable></View>
+    <View style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap},glassPanel(false)]}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:JOBEEN_CONTROL.accordionRowVerticalPadding,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name="color-palette-outline" size={23} color={sunflower?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined,color:sunflower?colors.glassText:colors.ink}]}>Apariencia</Text></View><Ionicons name="chevron-forward" size={20} color={sunflower?colors.glassMuted:colors.muted}/></Pressable></View>
 
    </View>
   </>}
@@ -251,30 +254,30 @@ export default function Professional() {
   <Modal visible={unsavedDialogOpen} transparent animationType="slide" onRequestClose={keepEditing} statusBarTranslucent={false}>
    <View style={{flex:1,justifyContent:"flex-end"}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar aviso de cambios sin guardar"
-     onPress={keepEditing} style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:jt.videoViewsOverlay}}/>
+     onPress={keepEditing} style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:modal.scrim}}/>
     <View accessibilityViewIsModal style={{width:"100%",maxWidth:640,alignSelf:"center",
-     borderTopLeftRadius:28,borderTopRightRadius:28,backgroundColor:jt.surface,
-     borderTopWidth:1,borderLeftWidth:1,borderRightWidth:1,borderColor:jt.line,
+     borderTopLeftRadius:modal.radius.sheet,borderTopRightRadius:modal.radius.sheet,backgroundColor:modal.surface,
+     borderTopWidth:1,borderLeftWidth:1,borderRightWidth:1,borderColor:modal.border,
      paddingHorizontal:22,paddingTop:13,paddingBottom:Math.max(insets.bottom,20),
      shadowColor:jt.floatingCardShadow,shadowOpacity:0.2,shadowRadius:24,
      shadowOffset:{width:0,height:-6},elevation:16}}>
-     <View style={{width:44,height:5,borderRadius:5,alignSelf:"center",backgroundColor:jt.silver,marginBottom:24}}/>
-     <Text accessibilityRole="header" style={{fontSize:22,lineHeight:28,fontWeight:"700",color:jt.ink,marginBottom:10}}>
+     <View style={{width:44,height:5,borderRadius:5,alignSelf:"center",backgroundColor:modal.handle,marginBottom:14}}/>
+     <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.modalTitle,lineHeight:22,fontWeight:"800",color:modal.text,marginBottom:8}}>
       ¿Descartar cambios?
      </Text>
-     <Text style={{fontSize:14,lineHeight:21,color:jt.ink2,marginBottom:24}}>
+     <Text style={{fontSize:JOBEEN_TYPE.body,lineHeight:21,color:modal.muted,marginBottom:18}}>
       Los cambios de tu JCard que no guardaste se perderán.
      </Text>
      <View style={{gap:10}}>
       <Pressable accessibilityRole="button" accessibilityLabel="Descartar cambios sin guardar"
-       onPress={discardChanges} style={{minHeight:52,borderRadius:16,backgroundColor:jt.ink,
+       onPress={discardChanges} style={{minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:modal.radius.control,backgroundColor:modal.accent,
         alignItems:"center",justifyContent:"center",paddingHorizontal:14}}>
-       <Text style={{fontSize:15,fontWeight:"700",color:jt.surface}}>Descartar cambios</Text>
+       <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"700",color:modal.text}}>Descartar cambios</Text>
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Seguir editando"
-       onPress={keepEditing} style={{minHeight:52,borderRadius:16,borderWidth:1,borderColor:jt.bizBorder,
-        backgroundColor:jt.cream,alignItems:"center",justifyContent:"center",paddingHorizontal:14}}>
-       <Text style={{fontSize:15,fontWeight:"600",color:jt.ink}}>Seguir editando</Text>
+       onPress={keepEditing} style={{minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:modal.radius.control,borderWidth:1,borderColor:modal.border,
+        backgroundColor:modal.inner,alignItems:"center",justifyContent:"center",paddingHorizontal:14}}>
+       <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"600",color:modal.text}}>Seguir editando</Text>
       </Pressable>
      </View>
     </View>

@@ -2,20 +2,24 @@ import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useFocusEffect} from "expo-router";
 import {useCallback,useState} from "react";
 import {ActivityIndicator,Alert,Modal,Pressable,ScrollView,Text,View} from "react-native";
-import {SafeAreaView} from "react-native-safe-area-context";
+import {SafeAreaView,useSafeAreaInsets} from "react-native-safe-area-context";
 import {AccountAvatar} from "../components/AccountAvatar";
 import {blockMessageUser,decideMessageRequest,loadIncomingRequests,loadMessagePrivacy,reportMessageUser,saveMessagePrivacy,
  type MessagePrivacy,type MessageRequest} from "../lib/message-requests";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
+import {jobeenModalTokens} from "../theme/modals";
+import {JOBEEN_TYPE} from "../theme/typography";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
 
 type Filter="Solicitudes"|"Spam";
 export default function MessageRequests(){
- const {theme}=useTheme(),t=jobeenTokens(theme);
+ const {theme}=useTheme(),t=jobeenTokens(theme),modal=jobeenModalTokens(theme);const insets=useSafeAreaInsets();
  const [filter,setFilter]=useState<Filter>("Solicitudes");
  const [rows,setRows]=useState<MessageRequest[]>([]);
  const [privacy,setPrivacy]=useState<MessagePrivacy>({requestsFrom:"all",filterSpam:true});
  const [settingsOpen,setSettingsOpen]=useState(false);
+ const [privacyError,setPrivacyError]=useState("");
  const [busy,setBusy]=useState("");const [saving,setSaving]=useState(false);
  const [loading,setLoading]=useState(true);const [error,setError]=useState("");
  const reload=useCallback(async()=>{
@@ -72,29 +76,27 @@ export default function MessageRequests(){
  }
  async function updatePrivacy(next:MessagePrivacy){
   if(saving)return;
-  setSaving(true);setError("");
+  setSaving(true);setPrivacyError("");
   try{await saveMessagePrivacy(next);setPrivacy(next);}
-  catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar la privacidad.");}
+  catch(e){setPrivacyError(e instanceof Error?e.message:"No se pudo actualizar la privacidad.");}
   finally{setSaving(false);}
  }
+ function closePrivacy(){if(!saving)setSettingsOpen(false);}
  const visible=rows.filter(x=>filter==="Solicitudes"?x.status==="pending":x.status==="spam"||x.status==="reported");
  const unreviewed=rows.filter(x=>x.status==="pending").length;
  return <>
   <Stack.Screen options={{title:"Solicitudes de mensajes"}}/>
   <SafeAreaView edges={["bottom"]} style={{flex:1,backgroundColor:t.bg}}>
-   <ScrollView contentContainerStyle={{padding:16,paddingBottom:45,gap:15}} keyboardShouldPersistTaps="handled">
+   <ScrollView contentContainerStyle={{padding:JOBEEN_CONTROL.pageHorizontalPadding,paddingBottom:45,gap:12}} keyboardShouldPersistTaps="handled">
     <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
-     <View style={{gap:3,flex:1}}>
-      <Text style={{fontSize:20,fontWeight:"800",color:t.ink}}>Solicitudes de mensajes</Text>
-      <Text style={{fontSize:13,color:t.ink2}}>Contactos que todavía no aceptaste</Text>
-     </View>
-     <Pressable accessibilityRole="button" accessibilityLabel="Privacidad de mensajes" onPress={()=>setSettingsOpen(true)} style={{width:45,height:45,borderRadius:16,alignItems:"center",justifyContent:"center",backgroundColor:t.surface,borderWidth:1,borderColor:t.line}}>
+     <Text style={{flex:1,fontSize:JOBEEN_TYPE.secondary,color:t.ink2}}>Contactos que todavía no aceptaste</Text>
+     <Pressable accessibilityRole="button" accessibilityLabel="Privacidad de mensajes" onPress={()=>{setPrivacyError("");setSettingsOpen(true);}} style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,borderRadius:16,alignItems:"center",justifyContent:"center",backgroundColor:t.surface,borderWidth:1,borderColor:t.line}}>
       <Ionicons name="settings-outline" size={22} color={t.ink}/>
      </Pressable>
     </View>
     <View style={{flexDirection:"row",gap:10}}>
      {(["Solicitudes","Spam"] as const).map(value=><Pressable key={value} accessibilityRole="tab" accessibilityState={{selected:filter===value}} onPress={()=>setFilter(value)}
-      style={{flex:1,minHeight:47,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:7,
+      style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:7,
        borderRadius:16,backgroundColor:filter===value?t.cream:t.surface,borderWidth:1,borderColor:filter===value?t.yellow:t.line}}>
       <Ionicons name={value==="Spam"?"shield-outline":"mail-unread-outline"} size={20} color={t.ink}/>
       <Text style={{fontSize:14,fontWeight:filter===value?"800":"600",color:t.ink}}>{value}</Text>
@@ -119,13 +121,13 @@ export default function MessageRequests(){
      <Text style={{fontSize:12,color:t.ink2}}>Si aceptás, esta conversación pasará a Chats. No se han habilitado archivos ni llamadas.</Text>
      <View style={{flexDirection:"row",gap:8}}>
       <Pressable accessibilityRole="button" disabled={busy===request.id} onPress={()=>void accept(request)}
-       style={{flex:1,minHeight:44,borderRadius:14,backgroundColor:t.ink,alignItems:"center",justifyContent:"center",opacity:busy===request.id?0.5:1}}>
+       style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:14,backgroundColor:t.ink,alignItems:"center",justifyContent:"center",opacity:busy===request.id?0.5:1}}>
        <Text style={{color:t.bg,fontWeight:"800"}}>Aceptar</Text>
       </Pressable>
       <Pressable accessibilityRole="button" disabled={busy===request.id}
        onPress={()=>Alert.alert("Eliminar solicitud","La persona no podrá enviarte otra solicitud sin tu autorización.",[
         {text:"Cancelar",style:"cancel"},{text:"Eliminar",style:"destructive",onPress:()=>void dismiss(request)}])}
-       style={{flex:1,minHeight:44,borderRadius:14,borderWidth:1,borderColor:t.line,backgroundColor:t.bg,alignItems:"center",justifyContent:"center"}}>
+       style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:14,borderWidth:1,borderColor:t.line,backgroundColor:t.bg,alignItems:"center",justifyContent:"center"}}>
        <Text style={{color:t.ink,fontWeight:"700"}}>Eliminar</Text>
       </Pressable>
      </View>
@@ -145,28 +147,47 @@ export default function MessageRequests(){
      </View>
     </View>)}
    </ScrollView>
-   <Modal visible={settingsOpen} transparent animationType="slide" onRequestClose={()=>setSettingsOpen(false)}>
-    <View style={{flex:1,backgroundColor:t.videoViewsOverlay,justifyContent:"flex-end"}}>
-     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar configuración de mensajes" onPress={()=>setSettingsOpen(false)} style={{flex:1}}/>
-     <View style={{backgroundColor:t.bg,borderTopLeftRadius:24,borderTopRightRadius:24,padding:20,gap:14,paddingBottom:32}}>
-      <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
-       <Text style={{color:t.ink,fontSize:19,fontWeight:"800"}}>Privacidad de mensajes</Text>
-       <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" onPress={()=>setSettingsOpen(false)} style={{padding:7}}><Ionicons name="close" size={25} color={t.ink}/></Pressable>
+   <Modal visible={settingsOpen} transparent animationType="slide" onRequestClose={closePrivacy}>
+    <View style={{flex:1,justifyContent:"flex-end"}}>
+     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar configuración de mensajes" onPress={closePrivacy}
+      style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:modal.scrim}}/>
+     <View accessibilityViewIsModal style={{maxHeight:"88%",backgroundColor:modal.surface,
+      borderTopLeftRadius:modal.radius.sheet,borderTopRightRadius:modal.radius.sheet,overflow:"hidden",
+      borderWidth:1,borderColor:modal.border}}>
+      <View style={{alignItems:"center",paddingTop:10,paddingBottom:4}}>
+       <View style={{width:42,height:5,borderRadius:3,backgroundColor:modal.handle}}/>
       </View>
-      <Text style={{color:t.ink2,fontSize:13}}>¿Quién puede enviarte una nueva solicitud?</Text>
-      {([{id:"all",label:"Cualquier usuario"},{id:"following",label:"Solo personas que sigo"},{id:"none",label:"Nadie"}] as const).map(option=><Pressable key={option.id} accessibilityRole="radio"
-       accessibilityState={{checked:privacy.requestsFrom===option.id}} onPress={()=>void updatePrivacy({...privacy,requestsFrom:option.id})}
-       style={{minHeight:45,flexDirection:"row",gap:10,alignItems:"center",borderWidth:1,borderRadius:15,borderColor:privacy.requestsFrom===option.id?t.yellow:t.line,backgroundColor:privacy.requestsFrom===option.id?t.cream:t.surface,paddingHorizontal:12}}>
-       <Ionicons name={privacy.requestsFrom===option.id?"radio-button-on":"radio-button-off"} size={21} color={t.ink}/>
-       <Text style={{color:t.ink,fontSize:14}}>{option.label}</Text>
-      </Pressable>)}
-      <Pressable accessibilityRole="switch" accessibilityState={{checked:privacy.filterSpam}} onPress={()=>void updatePrivacy({...privacy,filterSpam:!privacy.filterSpam})}
-       style={{minHeight:52,paddingHorizontal:12,borderRadius:15,backgroundColor:t.surface,borderWidth:1,borderColor:t.line,flexDirection:"row",alignItems:"center",gap:10}}>
-       <Text style={{flex:1,color:t.ink,fontWeight:"700"}}>Filtrar automáticamente mensajes sospechosos</Text>
-       <Ionicons name={privacy.filterSpam?"toggle":"toggle-outline"} size={32} color={t.ink}/>
-      </Pressable>
-      <Text style={{color:t.ink2,fontSize:12,lineHeight:18}}>El filtrado usa reglas de comportamiento y contenido; no supone que una persona desconocida sea spam. Los reportes no generan sanciones automáticas.</Text>
-      {saving&&<ActivityIndicator color={t.yellow}/>}
+      <View style={{paddingHorizontal:JOBEEN_CONTROL.modalHorizontalPadding,flexDirection:"row",
+       justifyContent:"space-between",alignItems:"center"}}>
+       <Text accessibilityRole="header" style={{flex:1,color:modal.text,fontSize:JOBEEN_TYPE.modalTitle,fontWeight:"800"}}>Privacidad de mensajes</Text>
+       <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" onPress={closePrivacy}
+        style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
+        <Ionicons name="close" size={23} color={modal.text}/>
+       </Pressable>
+      </View>
+      <ScrollView keyboardShouldPersistTaps="handled" style={{flexShrink:1}}
+       contentContainerStyle={{paddingHorizontal:JOBEEN_CONTROL.modalHorizontalPadding,paddingBottom:Math.max(insets.bottom,18),gap:JOBEEN_CONTROL.modalContentGap}}>
+       <Text style={{color:modal.muted,fontSize:JOBEEN_TYPE.input}}>¿Quién puede enviarte una nueva solicitud?</Text>
+       {!!privacyError&&<Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{fontSize:JOBEEN_TYPE.secondary,color:modal.text}}>{privacyError}</Text>}
+       {([{id:"all",label:"Cualquier usuario"},{id:"following",label:"Solo personas que sigo"},{id:"none",label:"Nadie"}] as const).map(option=><Pressable key={option.id} accessibilityRole="radio"
+        accessibilityState={{checked:privacy.requestsFrom===option.id,disabled:saving}} disabled={saving} onPress={()=>void updatePrivacy({...privacy,requestsFrom:option.id})}
+        style={{minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",gap:10,alignItems:"center",borderWidth:1,
+         borderRadius:modal.radius.control,borderColor:privacy.requestsFrom===option.id?modal.accent:modal.border,
+         backgroundColor:privacy.requestsFrom===option.id?modal.soft:modal.inner,paddingHorizontal:12}}>
+        <Ionicons name={privacy.requestsFrom===option.id?"radio-button-on":"radio-button-off"} size={20} color={modal.text}/>
+        <Text style={{color:modal.text,fontSize:JOBEEN_TYPE.body}}>{option.label}</Text>
+       </Pressable>)}
+       <Pressable accessibilityRole="switch" accessibilityState={{checked:privacy.filterSpam,disabled:saving}} disabled={saving} onPress={()=>void updatePrivacy({...privacy,filterSpam:!privacy.filterSpam})}
+        style={{minHeight:JOBEEN_CONTROL.touchTarget,padding:12,borderRadius:modal.radius.control,
+         backgroundColor:modal.inner,borderWidth:1,borderColor:modal.border,flexDirection:"row",alignItems:"center",gap:10}}>
+        <Text style={{flex:1,color:modal.text,fontSize:JOBEEN_TYPE.body,fontWeight:"700"}}>Filtrar automáticamente mensajes sospechosos</Text>
+        <Ionicons name={privacy.filterSpam?"toggle":"toggle-outline"} size={30} color={modal.text}/>
+       </Pressable>
+       <Text style={{color:modal.muted,fontSize:JOBEEN_TYPE.secondary,lineHeight:18}}>
+        El filtrado usa reglas de comportamiento y contenido; no supone que una persona desconocida sea spam. Los reportes no generan sanciones automáticas.
+       </Text>
+       {saving&&<ActivityIndicator color={modal.accent}/>}
+      </ScrollView>
      </View>
     </View>
    </Modal>
