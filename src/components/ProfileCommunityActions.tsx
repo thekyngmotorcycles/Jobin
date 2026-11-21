@@ -1,6 +1,5 @@
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
-import {jcardCommon} from "../theme/jcard";
 import {useCallback,useEffect,useState} from "react";
 import {Alert,Modal,Pressable,StyleSheet,Text,View} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
