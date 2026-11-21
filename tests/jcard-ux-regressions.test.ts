@@ -80,7 +80,10 @@ test("Own profile removes upper left wordmark without changing actions",()=>{
 test("Share sheet identifies personal/business JCard without duplicate name text",()=>{
  const sheet=src("src/components/JCardShareSheet.tsx");
  assert.ok(sheet.includes('cardType=side==="business"?"JCard de negocios":"JCard personal"'));
- assert.ok(sheet.includes('{showQr?"Mi código QR":cardType}'));
+ assert.ok(sheet.includes('{showQr?qrHeading:shareTitle}'));
+  assert.ok(sheet.includes('contentTitle?"Código QR":"Mi código QR"'));
+  assert.ok(sheet.includes("const shareTitle=contentTitle??cardType"));
+  assert.ok(sheet.includes("const message=contentMessage??("));
  assert.ok(!sheet.includes('>Compartir {label}</Text>'));
  assert.ok(business.includes('side={shareSide??(back?"business":"personal")}'));
 });
@@ -90,7 +93,8 @@ test("More options invokes Android native share chooser after closing custom she
  assert.ok(sheet.includes('nativeSharePending.current=true'));
  assert.ok(sheet.includes('if(Platform.OS==="android"){dismiss();setTimeout(()=>void shareNative(),400);return;}'));
  assert.ok(sheet.includes('onDismiss={()=>{if(nativeSharePending.current)'));
- assert.ok(sheet.includes('Share.share({message,title:cardType+" · "+label})'));
+ assert.ok(sheet.includes('Share.share({message,title:shareTitle+" · "+label})'));
+ assert.ok(sheet.includes('if(result.action===Share.sharedAction)onShared?.()'));
  assert.ok(sheet.includes("Para ver los contactos sugeridos y todas las apps instaladas"));
  assert.ok(sheet.indexOf('{id:"qr",label:"Mi QR"')<sheet.indexOf('{id:"whatsapp",label:"WhatsApp"'));
 });

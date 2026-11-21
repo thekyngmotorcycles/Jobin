@@ -1,11 +1,13 @@
 import { useRef, useState } from "react";
 import {PostCaption} from "./PostCaption";
-import { Alert, FlatList, Image, Pressable, Share, Text, View, useWindowDimensions, type ViewToken } from "react-native";
+import { FlatList, Image, Pressable, Text, View, useWindowDimensions, type ViewToken } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Avatar } from "./social-ui";
 import { useUi } from "./ui";
 import type { PhotoPost } from "../lib/home";
 import { useSocial } from "../state/SocialProvider";
+import {useTheme} from "../state/ThemeProvider";
+import {JobeenShareSheet} from "./JCardShareSheet";
 
 /** Identical action strip for demo and real posts, adaptive to narrow Android screens. */
 export function PostEngagementRow({likes,comments,shares,liked,onLike,onComments,onShare,saved=false,onSave,likeDisabled=false,saveDisabled=false}:{
@@ -58,15 +60,11 @@ export function PhotoCarousel({ post }: { post: Pick<PhotoPost, "photos" | "auth
 export function VideoCard({ id, poster, author, handle, avatar, caption, likes, comments, shares = 0, onOpen }: {
   id: string; poster: string; author: string; handle: string; avatar?: string; caption: string; likes: number; comments: number; shares?: number; onOpen: () => void;
 }) {
-  const { s, colors } = useUi();
+  const { s, colors } = useUi();const {theme}=useTheme();
+  const [shareOpen,setShareOpen]=useState(false);
   const { likedPosts, toggleLike, shares: demoShares, addShare, savedPosts, toggleSave } = useSocial();
   const liked = likedPosts.includes(id);
-  async function shareVideo() {
-    try {
-      const result = await Share.share({ message: author + ": " + caption });
-      if (result.action === Share.sharedAction) addShare(id);
-    } catch { Alert.alert("Compartir", "No se pudo compartir esta publicación."); }
-  }
+  function shareVideo(){setShareOpen(true);}
   return (
     <View style={{ gap: 10 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16 }}>
@@ -80,21 +78,19 @@ export function VideoCard({ id, poster, author, handle, avatar, caption, likes, 
       <PostCaption text={caption}/>
       <PostEngagementRow likes={likes + (liked ? 1 : 0)} comments={comments} shares={shares + (demoShares[id] || 0)}
         liked={liked} onLike={() => toggleLike(id)} onShare={() => void shareVideo()}
-        saved={savedPosts.includes(id)} onSave={()=>toggleSave(id)} />
+         saved={savedPosts.includes(id)} onSave={()=>toggleSave(id)} />
+      <JobeenShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} theme={theme} label={author}
+       contentTitle="Video profesional" contentMessage={author+": "+caption} onShared={()=>addShare(id)}/>
     </View>
   );
 }
 
 export function PhotoPostCard({ post }: { post: PhotoPost }) {
-  const { s } = useUi();
+  const { s } = useUi();const {theme}=useTheme();
+  const [shareOpen,setShareOpen]=useState(false);
   const { likedPosts, toggleLike, shares: demoShares, addShare, comments: demoComments, savedPosts, toggleSave } = useSocial();
   const liked = likedPosts.includes(post.id);
-  async function sharePhoto() {
-    try {
-      const result = await Share.share({ message: post.author + ": " + post.caption });
-      if (result.action === Share.sharedAction) addShare(post.id);
-    } catch { Alert.alert("Compartir", "No se pudo compartir esta publicación."); }
-  }
+  function sharePhoto(){setShareOpen(true);}
   return (
     <View style={{ gap: 10 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16 }}>
@@ -105,7 +101,9 @@ export function PhotoPostCard({ post }: { post: PhotoPost }) {
       <PostCaption text={post.caption}/>
       <PostEngagementRow likes={post.likes + (liked ? 1 : 0)} comments={(demoComments[post.id] || []).length} shares={demoShares[post.id] || 0}
         liked={liked} onLike={() => toggleLike(post.id)} onShare={() => void sharePhoto()}
-        saved={savedPosts.includes(post.id)} onSave={()=>toggleSave(post.id)} />
+         saved={savedPosts.includes(post.id)} onSave={()=>toggleSave(post.id)} />
+      <JobeenShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} theme={theme} label={post.author}
+       contentTitle="Publicación" contentMessage={post.author+": "+post.caption} onShared={()=>addShare(post.id)}/>
     </View>
   );
 }

@@ -22,7 +22,8 @@ test("Real Home posts have a paginated photo gallery and working social controls
  assert.ok(card.includes("loadHomePostComments("));
  assert.ok(card.includes("addHomePostComment("));
  assert.ok(card.includes("recordHomePostShare("));
- assert.ok(card.includes("Share.sharedAction"));
+ assert.ok(card.includes("onShared={()=>void confirmNativeShare()"));
+  assert.ok(source("src/components/JCardShareSheet.tsx").includes("if(result.action===Share.sharedAction)onShared?.()"));
  const demo=source("src/components/PostCard.tsx");
  assert.ok(demo.includes("export function PostEngagementRow("));
  assert.ok(demo.includes('justifyContent:"flex-start"'));
@@ -30,7 +31,8 @@ test("Real Home posts have a paginated photo gallery and working social controls
  assert.ok(demo.includes('name="heart-outline"') || demo.includes('"heart-outline"'));
  assert.ok(demo.includes('name="chatbubble-outline"'));
  assert.ok(demo.includes('name="arrow-redo-outline"'));
- assert.ok(demo.includes("Share.share("));
+ assert.ok(demo.includes("<JobeenShareSheet"));
+  assert.ok(!demo.includes("Share.share("));
  assert.ok(source("src/app/(tabs)/index.tsx").includes("shares={card.post.shares}"));
 });
 

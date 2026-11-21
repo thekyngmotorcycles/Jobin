@@ -16,8 +16,9 @@ const OPTIONS=[
 ] as const;
 
 /** Jobeen-owned bottom share sheet with real URL and QR. No invented contacts. */
-export function JCardShareSheet({visible,onClose,label,link,theme,side}:{
- visible:boolean;onClose:()=>void;label:string;link:string;theme:ThemeName;side:"personal"|"business"
+export function JCardShareSheet({visible,onClose,label,link="",theme,side="personal",contentTitle,contentMessage,onShared,onError}:{
+ visible:boolean;onClose:()=>void;label:string;link?:string;theme:ThemeName;side?:"personal"|"business";
+ contentTitle?:string;contentMessage?:string;onShared?:()=>void;onError?:(reason:string)=>void;
 }){
  const t=jobeenTokens(theme);
  const {width}=useWindowDimensions();
@@ -25,17 +26,23 @@ export function JCardShareSheet({visible,onClose,label,link,theme,side}:{
  const [showQr,setShowQr]=useState(false);
  const nativeSharePending=useRef(false);
  const cardType=side==="business"?"JCard de negocios":"JCard personal";
- const options=OPTIONS.filter(item=>item.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
- const message=cardType+" de "+label+": "+link;
+ const shareTitle=contentTitle??cardType;
+ const qrHeading=contentTitle?"Código QR":"Mi código QR";
+ const qrLabel=contentTitle?"Código QR":"Mi QR";
+ const options=OPTIONS.filter(item=>(item.id!=="qr"||!!link.trim())&&item.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+ const message=contentMessage??(cardType+" de "+label+": "+link);
  async function shareNative(){
-  try{await Share.share({message,title:cardType+" · "+label});}catch{}
+  try{
+   const result=await Share.share({message,title:shareTitle+" · "+label});
+   if(result.action===Share.sharedAction)onShared?.();
+  }catch{onError?.("No se pudo compartir. Inténtalo de nuevo.");}
  }
  async function openExternal(url:string){
-  try{await Linking.openURL(url);}catch{await shareNative();}
+  try{await Linking.openURL(url);}catch{if(Platform.OS==="android")setTimeout(()=>void shareNative(),400);else await shareNative();}
  }
  function dismiss(){setShowQr(false);setQuery("");onClose();}
  function choose(action:ShareAction){
-  if(action==="qr"){setShowQr(true);return;}
+  if(action==="qr"){if(link.trim())setShowQr(true);return;}
   if(action==="whatsapp"){dismiss();void openExternal("https://wa.me/?text="+encodeURIComponent(message));return;}
   if(action==="sms"){dismiss();void openExternal("sms:?body="+encodeURIComponent(message));return;}
   // Android doesn't reliably fire Modal.onDismiss, so defer the native
@@ -48,7 +55,7 @@ export function JCardShareSheet({visible,onClose,label,link,theme,side}:{
  return <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={dismiss}
   onDismiss={()=>{if(nativeSharePending.current){nativeSharePending.current=false;void shareNative();}}}>
   <View style={{flex:1,justifyContent:"flex-end"}}>
-   <Pressable accessibilityRole="button" accessibilityLabel="Cerrar Compartir JCard" onPress={dismiss}
+   <Pressable accessibilityRole="button" accessibilityLabel="Cerrar panel de compartir" onPress={dismiss}
     style={{position:"absolute",top:0,left:0,right:0,bottom:0,backgroundColor:jcardCommon.scrim}}/>
    <SafeAreaView edges={["bottom"]} style={{backgroundColor:t.surface,borderTopLeftRadius:30,borderTopRightRadius:30,maxHeight:"85%",overflow:"hidden"}}>
     <View style={{alignItems:"center",paddingTop:13,paddingBottom:8}}>
@@ -56,7 +63,7 @@ export function JCardShareSheet({visible,onClose,label,link,theme,side}:{
     </View>
     <View style={{paddingHorizontal:20,gap:14,paddingTop:10,paddingBottom:20}}>
      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
-      <Text style={{fontSize:19,fontWeight:"800",color:t.ink}}>{showQr?"Mi código QR":cardType}</Text>
+      <Text style={{fontSize:19,fontWeight:"800",color:t.ink}}>{showQr?qrHeading:shareTitle}</Text>
       <Pressable accessibilityRole="button" accessibilityLabel={showQr?"Volver a compartir":"Cerrar panel de compartir"}
        onPress={()=>showQr?setShowQr(false):dismiss()} style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
        <Ionicons name={showQr?"arrow-back":"close"} size={23} color={t.ink}/>
@@ -68,7 +75,7 @@ export function JCardShareSheet({visible,onClose,label,link,theme,side}:{
         <QRCode value={link} size={Math.min(width-92,260)} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
        </View>
        <Text style={{color:t.ink,fontWeight:"700",fontSize:15}}>{label}</Text>
-       <Text style={{color:t.ink2,fontSize:12,textAlign:"center"}}>Mostrá este código para compartir tu JCard.</Text>
+       <Text style={{color:t.ink2,fontSize:12,textAlign:"center"}}>Mostrá este código para compartir el enlace.</Text>
       </View>:
       <>
        <View style={{flexDirection:"row",alignItems:"center",gap:10,borderRadius:16,
@@ -81,14 +88,14 @@ export function JCardShareSheet({visible,onClose,label,link,theme,side}:{
        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{gap:16,paddingVertical:4,paddingRight:12}}>
         {options.map(option=><Pressable key={option.id} accessibilityRole="button"
-         accessibilityLabel={option.id==="qr"?"Mostrar mi código QR":option.label}
+         accessibilityLabel={option.id==="qr"?"Mostrar código QR":option.label}
          onPress={()=>choose(option.id)} style={{width:76,alignItems:"center",gap:8,minHeight:100}}>
          <View style={{width:62,height:62,borderRadius:31,justifyContent:"center",alignItems:"center",
           backgroundColor:option.id==="whatsapp"?t.okBackground:t.cream,
           borderColor:option.id==="qr"?t.yellow:t.line,borderWidth:option.id==="qr"?2:1}}>
           <Ionicons name={option.icon} size={27} color={option.id==="whatsapp"?t.okText:t.ink}/>
          </View>
-         <Text numberOfLines={2} style={{fontSize:12,color:t.ink,textAlign:"center"}}>{option.label}</Text>
+         <Text numberOfLines={2} style={{fontSize:12,color:t.ink,textAlign:"center"}}>{option.id==="qr"?qrLabel:option.label}</Text>
         </Pressable>)}
         {options.length===0&&<Text style={{color:t.ink2,paddingVertical:24}}>No hay opciones con ese nombre.</Text>}
        </ScrollView>
@@ -99,3 +106,6 @@ export function JCardShareSheet({visible,onClose,label,link,theme,side}:{
   </View>
  </Modal>;
 }
+
+/** The same approved Jobeen share surface for profiles, posts, videos, JShop and CV. */
+export const JobeenShareSheet=JCardShareSheet;
