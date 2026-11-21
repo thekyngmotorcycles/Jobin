@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {assertAccountOwner} from "./account-scope";
 import type {BusinessCardData} from "./jcard";
 
 export const EMPTY_BUSINESS_CARD:BusinessCardData={
@@ -15,7 +16,9 @@ export function businessCardCacheKey(owner:string){
  * Its contents cannot be attributed reliably to any account and must never
  * be silently uploaded as a different person's business JCard. */
 export async function readScopedBusinessCard(owner:string):Promise<BusinessCardData|null>{
+ await assertAccountOwner(owner);
  const raw=await AsyncStorage.getItem(businessCardCacheKey(owner));
+ await assertAccountOwner(owner);
  if(!raw)return null;
  try{
   const data:unknown=JSON.parse(raw);
@@ -26,5 +29,6 @@ export async function readScopedBusinessCard(owner:string):Promise<BusinessCardD
  }catch{return null;}
 }
 export async function writeScopedBusinessCard(owner:string,card:BusinessCardData){
+ await assertAccountOwner(owner);
  await AsyncStorage.setItem(businessCardCacheKey(owner),JSON.stringify(card));
 }
