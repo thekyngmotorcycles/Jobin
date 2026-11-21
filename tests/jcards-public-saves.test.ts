@@ -50,6 +50,17 @@ test("Gallery supports search, favorite and remove, and loads fresh on focus",()
  assert.ok(gallery.includes('disabled={!item.available}'));
  assert.ok(gallery.includes('pathname:"/jcard",params:{user:item.targetId,card:item.side}'));
 });
+test("Saved business JCards show their real category glyph, not a generic building",()=>{
+ const art=src("src/lib/business-category-art.ts");
+ assert.ok(gallery.includes('businessCategoryArt(item.subtitle).icon'),"The preview reuses the full JCard category icon resolver");
+ assert.ok(gallery.includes('item.side==="business"'),"Category glyph applies only to business cards");
+ assert.ok(gallery.includes('"person-circle-outline"'),"Personal cards retain their dedicated icon");
+ assert.ok(gallery.includes('"eye-off-outline"'),"Hidden cards retain the unavailable indicator");
+ assert.ok(art.includes('climatizacion:"climate"'),"Climatización resolves to the climate category");
+ assert.ok(art.includes('hvac:"climate"'),"HVAC resolves to the climate category");
+ assert.ok(art.includes('climate:{icon:"snow-outline"'),"Climate category shows the approved snowflake glyph");
+ assert.ok(!gallery.includes('item.side==="business"?"business-outline"'),"Do not regress to generic business glyph");
+});
 test("Owner visibility still controls what can be saved; the accordion remains unchanged",()=>{
  assert.ok(visitor.includes("readJCardVisibility(user)"));
  assert.ok(visitor.includes('onActiveSideChange={setActiveCardSide}'));
