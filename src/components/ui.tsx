@@ -1,6 +1,7 @@
 import {menuChrome} from "../theme/menu-chrome";
 import {JOBEEN_TYPE,jobeenTypeWidthScale} from "../theme/typography";
 import {jobeenTokens} from "../theme/jobeen";
+import {jobeenModalTokens} from "../theme/modals";
 import { JobinWordmark } from "./JobinWordmark";
 import { useCallback, useMemo, type ReactNode, type RefObject } from "react";
 import { useTheme } from "../state/ThemeProvider";
@@ -10,7 +11,7 @@ import { useApp } from "../state/AppProvider";
 
 // Phone typography density is consistent. A narrower display may reduce it slightly;
 // larger screens show more content instead of inflating all labels.
-export function useUi() { const { colors,theme } = useTheme(); const chrome=menuChrome(theme,colors); const jt=jobeenTokens(theme);const premium=theme==="light"; const { width } = useWindowDimensions();
+export function useUi() { const { colors,theme } = useTheme(); const chrome=menuChrome(theme,colors); const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme);const premium=theme==="light"; const { width } = useWindowDimensions();
  const k=jobeenTypeWidthScale(width);
  const fs = useCallback((size: number) => Math.round(size * k), [k]);
  const s = useMemo(() => StyleSheet.create({
@@ -36,7 +37,7 @@ export function useUi() { const { colors,theme } = useTheme(); const chrome=menu
   chipText: { fontSize: fs(JOBEEN_TYPE.secondary), color: colors.ink },
   tag: { fontSize: fs(10), fontWeight: "600", color: colors.ink, backgroundColor: colors.accent, alignSelf: "flex-start", paddingVertical: 7, paddingHorizontal: 12, borderRadius: 18, overflow: "hidden" },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
-  notice: { padding: 16, borderRadius: 18, backgroundColor: premium?jt.cream:chrome.sunflower?chrome.surface:colors.accent, gap: 10, borderWidth: premium||chrome.sunflower ? 1 : 0, borderColor: chrome.border },
+  notice: { padding: 16, borderRadius: modal.radius.popover, backgroundColor:modal.surface, gap: 10, borderWidth:1, borderColor:modal.border },
   footer: { paddingVertical: 20, borderTopWidth: 1, borderTopColor: premium?jt.line:colors.line, gap: 6 },
   pressed: { opacity: 0.82 },
 }), [colors, fs, chrome.sunflower, chrome.surface, chrome.border, theme]); return { s, colors, fs, k }; }
