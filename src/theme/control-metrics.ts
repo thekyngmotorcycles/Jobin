@@ -9,4 +9,9 @@ export const JOBEEN_CONTROL={
  inputHeight:42,
  modalHorizontalPadding:18,
  modalContentGap:10,
+ pageHorizontalPadding:18,
+ panelPadding:14,
+ panelGap:10,
+ accordionRowVerticalPadding:9,
+ settingsRowMinHeight:62,
 } as const;
