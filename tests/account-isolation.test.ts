@@ -49,3 +49,14 @@ test("Avatar saves cannot attach a previous user's photo to a new session",()=>{
  assert.ok(upload.includes("user.id!==expectedOwner"));
  assert.ok(upload.indexOf("await assertAccountOwner(user.id);",upload.indexOf("if(uploaded.error)"))>upload.indexOf("if(uploaded.error)"));
 });
+
+test("Saved-card actions and collections are bound to the account that rendered them",()=>{
+ const api=src("src/lib/saved-jcards.ts");
+ const gallery=src("src/components/SavedJCardsGallery.tsx");
+ const visitor=src("src/app/jcard.tsx");
+ assert.ok(api.includes("user.id!==expectedOwner"));
+ assert.ok(api.includes("await assertAccountOwner(uid)"));
+ assert.ok(gallery.includes("listSavedJCards(owner)"));
+ assert.ok(gallery.includes("removeSavedJCard(item.targetId,item.side,owner)"));
+ assert.ok(visitor.includes("saveVisibleJCard(user,activeCardSide,viewer)"));
+});
