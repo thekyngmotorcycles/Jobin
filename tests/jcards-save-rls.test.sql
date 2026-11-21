@@ -27,7 +27,7 @@ select pg_temp.jcard_assert((select count(*)=0 from public.jobeen_saved_jcards),
 update public.jobeen_saved_jcards set favorite=false where saver_id='92222222-2222-4222-8222-222222222222';
 select pg_temp.jcard_assert(not exists(select 1 from public.jobeen_saved_jcards),'other user cannot inspect collection');
 -- Direct API-style writes cannot impersonate the first saver.
-do $
+do $isolation$
 begin
  begin
   insert into public.jobeen_saved_jcards(saver_id,target_id,card_side)
@@ -35,19 +35,19 @@ begin
   raise exception 'Foreign saver insert unexpectedly succeeded';
  exception when insufficient_privilege then null;
  end;
-end $;
+end $isolation$;
 delete from public.jobeen_saved_jcards where saver_id='92222222-2222-4222-8222-222222222222';
 select set_config('request.jwt.claim.sub','92222222-2222-4222-8222-222222222222',true);
 select pg_temp.jcard_assert((select count(*)=2 from public.jobeen_saved_jcards),'A to B to A: foreign delete cannot affect original collection');
 select pg_temp.jcard_assert((select favorite from public.jobeen_saved_jcards where card_side='business'),'foreign update cannot affect original favorite');
-do $
+do $isolation$
 begin
  begin
   update public.jobeen_saved_jcards set saver_id='93333333-3333-4333-8333-333333333333' where card_side='personal';
   raise exception 'Bookmark reassignment unexpectedly succeeded';
  exception when insufficient_privilege then null;
  end;
-end $;
+end $isolation$;
 -- Owner hides the business face while leaving the personal face published.
 select set_config('request.jwt.claim.sub','91111111-1111-4111-8111-111111111111',true);
 insert into public.jcard_visibility(owner_id,personal_enabled,business_enabled)
