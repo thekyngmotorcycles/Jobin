@@ -14,9 +14,11 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
  const [error,setError]=useState("");
  const [loading,setLoading]=useState(true);
  const [version,setVersion]=useState(0);
+ const generation=useRef(0);
  const reload=useCallback(()=>setVersion(value=>value+1),[]);
  useEffect(()=>{
   const subscription=supabase?.auth.onAuthStateChange((_event,session)=>{
+   generation.current++;
    workspaceMemory.clear();
    setData(null);
    setLoading(true);
@@ -27,39 +29,44 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
  },[reload]);
  useFocusEffect(useCallback(()=>{
   let current=true;
+  const requestGeneration=generation.current;
+  const valid=()=>current&&generation.current===requestGeneration;
   setError("");
   void (async()=>{
    let cacheKey:string|null=null;
+   const initial=(await supabase?.auth.getSession())?.data.session?.user.id??null;
+   if(!valid())return;
+   const sameOwner=async()=>valid()&&((await supabase?.auth.getSession())?.data.session?.user.id??null)===initial&&valid();
    if(cacheWorkspace){
-    const {data:auth}=await supabase!.auth.getSession();
-    if(!current)return;
-    const userId=auth.session?.user.id;
+    if(!valid())return;
+    const userId=initial;
     if(userId){
      cacheKey=cachePrefix+userId;
      const memory=workspaceMemory.get(cacheKey);
-     if(memory){setData(memory as T);setLoading(false);}
+     if(memory&&typeof memory==="object"&&"card" in memory&&(memory as {card?:{id?:string}}).card?.id===userId){setData(memory as T);setLoading(false);}
      else{
       try{
        const raw=await AsyncStorage.getItem(cacheKey);
-       if(!current)return;
-       if(raw){const cached=JSON.parse(raw) as T;if(cached&&typeof cached==="object"&&"card" in cached){setData(cached);setLoading(false);workspaceMemory.set(cacheKey,cached);}}
+       if(!await sameOwner())return;
+       if(raw){const cached=JSON.parse(raw) as T;if(cached&&typeof cached==="object"&&"card" in cached&&(cached as {card?:{id?:string}}).card?.id===userId){setData(cached);setLoading(false);workspaceMemory.set(cacheKey,cached);}}
       }catch{/* A corrupt cache must never block the server request. */}
      }
     }else{setData(null);}
    }
-   if(!current)return;
+   if(!valid())return;
    try{
     const value=await loader();
-    if(!current)return;
+    if(!await sameOwner())return;
+    if(cacheWorkspace&&value&&(!initial||(value as {card?:{id?:string}}).card?.id!==initial))throw new Error("La sesión cambió. Vuelve a cargar el perfil.");
     setData(value);
     if(cacheWorkspace&&cacheKey&&value){
      workspaceMemory.set(cacheKey,value);
      void AsyncStorage.setItem(cacheKey,JSON.stringify(value)).catch(()=>{});
     }
    }catch(cause){
-    if(current)setError(cause instanceof Error?cause.message:String(cause));
-   }finally{if(current)setLoading(false);}
-  })().catch(cause=>{if(current){setError(cause instanceof Error?cause.message:String(cause));setLoading(false);}});
+    if(valid())setError(cause instanceof Error?cause.message:String(cause));
+   }finally{if(valid())setLoading(false);}
+  })().catch(cause=>{if(valid()){setError(cause instanceof Error?cause.message:String(cause));setLoading(false);}});
   return ()=>{current=false;};
  },[loader,version,cacheWorkspace]));
  return {data,error,loading,reload};
