@@ -64,7 +64,8 @@ test("Creator section panels rise OVER the JCard instead of scrolling the card a
   assert.ok(page.includes("new Animated.Value(0)"),"Scroll position must be tracked on the native driver");
   assert.ok(page.includes("useNativeDriver:true"),"Do not re-render the full JCard every scroll frame");
   assert.ok(page.includes("Animated.multiply(profileScrollY,0.5)"),"Identity hero must move at half the main sheet speed");
-  assert.ok(page.includes("transform:[{translateY:heroParallax}]"),"Use native-driven parallax rather than freezing the JCard");
+  assert.ok(page.includes("smoothHeroParallax=heroParallax.interpolate({inputRange:[0,320],outputRange:[0,320],extrapolate:\"clamp\"})"),"Clamp overscroll to prevent sudden JCard recoil");
+  assert.ok(page.includes("transform:[{translateY:smoothHeroParallax}]"),"Use native-driven parallax rather than freezing the JCard");
   assert.ok(page.includes("backgroundColor:jt.bg,zIndex:2"),"Opaque section body must cover the JCard beneath");
   assert.ok(page.includes("minHeight:screenHeight"),"Short feeds must still allow the section tabs to reach the top");
   assert.ok(page.includes("onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}"),"Pin threshold must follow the measured panel");
@@ -131,15 +132,42 @@ test("Visitor profile keeps global tabs while scrolling JCard and media sections
  assert.ok(root.includes("<PersistentBottomTabs/>"));
  assert.ok(global.includes('items.map(item=><Pressable'));
  for(const label of ["Casa","JShop","Videos","Mensajes","Perfil"])assert.ok(global.includes('label:"'+label+'"'));
- assert.ok(state.includes("amount.current+delta/100"));
+ assert.ok(state.includes("amount.current+delta/SCROLL_HIDE_DISTANCE"));
  assert.ok(state.includes("progress.setValue(amount.current)"));
  assert.ok(tabLayout.includes('<BottomTabBar {...props}/>'));
- for(const page of [visitor,owner])assert.ok(page.includes("reportScroll(event.nativeEvent.contentOffset.y)"));
+ for(const page of [visitor,owner])assert.ok(page.includes("if(focused)reportScroll(event.nativeEvent.contentOffset.y)"),"Only the focused profile may drive the shared bottom nav");
 });
 test("Primary feeds progressively retract and reveal navigation on scroll",()=>{
  for(const path of ["src/app/(tabs)/index.tsx","src/app/jshop.tsx","src/app/(tabs)/inbox.tsx","src/app/(tabs)/videos.tsx","src/app/search.tsx"]){
   const page=source(path);
   assert.ok(page.includes("useScrollNavigation"),path+" needs shared scroll state");
-  assert.ok(page.includes("onScroll={e=>reportScroll(e.nativeEvent.contentOffset.y)}"),path+" needs scroll listener");
+  assert.ok(page.includes(path.includes("(tabs)/index.tsx")?"if(focused)reportScroll(e.nativeEvent.contentOffset.y)":"onScroll={e=>reportScroll(e.nativeEvent.contentOffset.y)}"),path+" needs scroll listener");
  }
+});
+
+// Regression contract for approved option 2: native-driven route reveal and
+// immediate vertical ownership of the JCard scroll gesture.
+test("Tab transitions reveal bottom chrome progressively without a snap or stale scroll",()=>{
+ const state=source("src/state/ScrollNavigation.tsx");
+ const root=source("src/app/_layout.tsx");
+ const ownerPage=source("src/app/(tabs)/profile.tsx");
+ const homePage=source("src/app/(tabs)/index.tsx");
+ assert.ok(root.includes("useEffect(()=>reset(),[pathname,reset])"));
+ assert.ok(state.includes("const ROUTE_REVEAL_DURATION=240"));
+ assert.ok(state.includes("Animated.timing(progress"));
+ assert.ok(state.includes("useNativeDriver:true"));
+ assert.ok(state.includes("transitioning.current"));
+ assert.ok(state.includes("if(transitioning.current){last.current=current;return;}"));
+ assert.ok(state.includes("SCROLL_HIDE_DISTANCE=160"));
+ assert.ok(homePage.includes("if(focused)reportScroll("));
+ assert.ok(ownerPage.includes("if(focused)reportScroll("));
+ assert.ok(visitor.includes("if(focused)reportScroll("));
+});
+test("JCard vertical dragging is released early while horizontal flips remain intact",()=>{
+ const card=source("src/components/BusinessCard3D.tsx");
+ assert.ok(card.includes("Gesture.Pan().enabled(enabled).activeOffsetX([-16,16]).failOffsetY([-7,7])"));
+ assert.ok(card.includes("Gesture.Tap().enabled(enabled).maxDistance(7).maxDuration(240)"));
+ assert.ok(card.includes("Gesture.Exclusive(pan,tap)"));
+ assert.ok(card.includes("if(moving.value){lift.value=withSpring(1,SPRING);moving.value=false;}"));
+ assert.ok(card.includes("onSide(next)"));
 });
