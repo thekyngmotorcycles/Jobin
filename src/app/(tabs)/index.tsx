@@ -3,6 +3,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { useWindowDimensions } from "react-native";
 import { DraggableAssistant } from "../../components/DraggableAssistant";
 import { useTabClearance } from "../../theme/navigation";
+import {useScrollNavigation} from "../../state/ScrollNavigation";
 import { PublishedWorkMedia } from "../../components/PublishedWorkMedia";
 import { ScrollView, View,Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,7 +23,7 @@ export default function Home() {
   const [newlyPublished,setNewlyPublished]=useState("");
   const scrollRef=useRef<ScrollView>(null);
   useEffect(()=>{if(published){setFilter("all");scrollRef.current?.scrollTo({y:0,animated:false});}},[published]);
-  const { s } = useUi();const focused=useIsFocused();const window=useWindowDimensions();const [viewport,setViewport]=useState({width:window.width,height:window.height});const {contentBottom}=useTabClearance();
+  const { s } = useUi();const focused=useIsFocused();const window=useWindowDimensions();const [viewport,setViewport]=useState({width:window.width,height:window.height});const {contentBottom}=useTabClearance();const {reportScroll}=useScrollNavigation();
   useEffect(()=>{
     if(!focused)return;
     const latest=takePublishedPostForHome();
@@ -39,7 +40,7 @@ export default function Home() {
   ];
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={s.screen} onLayout={event=>{const {width,height}=event.nativeEvent.layout;setViewport(previous=>previous.width===width&&previous.height===height?previous:{width,height});}}>
-      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: contentBottom, gap: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} scrollEventThrottle={16} onScroll={e=>reportScroll(e.nativeEvent.contentOffset.y)} contentContainerStyle={{ paddingBottom: contentBottom, gap: 24 }} showsVerticalScrollIndicator={false}>
         <SocialHeader showComposer/>
         <HomeFeedFilters value={filter} onChange={setFilter}/>
         <HomePublishedPosts filter={filter} featuredPostId={newlyPublished||(published??"")}/>
