@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {assertAccountOwner} from "./account-scope";
 import {requireSupabase} from "./supabase";
 import type {JShopPlace} from "./jshop-location-core";
 
@@ -22,12 +23,15 @@ function fromRow(r:SaleRow):SaleLocation{
 }
 export async function readDefaultSaleLocation(owner:string):Promise<SaleLocation|null>{
  if(!owner||owner==="guest")return null;
+ await assertAccountOwner(owner);
  const {data,error}=await requireSupabase().from("jshop_seller_locations" as never).select(select).eq("seller_id",owner).maybeSingle();
  if(error)throw error;
+ await assertAccountOwner(owner);
  return data?fromRow(data as unknown as SaleRow):null;
 }
 export async function writeDefaultSaleLocation(owner:string,point:SaleLocation):Promise<void>{
  if(!owner||owner==="guest"||!validSaleLocation(point))throw Error("Ubicación de venta inválida.");
+ await assertAccountOwner(owner);
  const db=requireSupabase();
  const values={city:point.city.trim(),label:point.label.trim(),
   location_lat:point.lat,location_lon:point.lon,updated_at:new Date().toISOString()};
@@ -50,7 +54,7 @@ export async function writeDefaultSaleLocation(owner:string,point:SaleLocation):
 }
 export async function readPendingArticleLocation(owner:string,session:string):Promise<SaleLocation|null>{
  if(!owner||!session)return null;
- try{const raw=await AsyncStorage.getItem(pendingKey(owner,session));
+ try{await assertAccountOwner(owner);const raw=await AsyncStorage.getItem(pendingKey(owner,session));await assertAccountOwner(owner);
   if(!raw)return null;
   const p:unknown=JSON.parse(raw);
   return validSaleLocation(p)?p:null;
@@ -58,8 +62,9 @@ export async function readPendingArticleLocation(owner:string,session:string):Pr
 }
 export async function writePendingArticleLocation(owner:string,session:string,point:SaleLocation):Promise<void>{
  if(!owner||!session||!validSaleLocation(point))throw Error("Ubicación del artículo inválida.");
+ await assertAccountOwner(owner);
  await AsyncStorage.setItem(pendingKey(owner,session),JSON.stringify(point));
 }
 export async function clearPendingArticleLocation(owner:string,session:string):Promise<void>{
- if(owner&&session)await AsyncStorage.removeItem(pendingKey(owner,session));
+ if(owner&&session){await assertAccountOwner(owner);await AsyncStorage.removeItem(pendingKey(owner,session));}
 }
