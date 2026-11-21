@@ -1,7 +1,6 @@
 import { useTheme } from "../../state/ThemeProvider";
 import { useMemo, useRef, useState } from "react";
 import { FlatList, View, type ViewToken } from "react-native";
-import {useScrollNavigation} from "../../state/ScrollNavigation";
 import { useIsFocused } from "@react-navigation/native";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -15,7 +14,7 @@ import { useSocial } from "../../state/SocialProvider";
 const PAGE = 6;
 
 export default function Videos() {
- const {reportScroll}=useScrollNavigation();
+ 
   const {theme,colors}=useTheme();
   const { following } = useSocial();
   const focused = useIsFocused();
@@ -51,7 +50,7 @@ export default function Videos() {
         <FeedTopBar tab={tab} onTab={changeTab} category={category} onCategory={changeCategory} leading="live" onLeading={() => router.navigate("/(tabs)/streams")} onSearch={() => router.push({pathname:"/search",params:{mode:"flash"}})} />
       </View>
       <View style={{ flex: 1 }} onLayout={e => { const next=Math.max(1,Math.round(e.nativeEvent.layout.height)); setHeight(previous=>previous===next?previous:next); }}>
-        <FlatList onScroll={e=>reportScroll(e.nativeEvent.contentOffset.y)} scrollEventThrottle={16} key={tab + category + Math.round(height) + (post || "")} data={clips} keyExtractor={clip => clip.id}
+        <FlatList key={tab + category + Math.round(height) + (post || "")} data={clips} keyExtractor={clip => clip.id}
           pagingEnabled snapToInterval={height} decelerationRate="fast" disableIntervalMomentum showsVerticalScrollIndicator={false}
           initialScrollIndex={clips.length && tab === "Para ti" ? target : undefined} onViewableItemsChanged={visible} viewabilityConfig={viewability}
           onEndReached={() => { if (filtered.length) setCount(current => current + PAGE); }} onEndReachedThreshold={1}
