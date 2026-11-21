@@ -9,17 +9,18 @@ import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {JOBEEN_TYPE} from "../theme/typography";
 
-export type ProfileSection="home"|"grid"|"cv"|"videos"|"live";
+export type ProfileSection="grid"|"jcards"|"cv"|"videos"|"live";
 const tabs=[
- {id:"home",label:"Inicio"},
  {id:"grid",label:"Todo"},
+ {id:"jcards",label:"JCards"},
  {id:"videos",label:"Videos"},
  {id:"live",label:"En vivo"},
  {id:"cv",label:"Acerca de"}
 ] as const;
+const visitorTabs=tabs.filter(tab=>tab.id!=="jcards");
 
 /** Accessible horizontally scrollable tabs, pinned by the parent ScrollView. */
-export function ProfileSectionTabs({section,onSelect,pinned=false}:{section:ProfileSection;onSelect:(section:ProfileSection)=>void;pinned?:boolean}){
+export function ProfileSectionTabs({section,onSelect,pinned=false,showPrivateJCards=false}:{section:ProfileSection;onSelect:(section:ProfileSection)=>void;pinned?:boolean;showPrivateJCards?:boolean}){
  const {theme}=useTheme();const jt=jobeenTokens(theme);
  const {width}=useWindowDimensions();const reducedMotion=useReducedMotion();
  const [viewportWidth,setViewportWidth]=useState(width);
@@ -35,7 +36,7 @@ export function ProfileSectionTabs({section,onSelect,pinned=false}:{section:Prof
   shadowRadius:pinned?5:0,zIndex:5}}>
   <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always"
    onLayout={event=>setViewportWidth(event.nativeEvent.layout.width)} ref={scroller} contentContainerStyle={{flexGrow:1,alignItems:"center",paddingHorizontal:4,gap:4}}>
-   {tabs.map(tab=>{
+   {(showPrivateJCards?tabs:visitorTabs).map(tab=>{
     const selected=section===tab.id;
     return <Pressable key={tab.id} accessibilityRole="tab" accessibilityLabel={tab.label}
       accessibilityState={{selected}} onPress={()=>onSelect(tab.id)}
