@@ -154,7 +154,7 @@ export default function JShopItemDetail(){
    {!!error&&!item&&<Text accessibilityLiveRegion="polite" style={{color:t.ink}}>{error}</Text>}
   </JShopPage>
  <JobeenShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} theme={theme} label={listing?.title??"Artículo"}
-  contentTitle="Artículo de JShop" link={listing?Linking.createURL("/jshop/item/"+listing.id):""}
+  contentTitle="Compartir artículo" link={listing?Linking.createURL("/jshop/item/"+listing.id):""}
   contentMessage={listing?listing.title+" · "+formatJShopPrice(listing.price,listing.currency)+"\n"+Linking.createURL("/jshop/item/"+listing.id):""}
   onError={setError}/>
  </>;
