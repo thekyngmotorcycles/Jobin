@@ -8,6 +8,7 @@ export const JOBEEN_TYPE={
  display:30,
  headline:22,
  pageTitle:22,
+ navigationTitle:18,
  modalTitle:17,
  modalSectionTitle:13,
  modalRecipient:11,
