@@ -58,3 +58,5 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f tests/jcards-save-rls.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/business-card-privacy.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/employment-privacy.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/company-verification-privacy.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/social-media-ownership.test.sql

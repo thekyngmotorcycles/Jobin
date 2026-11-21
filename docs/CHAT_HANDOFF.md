@@ -12,7 +12,7 @@ Opción 2 aprobada: aislamiento reforzado. Leer AGENTS.md y docs/ACCOUNT_ISOLATI
 
 ## Referencias
 - GitHub: https://github.com/thekyngmotorcycles/Jobin
-- Rama de trabajo: development. Rama estable: main (NO modificar sin aprobación explícita).
+- Rama de auditoría: `fix/account-isolation-history-20261121` ([PR #69](https://github.com/thekyngmotorcycles/Jobin/pull/69)). Rama de integración: `development`. Rama estable: main (NO modificar sin aprobación explícita).
 - Reglas obligatorias: AGENTS.md.
 - Expo/React Native + Expo Router; TypeScript; Supabase; OTA EAS development.
 - El usuario prueba visualmente desde Android y aporta capturas. Todo el texto de interfaz en español.

@@ -4,23 +4,21 @@ begin;
 create policy "feed media ownership guard insert" on public.jobeen_feed_posts
 as restrictive for insert to authenticated with check (
   author_id = (select auth.uid())
-  and not exists (select 1 from unnest(photo_paths) as p(path)
-    where path is null or split_part(path,'/',1) is distinct from author_id::text)
+  and public.jobeen_social_paths_owned(author_id, photo_paths)
   and (cardinality(photo_paths)=0 or
     photo_bucket = case when audience='private' then 'jobeen-private-post-photos' else 'photo-posts' end)
 );
 create policy "feed media ownership guard update" on public.jobeen_feed_posts
 as restrictive for update to authenticated using (author_id = (select auth.uid())) with check (
   author_id = (select auth.uid())
-  and not exists (select 1 from unnest(photo_paths) as p(path)
-    where path is null or split_part(path,'/',1) is distinct from author_id::text)
+  and public.jobeen_social_paths_owned(author_id, photo_paths)
   and (cardinality(photo_paths)=0 or
     photo_bucket = case when audience='private' then 'jobeen-private-post-photos' else 'photo-posts' end)
 );
 create policy "story media ownership guard insert" on public.jobeen_stories
 as restrictive for insert to authenticated with check (
   author_id = (select auth.uid()) and
-  (photo_path is null or split_part(photo_path,'/',1)=author_id::text)
+  (photo_path is null or public.jobeen_social_paths_owned(author_id, array[photo_path]))
 );
 -- Defense in depth: a reference from a different author must never authorize a private object.
 alter policy "Jobeen private post photos restricted read" on storage.objects using (
