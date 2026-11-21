@@ -1,9 +1,7 @@
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
-import {JOBEEN_TYPE} from "../theme/typography";
-import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {useCallback,useEffect,useState} from "react";
-import {Modal,Pressable,StyleSheet,Text,View} from "react-native";
+import {Modal,Pressable,StyleSheet,Text,View,useWindowDimensions} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
@@ -13,8 +11,9 @@ import {useUi} from "./ui";
 import {useTheme} from "../state/ThemeProvider";
 import {JobeenShareSheet} from "./JCardShareSheet";
 import {JobeenNoticeDialog} from "./JobeenNoticeDialog";
+import {SettingsMenuRow} from "./SettingsMenuRow";
 export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void}){
- const {s,colors}=useUi();const {theme}=useTheme();const modal=jobeenModalTokens(theme);const danger=jobeenModalTokens(theme,"danger");const insets=useSafeAreaInsets();const jobeen=jobeenTokens("light");const [shareOpen,setShareOpen]=useState(false);const [confirm,setConfirm]=useState<"remove"|"block"|null>(null);const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
+ const {s,colors}=useUi();const {theme}=useTheme();const modal=jobeenModalTokens(theme);const insets=useSafeAreaInsets();const {width}=useWindowDimensions();const jobeen=jobeenTokens("light");const [shareOpen,setShareOpen]=useState(false);const [confirm,setConfirm]=useState<"remove"|"block"|null>(null);const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
  const [contact,setContact]=useState<ContactRequest|null>(null),[viewer,setViewer]=useState("");
  useFocusEffect(useCallback(()=>{let active=true;void contactState(user).then(value=>{if(active){setContact(value.request);setViewer(value.mine);}}).catch(()=>{if(active)setContact(null);});return()=>{active=false;};},[user]));
  async function connect(){
@@ -82,22 +81,16 @@ export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClos
   <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={()=>onMenuClose?.()}>
    <View style={{flex:1,backgroundColor:modal.scrim,paddingTop:insets.top+65,paddingHorizontal:16,alignItems:"flex-end"}}>
     <Pressable accessibilityLabel="Cerrar opciones del perfil" onPress={()=>onMenuClose?.()} style={StyleSheet.absoluteFill}/>
-    <View style={{width:254,maxWidth:"85%",padding:5,borderWidth:1,borderColor:modal.border,backgroundColor:modal.surface,borderRadius:modal.radius.popover,gap:1}}>
-   <Pressable accessibilityRole="button" onPress={()=>{onMenuClose?.();setTimeout(()=>setShareOpen(true),350);}}
-     style={{minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:13,flexDirection:"row",alignItems:"center",gap:12}}>
-     <Ionicons name="share-social-outline" size={20} color={modal.text}/>
-     <Text style={{fontSize:JOBEEN_TYPE.modalAction,color:modal.text}}>Compartir perfil</Text>
-    </Pressable>
-    <Pressable accessibilityRole="button" onPress={block}
-     style={{minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:13,flexDirection:"row",alignItems:"center",gap:12}}>
-     <Ionicons name="ban-outline" size={20} color={danger.icon}/>
-     <Text style={{fontSize:JOBEEN_TYPE.modalAction,color:modal.text}}>Bloquear perfil</Text>
-    </Pressable>
-    <Pressable accessibilityRole="button" onPress={()=>{onMenuClose?.();router.push({pathname:"/report-profile",params:{user}});}}
-     style={{minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:13,flexDirection:"row",alignItems:"center",gap:12}}>
-     <Ionicons name="flag-outline" size={20} color={modal.text}/>
-     <Text style={{fontSize:JOBEEN_TYPE.modalAction,color:modal.text}}>Denunciar perfil</Text>
-    </Pressable>
+    <View style={{width:Math.min(330,width-32),padding:8,borderWidth:1,borderColor:modal.border,
+     backgroundColor:modal.surface,borderRadius:modal.radius.popover,gap:6}}>
+     <SettingsMenuRow variant="action" title="Compartir perfil"
+      description="Envía la JCard de este profesional." icon="share-social-outline"
+      onPress={()=>{onMenuClose?.();setTimeout(()=>setShareOpen(true),350);}}/>
+     <SettingsMenuRow variant="action" tone="danger" title="Bloquear perfil"
+      description="Evita nuevas interacciones con esta cuenta." icon="ban-outline" onPress={block}/>
+     <SettingsMenuRow variant="action" title="Denunciar perfil"
+      description="Informa sobre contenido o conductas indebidas." icon="flag-outline"
+      onPress={()=>{onMenuClose?.();router.push({pathname:"/report-profile",params:{user}});}}/>
     </View>
    </View>
   </Modal>
