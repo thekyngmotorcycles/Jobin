@@ -10,11 +10,11 @@ test("Approved premium light panel has real accepted Jobeen contacts with circul
  assert.ok(panel.includes("loadShareRecipients()"));
  assert.ok(contacts.includes('c.status==="accepted"'));
  assert.ok(panel.includes("<PublicProfileAvatar userId={contact.id}"));
- assert.ok(panel.includes("size={60} framed={false}"));
+ assert.ok(panel.includes("size={52} framed={false}"));
  assert.ok(panel.includes("borderColor:t.yellow"));
  assert.ok(panel.includes('backgroundColor:t.yellow'));
- assert.ok(panel.includes('name="checkmark" color={t.ink} size={18}'));
- assert.ok(panel.includes('position:"absolute",right:-4,top:-5,width:27,height:27'));
+ assert.ok(panel.includes('name="checkmark" color={t.ink} size={16}'));
+ assert.ok(panel.includes('position:"absolute",right:-4,top:-5,width:23,height:23'));
  assert.ok(panel.includes("textAlign:\"center\""));
  assert.ok(panel.includes('Buscar contactos de Jobeen'));
  assert.ok(!panel.includes("Para ver los contactos sugeridos y todas las apps instaladas"));
