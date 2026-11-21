@@ -5,6 +5,8 @@ import {Modal,Pressable,Text,View,useWindowDimensions} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
+import {jobeenModalTokens} from "../theme/modals";
+import {JOBEEN_TYPE} from "../theme/typography";
 import {JobeenCreateIcon} from "./JobeenCreateIcon";
 import {JobeenFlashIcon} from "./JobeenFlashIcon";
 
@@ -19,7 +21,7 @@ const actions=[
 
 /** Shared create entry: used only in Home and the signed-in owner's profile. */
 export function JobeenCreateMenu(){
- const {theme}=useTheme();const t=jobeenTokens(theme);
+ const {theme}=useTheme();const t=jobeenTokens(theme);const modal=jobeenModalTokens(theme);
  const insets=useSafeAreaInsets();const {width:screenWidth,height:screenHeight}=useWindowDimensions();
  const trigger=useRef<View>(null);
  const [visible,setVisible]=useState(false);
@@ -54,12 +56,12 @@ export function JobeenCreateMenu(){
   <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={()=>setVisible(false)}>
    <View style={{flex:1}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar opciones de creación" onPress={()=>setVisible(false)}
-     style={{position:"absolute",top:0,bottom:0,left:0,right:0}}/>
-    <View accessibilityViewIsModal style={{position:"absolute",top:position.top,left:position.left,width:menuWidth,borderRadius:20,overflow:"hidden",backgroundColor:t.surface,borderColor:t.line,borderWidth:1,shadowColor:t.ink,shadowOpacity:0.16,shadowRadius:16,shadowOffset:{width:0,height:7},elevation:10}}>
+     style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:modal.scrim}}/>
+    <View accessibilityViewIsModal style={{position:"absolute",top:position.top,left:position.left,width:menuWidth,borderRadius:modal.radius.popover,overflow:"hidden",backgroundColor:modal.surface,borderColor:modal.border,borderWidth:1,shadowColor:t.ink,shadowOpacity:0.16,shadowRadius:16,shadowOffset:{width:0,height:7},elevation:10}}>
      {actions.map((action,index)=><Pressable key={action.name} accessibilityRole="button" accessibilityLabel={"Crear "+action.name} onPress={()=>navigate(action)}
-      style={({pressed})=>({height:56,paddingHorizontal:18,flexDirection:"row",alignItems:"center",gap:14,backgroundColor:pressed?t.cream:t.surface,borderTopWidth:index?1:0,borderColor:t.line})}>
+      style={({pressed})=>({height:56,paddingHorizontal:18,flexDirection:"row",alignItems:"center",gap:14,backgroundColor:pressed?modal.soft:modal.surface,borderTopWidth:index?1:0,borderColor:modal.border})}>
       {action.id==="flash"?<JobeenFlashIcon size={25}/>:<Ionicons name={action.icon} size={23} color={t.ink}/>}
-      <Text style={{color:t.ink,fontWeight:"700",fontSize:16}}>{action.name}</Text>
+      <Text style={{color:modal.text,fontWeight:"700",fontSize:JOBEEN_TYPE.body}}>{action.name}</Text>
      </Pressable>)}
     </View>
    </View>
