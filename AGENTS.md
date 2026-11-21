@@ -37,6 +37,9 @@ Este archivo es la fuente de referencia para asistentes y desarrolladores que co
 - **No desperdiciar el espacio principal:** un creador en vivo debe poder emitir/gestionar el directo sin obstáculos ni menús invasivos; su audiencia debe descubrir y entrar a transmisiones con pocas acciones. Las funciones laborales complementan el contenido, no compiten con él en jerarquía.
 - **Para decisiones futuras de UX y priorización:** elegir primero lo que mejore transmisión, audiencia, interacción, creación móvil y seguridad del creador. Revisar `docs/JOBEEN_PRODUCT_VISION.md` antes de proponer o implementar cambios mayores.
 
+## Protocolo obligatorio de diseño UI/UX
+- Leer `DESIGN_RULES.md` antes de cualquier tarea de diseño, junto con las reglas visuales siguientes. Consultar Mobbin, presentar 2 o 3 propuestas y esperar aprobación explícita antes de implementar UI/UX. Las correcciones técnicas y de seguridad ya autorizadas pueden continuar sin aprobación por archivo, sin rediseños. Mantener el bloqueo de UX durante la auditoría de privacidad.
+
 ## Sistema visual minimalista (aprobado; NO sustituye los tokens existentes)
 - **Mismo sistema para Configuración Home, menú de tres puntos del perfil propio y menú de tres puntos del perfil visitante:** misma familia de superficie, tipografía, radios, espacios y filas; permitir diferencias funcionales de contenido y formato (drawer para navegación, menú compacto de acciones para visitante).
 - Una fila de menú puede tener **ícono semántico ÚNICO + título + descripción breve opcional + chevron únicamente cuando navega**. No poblar la interfaz de iconos por decoración. Acciones destructivas se distinguen de forma discreta (icono/tono), sin usar color de énfasis en todo el menú. Preservar interacción, rutas y seguridad.
@@ -95,4 +98,4 @@ Este archivo es la fuente de referencia para asistentes y desarrolladores que co
 1. Leer este archivo y el repositorio, en especial el último commit de `development`, workflows de GitHub Actions, migraciones y estado Supabase.
 2. No asumir que la última modificación se publicó; comprobar Actions/Expo.
 3. Consultar `docs/CHAT_HANDOFF.md` para contexto funcional, tareas pendientes y prompt de continuidad.
-4. Preguntar al usuario qué tarea continuar; nunca fusionar `main` por iniciativa propia.
+4. Recuperar la tarea activa desde el traspaso, ramas, PR y verificaciones; continuar sin pedir contexto repetido cuando sea inequívoco. Consultar `DESIGN_RULES.md` antes de tareas UI/UX. Preguntar solo si falta una decisión imprescindible o autorización; nunca fusionar `main` por iniciativa propia.

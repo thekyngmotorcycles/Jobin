@@ -10,10 +10,13 @@ Jobeen es la plataforma **mobile-first de transmisiones EN VIVO de personas most
 ## BLOQUEO ACTUAL: seguridad de cuentas
 Opción 2 aprobada: aislamiento reforzado. Leer AGENTS.md y docs/ACCOUNT_ISOLATION.md antes de continuar. Incidente de historial/JCard cruzados; UX suspendida hasta contención, pruebas y recuperación segura. No confundir código de revisión con protección ya publicada.
 
+## Protocolo permanente de diseño (aprobado)
+Leer `DESIGN_RULES.md` antes de cualquier tarea UI/UX: consultar Mobbin, presentar 2 o 3 propuestas, aplicar MD3 con áreas táctiles mínimas de 48dp, preservar identidad visual y esperar aprobación explícita antes de implementar. Esto no bloquea correcciones técnicas y de seguridad autorizadas. La auditoría de privacidad sigue siendo prioritaria; no iniciar rediseños ni APK nuevas.
+
 ## Referencias
 - GitHub: https://github.com/thekyngmotorcycles/Jobin
 - Rama de auditoría: `fix/account-isolation-history-20261121` ([PR #69](https://github.com/thekyngmotorcycles/Jobin/pull/69)). Rama de integración: `development`. Rama estable: main (NO modificar sin aprobación explícita).
-- Reglas obligatorias: AGENTS.md.
+- Reglas obligatorias: AGENTS.md y DESIGN_RULES.md.
 - Expo/React Native + Expo Router; TypeScript; Supabase; OTA EAS development.
 - El usuario prueba visualmente desde Android y aporta capturas. Todo el texto de interfaz en español.
 
@@ -43,4 +46,4 @@ Opción 2 aprobada: aislamiento reforzado. Leer AGENTS.md y docs/ACCOUNT_ISOLATI
 6. Cuando el usuario lo autorice: PR de development a main, checklist de publicación y tag v0.1.0.
 
 ## Prompt reutilizable
-«Continuemos mi proyecto Jobin. Repositorio GitHub: thekyngmotorcycles/Jobin. Conecta GitHub y Supabase, lee primero AGENTS.md y docs/CHAT_HANDOFF.md en la rama development, revisa el último commit, las pruebas de GitHub Actions y la publicación de Expo. Sigue las reglas: main es estable y NO se modifica ni fusiona sin mi autorización explícita; cambios pequeños en development, funciones grandes en feature/* y luego development. Todo en español. No asumas que algo está publicado sin verificarlo. Quiero que continúes desde el estado real del código, identifiques pendientes y me indiques qué está listo para probar en Android. No expongas secretos. Mi siguiente tarea es: [ESCRIBIR AQUÍ].»
+«Continuemos mi proyecto Jobin. Repositorio GitHub: thekyngmotorcycles/Jobin. Conecta GitHub y Supabase, lee primero AGENTS.md, DESIGN_RULES.md y docs/CHAT_HANDOFF.md en la rama activa, revisa el último commit, las pruebas de GitHub Actions y la publicación de Expo. Sigue las reglas: main es estable y NO se modifica ni fusiona sin mi autorización explícita; cambios pequeños en development, funciones grandes en feature/* y luego development. Todo en español. No asumas que algo está publicado sin verificarlo. Quiero que continúes desde el estado real del código, identifiques pendientes y me indiques qué está listo para probar en Android. No expongas secretos. Mi siguiente tarea es: [ESCRIBIR AQUÍ].»
