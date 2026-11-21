@@ -21,7 +21,7 @@ Priorizar protección de credenciales, persistencia y recuperación para la prim
 
 ## Clasificación para una APK consolidada
 
-El alcance funcional se toma de la hoja de ruta aprobada y se usa para planificar dependencias. Los cambios de producto y monetización todavía no se implementan. [Hoja de ruta aprobada](https://github.com/thekyngmotorcycles/Jobin/blob/e296f0053de057e8cae07920b293c5152c7e2057/docs/APPROVED_PRODUCT_ROADMAP.md)
+El alcance funcional se toma de la hoja de ruta actualizada, incluidos descubrimiento y oportunidades. Los cambios de producto y monetización todavía no se implementan. [Hoja de ruta aprobada](https://github.com/thekyngmotorcycles/Jobin/blob/851573f50edbea46cab8ed1695ee7f22a0027225/docs/APPROVED_PRODUCT_ROADMAP.md)
 
 | Clasificación | Base propuesta y criterio de inclusión |
 | --- | --- |
@@ -35,3 +35,24 @@ El alcance funcional se toma de la hoja de ruta aprobada y se usa para planifica
 - **Compatibilidad.** `package.json` y el lockfile vigentes ya resuelven cámara, notificaciones, reproducción, picker, FileSystem transitivo y Updates. Para cualquier biblioteca nueva, comprobar soporte explícito de Expo SDK 54, React Native 0.81 y New Architecture, y probar integración, permisos y Jelly 2. Una dependencia o permiso nativo cambia el alcance del runtime. Consolidar en una APK solo los módulos ya seleccionados y validados. Después, limitar OTA al runtime compatible y ensayar cambios de servidor y JS desde un canal de prueba.
 
 [Expo New Architecture](https://docs.expo.dev/guides/new-architecture/) · [Expo In-App Purchases](https://docs.expo.dev/guides/in-app-purchases/)
+
+## Impacto de las funciones aprobadas en la base nativa
+
+| Bloque aprobado | Qué necesita del binario |
+| --- | --- |
+| Sistema visual y menús, Live Hub, descubrimiento profesional, Opportunities y Talent Discovery | Usar la base Expo y los componentes actuales. Filtros, zona aproximada consentida, consultas, CV, postulaciones, agenda, permisos, historial, estados y roles son contratos de aplicación y servidor. Reutilizar DocumentPicker y Notifications donde ya estén disponibles. |
+| Reproductor y Work Live Studio, Adaptive Work Live y Creator Growth | Un SDK para cámara y audio en tiempo real, orientación 9:16 por defecto y 16:9 opcional, reconexión, silencio de imagen y audio, y detención verificada. Probar cámara trasera, audio USB/Bluetooth del sistema, cambio de red, consumo de datos, calor y batería en Jelly 2. Live Hub, controles sociales y modo de trabajo son JS. El resumen, la grabación voluntaria (privada por defecto) y métricas verificadas corresponden al servidor. |
+| Adaptive Flash Studio y JHighlights | Reusar cámara, picker y reproductor. Modelar recorte, división, deshacer, portada, volumen y texto como edición no destructiva. Probar vista previa y procesamiento en servidor del límite de 180 s propuesto. Hacer JHighlights en servidor con los permisos de la grabación de origen. Evaluar transcodificación nativa solo si la vista previa o la edición útil offline lo requiere. |
+| JAcademy y Adaptive Learning | Reusar `expo-video` para velocidad, saltos y subtítulos compatibles. Módulos, progreso, notas, JQuiz y constancias necesitan permisos por cuenta en servidor. Descarga protegida y DRM se evalúan cuando haya un requisito concreto. |
+| Creator Studio, JGifts, JSubs y JEarnings | Reusar captura, directos, edición y reproducción. Incorporar como máximo un SDK de facturación al habilitar compras verificadas. Catálogo, derechos premium, historial, reglas de reparto, retiros y reconciliación son de servidor. JCoins, equipos, hardware externo y automatización avanzada conservan su fase posterior. |
+
+## Videollamada privada para entrevistas individuales
+
+Un mismo proveedor RTC puede cubrir captura y recepción en los dos flujos con un único SDK nativo. Para directos, usar salas con permisos de publicación y audiencia separados. Evaluar HLS y el reproductor Expo para audiencias grandes, con grabación voluntaria y egress autorizado. Para entrevistas, usar una sala privada con solo dos UUID autorizados por la convocatoria, invitación limitada, tokens cortos por sala y participante, expulsión y revocación al cancelar, y grabación, egress y transcripción desactivados por defecto. La agenda y el estado de la postulación pertenecen a Opportunities. El identificador de una sala jamás concede acceso por sí mismo. Conviene separar proyectos o credenciales para mantener aislados permisos, transmisión y métricas.
+
+| Proveedor a validar | Alcance y costes públicos orientativos |
+| --- | --- |
+| **LiveKit**, primera opción para una prueba cuando se autorice compilación | El SDK React Native tiene integración Expo mediante plugins y permite salas RTC para ambos flujos. Se puede usar egress separado para HLS/RTMP del directo. Expo Go carece de los módulos nativos. LiveKit Cloud publica Build a US$0 y Ship desde US$50/mes, con consumo de WebRTC, transferencia y egress según plan. Probar expiración, expulsión y posibles reingresos con tokens emitidos justo antes de revocar. |
+| **Agora**, alternativa | Un SDK React Native cubre llamada privada, directo interactivo y difusión por configuración de canal. La tarifa de lista publicada es US$3.99 por 1.000 minutos de vídeo HD RTC y US$1.99 por 1.000 minutos HD de audiencia broadcast, más funciones adicionales cuando apliquen. Por ejemplo, 100 entrevistas de 30 minutos con dos participantes suman 6.000 minutos RTC HD, unos US$23.94 a tarifa de lista antes de descuentos y extras. Confirmar compatibilidad Expo SDK 54 y New Architecture con la versión exacta antes de decidir. |
+
+Medir ancho de banda, batería, estabilidad tras reconexión, audio externo, permisos, capacidad de excluir a C de una entrevista y separación de egress. Comparar regiones, tratamiento de datos, grabación, moderación y coste de audiencia. No incorporar dos SDKs por diferencias de interfaz. La selección queda pendiente de una prueba con hardware y presupuesto aprobados. [Expo con LiveKit](https://docs.livekit.io/transport/sdk-platforms/expo/) · [LiveKit egress](https://docs.livekit.io/transport/media/ingress-egress/egress/outputs/) · [Revocación LiveKit](https://docs.livekit.io/frontends/reference/tokens-grants/) · [Precios LiveKit](https://livekit.com/pricing) · [SDK Agora](https://docs.agora.io/en/api-reference/sdks) · [Precios Agora](https://docs.agora.io/en/realtime-media/rtc/reference/pricing)
