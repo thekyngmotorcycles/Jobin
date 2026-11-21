@@ -17,7 +17,7 @@ import {jobeenModalTokens} from "../../theme/modals";
 import {JOBEEN_TYPE} from "../../theme/typography";
 type MapSize={width:number;height:number};
 export default function JShopLocationPicker(){
- const {theme,colors}=useTheme(),t=jobeenTokens(theme),modal=jobeenModalTokens(theme),insets=useSafeAreaInsets();
+ const {theme}=useTheme(),t=jobeenTokens(theme),modal=jobeenModalTokens(theme),insets=useSafeAreaInsets();
  const [owner,setOwner]=useState("guest"),[chosen,setChosen]=useState<JShopPlace|null>(null);
  const [center,setCenter]=useState<MapPoint>({lat:0,lon:-25}),[zoom,setZoom]=useState(2);
  const [viewport,setViewport]=useState<MapSize>({width:320,height:300});
