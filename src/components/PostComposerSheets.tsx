@@ -85,10 +85,10 @@ export function PostComposerSheets(p:Props){
 
   <Modal transparent visible={p.draftsOpen} animationType="fade" onRequestClose={p.onCloseDrafts} statusBarTranslucent={false}>
    {floatingCard("Borradores",p.onCloseDrafts,
-    p.drafts.length?<ScrollView showsVerticalScrollIndicator contentContainerStyle={{paddingHorizontal:15,paddingBottom:18,gap:12}}>
-     <Text style={{fontSize:12,color:t.ink2}}>{p.drafts.length} de {MAX_POST_DRAFTS} borradores</Text>
+    p.drafts.length?<ScrollView showsVerticalScrollIndicator contentContainerStyle={{paddingHorizontal:JOBEEN_CONTROL.modalHorizontalPadding,paddingBottom:18,gap:12}}>
+     <Text style={{fontSize:JOBEEN_TYPE.secondary,color:modal.muted}}>{p.drafts.length} de {MAX_POST_DRAFTS} borradores</Text>
      <View style={{flexDirection:"row",flexWrap:"wrap",gap:10}}>
-      {p.drafts.map((draft,index)=><View key={draft.id} style={{width:"48%",borderRadius:16,
+      {p.drafts.map((draft,index)=><View key={draft.id} style={{width:screenWidth<360?"100%":"48%",borderRadius:modal.radius.control,
        borderWidth:1,borderColor:t.line,backgroundColor:t.surface,overflow:"hidden"}}>
        <Pressable accessibilityRole="button" accessibilityLabel={"Continuar borrador "+(index+1)}
         onPress={()=>p.onRestore(draft)}>
@@ -99,9 +99,9 @@ export function PostComposerSheets(p:Props){
            size={32} color={t.ink2}/>}
         </View>
         <View style={{padding:9,gap:4,minHeight:61}}>
-         <Text numberOfLines={1} style={{color:t.ink,fontSize:12,fontWeight:"700"}}>
+         <Text numberOfLines={1} style={{color:t.ink,fontSize:JOBEEN_TYPE.secondary,fontWeight:"700"}}>
           {draft.body.trim()||"Publicación sin descripción"}</Text>
-         <Text numberOfLines={1} style={{color:t.ink2,fontSize:10}}>
+         <Text numberOfLines={1} style={{color:modal.muted,fontSize:JOBEEN_TYPE.caption}}>
           {new Date(draft.updatedAt).toLocaleDateString("es")} · {draft.photos.length} fotos</Text>
         </View>
        </Pressable>
