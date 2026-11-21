@@ -44,7 +44,7 @@ export function JobeenNoticeDialog({visible,title,description,tone="neutral",con
       style={{flex:1,minHeight:46,borderRadius:t.radius.control,alignItems:"center",justifyContent:"center",
        backgroundColor:destructive&&theme==="light"?t.icon:t.accent,opacity:busy?0.5:1}}>
       <Text style={{fontSize:JOBEEN_TYPE.action,fontWeight:"800",
-       color:destructive&&theme==="light"?"#FFFFFF":t.text}}>{busy?"Procesando...":confirmLabel}</Text>
+       color:destructive&&theme==="light"?t.destructiveOnColor:t.text}}>{busy?"Procesando...":confirmLabel}</Text>
      </Pressable>
     </View>
    </View>
