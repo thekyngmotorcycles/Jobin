@@ -1,4 +1,5 @@
 import {jobeenTokens} from "../theme/jobeen";
+import {jobeenModalTokens} from "../theme/modals";
 import {jcardCommon} from "../theme/jcard";
 import {useCallback,useEffect,useState} from "react";
 import {Alert,Modal,Pressable,StyleSheet,Text,View} from "react-native";
@@ -11,7 +12,7 @@ import {useUi} from "./ui";
 import {useTheme} from "../state/ThemeProvider";
 import {JobeenShareSheet} from "./JCardShareSheet";
 export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void}){
- const {s,colors}=useUi();const {theme}=useTheme();const insets=useSafeAreaInsets();const jobeen=jobeenTokens("light");const [shareOpen,setShareOpen]=useState(false);const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
+ const {s,colors}=useUi();const {theme}=useTheme();const modal=jobeenModalTokens(theme);const insets=useSafeAreaInsets();const jobeen=jobeenTokens("light");const [shareOpen,setShareOpen]=useState(false);const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
  const [contact,setContact]=useState<ContactRequest|null>(null),[viewer,setViewer]=useState("");
  useFocusEffect(useCallback(()=>{let active=true;void contactState(user).then(value=>{if(active){setContact(value.request);setViewer(value.mine);}}).catch(()=>{if(active)setContact(null);});return()=>{active=false;};},[user]));
  async function connect(){
@@ -65,9 +66,9 @@ export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClos
    </Pressable>
   </View>
   <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={()=>onMenuClose?.()}>
-   <View style={{flex:1,backgroundColor:jcardCommon.scrim,paddingTop:insets.top+65,paddingHorizontal:16,alignItems:"flex-end"}}>
+   <View style={{flex:1,backgroundColor:modal.scrim,paddingTop:insets.top+65,paddingHorizontal:16,alignItems:"flex-end"}}>
     <Pressable accessibilityLabel="Cerrar opciones del perfil" onPress={()=>onMenuClose?.()} style={StyleSheet.absoluteFill}/>
-    <View style={{width:260,maxWidth:"85%",padding:10,borderWidth:1,borderColor:colors.line,backgroundColor:colors.paper,borderRadius:14,gap:5}}>
+    <View style={{width:260,maxWidth:"85%",padding:10,borderWidth:1,borderColor:modal.border,backgroundColor:modal.surface,borderRadius:modal.radius.popover,gap:5}}>
    <Pressable accessibilityRole="button" onPress={()=>{onMenuClose?.();setTimeout(()=>setShareOpen(true),350);}} style={{padding:12,flexDirection:"row",gap:12}}><Ionicons name="share-social-outline" size={21} color={colors.ink}/><Text style={s.text}>Compartir perfil</Text></Pressable>
    <Pressable accessibilityRole="button" onPress={()=>void block()} style={{padding:12,flexDirection:"row",gap:12}}><Ionicons name="ban-outline" size={21} color={colors.ink}/><Text style={s.text}>Bloquear perfil</Text></Pressable>
    <Pressable accessibilityRole="button" onPress={()=>{onMenuClose?.();router.push({pathname:"/report-profile",params:{user}});}} style={{padding:12,flexDirection:"row",gap:12}}><Ionicons name="flag-outline" size={21} color={colors.ink}/><Text style={s.text}>Denunciar perfil</Text></Pressable>
