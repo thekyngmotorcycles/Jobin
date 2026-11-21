@@ -11,11 +11,13 @@ import {readDefaultSaleLocation,readPendingArticleLocation,writeDefaultSaleLocat
 import type {JShopPlace,MapPoint} from "../../lib/jshop-location-core";
 import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
+import {jobeenModalTokens} from "../../theme/modals";
+import {JOBEEN_TYPE} from "../../theme/typography";
 
 export default function SaleLocationPicker(){
  const {target,session}=useLocalSearchParams<{target?:string;session?:string}>();
  const article=target==="article"&&typeof session==="string"&&session.length>0&&session.length<120;
- const {theme,colors}=useTheme(),t=jobeenTokens(theme),insets=useSafeAreaInsets();
+ const {theme,colors}=useTheme(),t=jobeenTokens(theme),modal=jobeenModalTokens(theme),insets=useSafeAreaInsets();
  const [owner,setOwner]=useState("");
  const [chosen,setChosen]=useState<SaleLocation|null>(null);
  const [center,setCenter]=useState<MapPoint>({lat:0,lon:0});
@@ -93,13 +95,13 @@ export default function SaleLocationPicker(){
  return <>
   <Stack.Screen options={{headerShown:false,presentation:"transparentModal",animation:"slide_from_bottom"}}/>
   <KeyboardAvoidingView behavior={Platform.OS==="ios"?"padding":undefined}
-   style={{flex:1,backgroundColor:colors.scrim,justifyContent:"flex-end"}}>
+   style={{flex:1,backgroundColor:modal.scrim,justifyContent:"flex-end"}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Cerrar sin guardar" onPress={()=>router.back()} style={{flex:1}}/>
-   <View accessibilityViewIsModal style={{height:"92%",minHeight:0,backgroundColor:t.bg,
-    borderTopLeftRadius:27,borderTopRightRadius:27,overflow:"hidden",paddingBottom:Math.max(12,insets.bottom)}}>
+   <View accessibilityViewIsModal style={{height:"92%",minHeight:0,backgroundColor:modal.surface,
+    borderTopLeftRadius:modal.radius.sheet,borderTopRightRadius:modal.radius.sheet,overflow:"hidden",paddingBottom:Math.max(12,insets.bottom)}}>
     <View style={{width:40,height:5,borderRadius:3,alignSelf:"center",backgroundColor:t.line,marginTop:10,marginBottom:6}}/>
     <View style={{paddingHorizontal:16,paddingBottom:8,flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
-     <Text accessibilityRole="header" numberOfLines={1} style={{flex:1,fontSize:20,fontWeight:"800",color:t.ink}}>
+     <Text accessibilityRole="header" numberOfLines={1} style={{flex:1,fontSize:JOBEEN_TYPE.modalTitle,fontWeight:"800",color:modal.text}}>
       {article?"Ubicación del artículo":"Ubicación de venta"}
      </Text>
      <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" onPress={()=>router.back()}
