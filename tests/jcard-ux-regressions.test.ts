@@ -119,3 +119,14 @@ test("JCard personal and business photos have matching softened gold corners",()
  assert.ok(business.includes('width:60,height:60,borderRadius:11'));
  assert.ok(!business.includes('borderRadius:32,borderWidth:2,borderColor:jobeen.yellow'));
 });
+
+test("Nested JCard and story photos use a single clean gold frame, not doubled borders",()=>{
+ const shared=src("src/components/social-ui.tsx");
+ const publicAvatar=src("src/components/PublicProfileAvatar.tsx");
+ const stories=src("src/components/StoryStrip.tsx");
+ assert.ok(shared.includes("framed=true"));
+ assert.ok(shared.includes("const border=framed?Math.max"));
+ assert.ok(publicAvatar.includes("framed={framed}"));
+ assert.equal(stories.split("framed={false}").length-1,2);
+ assert.ok(business.includes('size={theme==="light"?80:jcardLayout.avatar} framed={false}'));
+});
