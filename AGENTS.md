@@ -15,7 +15,7 @@
 - Minimizar persistencia de información privada, proteger credenciales y tokens mediante almacenamiento seguro del sistema y cifrar persistencia sensible conforme a OWASP MASVS. Nunca registrar secretos ni PII innecesaria en logs. Mantener los enlaces firmados de archivos privados fuera de la persistencia del cliente y de logs. Si se requiere revocación por solicitud, verificar permisos y sesión vigentes en servidor y comprobar que los endpoints originales y las cachés respetan ese control.
 - Pruebas obligatorias A→B→A, cierre y reapertura, offline, solicitudes concurrentes/retardadas, sesión expirada y acceso directo a API/Storage. A y B no deben leer/escribir datos privados ajenos; comprobar también que el contenido deliberadamente compartido siga funcionando.
 - Ante sospecha de contaminación: priorizar contención antes de UX, inspección de solo lectura, preservar evidencia, identificar registros afectados y propietario real; no borrar datos ni migrar registros entre cuentas sin evidencia y aprobación específica. No publicar una corrección como verificada hasta superar pruebas. main/producción requieren autorización.
-- Conservar las restricciones de privacidad en las reversiones. Si un cliente anterior depende de un permiso inseguro, suspender el flujo afectado antes de restablecer ese permiso.
+- Conservar las restricciones de privacidad en las reversiones. Si un cliente anterior depende de un permiso inseguro, mantenerlo revocado y suspender el flujo afectado.
 - Referencias: https://mas.owasp.org/MASVS/ y https://supabase.com/docs/guides/database/postgres/row-level-security . La selección de arquitectura adicional (sesión única reforzada o multicuenta) requiere aprobación del propietario.
 
 # Jobin — Reglas permanentes de trabajo (AGENTS.md)
