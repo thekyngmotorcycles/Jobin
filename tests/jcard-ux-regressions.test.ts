@@ -94,3 +94,39 @@ test("More options invokes Android native share chooser after closing custom she
  assert.ok(sheet.includes("Para ver los contactos sugeridos y todas las apps instaladas"));
  assert.ok(sheet.indexOf('{id:"qr",label:"Mi QR"')<sheet.indexOf('{id:"whatsapp",label:"WhatsApp"'));
 });
+
+test("Shared avatars use a Jobeen gold framed rounded square, including owner and visitor",()=>{
+ const shared=src("src/components/social-ui.tsx");
+ const account=src("src/components/AccountAvatar.tsx");
+ const publicAvatar=src("src/components/PublicProfileAvatar.tsx");
+ assert.ok(shared.includes('const corner=Math.max(6,Math.round(size*0.2))'));
+ assert.ok(shared.includes('borderColor:t.yellow'));
+ assert.ok(shared.includes('width:"100%",height:"100%",borderRadius:Math.max(4,corner-border-2)'));
+ assert.ok(!shared.includes('borderRadius:size/2'));
+ assert.ok(account.includes('<Avatar uri={identity?.avatar'));
+ assert.ok(publicAvatar.includes('<Avatar uri={uri}'));
+});
+test("Story rings are rounded squares with gold stroke for owner and visitors",()=>{
+ const stories=src("src/components/StoryStrip.tsx");
+ assert.equal(stories.split('width:66,height:66,borderRadius:16,borderWidth:2,borderColor:t.yellow').length-1,2);
+ assert.ok(stories.includes('<PublicProfileAvatar userId={userId}'));
+ assert.ok(stories.includes('<PublicProfileAvatar userId={story.authorId}'));
+ assert.ok(!stories.includes('borderRadius:33'));
+});
+test("JCard personal and business photos have matching softened gold corners",()=>{
+ assert.ok(business.includes('borderRadius:18,borderWidth:3,borderColor:jobeen.yellow'));
+ assert.ok(business.includes('width:64,height:64,borderRadius:14,borderWidth:2,borderColor:jobeen.yellow'));
+ assert.ok(business.includes('width:60,height:60,borderRadius:11'));
+ assert.ok(!business.includes('borderRadius:32,borderWidth:2,borderColor:jobeen.yellow'));
+});
+
+test("Nested JCard and story photos use a single clean gold frame, not doubled borders",()=>{
+ const shared=src("src/components/social-ui.tsx");
+ const publicAvatar=src("src/components/PublicProfileAvatar.tsx");
+ const stories=src("src/components/StoryStrip.tsx");
+ assert.ok(shared.includes("framed=true"));
+ assert.ok(shared.includes("const border=framed?Math.max"));
+ assert.ok(publicAvatar.includes("framed={framed}"));
+ assert.equal(stories.split("framed={false}").length-1,2);
+ assert.ok(business.includes('size={theme==="light"?80:jcardLayout.avatar} framed={false}'));
+});

@@ -4,7 +4,7 @@ import {personalAvatarUrl} from "../lib/personal-jcard-photo";
 import {requireSupabase} from "../lib/supabase";
 
 /** Public profile picture with initials fallback; never displays another user's private contact data. */
-export function PublicProfileAvatar({userId,name,size=52}:{userId:string;name:string;size?:number}){
+export function PublicProfileAvatar({userId,name,size=52,framed=true}:{userId:string;name:string;size?:number;framed?:boolean}){
  const [uri,setUri]=useState<string|undefined>();
  useEffect(()=>{
   let live=true;setUri(undefined);
@@ -17,5 +17,5 @@ export function PublicProfileAvatar({userId,name,size=52}:{userId:string;name:st
   })();
   return()=>{live=false;};
  },[userId]);
- return <Avatar uri={uri} name={name} size={size}/>;
+ return <Avatar uri={uri} name={name} size={size} framed={framed}/>;
 }
