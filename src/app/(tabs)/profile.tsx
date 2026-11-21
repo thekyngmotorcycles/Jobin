@@ -16,6 +16,7 @@ import {opacity} from "../../theme/color";
 import {useRef} from "react";
 import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../../components/ProfileSharedSections";
 import {useReducedMotion} from "react-native-reanimated";
+import {useIsFocused} from "@react-navigation/native";
 import {ProfileOwnedPosts} from "../../components/ProfileOwnedPosts";
 import {NotificationBell} from "../../components/NotificationBell";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
@@ -49,7 +50,7 @@ function validPhoneLabel(value:string):boolean{
  return /^(?:[\p{Regional_Indicator}]{2}|[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?(?:\u200D[\p{Extended_Pictographic}](?:\uFE0F|[\p{Emoji_Modifier}])?)*)$/u.test(label);
 }
 export default function Profile() {
-  const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {reportScroll}=useScrollNavigation();const {view,card}=useLocalSearchParams<{view?:string;card?:string}>();
+  const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const chrome=menuChrome(theme,colors);const {contentBottom}=useTabClearance();const {reportScroll}=useScrollNavigation();const focused=useIsFocused();const {view,card}=useLocalSearchParams<{view?:string;card?:string}>();
   const [mode,setMode]=useState<Mode>("home");
   const profileScroll=useRef<ScrollView|null>(null);
   const profileScrollY=useRef(new Animated.Value(0)).current;
@@ -57,6 +58,8 @@ export default function Profile() {
   const [tabsPinned,setTabsPinned]=useState(false);
   // The JCard moves at half the section sheet's speed, as in a layered creator profile.
   const heroParallax=Animated.multiply(profileScrollY,0.5);
+   // Clamp the pull-down overscroll to avoid a visible JCard recoil on release.
+   const smoothHeroParallax=heroParallax.interpolate({inputRange:[0,320],outputRange:[0,320],extrapolate:"clamp"});
   const retreatStart=Math.max(1,tabOffset-NAVIGATION_ROW_HEIGHT);
   const retreatEnd=Math.max(retreatStart+1,tabOffset);
   const topHeaderOffset=profileScrollY.interpolate({
@@ -264,13 +267,13 @@ export default function Profile() {
         onScroll={Animated.event([{nativeEvent:{contentOffset:{y:profileScrollY}}}],{
           useNativeDriver:true,
           listener:(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
-            reportScroll(event.nativeEvent.contentOffset.y);
+            if(focused)reportScroll(event.nativeEvent.contentOffset.y);
             const pinned=tabOffset>0&&event.nativeEvent.contentOffset.y>=tabOffset-2;
             setTabsPinned(previous=>previous===pinned?previous:pinned);
           }
         })}
         showsVerticalScrollIndicator={false}>
-        <Animated.View style={{gap:16,paddingHorizontal:16,paddingBottom:20,zIndex:0,transform:[{translateY:heroParallax}]}}>
+        <Animated.View style={{gap:16,paddingHorizontal:16,paddingBottom:20,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         <ProfileIdentityHeader
           card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
