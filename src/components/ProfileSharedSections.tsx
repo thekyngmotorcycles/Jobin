@@ -36,7 +36,7 @@ export function ProfileSectionTabs({section,onSelect,pinned=false}:{section:Prof
     return <Pressable key={tab.id} accessibilityRole="tab" accessibilityLabel={tab.label}
       accessibilityState={{selected}} onPress={()=>onSelect(tab.id)}
       style={{minHeight:50,paddingHorizontal:12,minWidth:92,flexDirection:"row",gap:6,alignItems:"center",justifyContent:"center",
-       borderBottomWidth:selected?3:0,borderBottomColor:jt.yellow}}>
+       borderBottomWidth:3,borderBottomColor:selected?jt.yellow:jt.bg}}>
      <Ionicons name={tab.icon} size={18} color={jt.ink}/>
      <Text numberOfLines={1} style={{fontSize:13,fontWeight:selected?"700":"600",color:jt.ink}}>{tab.label}</Text>
     </Pressable>;
