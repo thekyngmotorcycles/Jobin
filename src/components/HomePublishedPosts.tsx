@@ -113,7 +113,7 @@ export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;v
   {!!error&&!commentsOpen&&<Text accessibilityLiveRegion="polite" style={{paddingHorizontal:16,color:t.ink2,fontSize:12}}>{error}</Text>}
   <FeedPostOptions visible={optionsOpen} onClose={()=>setOptionsOpen(false)} viewerId={viewer} postId={post.id} onHidden={()=>onHide(post.id)} onShareLink={sharePostLink} onSaveChanged={setSaved}/>
   <JobeenShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} theme={theme} label={post.authorName}
-   link={Linking.createURL("post/"+post.id)} contentTitle="Publicación"
+   link={Linking.createURL("post/"+post.id)} contentTitle="Compartir publicación"
    contentMessage={post.authorName+": "+post.body+(post.kind==="video"?" · Video profesional en Jobeen":"")+"\n"+Linking.createURL("post/"+post.id)}
    onShared={()=>void confirmNativeShare()} onError={setError}/>
   <BottomSheet visible={commentsOpen} onClose={()=>setCommentsOpen(false)} title={"Comentarios · "+formatCount(commentsCount)}>
