@@ -115,7 +115,7 @@ export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;v
   <JobeenShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} theme={theme} label={post.authorName}
    link={Linking.createURL("post/"+post.id)} contentTitle="Publicación"
    contentMessage={post.authorName+": "+post.body+(post.kind==="video"?" · Video profesional en Jobeen":"")+"\n"+Linking.createURL("post/"+post.id)}
-   onShared={()=>void confirmNativeShare()}/>
+   onShared={()=>void confirmNativeShare()} onError={setError}/>
   <BottomSheet visible={commentsOpen} onClose={()=>setCommentsOpen(false)} title={"Comentarios · "+formatCount(commentsCount)}>
    <View style={{gap:14,paddingVertical:10}}>
     {commentsLoading&&<ActivityIndicator color={t.yellow}/>}
