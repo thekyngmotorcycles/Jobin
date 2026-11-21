@@ -37,6 +37,8 @@ test("Personal and business JCard editors use compact accessible accordion secti
   assert.ok(page.includes("padding:JOBEEN_CONTROL.panelPadding"));
   assert.ok(page.includes("paddingVertical:JOBEEN_CONTROL.accordionRowVerticalPadding"));
  }
+ assert.equal((personal.match(/paddingVertical:8,minHeight:JOBEEN_CONTROL.touchTarget/g)??[]).length,3,"Personal privacy toggles keep accessible touch height");
+ assert.ok(business.includes('paddingVertical:8,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name={visibility[item.key]'),"Business privacy toggles keep accessible touch height");
  assert.ok(personal.includes("pendingExitRef"),"Unsaved-change confirmation retained");
  assert.ok(personal.includes("minHeight:JOBEEN_CONTROL.touchTarget"),"Personal editor keeps accessible tap targets");
  assert.ok(business.includes("minHeight:JOBEEN_CONTROL.touchTarget"),"Business editor controls use accessible tap targets");
