@@ -38,7 +38,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
   }catch{onError?.("No se pudo compartir. Inténtalo de nuevo.");}
  }
  async function openExternal(url:string){
-  try{await Linking.openURL(url);}catch{await shareNative();}
+  try{await Linking.openURL(url);}catch{if(Platform.OS==="android")setTimeout(()=>void shareNative(),400);else await shareNative();}
  }
  function dismiss(){setShowQr(false);setQuery("");onClose();}
  function choose(action:ShareAction){
