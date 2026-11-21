@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import * as Linking from "expo-linking";
 import { ActivityIndicator, AppState, View } from "react-native";
 import { router, usePathname } from "expo-router";
@@ -23,6 +23,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
  const pathname = usePathname();
  const [ready, setReady] = useState(false);
  const [signedIn, setSignedIn] = useState(false);
+ const [sessionOwner,setSessionOwner]=useState<string|null>(null);
  const [handlingOAuth, setHandlingOAuth] = useState(true);
  const [needsUsername,setNeedsUsername]=useState(false);
  useEffect(() => {
@@ -82,7 +83,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const linkSubscription=Linking.addEventListener("url",event=>{void handleOAuthUrl(event.url).then(handled=>{if(!handled)void check();});});
 
   const appSubscription = AppState.addEventListener("change", state => { if(state==="active" && !handlingOAuth) void check(); });
-  const subscription = supabase?.auth.onAuthStateChange((event) => {
+  const subscription = supabase?.auth.onAuthStateChange((event,session) => {
+   if(active)setSessionOwner(session?.user.id??null);
    if (event === "SIGNED_OUT") { void AsyncStorage.removeItem(KEY); if (active) setSignedIn(false); }
    if (event === "SIGNED_IN") { if (active) setSignedIn(true); }
   });
@@ -96,5 +98,5 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
  }, [ready, signedIn, pathname, handlingOAuth,needsUsername]);
  if (!ready || handlingOAuth) return <View style={{ flex: 1, justifyContent: "center" }}><ActivityIndicator /></View>;
- return children;
+ return <Fragment key={sessionOwner??"signed-out"}>{children}</Fragment>;
 }
