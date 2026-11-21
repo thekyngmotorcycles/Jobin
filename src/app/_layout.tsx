@@ -89,5 +89,5 @@ function Navigation() {
  </Stack>{isBrowserPage&&<PersistentBottomTabs/>}</>;
 }
 export default function RootLayout() {
- return <GestureHandlerRootView style={{flex:1}}><SafeAreaProvider><ThemeProvider><AppProvider><SocialProvider><NoticeProvider><IconFontGate><AuthGate><SafetyAccountGate><ScrollNavigationProvider><Navigation/></ScrollNavigationProvider></SafetyAccountGate></AuthGate></IconFontGate></NoticeProvider></SocialProvider></AppProvider></ThemeProvider></SafeAreaProvider></GestureHandlerRootView>;
+ return <GestureHandlerRootView style={{flex:1}}><SafeAreaProvider><ThemeProvider><IconFontGate><AuthGate><AppProvider><SocialProvider><NoticeProvider><SafetyAccountGate><ScrollNavigationProvider><Navigation/></ScrollNavigationProvider></SafetyAccountGate></NoticeProvider></SocialProvider></AppProvider></AuthGate></IconFontGate></ThemeProvider></SafeAreaProvider></GestureHandlerRootView>;
 }
