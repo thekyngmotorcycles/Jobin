@@ -34,12 +34,11 @@ export default function AccountSecurity(){
    <View style={{gap:7}}>{group.items.map(item=><SettingsMenuRow key={item.label} icon={item.icon} title={item.label} description={item.detail}
     onPress={()=>{if(item.route)router.push(item.route as any);else item.action?.();}}/>)}</View>
   </View>)}
-  <Pressable accessibilityRole="button" disabled={signingOut} onPress={()=>setExitOpen(true)} style={{padding:17,borderRadius:18,borderWidth:1,borderColor:colors.line,alignItems:"center",flexDirection:"row",justifyContent:"center",gap:12}}>
+  <Pressable accessibilityRole="button" disabled={signingOut} onPress={()=>{setExitError("");setExitOpen(true);}} style={{padding:17,borderRadius:18,borderWidth:1,borderColor:colors.line,alignItems:"center",flexDirection:"row",justifyContent:"center",gap:12}}>
    <Ionicons name="log-out-outline" size={23} color={colors.ink}/><Text style={[s.text,{fontWeight:"700"}]}>{signingOut?"Cerrando sesión…":"Cerrar sesión"}</Text>
   </Pressable>
- {!!exitError&&<Text accessibilityLiveRegion="polite" style={[s.muted,{color:colors.ink}]}>{exitError}</Text>}
   </ScrollView>
-  <JobeenNoticeDialog visible={exitOpen} title="Cerrar sesión" description="¿Quieres salir de tu cuenta de Jobeen?"
-   tone="warning" confirmLabel="Cerrar sesión" onCancel={()=>setExitOpen(false)} onConfirm={()=>void signOut()} busy={signingOut}/>
+  <JobeenNoticeDialog visible={exitOpen} title="Cerrar sesión" description={exitError||"¿Quieres salir de tu cuenta de Jobeen?"}
+   tone="warning" confirmLabel="Cerrar sesión" onCancel={()=>{setExitError("");setExitOpen(false);}} onConfirm={()=>void signOut()} busy={signingOut}/>
  </SafeAreaView>;
 }
