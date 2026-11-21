@@ -44,7 +44,7 @@ export default function BusinessEditor(){
     if(!live)return;
     setEditorOwner(owner);setData(EMPTY_BUSINESS_CARD);setServicesInput("");
     try{
-     const cloud=await readCloudBusiness();
+     const cloud=await readCloudBusiness(owner);
      if(!live||(await appearanceOwner())!==owner)return;
      const next={...EMPTY_BUSINESS_CARD,...(cloud??{})};
      setData(next);setServicesInput(next.services.join(", "));
@@ -97,7 +97,7 @@ export default function BusinessEditor(){
   if(section==="contact"&&[data.phoneLabel,data.phoneSecondaryLabel].some(v=>v&&Array.from(v).length>4)){setNotice("Identificadores: máximo 4 caracteres.");return;}
   setSaving(true);setNotice("");
   try{if(!editorOwner||(await appearanceOwner())!==editorOwner)throw new Error("La cuenta cambió. Abre de nuevo tu JCard.");if(section==="main"&&businessHandle&&!(await checkBusinessHandleAvailable(businessHandle)))throw new Error("Este usuario empresarial ya está ocupado.");
-   if(section==="privacy"){await saveJCardVisibility(visibility);}else{const stored=await readCloudBusiness()??empty;const keys=sections.find(item=>item.id===section)?.keys??[];const clean:BusinessCardData={...empty,...stored};for(const key of keys){(clean as unknown as Record<string,unknown>)[key]=key==="services"?parsedServices:key==="name"?data.name.trim():key==="businessHandle"?businessHandle:data[key];}await writeCloudBusiness(clean,editorOwner);await writeScopedBusinessCard(editorOwner,clean);setData(clean);if(section==="services")setServicesInput(clean.services.join(", "));}setOpen(null);}
+   if(section==="privacy"){await saveJCardVisibility(visibility,editorOwner);}else{const stored=await readCloudBusiness(editorOwner)??empty;const keys=sections.find(item=>item.id===section)?.keys??[];const clean:BusinessCardData={...empty,...stored};for(const key of keys){(clean as unknown as Record<string,unknown>)[key]=key==="services"?parsedServices:key==="name"?data.name.trim():key==="businessHandle"?businessHandle:data[key];}await writeCloudBusiness(clean,editorOwner);await writeScopedBusinessCard(editorOwner,clean);setData(clean);if(section==="services")setServicesInput(clean.services.join(", "));}setOpen(null);}
   catch(e){setNotice(e instanceof Error?e.message:"No se pudieron guardar los cambios.");}finally{setSaving(false);}
  }
  return <Screen demo={false} hideHeader hideFooter title="JCard de negocio" subtitle="">
