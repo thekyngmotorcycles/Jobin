@@ -54,7 +54,7 @@ test("The user-facing typography and touch targets stay compact and accessible",
  assert.ok(typography.includes("action:14"));
  const share=src("src/components/JCardShareSheet.tsx");
  assert.ok(share.includes("style={{flexShrink:1}}"),"scrollable actions remain reachable above the send button");
- assert.ok(share.includes("minHeight:46,marginHorizontal:13"));
+ assert.ok(share.includes("minHeight:48,marginHorizontal:13"));
  const notice=src("src/components/JobeenNoticeDialog.tsx");
  assert.ok(notice.includes("minHeight:46"));
  assert.ok(notice.includes("statusBarTranslucent={false}"));
