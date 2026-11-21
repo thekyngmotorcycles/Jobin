@@ -50,13 +50,15 @@ test("Message requests controls have uniform accessible 48dp targets",()=>{
  assert.ok(s.includes('flex:1,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row"'),"Request tabs share the same minimum height");
  assert.equal((s.match(/flex:1,minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:14/g)??[]).length,2,"Accept and delete controls match");
 });
-test("Destructive public profile action receives only semantic red emphasis",()=>{
+test("Destructive public profile action uses the shared premium menu row with restrained emphasis",()=>{
  const s=src("src/components/ProfileCommunityActions.tsx");
- assert.ok(s.includes('const danger=jobeenModalTokens(theme,"danger")'));
- assert.ok(s.includes('name="ban-outline" size={20} color={danger.icon}'));
- assert.ok(s.includes("minHeight:JOBEEN_CONTROL.touchTarget"));
- assert.ok(s.includes("Bloquear perfil"));
+ const row=src("src/components/SettingsMenuRow.tsx");
+ assert.ok(s.includes('<SettingsMenuRow variant="action" tone="danger" title="Bloquear perfil"'));
+ assert.ok(s.includes('icon="ban-outline" onPress={block}'));
  assert.ok(s.includes("Denunciar perfil"));
+ assert.ok(row.includes('const danger=jobeenModalTokens(theme,"danger")'));
+ assert.ok(row.includes('minHeight:JOBEEN_CONTROL.settingsRowMinHeight'));
+ assert.ok(row.includes('variant==="navigation"&&<Ionicons name="chevron-forward"'),"Contextual actions omit navigation chevrons");
 });
 test("Composer keeps draft and media preview behavior while using compact action heights",()=>{
  const s=src("src/components/PostComposerSheets.tsx");
