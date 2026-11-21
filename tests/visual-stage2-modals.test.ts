@@ -37,6 +37,13 @@ test("Confirmation dialogs stay open while an action is processing",()=>{
  assert.ok(s.includes('accessibilityLabel="Cerrar aviso" disabled={busy} onPress={onCancel}'),"Backdrop tap must not dismiss while busy");
  assert.ok(s.includes("minHeight:JOBEEN_CONTROL.touchTarget"),"Both choices preserve accessible controls");
 });
+test("Privacy settings cannot close during an in-flight save",()=>{
+ const s=src("src/app/message-requests.tsx");
+ assert.ok(s.includes('function closePrivacy(){if(!saving)setSettingsOpen(false);}'));
+ assert.ok(s.includes('onRequestClose={closePrivacy}'));
+ assert.equal((s.match(/onPress=\{closePrivacy\}/g)??[]).length,2,"Both backdrop and close icon respect the save state");
+ assert.ok(s.includes("!!privacyError"),"Save failures are visible inside the sheet");
+});
 test("Message requests controls have uniform accessible 48dp targets",()=>{
  const s=src("src/app/message-requests.tsx");
  assert.ok(s.includes('width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget'),"Privacy settings trigger has a full touch target");
