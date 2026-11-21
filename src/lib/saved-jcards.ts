@@ -1,4 +1,5 @@
 import {requireSupabase} from "./supabase";
+import {assertAccountOwner} from "./account-scope";
 import {DEFAULT_JCARD_VISIBILITY,type JCardVisibility} from "./jcard-visibility";
 
 export type SavedJCardSide="personal"|"business";
@@ -13,15 +14,17 @@ type TargetBusiness={owner_id:string;name:string;category:string|null};
 type TargetVisibility={owner_id:string}&JCardVisibility;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function assertTarget(id:string){if(!UUID.test(id))throw new Error("La JCard no tiene un identificador válido.");}
-async function sessionUser(){
+async function sessionUser(expectedOwner:string){
  const {data:{user},error}=await requireSupabase().auth.getUser();
  if(error)throw error;
  if(!user)throw new Error("Inicia sesión para guardar JCards.");
+ if(user.id!==expectedOwner)throw new Error("La cuenta cambió.");
+ await assertAccountOwner(expectedOwner);
  return user.id;
 }
 /** Public JCards need no owner acceptance. SQL RLS verifies that the face is visible. */
-export async function saveVisibleJCard(targetId:string,side:SavedJCardSide):Promise<void>{
- assertTarget(targetId);const uid=await sessionUser();
+export async function saveVisibleJCard(targetId:string,side:SavedJCardSide,expectedOwner:string):Promise<void>{
+ assertTarget(targetId);const uid=await sessionUser(expectedOwner);
  const db=requireSupabase() as any;
  if(side==="business"){
   const {data:business,error:businessError}=await db.from("jcard_business_details")
@@ -29,41 +32,47 @@ export async function saveVisibleJCard(targetId:string,side:SavedJCardSide):Prom
   if(businessError)throw new Error(businessError.message);
   if(!business?.name?.trim())throw new Error("Esta cuenta no tiene una JCard empresarial pública disponible.");
  }
+ await assertAccountOwner(uid);
  const {error}=await db.from("jobeen_saved_jcards")
   .insert({target_id:targetId,card_side:side,saver_id:uid});
+ await assertAccountOwner(uid);
  if(error && error.code!=="23505")throw new Error(error.message||"No se pudo guardar la JCard pública.");
 }
-export async function removeSavedJCard(targetId:string,side:SavedJCardSide):Promise<void>{
+export async function removeSavedJCard(targetId:string,side:SavedJCardSide,expectedOwner:string):Promise<void>{
  assertTarget(targetId);
- const uid=await sessionUser();
+ const uid=await sessionUser(expectedOwner);
  const {error}=await (requireSupabase() as any).from("jobeen_saved_jcards").delete()
   .eq("saver_id",uid).eq("target_id",targetId).eq("card_side",side);
+ await assertAccountOwner(uid);
  if(error)throw new Error(error.message);
 }
-export async function setSavedJCardFavorite(targetId:string,side:SavedJCardSide,favorite:boolean):Promise<void>{
+export async function setSavedJCardFavorite(targetId:string,side:SavedJCardSide,favorite:boolean,expectedOwner:string):Promise<void>{
  assertTarget(targetId);
- const uid=await sessionUser();
+ const uid=await sessionUser(expectedOwner);
  const {error}=await (requireSupabase() as any).from("jobeen_saved_jcards").update({favorite})
   .eq("saver_id",uid).eq("target_id",targetId).eq("card_side",side);
+ await assertAccountOwner(uid);
  if(error)throw new Error(error.message);
 }
-export async function isSavedJCard(targetId:string,side:SavedJCardSide):Promise<boolean>{
+export async function isSavedJCard(targetId:string,side:SavedJCardSide,expectedOwner:string):Promise<boolean>{
  assertTarget(targetId);
- const uid=await sessionUser();
+ const uid=await sessionUser(expectedOwner);
  const {data,error}=await (requireSupabase() as any).from("jobeen_saved_jcards")
   .select("target_id").eq("saver_id",uid).eq("target_id",targetId).eq("card_side",side).maybeSingle();
+ await assertAccountOwner(uid);
  if(error)throw new Error(error.message);
  return !!data;
 }
 /** Never retain contact details in favorites: fetch only current public identities.
  * If the owner disables a face, show an unavailable placeholder with a remove action.
  */
-export async function listSavedJCards():Promise<SavedJCard[]>{
- const uid=await sessionUser();
+export async function listSavedJCards(expectedOwner:string):Promise<SavedJCard[]>{
+ const uid=await sessionUser(expectedOwner);
  const db=requireSupabase() as any;
  const {data,error}=await db.from("jobeen_saved_jcards")
   .select("target_id,card_side,favorite,created_at").eq("saver_id",uid)
   .order("favorite",{ascending:false}).order("created_at",{ascending:false}).limit(250);
+ await assertAccountOwner(uid);
  if(error)throw new Error(error.message);
  const saved=(data??[]) as SavedRow[];
  if(!saved.length)return [];
@@ -90,6 +99,7 @@ export async function listSavedJCards():Promise<SavedJCard[]>{
   businesses=(biz??[]) as TargetBusiness[];
  }
  const byBusiness=new Map(businesses.map(item=>[item.owner_id,item]));
+ await assertAccountOwner(uid);
  return saved.map(item=>{
   const profile=byProfile.get(item.target_id);
   const visibility=byVisibility.get(item.target_id)??DEFAULT_JCARD_VISIBILITY;
