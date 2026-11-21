@@ -31,7 +31,7 @@ export function AuthShell({ title, children, footer }: { title?: string; childre
   </KeyboardAvoidingView>
  </SafeAreaView>;
 }
-export function AuthField({label,value,onChangeText,placeholder,secure=false,keyboardType="default",autoCapitalize="none"}:{label:string;value:string;onChangeText:(v:string)=>void;placeholder:string;secure?:boolean;keyboardType?:"default"|"email-address"|"phone-pad";autoCapitalize?:"none"|"words"}) {
+export function AuthField({label,value,onChangeText,placeholder,secure=false,keyboardType="default",autoCapitalize="none"}:{label:string;value:string;onChangeText:(v:string)=>void;placeholder:string;secure?:boolean;keyboardType?:"default"|"email-address"|"phone-pad"|"number-pad";autoCapitalize?:"none"|"words"}) {
  const [visible,setVisible]=useState(false);
  return <View style={{gap:6}}>
   <Text style={{fontSize:12,fontWeight:"700",color:authSilver.tone14}}>{label}</Text>
