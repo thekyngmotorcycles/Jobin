@@ -43,7 +43,7 @@ test("Conversation uses exactly one screen header for the recipient",()=>{
  assert.ok(message.includes('accessibilityLabel="Volver"'));
 });
 test("Public profile has the lowered header and only three bottom actions",()=>{
- assert.ok(profile.includes('style={{position:"absolute",top:10,left:0,right:0,height:NAVIGATION_ROW_HEIGHT'));
+ assert.ok(profile.includes('top:insets.top,left:0,right:0,zIndex:10,height:NAVIGATION_ROW_HEIGHT'));
  assert.ok(profile.includes('accessibilityLabel="Opciones del perfil"'));
  assert.ok(profile.includes('menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}'));
  assert.ok(actions.includes('width:52,height:52'));
