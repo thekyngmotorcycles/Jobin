@@ -68,7 +68,7 @@ test("Composer keeps draft and media preview behavior while using compact action
  assert.ok(!s.includes("0 de {MAX_POST_DRAFTS} borradores"),"Empty state should not repeat a counter");
  assert.ok(!s.includes('name="albums-outline"'),"Empty state should not consume extra height with a decorative icon");
  assert.ok(!s.includes("minHeight:92"),"Do not reserve an oversized empty panel");
- assert.ok(s.includes('width:screenWidth<360?"100%":"48%"'),"Draft cards should fill narrow Jelly screens without a tiny half-column");
+ assert.ok(s.includes('width:"48%"'),"Draft grid retains two columns at any phone width");
  assert.ok(s.includes("paddingHorizontal:JOBEEN_CONTROL.modalHorizontalPadding"),"Draft list uses the shared modal padding");
  assert.ok(s.includes("borderRadius:modal.radius.control"),"Draft cards use consistent control rounding");
  assert.ok(s.includes("fontSize:JOBEEN_TYPE.caption"),"Draft metadata uses semantic caption typography");
