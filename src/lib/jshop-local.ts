@@ -14,6 +14,7 @@ export async function jshopAccountId():Promise<string>{
 export async function readJShopDrafts(ownerId:string):Promise<JShopDraft[]>{
  await assertAccountOwner(ownerId);
  const raw=await AsyncStorage.getItem(draftsKey(ownerId));
+ await assertAccountOwner(ownerId);
  if(!raw)return [];
  try{
   const parsed:unknown=JSON.parse(raw);
@@ -24,7 +25,6 @@ export async function readJShopDrafts(ownerId:string):Promise<JShopDraft[]>{
 }
 export async function saveJShopDraft(ownerId:string,draft:JShopDraft):Promise<void>{
  if(draft.ownerId!==ownerId)throw new Error("No puedes modificar anuncios de otra cuenta.");
- await assertAccountOwner(ownerId);
  await assertAccountOwner(ownerId);
  const drafts=await readJShopDrafts(ownerId);
  await assertAccountOwner(ownerId);
@@ -39,6 +39,7 @@ export async function deleteJShopDraft(ownerId:string,id:string):Promise<void>{
 export async function readJShopFavorites(ownerId:string):Promise<string[]>{
  await assertAccountOwner(ownerId);
  const raw=await AsyncStorage.getItem(favoritesKey(ownerId));
+ await assertAccountOwner(ownerId);
  if(!raw)return [];
  try{const ids:unknown=JSON.parse(raw);return Array.isArray(ids)?ids.filter((id):id is string=>typeof id==="string"):[];}catch{return [];}
 }
