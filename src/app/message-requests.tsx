@@ -19,6 +19,7 @@ export default function MessageRequests(){
  const [rows,setRows]=useState<MessageRequest[]>([]);
  const [privacy,setPrivacy]=useState<MessagePrivacy>({requestsFrom:"all",filterSpam:true});
  const [settingsOpen,setSettingsOpen]=useState(false);
+ const [privacyError,setPrivacyError]=useState("");
  const [busy,setBusy]=useState("");const [saving,setSaving]=useState(false);
  const [loading,setLoading]=useState(true);const [error,setError]=useState("");
  const reload=useCallback(async()=>{
@@ -75,9 +76,9 @@ export default function MessageRequests(){
  }
  async function updatePrivacy(next:MessagePrivacy){
   if(saving)return;
-  setSaving(true);setError("");
+  setSaving(true);setPrivacyError("");
   try{await saveMessagePrivacy(next);setPrivacy(next);}
-  catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar la privacidad.");}
+  catch(e){setPrivacyError(e instanceof Error?e.message:"No se pudo actualizar la privacidad.");}
   finally{setSaving(false);}
  }
  const visible=rows.filter(x=>filter==="Solicitudes"?x.status==="pending":x.status==="spam"||x.status==="reported");
@@ -88,7 +89,7 @@ export default function MessageRequests(){
    <ScrollView contentContainerStyle={{padding:JOBEEN_CONTROL.pageHorizontalPadding,paddingBottom:45,gap:12}} keyboardShouldPersistTaps="handled">
     <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
      <Text style={{flex:1,fontSize:JOBEEN_TYPE.secondary,color:t.ink2}}>Contactos que todavía no aceptaste</Text>
-     <Pressable accessibilityRole="button" accessibilityLabel="Privacidad de mensajes" onPress={()=>setSettingsOpen(true)} style={{width:45,height:45,borderRadius:16,alignItems:"center",justifyContent:"center",backgroundColor:t.surface,borderWidth:1,borderColor:t.line}}>
+     <Pressable accessibilityRole="button" accessibilityLabel="Privacidad de mensajes" onPress={()=>{setPrivacyError("");setSettingsOpen(true);}} style={{width:45,height:45,borderRadius:16,alignItems:"center",justifyContent:"center",backgroundColor:t.surface,borderWidth:1,borderColor:t.line}}>
       <Ionicons name="settings-outline" size={22} color={t.ink}/>
      </Pressable>
     </View>
@@ -166,15 +167,16 @@ export default function MessageRequests(){
       <ScrollView keyboardShouldPersistTaps="handled" style={{flexShrink:1}}
        contentContainerStyle={{paddingHorizontal:JOBEEN_CONTROL.modalHorizontalPadding,paddingBottom:Math.max(insets.bottom,18),gap:JOBEEN_CONTROL.modalContentGap}}>
        <Text style={{color:modal.muted,fontSize:JOBEEN_TYPE.input}}>¿Quién puede enviarte una nueva solicitud?</Text>
+       {!!privacyError&&<Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{fontSize:JOBEEN_TYPE.secondary,color:modal.text}}>{privacyError}</Text>}
        {([{id:"all",label:"Cualquier usuario"},{id:"following",label:"Solo personas que sigo"},{id:"none",label:"Nadie"}] as const).map(option=><Pressable key={option.id} accessibilityRole="radio"
-        accessibilityState={{checked:privacy.requestsFrom===option.id}} onPress={()=>void updatePrivacy({...privacy,requestsFrom:option.id})}
+        accessibilityState={{checked:privacy.requestsFrom===option.id,disabled:saving}} disabled={saving} onPress={()=>void updatePrivacy({...privacy,requestsFrom:option.id})}
         style={{minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",gap:10,alignItems:"center",borderWidth:1,
          borderRadius:modal.radius.control,borderColor:privacy.requestsFrom===option.id?modal.accent:modal.border,
          backgroundColor:privacy.requestsFrom===option.id?modal.soft:modal.inner,paddingHorizontal:12}}>
         <Ionicons name={privacy.requestsFrom===option.id?"radio-button-on":"radio-button-off"} size={20} color={modal.text}/>
         <Text style={{color:modal.text,fontSize:JOBEEN_TYPE.body}}>{option.label}</Text>
        </Pressable>)}
-       <Pressable accessibilityRole="switch" accessibilityState={{checked:privacy.filterSpam}} onPress={()=>void updatePrivacy({...privacy,filterSpam:!privacy.filterSpam})}
+       <Pressable accessibilityRole="switch" accessibilityState={{checked:privacy.filterSpam,disabled:saving}} disabled={saving} onPress={()=>void updatePrivacy({...privacy,filterSpam:!privacy.filterSpam})}
         style={{minHeight:JOBEEN_CONTROL.touchTarget,padding:12,borderRadius:modal.radius.control,
          backgroundColor:modal.inner,borderWidth:1,borderColor:modal.border,flexDirection:"row",alignItems:"center",gap:10}}>
         <Text style={{flex:1,color:modal.text,fontSize:JOBEEN_TYPE.body,fontWeight:"700"}}>Filtrar automáticamente mensajes sospechosos</Text>
