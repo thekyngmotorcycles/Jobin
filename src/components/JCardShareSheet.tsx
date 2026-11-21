@@ -43,7 +43,12 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
  const message=contentMessage??(cardType+" de "+label+": "+link);
  const matchingContacts=contacts.filter(c=>c.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
  const options=OPTIONS.filter(item=>item.id!=="qr"||!!link.trim());
- const actionSize=Math.max(48,Math.min(JOBEEN_CONTROL.optionDiameter,(width-70)/4));
+ // Match the reference proportions on standard Android widths without clipping the Jelly layout.
+ const compact=width<360;
+ const headerSize=compact?JOBEEN_TYPE.modalTitle:20;
+ const sectionSize=compact?JOBEEN_TYPE.modalSectionTitle:15;
+ const recipientSize=compact?JOBEEN_TYPE.modalRecipient:12;
+ const actionSize=Math.max(44,Math.min(compact?48:62,(width-70)/4));
  useEffect(()=>{
   if(!visible)return;
   let active=true;
@@ -106,9 +111,9 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
      <View style={{width:39,height:39,borderRadius:13,alignItems:"center",justifyContent:"center",backgroundColor:t.yellow}}>
       <Ionicons name="share-social-outline" color={t.ink} size={24}/>
      </View>
-     <Text numberOfLines={2} style={{flex:1,fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle,fontWeight:"800",color:t.ink}}>{showQr?qrHeading:shareTitle}</Text>
+     <Text numberOfLines={2} style={{flex:1,fontSize:headerSize,lineHeight:compact?JOBEEN_LINE_HEIGHT.modalTitle:26,fontWeight:"800",color:t.ink}}>{showQr?qrHeading:shareTitle}</Text>
      <Pressable accessibilityRole="button" accessibilityLabel={showQr?"Volver a compartir":"Cerrar panel de compartir"}
-      onPress={()=>showQr?setShowQr(false):dismiss()} style={{width:44,height:44,justifyContent:"center",alignItems:"center"}}>
+      onPress={()=>showQr?setShowQr(false):dismiss()} style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,justifyContent:"center",alignItems:"center"}}>
       <Ionicons name={showQr?"arrow-back":"close"} size={24} color={t.ink}/>
      </Pressable>
     </View>
@@ -130,9 +135,9 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8,marginTop:4}}>
        <View style={{flexDirection:"row",gap:8,alignItems:"center",flexShrink:1}}>
         <Ionicons name="people-outline" size={19} color={t.yellow}/>
-        <Text numberOfLines={1} style={{fontSize:JOBEEN_TYPE.modalSectionTitle,fontWeight:"800",color:t.ink}}>Contactos Jobeen</Text>
+        <Text numberOfLines={1} style={{fontSize:sectionSize,fontWeight:"800",color:t.ink}}>Contactos Jobeen</Text>
        </View>
-       <Text style={{fontSize:JOBEEN_TYPE.secondary,color:selected.length?t.ink:t.ink2,fontWeight:selected.length?"700":"500"}}>
+       <Text style={{fontSize:JOBEEN_TYPE.secondary,color:selected.length?t.ink:t.yellow,fontWeight:selected.length?"700":"700"}}>
         {selected.length?"Seleccionados: "+selected.length:"Seleccionar varios"}
        </Text>
       </View>
@@ -152,7 +157,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
             <Ionicons name="checkmark" color={t.ink} size={16}/>
            </View>}
           </View>
-          <Text numberOfLines={2} style={{fontSize:JOBEEN_TYPE.modalRecipient,textAlign:"center",fontWeight:active?"800":"600",color:t.ink,lineHeight:15}}>{contact.name}</Text>
+          <Text numberOfLines={2} style={{fontSize:recipientSize,textAlign:"center",fontWeight:active?"800":"600",color:t.ink,lineHeight:15}}>{contact.name}</Text>
          </Pressable>;
         })}
        </ScrollView>:
@@ -164,7 +169,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
       <View style={{height:1,backgroundColor:t.line,marginVertical:4}}/>
       <View style={{flexDirection:"row",alignItems:"center",gap:9}}>
        <Ionicons name="layers-outline" size={18} color={t.yellow}/>
-       <Text style={{fontSize:JOBEEN_TYPE.modalSectionTitle,fontWeight:"800",color:t.ink}}>Compartir mediante</Text>
+       <Text style={{fontSize:sectionSize,fontWeight:"800",color:t.ink}}>Compartir mediante</Text>
       </View>
       <View style={{flexDirection:"row",justifyContent:"space-between",gap:6,marginBottom:4}}>
        {options.map(option=><Pressable key={option.id} accessibilityRole="button"
@@ -175,7 +180,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
          backgroundColor:option.id==="whatsapp"?t.okBackground:t.cream,alignItems:"center",justifyContent:"center"}}>
          <Ionicons name={option.icon} size={23} color={option.id==="whatsapp"?t.okText:t.ink}/>
         </View>
-        <Text numberOfLines={2} style={{textAlign:"center",fontSize:JOBEEN_TYPE.modalRecipient,color:t.ink}}>{option.id==="qr"?qrLabel:option.label}</Text>
+        <Text numberOfLines={2} style={{textAlign:"center",fontSize:recipientSize,color:t.ink}}>{option.id==="qr"?qrLabel:option.label}</Text>
        </Pressable>)}
       </View>
      </ScrollView>
