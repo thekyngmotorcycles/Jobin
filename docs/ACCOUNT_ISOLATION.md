@@ -17,3 +17,9 @@ Leer AGENTS.md, sección Seguridad y aislamiento. Una sola identidad activa por 
 ## Referencias
 OWASP MASVS: https://mas.owasp.org/MASVS/
 Supabase RLS: https://supabase.com/docs/guides/database/postgres/row-level-security
+
+## Avance de contención y validación
+- Commit 713a115: validate y database aprobados. Posteriormente se vincularon guardados de contacto, visibilidad y datos personales a la identidad original del editor.
+- Se incorporó al workflow database la prueba SQL de JCards guardadas, ampliada para comprobar inserción impersonada, eliminación y modificación ajenas, reasignación de propietario y cambio A→B→A. Prueba en base descartable de CI; no constituye validación del proyecto remoto ni de Android.
+- Confirmado por lectura del catálogo remoto: la política de descubrimiento empresarial admite SELECT de toda fila con nombre no vacío, sin comprobar visibilidad; las políticas de escritura de historial duplicadas pueden combinarse permisivamente. Pendiente inventario de consumidores y migración coordinada de lectura pública con proyección de campos permitidos; no modificar privilegios del proyecto compartido sin comprobar compatibilidad. 
+- No se han borrado ni reasignado registros. Cifrado, reautenticación y pruebas funcionales de dos cuentas siguen pendientes.
