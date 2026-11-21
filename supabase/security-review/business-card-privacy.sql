@@ -43,6 +43,7 @@ create or replace function jobeen_private.public_business_card_rows()
   left join public.jcard_visibility v on v.owner_id=b.owner_id
   where (select auth.uid()) is not null and length(btrim(b.name))>0
    and coalesce(v.business_enabled,true)
+   and not private.is_blocked(b.owner_id,(select auth.uid()))
  $projection$;
 -- Missing legacy visibility: retain discovery compatibility but never expose
 -- email/phone until the owner has explicitly saved the visibility preferences.
