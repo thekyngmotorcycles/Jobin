@@ -80,7 +80,7 @@ export function VideoCard({ id, poster, author, handle, avatar, caption, likes, 
         liked={liked} onLike={() => toggleLike(id)} onShare={() => void shareVideo()}
          saved={savedPosts.includes(id)} onSave={()=>toggleSave(id)} />
       <JobeenShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} theme={theme} label={author}
-       contentTitle="Video profesional" contentMessage={author+": "+caption} onShared={()=>addShare(id)}/>
+       contentTitle="Compartir video" contentMessage={author+": "+caption} onShared={()=>addShare(id)}/>
     </View>
   );
 }
@@ -103,7 +103,7 @@ export function PhotoPostCard({ post }: { post: PhotoPost }) {
         liked={liked} onLike={() => toggleLike(post.id)} onShare={() => void sharePhoto()}
          saved={savedPosts.includes(post.id)} onSave={()=>toggleSave(post.id)} />
       <JobeenShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} theme={theme} label={post.author}
-       contentTitle="Publicación" contentMessage={post.author+": "+post.caption} onShared={()=>addShare(post.id)}/>
+       contentTitle="Compartir publicación" contentMessage={post.author+": "+post.caption} onShared={()=>addShare(post.id)}/>
     </View>
   );
 }
