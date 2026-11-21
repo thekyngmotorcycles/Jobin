@@ -89,13 +89,13 @@ export default function MessageRequests(){
    <ScrollView contentContainerStyle={{padding:JOBEEN_CONTROL.pageHorizontalPadding,paddingBottom:45,gap:12}} keyboardShouldPersistTaps="handled">
     <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
      <Text style={{flex:1,fontSize:JOBEEN_TYPE.secondary,color:t.ink2}}>Contactos que todavía no aceptaste</Text>
-     <Pressable accessibilityRole="button" accessibilityLabel="Privacidad de mensajes" onPress={()=>{setPrivacyError("");setSettingsOpen(true);}} style={{width:45,height:45,borderRadius:16,alignItems:"center",justifyContent:"center",backgroundColor:t.surface,borderWidth:1,borderColor:t.line}}>
+     <Pressable accessibilityRole="button" accessibilityLabel="Privacidad de mensajes" onPress={()=>{setPrivacyError("");setSettingsOpen(true);}} style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,borderRadius:16,alignItems:"center",justifyContent:"center",backgroundColor:t.surface,borderWidth:1,borderColor:t.line}}>
       <Ionicons name="settings-outline" size={22} color={t.ink}/>
      </Pressable>
     </View>
     <View style={{flexDirection:"row",gap:10}}>
      {(["Solicitudes","Spam"] as const).map(value=><Pressable key={value} accessibilityRole="tab" accessibilityState={{selected:filter===value}} onPress={()=>setFilter(value)}
-      style={{flex:1,minHeight:47,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:7,
+      style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:7,
        borderRadius:16,backgroundColor:filter===value?t.cream:t.surface,borderWidth:1,borderColor:filter===value?t.yellow:t.line}}>
       <Ionicons name={value==="Spam"?"shield-outline":"mail-unread-outline"} size={20} color={t.ink}/>
       <Text style={{fontSize:14,fontWeight:filter===value?"800":"600",color:t.ink}}>{value}</Text>
@@ -120,13 +120,13 @@ export default function MessageRequests(){
      <Text style={{fontSize:12,color:t.ink2}}>Si aceptás, esta conversación pasará a Chats. No se han habilitado archivos ni llamadas.</Text>
      <View style={{flexDirection:"row",gap:8}}>
       <Pressable accessibilityRole="button" disabled={busy===request.id} onPress={()=>void accept(request)}
-       style={{flex:1,minHeight:44,borderRadius:14,backgroundColor:t.ink,alignItems:"center",justifyContent:"center",opacity:busy===request.id?0.5:1}}>
+       style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:14,backgroundColor:t.ink,alignItems:"center",justifyContent:"center",opacity:busy===request.id?0.5:1}}>
        <Text style={{color:t.bg,fontWeight:"800"}}>Aceptar</Text>
       </Pressable>
       <Pressable accessibilityRole="button" disabled={busy===request.id}
        onPress={()=>Alert.alert("Eliminar solicitud","La persona no podrá enviarte otra solicitud sin tu autorización.",[
         {text:"Cancelar",style:"cancel"},{text:"Eliminar",style:"destructive",onPress:()=>void dismiss(request)}])}
-       style={{flex:1,minHeight:44,borderRadius:14,borderWidth:1,borderColor:t.line,backgroundColor:t.bg,alignItems:"center",justifyContent:"center"}}>
+       style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:14,borderWidth:1,borderColor:t.line,backgroundColor:t.bg,alignItems:"center",justifyContent:"center"}}>
        <Text style={{color:t.ink,fontWeight:"700"}}>Eliminar</Text>
       </Pressable>
      </View>
