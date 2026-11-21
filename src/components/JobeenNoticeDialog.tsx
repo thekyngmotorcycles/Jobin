@@ -4,6 +4,7 @@ import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenModalTokens,type JobeenNoticeTone} from "../theme/modals";
 import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
 
 /** Branded, accessible confirmation for ordinary and important notices.
  * In the light theme the surface stays warm; only icons/actions carry severity.
@@ -36,7 +37,7 @@ export function JobeenNoticeDialog({visible,title,description,tone="neutral",con
     <Text style={{color:t.muted,fontSize:JOBEEN_TYPE.body,lineHeight:JOBEEN_LINE_HEIGHT.body}}>{description}</Text>
     <View style={{flexDirection:"row",gap:10,marginTop:4}}>
      <Pressable accessibilityRole="button" accessibilityLabel={cancelLabel} disabled={busy} onPress={onCancel}
-      style={{flex:1,minHeight:46,borderRadius:t.radius.control,borderColor:t.border,borderWidth:1,
+      style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:t.radius.control,borderColor:t.border,borderWidth:1,
        alignItems:"center",justifyContent:"center",backgroundColor:t.inner}}>
       <Text style={{color:t.text,fontSize:JOBEEN_TYPE.action,fontWeight:"700"}}>{cancelLabel}</Text>
      </Pressable>

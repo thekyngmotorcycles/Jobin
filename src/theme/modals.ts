@@ -12,7 +12,7 @@ export type JobeenNoticeTone="neutral"|"info"|"success"|"warning"|"danger";
 export function jobeenModalTokens(theme:ThemeName,tone:JobeenNoticeTone="neutral"){
  const t=jobeenTokens(theme);
  const light=theme==="light";
- const surface=light?LIGHT_JOBEEN.bg:t.surface;
+ const surface=light?"#FCF9F4":t.surface;
  const inner=light?LIGHT_JOBEEN.surface:t.bg;
  const border=light?LIGHT_JOBEEN.line:t.line;
  const accent=light?LIGHT_JOBEEN.yellow:t.yellow;
