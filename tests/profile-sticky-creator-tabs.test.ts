@@ -10,16 +10,16 @@ const ui=source("src/components/ui.tsx");
 const posts=source("src/components/ProfileOwnedPosts.tsx");
 
 test("Creator profiles use a scrollable five-section tab bar with accessible names and selected state",()=>{
- for(const label of ['label:"Inicio"','label:"Todo"','label:"Videos"','label:"En vivo"','label:"Acerca de"'])
+ for(const label of ['label:"JCards"','label:"Todo"','label:"Videos"','label:"En vivo"','label:"Acerca de"'])
   assert.ok(tabs.includes(label),"Missing label "+label);
- assert.ok(tabs.includes('export type ProfileSection="home"|"grid"|"cv"|"videos"|"live"'));
+ assert.ok(tabs.includes('export type ProfileSection="grid"|"jcards"|"cv"|"videos"|"live"'));
  assert.ok(tabs.includes("<ScrollView horizontal"));
  assert.ok(tabs.includes('accessibilityRole="tab"'));
  assert.ok(tabs.includes("accessibilityState={{selected}}"));
  assert.ok(tabs.includes("minHeight:50"));
  assert.ok(tabs.includes("borderBottomWidth:3,borderBottomColor:selected?jt.yellow:jt.bg"),"Selection must not move icons or labels vertically");
  assert.ok(tabs.includes('fontSize:JOBEEN_TYPE.input,fontWeight:selected?"700":"600",color:jt.ink'),"Profile labels use the shared semantic type scale and remain readable");
- assert.ok(tabs.includes('size={18} color={jt.ink}'),"Tab icons use balanced contrast and size");
+ assert.ok(!tabs.includes("<Ionicons name={tab.icon}"),"Profile navigation is text-only");
  assert.ok(tabs.includes("minWidth:92"),"Five profile controls share minimum width");
  assert.ok(tabs.includes("tabLayouts=useRef<Partial<Record<ProfileSection,{x:number;width:number}>>>"),"Measure actual tab widths");
  assert.ok(tabs.includes("layout.x+layout.width/2-viewportWidth/2"),"Center using real button position and scroll viewport width");
@@ -38,17 +38,17 @@ test("Both own and public profile have separate scrolling hero, sticky tabs and 
   assert.ok(page.includes("setTabsPinned"));
   assert.ok(page.includes("setTabOffset"));
   assert.ok(page.includes("scrollTo({y:tabOffset,animated:!reducedMotion})"));
-  assert.ok(page.includes('useState<')&&page.includes('("home")'));
+  assert.ok(page.includes('useState<')&&page.includes('("grid")'));
  }
  assert.ok(owner.includes("stickyHeaderIndices={[1]}"));
  assert.ok(visitor.includes("stickyHeaderIndices={resource.data?[1]:undefined}"));
  assert.ok(ui.includes("stickyHeaderIndices={stickyHeaderIndices}"));
 });
 test("Creator Home uses real published work without inventing live viewers",()=>{
- assert.ok(owner.includes('heading="Trabajo reciente"'));
- assert.ok(visitor.includes('heading="Trabajo reciente"'));
- assert.ok(owner.includes('limit={6}'));
- assert.ok(visitor.includes('limit={6}'));
+ assert.ok(owner.includes('mode==="jcards"&&<SavedJCardsGallery/>'));
+ assert.ok(visitor.includes('section==="grid"'));
+ assert.ok(owner.includes('ProfileOwnedPosts filter="all"'));
+ assert.ok(visitor.includes('ProfilePublicPosts userId={resource.data.id} filter="all"'));
  assert.ok(posts.includes("tiles.slice(0,limit)"));
  assert.ok(posts.includes('accessibilityLabel="Ver todas las publicaciones"'));
  assert.ok(owner.includes('Sin transmisión activa verificada'));
