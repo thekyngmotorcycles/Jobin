@@ -388,7 +388,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
   </View>
   <JCardShareSheet visible={shareSide!==null} onClose={()=>setShareSide(null)}
   label={sideLabel(shareSide??(back?"business":"personal"))}
-  link={sideLink(shareSide??(back?"business":"personal"))} theme={cardTheme}/>
+  link={sideLink(shareSide??(back?"business":"personal"))} side={shareSide??(back?"business":"personal")} theme={cardTheme}/>
  </>;
 }
 
