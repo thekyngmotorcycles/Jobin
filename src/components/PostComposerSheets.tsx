@@ -48,7 +48,7 @@ export function PostComposerSheets(p:Props){
     <View style={{paddingHorizontal:16,paddingTop:12,paddingBottom:8,flexDirection:"row",alignItems:"center",gap:9}}>
      <Text accessibilityRole="header" style={{flex:1,fontSize:JOBEEN_TYPE.modalTitle,fontWeight:"800",color:modal.text}}>{title}</Text>
      <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" onPress={onClose}
-      style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
+      style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
       <Ionicons name="close" size={22} color={t.ink}/>
      </Pressable>
     </View>
@@ -75,7 +75,7 @@ export function PostComposerSheets(p:Props){
       {action("Guardar borrador","bookmark-outline",p.onSaveExit,true)}
       {action("Descartar cambios","trash-outline",p.onDiscardExit)}
       <Pressable accessibilityRole="button" accessibilityLabel="Continuar editando" onPress={p.onContinue}
-       style={{minHeight:46,alignItems:"center",justifyContent:"center"}}>
+       style={{minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
        <Text style={{color:t.ink2,fontSize:14,fontWeight:"600"}}>Continuar editando</Text>
       </Pressable>
      </View>
@@ -111,7 +111,7 @@ export function PostComposerSheets(p:Props){
        </Pressable>
        <Pressable accessibilityRole="button" accessibilityLabel={"Eliminar borrador "+(index+1)}
         onPress={()=>p.onDelete(draft)}
-        style={{position:"absolute",top:3,right:3,width:38,height:38,borderRadius:20,
+        style={{position:"absolute",top:3,right:3,width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,borderRadius:24,
          alignItems:"center",justifyContent:"center",backgroundColor:t.surface}}>
         <Ionicons name="trash-outline" size={19} color={t.ink}/>
        </Pressable>
