@@ -81,6 +81,7 @@ export default function MessageRequests(){
   catch(e){setPrivacyError(e instanceof Error?e.message:"No se pudo actualizar la privacidad.");}
   finally{setSaving(false);}
  }
+ function closePrivacy(){if(!saving)setSettingsOpen(false);}
  const visible=rows.filter(x=>filter==="Solicitudes"?x.status==="pending":x.status==="spam"||x.status==="reported");
  const unreviewed=rows.filter(x=>x.status==="pending").length;
  return <>
@@ -146,9 +147,9 @@ export default function MessageRequests(){
      </View>
     </View>)}
    </ScrollView>
-   <Modal visible={settingsOpen} transparent animationType="slide" onRequestClose={()=>setSettingsOpen(false)}>
+   <Modal visible={settingsOpen} transparent animationType="slide" onRequestClose={closePrivacy}>
     <View style={{flex:1,justifyContent:"flex-end"}}>
-     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar configuración de mensajes" onPress={()=>setSettingsOpen(false)}
+     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar configuración de mensajes" onPress={closePrivacy}
       style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:modal.scrim}}/>
      <View accessibilityViewIsModal style={{maxHeight:"88%",backgroundColor:modal.surface,
       borderTopLeftRadius:modal.radius.sheet,borderTopRightRadius:modal.radius.sheet,overflow:"hidden",
@@ -159,7 +160,7 @@ export default function MessageRequests(){
       <View style={{paddingHorizontal:JOBEEN_CONTROL.modalHorizontalPadding,flexDirection:"row",
        justifyContent:"space-between",alignItems:"center"}}>
        <Text accessibilityRole="header" style={{flex:1,color:modal.text,fontSize:JOBEEN_TYPE.modalTitle,fontWeight:"800"}}>Privacidad de mensajes</Text>
-       <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" onPress={()=>setSettingsOpen(false)}
+       <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" onPress={closePrivacy}
         style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
         <Ionicons name="close" size={23} color={modal.text}/>
        </Pressable>
