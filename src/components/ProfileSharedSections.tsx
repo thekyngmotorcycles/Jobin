@@ -7,6 +7,7 @@ import {ProfileFollowCounts} from "./ProfileFollowCounts";
 import {MediaThumbnail} from "./MediaThumbnail";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
+import {JOBEEN_TYPE} from "../theme/typography";
 
 export type ProfileSection="home"|"grid"|"cv"|"videos"|"live";
 const tabs=[
@@ -42,7 +43,7 @@ export function ProfileSectionTabs({section,onSelect,pinned=false}:{section:Prof
       style={{minHeight:50,paddingHorizontal:12,minWidth:92,flexDirection:"row",gap:6,alignItems:"center",justifyContent:"center",
        borderBottomWidth:3,borderBottomColor:selected?jt.yellow:jt.bg}}>
      <Ionicons name={tab.icon} size={18} color={jt.ink}/>
-     <Text numberOfLines={1} style={{fontSize:13,fontWeight:selected?"700":"600",color:jt.ink}}>{tab.label}</Text>
+     <Text numberOfLines={1} style={{fontSize:JOBEEN_TYPE.input,fontWeight:selected?"700":"600",color:jt.ink}}>{tab.label}</Text>
     </Pressable>;
    })}
   </ScrollView>
