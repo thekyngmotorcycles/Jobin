@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {assertAccountOwner} from "./account-scope";
 import {requireSupabase} from "./supabase";
 import type {FeedAudience,FeedPostKind} from "./social-content";
 import type {PostBusinessMention} from "./post-mentions";
@@ -25,6 +26,7 @@ export function emptyPostDraft():PostDraft{
 }
 export async function readPostDrafts(owner:string):Promise<PostDraft[]>{
  if(!owner)return [];
+ await assertAccountOwner(owner);
  const raw=await AsyncStorage.getItem(key(owner));
  if(!raw)return [];
  try{
@@ -37,16 +39,20 @@ export async function readPostDrafts(owner:string):Promise<PostDraft[]>{
 }
 export async function savePostDraft(owner:string,draft:PostDraft){
  if(!owner||!hasDraftContent(draft))return;
+ await assertAccountOwner(owner);
  const previous=await readPostDrafts(owner);
  if(!previous.some(x=>x.id===draft.id)&&previous.length>=MAX_POST_DRAFTS)
   throw Error("Has alcanzado el límite de "+MAX_POST_DRAFTS+" borradores. Elimina uno de los anteriores para guardar otro.");
  const next=[{...draft,updatedAt:Date.now()},...previous.filter(x=>x.id!==draft.id)];
+ await assertAccountOwner(owner);
  await AsyncStorage.setItem(key(owner),JSON.stringify(next));
 }
 export async function deletePostDraft(owner:string,id:string,removePhotos=true){
  if(!owner)return;
+ await assertAccountOwner(owner);
  const previous=await readPostDrafts(owner);
  const found=previous.find(x=>x.id===id);
+ await assertAccountOwner(owner);
  await AsyncStorage.setItem(key(owner),JSON.stringify(previous.filter(x=>x.id!==id)));
  if(removePhotos&&found){
   const paths=found.photos.map(x=>x.backupPath).filter((x):x is string=>!!x&&x.startsWith(owner+"/"));
