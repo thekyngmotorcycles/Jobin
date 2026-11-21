@@ -1,6 +1,6 @@
 import {Ionicons} from "@expo/vector-icons";
 import {Image,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
-import {useEffect,useRef} from "react";
+import {useCallback,useEffect,useRef} from "react";
 import {useReducedMotion} from "react-native-reanimated";
 import type {ReactNode,ComponentProps} from "react";
 import {ProfileFollowCounts} from "./ProfileFollowCounts";
@@ -23,11 +23,11 @@ export function ProfileSectionTabs({section,onSelect,pinned=false}:{section:Prof
  const {width}=useWindowDimensions();const reducedMotion=useReducedMotion();
  const scroller=useRef<ScrollView|null>(null);
  const tabLayouts=useRef<Partial<Record<ProfileSection,{x:number;width:number}>>>({});
- const scrollToSection=(id:ProfileSection)=>{
+ const scrollToSection=useCallback((id:ProfileSection)=>{
   const layout=tabLayouts.current[id];
   if(layout)scroller.current?.scrollTo({x:Math.max(0,layout.x+layout.width/2-width/2),animated:!reducedMotion});
- };
- useEffect(()=>{scrollToSection(section);},[section,width,reducedMotion]);
+ },[width,reducedMotion]);
+ useEffect(()=>{scrollToSection(section);},[section,scrollToSection]);
  return <View style={{backgroundColor:jt.bg,borderBottomWidth:1,borderBottomColor:jt.line,
   elevation:pinned?3:0,shadowColor:jt.ink,shadowOffset:{width:0,height:2},shadowOpacity:pinned?0.09:0,
   shadowRadius:pinned?5:0,zIndex:5}}>
