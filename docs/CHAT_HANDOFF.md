@@ -2,6 +2,11 @@
 
 Actualizado: 2026-11-01. Este documento describe el contexto conocido al momento de crearlo; verificar siempre el estado actual del repositorio, GitHub Actions y Supabase.
 
+## MISIÓN ACTUAL DE JOBEEN — LEER SIEMPRE EN UN CHAT NUEVO
+Jobeen es la plataforma **mobile-first de transmisiones EN VIVO de personas mostrando su trabajo y oficio**, no una bolsa de empleos generalista. Twitch sirve como referencia de directo, pero se diseña para creadores trabajando con móvil/cámara manos libres en calle, taller, obra u oficina. Los **Flashes** son videos cortos para difundir el trabajo. Visión futura: regalos con valor monetario durante directos y en Flashes (aún NO funcionales). Priorizar siempre emisión móvil, descubrimiento de lives, participación segura, clips y luego herramientas profesionales. Evitar diseños cargados de íconos.
+
+**Norma vinculante:** consultar primero `AGENTS.md` y `docs/JOBEEN_PRODUCT_VISION.md`. La nueva revisión de UX es **por fases**, con menús principales unificados (Configuración, perfil propio y perfil público), pestañas interiores del perfil solo texto y barra global inferior de cinco iconos INTACTA. Usar Mobbin/X solo para distribución y limpieza, sin copiar el estilo. Mantener mismas columnas en Jelly y teléfonos mayores. No confundir la visión de regalos o gafas con capacidades ya implementadas.
+
 ## Referencias
 - GitHub: https://github.com/thekyngmotorcycles/Jobin
 - Rama de trabajo: development. Rama estable: main (NO modificar sin aprobación explícita).
