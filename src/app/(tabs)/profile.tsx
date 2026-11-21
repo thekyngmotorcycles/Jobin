@@ -95,7 +95,6 @@ export default function Profile() {
   const [employerLink,setEmployerLink]=useState<{id:string;name:string;handle:string}|null>(null);
   const [businessRating,setBusinessRating]=useState<{rating:number|null;count:number}>({rating:null,count:0});
   const [businessExcellence,setBusinessExcellence]=useState<Pick<BusinessCardData,"excellenceVotes"|"excellenceReviewCount">>({});
-  useEffect(()=>{if(historyLoaded)void AsyncStorage.setItem("jobin.professional.history.v1",JSON.stringify(history)).catch(()=>setNotice("No se pudo guardar el historial en este dispositivo."));},[history,historyLoaded]);
   const [businessOpen,setBusinessOpen]=useState(false);
   const [businessCategoryOpen,setBusinessCategoryOpen]=useState(false);
   const [businessCategoryQuery,setBusinessCategoryQuery]=useState("");
@@ -123,7 +122,7 @@ export default function Profile() {
   const workspace = useProfessionalData(loadWorkspace,true);
   const ownerId=workspace.data?.card.id;
   const [historyState,setHistoryState]=useState<{owner:string;rows:EmploymentEntry[]}|null>(null);
-  const history=historyState?.owner===ownerId?historyState?.rows??[]:[];
+  const history=historyState&&historyState.owner===ownerId?historyState.rows:[];
   useFocusEffect(useCallback(()=>{
    let active=true;
    if(!ownerId)return()=>{active=false;};
@@ -131,7 +130,7 @@ export default function Profile() {
    void (async()=>{
     try{
      const rows=await readCloudHistory(owner);
-     if(!active||await cloudOwner()!==owner)return;
+     if(!active||(await cloudOwner())!==owner||!active)return;
      const key="jobeen.professional.history.v2."+owner;
      const raw=await AsyncStorage.getItem(key);
      const local:EmploymentEntry[]=raw?JSON.parse(raw):[];
@@ -158,8 +157,9 @@ export default function Profile() {
     // Show the scoped card immediately on return or a card flip. Refresh from
     // Supabase afterward, instead of briefly rendering the personal fallback.
     const cached=await readScopedBusinessCard(owner).catch(()=>null);
-    if(active&&cached){setBusiness(cached);setBusinessOwner(owner);}
-    const row=await readCloudBusiness();
+    if(!active||(await cloudOwner())!==owner)return;
+    if(cached){setBusiness(cached);setBusinessOwner(owner);}
+    const row=await readCloudBusiness(owner);
     if(!active||(await cloudOwner())!==owner)return;
     const current={...EMPTY_BUSINESS_CARD,...(row??{})};
     setBusiness(current);setBusinessOwner(owner);
