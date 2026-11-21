@@ -14,6 +14,7 @@ import {EXTENSION_MONTHS} from "../../lib/rules";
 import {requireSupabase} from "../../lib/supabase";
 import {useJobinNotices} from "../../state/NoticeProvider";
 import {useTabClearance} from "../../theme/navigation";
+import {useScrollNavigation} from "../../state/ScrollNavigation";
 import {jobeenTokens} from "../../theme/jobeen";
 import {useTheme} from "../../state/ThemeProvider";
 
@@ -34,6 +35,7 @@ type InboxTab="chats"|"jshop";
 type ShopFilter="Todo"|"Compras"|"Ventas"|"Spam";
 
 export default function Messages(){
+ const {reportScroll}=useScrollNavigation();
  const {markInboxRead}=useJobinNotices();
  useEffect(()=>{markInboxRead();},[]);
  const {s,colors}=useUi(),{theme}=useTheme(),t=jobeenTokens(theme),{contentBottom}=useTabClearance();
@@ -92,7 +94,7 @@ export default function Messages(){
  const visibleShopThreads=shopThreads.filter(thread=>shopFilter==="Spam"?shopSpamIds.has(thread.id):!shopSpamIds.has(thread.id)&&(shopFilter==="Todo"||thread.side===shopFilter));
  const tabBackground=(selected:boolean)=>selected?t.cream:t.surface;
  return <SafeAreaView edges={["top","left","right"]} style={s.screen}>
-  <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingBottom:contentBottom,gap:10}} showsVerticalScrollIndicator={false}>
+  <ScrollView keyboardShouldPersistTaps="handled" scrollEventThrottle={16} onScroll={e=>reportScroll(e.nativeEvent.contentOffset.y)} contentContainerStyle={{paddingBottom:contentBottom,gap:10}} showsVerticalScrollIndicator={false}>
    <SocialHeader />
    <View style={{paddingHorizontal:16,gap:14,marginTop:8}}>
     <View accessibilityRole="tablist" style={{flexDirection:"row",gap:10}}>
