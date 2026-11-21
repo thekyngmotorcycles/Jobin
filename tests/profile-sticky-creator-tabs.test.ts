@@ -46,7 +46,7 @@ test("Both own and public profile have separate scrolling hero, sticky tabs and 
  assert.ok(ui.includes("stickyHeaderIndices={stickyHeaderIndices}"));
 });
 test("Creator Home uses real published work without inventing live viewers",()=>{
- assert.ok(owner.includes('mode==="jcards"&&<SavedJCardsGallery/>'));
+ assert.ok(owner.includes('mode==="jcards"&&ownerId&&<SavedJCardsGallery key={ownerId} owner={ownerId}/>'));
  assert.ok(visitor.includes('section==="grid"'));
  assert.ok(owner.includes('ProfileOwnedPosts filter="all"'));
  assert.ok(visitor.includes('ProfilePublicPosts userId={resource.data.id} filter={section==="grid"?"all"'));
