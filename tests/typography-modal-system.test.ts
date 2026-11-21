@@ -28,7 +28,7 @@ test("Premium Jobeen share sheet uses common type scale and compact accessible s
  assert.ok(sheet.includes("flex:1,fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle"));
  assert.ok(sheet.includes("contentTitle??\"Compartir \"+cardType"));
  assert.ok(sheet.includes("if(result.sent.length)onShared?.()"));
- assert.ok(sheet.includes('name="checkmark" color={t.ink} size={18}'));
+ assert.ok(sheet.includes('name="checkmark" color={t.ink} size={16}'));
 });
 test("Shared bottom sheets reuse the same compact heading while retaining theme and gestures",()=>{
  const sheet=src("src/components/social-ui.tsx");
