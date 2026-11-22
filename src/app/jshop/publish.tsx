@@ -44,7 +44,7 @@ export default function JShopPublish(){
     setDefaultPlace(defaultLocation);
     if(!draft)setCurrency(preferredCurrency);
     if(draft){
-     const drafts=await readJShopDrafts(owner);await assertMessageScope(scope);
+     const drafts=await readJShopDrafts(owner,scope);await assertMessageScope(scope);
      const found=drafts.find(item=>item.id===draft);
      if(!found)throw new Error("El borrador no existe o pertenece a otra cuenta.");
      if(!live)return;
@@ -118,11 +118,11 @@ export default function JShopPublish(){
    if(publish){
     const publishedId=await publishJShopDraft(ownerId,item,scope);
     await assertMessageScope(scope);if(scopeRef.current!==scope)return;
-    if(existing)await deleteJShopDraft(ownerId,existing.id).catch(()=>{});
+    if(existing)await deleteJShopDraft(ownerId,existing.id,scope).catch(()=>{});
     await clearPendingArticleLocation(ownerId,session,scope).catch(()=>{});
     await assertMessageScope(scope);if(scopeRef.current===scope)router.replace({pathname:"/jshop/item/[id]",params:{id:publishedId}});
    }else{
-    await assertMessageScope(scope);await saveJShopDraft(ownerId,item);
+    await assertMessageScope(scope);await saveJShopDraft(ownerId,item,scope);
     await assertMessageScope(scope);if(scopeRef.current!==scope)return;
     await clearPendingArticleLocation(ownerId,session,scope).catch(()=>{});
     await assertMessageScope(scope);if(scopeRef.current===scope)router.replace("/jshop/mine");
