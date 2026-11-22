@@ -43,21 +43,35 @@ test("Changing authenticated identity remounts state providers and rejects previ
 test("Private device collections require the current authenticated UUID, not just a cache key",()=>{
  const guard=src("src/lib/account-scope.ts");
  assert.ok(guard.includes("data.session?.user.id!==owner"));
- for(const [file,owner] of [["post-drafts.ts","owner"],["jshop-local.ts","ownerId"],["search-history.ts","ownerId"],["business-card-cache.ts","owner"],["feed-preferences.ts","owner"],["jshop-location.ts","owner"],["jshop-selling-location.ts","owner"]]){
+ for(const [file,owner] of [["post-drafts.ts","owner"],["jshop-local.ts","ownerId"],["search-history.ts","ownerId"],["feed-preferences.ts","owner"],["jshop-location.ts","owner"],["jshop-selling-location.ts","owner"]]){
   const s=src("src/lib/"+file);
   assert.ok(s.includes("await assertAccountOwner("+owner+")"),file);
   assert.ok(s.includes("import {assertAccountOwner}"),file);
  }
+ const business=src("src/lib/business-card-cache.ts");
+ assert.ok(!business.includes("AsyncStorage"));
+ assert.ok(business.includes("if(scope.owner!==owner)throw"));
+ assert.equal((business.match(/await assertAccountOwner\(owner,scope\.session\)/g)??[]).length,2);
+ assert.ok(business.includes("memory.read(scope)"));
+ assert.ok(business.includes("memory.write(scope,card)"));
 });
 
 test("Avatar saves cannot attach a previous user's photo to a new session",()=>{
  const editor=src("src/app/personal-avatar-editor.tsx");
  const upload=src("src/lib/personal-jcard-photo.ts");
- assert.ok(editor.includes("const owner=editorOwner"));
- assert.ok(editor.includes("readCloudBusiness(owner)"));
- assert.ok(editor.includes('uploadPersonalJCardPhoto(result.base64??"","image/jpeg",owner)'));
+ assert.ok(editor.includes("const scope=editorScope,owner=scope.owner"));
+ assert.ok(editor.includes("readCloudBusiness(owner,scope)"));
+ assert.ok(editor.includes('uploadPersonalJCardPhoto(result.base64??"","image/jpeg",owner,scope)'));
  assert.ok(upload.includes("user.id!==expectedOwner"));
- assert.ok(upload.indexOf("await assertAccountOwner(user.id);",upload.indexOf("if(uploaded.error)"))>upload.indexOf("if(uploaded.error)"));
+ assert.ok(editor.includes("await captureMessageScope(scope)"));
+ assert.ok(editor.includes("await assertMessageScope(scope)"));
+ assert.ok(upload.includes("scope=await captureMessageScope(expectedScope)"));
+ const uploadIndex=upload.indexOf("await db.storage.from(BUCKET).upload");
+ const profileIndex=upload.indexOf('await db.from("profiles").update');
+ assert.ok(uploadIndex>=0&&profileIndex>uploadIndex);
+ assert.ok(upload.lastIndexOf("await assertMessageScope(scope);",uploadIndex)>=0);
+ assert.ok(upload.indexOf("await assertMessageScope(scope);",uploadIndex)<profileIndex);
+ assert.ok(upload.indexOf("await assertMessageScope(scope);",profileIndex)>profileIndex);
 });
 
 test("Saved-card actions and collections are bound to the account that rendered them",()=>{
