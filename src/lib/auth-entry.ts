@@ -22,3 +22,8 @@ export function exchangePendingGoogle<T>(url:string|null,accept:(code:string)=>P
  return boundary.exchange(url,async code=>{await signedOut();return accept(code);});
 }
 export const cancelPendingGoogle=()=>boundary.cancelPendingGoogle();
+// Serialize logout with every entry, including completion of Google PKCE.
+export function runAuthExit<T>(action:()=>Promise<T>){
+ boundary.cancelPendingGoogle();
+ return boundary.exclusive(action);
+}

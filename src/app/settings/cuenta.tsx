@@ -1,6 +1,7 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router} from "expo-router";
-import {useState} from "react";
+import {useRef,useState} from "react";
+import {captureMessageScope,type MessageScope} from "../../lib/message-session";
 import {Pressable,ScrollView,Text,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {endJobinSession} from "../../components/AuthGate";
@@ -12,6 +13,13 @@ import {JOBEEN_CONTROL} from "../../theme/control-metrics";
 type Item={label:string;detail:string;icon:React.ComponentProps<typeof Ionicons>["name"];route?:string;action?:()=>void};
 export default function AccountSecurity(){
  const {s,colors}=useUi();const [signingOut,setSigningOut]=useState(false);const [exitOpen,setExitOpen]=useState(false);const [exitError,setExitError]=useState("");
+ const exitScope=useRef<MessageScope|null>(null),exitGuard=useRef(false);
+ async function requestExit(){
+  if(exitGuard.current)return;exitGuard.current=true;setExitError("");
+  try{exitScope.current=await captureMessageScope();setExitOpen(true);}
+  catch{setExitError("No se pudo verificar la sesión actual.");setExitOpen(true);}
+  finally{exitGuard.current=false;}
+ }
  const groups:{title:string;description:string;items:Item[]}[]=[
   {title:"Información de tu cuenta",description:"Mantén tus datos y tu perfil actualizados.",items:[
    {label:"Información personal",detail:"Nombre, correo electrónico y teléfono.",icon:"person-outline",route:"/settings/datos-personales"},
@@ -26,7 +34,7 @@ export default function AccountSecurity(){
   {title:"Administrar cuenta",description:"Acciones importantes sobre tu cuenta.",items:[
    {label:"Desactivar o eliminar cuenta",detail:"Consulta las opciones de cierre de cuenta.",icon:"alert-circle-outline",route:"/settings/cierre-cuenta"}]},
  ];
- async function signOut(){if(signingOut)return;setSigningOut(true);setExitError("");try{await endJobinSession();setExitOpen(false);router.replace("/login");}catch{setExitError("No se pudo cerrar sesión. Inténtalo de nuevo.");}finally{setSigningOut(false);}}
+ async function signOut(){const scope=exitScope.current;if(exitGuard.current||!scope)return;exitGuard.current=true;setSigningOut(true);setExitError("");try{await endJobinSession(scope);setExitOpen(false);}catch{setExitError("No se pudo cerrar sesión. Inténtalo de nuevo.");}finally{exitGuard.current=false;setSigningOut(false);}}
  return <SafeAreaView edges={["bottom"]} style={s.screen}><ScrollView contentContainerStyle={{padding:JOBEEN_CONTROL.pageHorizontalPadding,paddingBottom:48,gap:16,maxWidth:720,width:"100%",alignSelf:"center"}}>
   <Text style={s.muted}>Tus datos, tu acceso y tu seguridad en un solo lugar.</Text>
   {groups.map(group=><View key={group.title} style={{gap:8}}>
@@ -34,11 +42,11 @@ export default function AccountSecurity(){
    <View style={{gap:7}}>{group.items.map(item=><SettingsMenuRow key={item.label} icon={item.icon} title={item.label} description={item.detail}
     onPress={()=>{if(item.route)router.push(item.route as any);else item.action?.();}}/>)}</View>
   </View>)}
-  <Pressable accessibilityRole="button" disabled={signingOut} onPress={()=>{setExitError("");setExitOpen(true);}} style={{padding:17,borderRadius:18,borderWidth:1,borderColor:colors.line,alignItems:"center",flexDirection:"row",justifyContent:"center",gap:12}}>
+  <Pressable accessibilityRole="button" disabled={signingOut} onPress={()=>void requestExit()} style={{padding:17,borderRadius:18,borderWidth:1,borderColor:colors.line,alignItems:"center",flexDirection:"row",justifyContent:"center",gap:12}}>
    <Ionicons name="log-out-outline" size={23} color={colors.ink}/><Text style={[s.text,{fontWeight:"700"}]}>{signingOut?"Cerrando sesión…":"Cerrar sesión"}</Text>
   </Pressable>
   </ScrollView>
   <JobeenNoticeDialog visible={exitOpen} title="Cerrar sesión" description={exitError||"¿Quieres salir de tu cuenta de Jobeen?"}
-   tone="warning" confirmLabel="Cerrar sesión" onCancel={()=>{setExitError("");setExitOpen(false);}} onConfirm={()=>void signOut()} busy={signingOut}/>
+   tone="warning" confirmLabel="Cerrar sesión" onCancel={()=>{exitScope.current=null;setExitError("");setExitOpen(false);}} onConfirm={()=>void signOut()} busy={signingOut}/>
  </SafeAreaView>;
 }
