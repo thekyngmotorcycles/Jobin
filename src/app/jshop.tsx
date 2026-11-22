@@ -35,9 +35,9 @@ export default function JShop(){
   const generation=++revision.current;scopeRef.current=null;setLoading(true);setDrafts([]);setFavorites([]);setSearchArea(null);setOwnerId("");setRemoteListings([]);
   void(async()=>{try{
    const scope=await captureMessageScope(),userId=scope.owner;
-   const [savedDrafts,savedFavorites,selectedPlace]=await Promise.all([readJShopDrafts(userId,scope),loadJShopFavoriteIds(userId),readJShopLocation(userId,scope)]);
+   const [savedDrafts,savedFavorites,selectedPlace]=await Promise.all([readJShopDrafts(userId,scope),loadJShopFavoriteIds(userId,scope),readJShopLocation(userId,scope)]);
    await assertMessageScope(scope);if(revision.current!==generation)return;
-   const listed=selectedPlace?await loadJShopListingsNear(selectedPlace):await loadJShopListings();
+   const listed=selectedPlace?await loadJShopListingsNear(selectedPlace,scope):await loadJShopListings(scope);
    await assertMessageScope(scope);if(revision.current!==generation)return;
    scopeRef.current=scope;setRemoteListings(listed);setOwnerId(userId);setSearchArea(selectedPlace);setDrafts(savedDrafts);setFavorites(savedFavorites);setError("");
    setActiveFilters(previous=>({...previous,location:""}));setPending(previous=>({...previous,location:""}));
@@ -53,7 +53,7 @@ export default function JShop(){
   try{
    await saveJShopLocation(ownerId,null,scope);
    await assertMessageScope(scope);if(!valid())return;
-   const fullCatalogue=await loadJShopListings();await assertMessageScope(scope);
+   const fullCatalogue=await loadJShopListings(scope);await assertMessageScope(scope);
    if(valid()){setRemoteListings(fullCatalogue);setSearchArea(null);}
   }catch(e){if(valid())setError(e instanceof Error?e.message:"No se pudo restaurar el catálogo completo.");}
   finally{if(valid())setLoading(false);}
@@ -63,7 +63,7 @@ export default function JShop(){
   const valid=()=>scopeRef.current===scope&&revision.current===generation,saved=favorites.includes(id);
   favoriteBusy.current=true;
   try{await captureMessageScope(scope);if(!valid())return;
-   await setJShopFavorite(ownerId,id,!saved);await assertMessageScope(scope);
+   await setJShopFavorite(ownerId,id,!saved,scope);await assertMessageScope(scope);
    if(valid()){setFavorites(current=>saved?current.filter(x=>x!==id):[...current,id]);setError("");}
   }catch(e){if(valid())setError(e instanceof Error?e.message:"No se pudo actualizar el favorito.");}
   finally{favoriteBusy.current=false;}
