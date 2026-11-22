@@ -1,3 +1,4 @@
+import {userImageSource} from "../../lib/media-urls";
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useLocalSearchParams,useNavigation} from "expo-router";
 import {markPublishedPostForHome} from "../../lib/post-return";
@@ -422,7 +423,7 @@ export default function PostCreate(){
       accessibilityLabel="Fotografías seleccionadas, deslizar horizontalmente"
       contentContainerStyle={{flexDirection:"row",gap:9,paddingVertical:2}}>
       {photos.map((photo,i)=><View key={photo.id} style={{width:104,height:104,borderRadius:13,overflow:"hidden"}}>
-       <Image source={{uri:draftPhotoDisplayUri(photo)}} accessibilityLabel={photo.altText||"Foto "+(i+1)} style={{width:104,height:104}} resizeMode="cover"/>
+       <Image source={userImageSource(draftPhotoDisplayUri(photo))} accessibilityLabel={photo.altText||"Foto "+(i+1)} style={{width:104,height:104}} resizeMode="cover"/>
        <Pressable accessibilityRole="button" accessibilityLabel={"Quitar foto "+(i+1)}
         onPress={()=>setPhotos(current=>current.filter((_,j)=>j!==i))}
         style={{position:"absolute",top:4,right:4,width:34,height:34,alignItems:"center",
