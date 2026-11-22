@@ -1,10 +1,11 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useFocusEffect,useLocalSearchParams} from "expo-router";
-import {useCallback,useState} from "react";
+import {useCallback,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Image,Pressable,Text,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {PublicProfileAvatar} from "../../components/PublicProfileAvatar";
-import {currentSocialUser,deleteStory,loadActiveStories,type SocialStory} from "../../lib/social-content";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../../lib/message-session";
+import {deleteStory,loadActiveStories,type SocialStory} from "../../lib/social-content";
 import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
 
@@ -15,30 +16,36 @@ export default function StoryViewer(){
  const [index,setIndex]=useState(0);
  const [viewer,setViewer]=useState("");
  const [busy,setBusy]=useState(false);const [loading,setLoading]=useState(true);const [error,setError]=useState("");
+ const scopeRef=useRef<MessageScope|null>(null),generation=useRef(0),removing=useRef(false);
  useFocusEffect(useCallback(()=>{
-  let active=true;setLoading(true);
+  const rev=++generation.current;scopeRef.current=null;setStories([]);setViewer("");setIndex(0);setLoading(true);
+  let active=true;
   void(async()=>{
    try{
-    const [all,uid]=await Promise.all([loadActiveStories(),currentSocialUser().catch(()=>"")]);
+    const scope=await captureMessageScope(),uid=scope.owner;const all=await loadActiveStories(scope);await assertMessageScope(scope);
     const chosen=all.find(s=>s.id===id);
     const authorStories=all.filter(s=>s.authorId===chosen?.authorId).sort((a,b)=>a.createdAt.localeCompare(b.createdAt));
-    if(active){setStories(authorStories);setIndex(Math.max(0,authorStories.findIndex(x=>x.id===id)));setViewer(uid);setError("");}
+    if(active&&generation.current===rev){scopeRef.current=scope;setStories(authorStories);setIndex(Math.max(0,authorStories.findIndex(x=>x.id===id)));setViewer(uid);setError("");}
    }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudo abrir la historia.");}
    finally{if(active)setLoading(false);}
   })();
-  return()=>{active=false;};
+  return()=>{active=false;generation.current++;scopeRef.current=null;setStories([]);setViewer("");};
  },[id]));
  const current=stories[index];
  function next(){if(index+1<stories.length)setIndex(i=>i+1);else router.back();}
  function prev(){if(index>0)setIndex(i=>i-1);}
  function remove(){
-  if(!current||busy)return;
+  const scope=scopeRef.current,rev=generation.current;
+  if(!scope||!current||current.authorId!==scope.owner||removing.current)return;
   Alert.alert("Eliminar historia","¿Eliminar esta historia ahora?",[
    {text:"Cancelar",style:"cancel"},{text:"Eliminar",style:"destructive",onPress:()=>{void(async()=>{
-    setBusy(true);
-    try{await deleteStory(current.id);const remaining=stories.filter(x=>x.id!==current.id);if(!remaining.length)router.back();else{setStories(remaining);setIndex(i=>Math.min(i,remaining.length-1));}}
-    catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar.");}
-    finally{setBusy(false);}
+    if(scopeRef.current!==scope||generation.current!==rev||removing.current)return;
+    removing.current=true;setBusy(true);
+    try{await captureMessageScope(scope);if(scopeRef.current!==scope||generation.current!==rev)return;
+     await deleteStory(current.id,scope);await assertMessageScope(scope);if(scopeRef.current!==scope||generation.current!==rev)return;
+     const remaining=stories.filter(x=>x.id!==current.id);if(!remaining.length)router.back();else{setStories(remaining);setIndex(i=>Math.min(i,remaining.length-1));}}
+    catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo eliminar.");}
+    finally{removing.current=false;if(scopeRef.current===scope)setBusy(false);}
    })();}}
   ]);
  }
