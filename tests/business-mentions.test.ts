@@ -29,7 +29,7 @@ test("A company handle is optional, unique among business cards and checked agai
  assert.ok(cloud.includes('rpc("jobeen_business_handle_available"'));
  assert.ok(company.includes('businessHandle:"Usuario empresarial (opcional)"'));
  assert.ok(company.includes("handleFeedback"));
- assert.ok(company.includes("await checkBusinessHandleAvailable(businessHandle)"));
+ assert.ok(company.includes("await checkBusinessHandleAvailable(businessHandle,origin)"));
 });
 test("The composer supports company names with spaces and saves typed identity in drafts",()=>{
  assert.ok(editor.includes('setBusinessMentions('));
