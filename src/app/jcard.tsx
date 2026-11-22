@@ -115,22 +115,39 @@ export default function PublicJCard(){
   try{await requestCV(user,scope);if(cvRevision.current===generation&&cvScope.current===scope){setCvStatus("pending");setCvMessage("Solicitud enviada.");}}
   catch(e){if(cvRevision.current===generation)setCvMessage(String(e));}
  }
- useEffect(()=>{
-  if(!user||!viewer||viewer===user||!cardVisibilityReady||!sideIsPublic){setCardSaved(false);return;}
-  let live=true;setCardSaved(false);
-  void isSavedJCard(user,activeCardSide,viewer).then(saved=>{if(live)setCardSaved(saved);}).catch(()=>{if(live)setCardSaved(false);});
-  return()=>{live=false;};
- },[user,viewer,activeCardSide,cardVisibilityReady,sideIsPublic]);
+ const savedScope=useRef<{scope:MessageScope;target:string;side:SavedJCardSide;generation:number}|null>(null),savedRevision=useRef(0),saveGuard=useRef(false);
+ const [savedReady,setSavedReady]=useState(false);
+ useFocusEffect(useCallback(()=>{
+  const generation=++savedRevision.current;
+  savedScope.current=null;setSavedReady(false);setCardSaved(false);setProfileMenuOpen(false);
+  if(!user||!viewer||viewer===user||!cardVisibilityReady||!sideIsPublic)return;
+  const origin=cvScope.current;
+  if(!origin||origin.owner!==viewer||cvTarget.current!==user)return;
+  void(async()=>{
+   try{
+    const scope=await captureMessageScope(origin);
+    const saved=await isSavedJCard(user,activeCardSide,viewer,scope);
+    await assertMessageScope(scope);
+    if(savedRevision.current!==generation||cvScope.current!==origin)return;
+    savedScope.current={scope,target:user,side:activeCardSide,generation};setCardSaved(saved);setSavedReady(true);
+   }catch{if(savedRevision.current===generation){setSavedReady(false);setCardSaved(false);}}
+  })();
+  return()=>{savedRevision.current++;savedScope.current=null;setSavedReady(false);setCardSaved(false);};
+ },[user,viewer,activeCardSide,cardVisibilityReady,sideIsPublic]));
  const toggleSaved=async()=>{
-  if(!user)return;
-  if(!viewer){Alert.alert("Mis JCards","Inicia sesión para guardar tarjetas.");return;}
-  if(!cardVisibilityReady||!sideIsPublic){Alert.alert("JCard no disponible","Su propietario ya no tiene esta tarjeta visible.");return;}
-  if(savingCard)return;
-  setSavingCard(true);
-  try{if(cardSaved)await removeSavedJCard(user,activeCardSide,viewer);else await saveVisibleJCard(user,activeCardSide,viewer);
-   setCardSaved(!cardSaved);
-  }catch(e){Alert.alert("Mis JCards",e instanceof Error?e.message:"No se pudo actualizar tu colección.");}
-  finally{setSavingCard(false);}
+  const origin=savedScope.current;
+  if(!origin||!savedReady||!user||origin.target!==user||origin.side!==activeCardSide||origin.scope.owner!==viewer||!cardVisibilityReady||!sideIsPublic||saveGuard.current)return;
+  const valid=()=>savedScope.current===origin&&savedRevision.current===origin.generation;
+  saveGuard.current=true;setSavingCard(true);
+  try{
+   await captureMessageScope(origin.scope);
+   if(!valid())return;
+   if(cardSaved)await removeSavedJCard(user,activeCardSide,viewer,origin.scope);
+   else await saveVisibleJCard(user,activeCardSide,viewer,origin.scope);
+   const saved=await isSavedJCard(user,activeCardSide,viewer,origin.scope);
+   if(valid())setCardSaved(saved);
+  }catch(e){if(valid()){savedScope.current=null;setSavedReady(false);setCardSaved(false);Alert.alert("Mis JCards",e instanceof Error?e.message:"No se pudo actualizar tu colección.");}}
+  finally{saveGuard.current=false;setSavingCard(false);}
  };
  const resource=useProfessionalData(useCallback(()=>{
   if(!user||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user))return Promise.reject(new Error("Enlace de JCard inválido."));
@@ -184,7 +201,7 @@ export default function PublicJCard(){
     {resource.data?<ProfileIdentityHeader
      card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"} onActiveSideChange={setActiveCardSide}/>}
      actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
-      onToggleSaved={cardVisibilityReady&&sideIsPublic?()=>void toggleSaved():undefined}
+      onToggleSaved={savedReady&&cardVisibilityReady&&sideIsPublic?()=>void toggleSaved():undefined}
       savedJCard={cardSaved} savingJCard={savingCard} visibleCardSide={activeCardSide}/>}
      trust={<ProfessionalTrustMark worker={resource.data.id}/>}
      profileUserId={resource.data.id}
