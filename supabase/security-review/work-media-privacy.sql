@@ -1,4 +1,7 @@
 -- Candidate only. Authorization of database reads does not revoke a URL already issued by a provider.
+create schema if not exists jobeen_private;
+revoke all on schema jobeen_private from public,anon,authenticated;
+grant usage on schema jobeen_private to authenticated;
 create or replace function jobeen_private.can_view_work_media(media uuid)
 returns boolean language sql stable security definer set search_path='' as $access$
  select (select auth.uid()) is not null
@@ -60,6 +63,7 @@ drop policy if exists jobeen_live_viewer_boundary on public.live_sessions;
 create policy jobeen_live_viewer_boundary on public.live_sessions as restrictive for select to public
  using(case when (select auth.uid()) is null then false
  when work_media_id is not null then jobeen_private.can_view_work_media(work_media_id)
+  and (host_id=(select auth.uid()) or private.work_media_visible(work_media_id))
  else host_id=(select auth.uid()) or not private.is_blocked(host_id,(select auth.uid())) end);
 -- Direct reads of original sources permit only the owner; employer evidence
 -- retains the separately authorized moderator exception.
