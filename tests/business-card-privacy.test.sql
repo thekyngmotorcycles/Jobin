@@ -199,4 +199,41 @@ select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_all_ac
 select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_people('Privacy C','',50)),'block overrides people search');
 select set_config('request.jwt.claim.sub','',true);
 select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_all_accounts('','',50)),'no identity no discovery');
+reset role;
+\ir ../supabase/security-review/map-presence-privacy.sql
+select pg_temp.privacy_assert(not has_table_privilege('anon','public.jobeen_map_presence','SELECT'),'anonymous raw map denied');
+select pg_temp.privacy_assert(not has_function_privilege('anon','public.jobeen_find_profiles_on_map(double precision,double precision,double precision,text,text)','EXECUTE'),'anonymous map discovery denied');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+insert into public.jobeen_map_presence(owner_id,kind,city,service,latitude,longitude,is_visible)
+ values(auth.uid(),'company','Test City','HVAC',25.75,-80.2,true);
+select pg_temp.privacy_assert((select count(*)=1 from public.jobeen_map_presence),'owner reads own map placement');
+select set_config('request.jwt.claim.sub','d4444444-4444-4444-8444-444444444444',true);
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_map_presence),'other accounts cannot download raw map presence');
+select pg_temp.privacy_assert((select name='Public HVAC' from public.jobeen_find_profiles_on_map(25.75,-80.2,30,'','all')),'business pin discloses only approved business name');
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_profiles_on_map(25.75,-80.2,30,'Privacy A','all')),'hidden personal name cannot match map results');
+do $map_test$
+begin
+ begin
+  insert into public.jobeen_map_presence(owner_id,kind,city,service,latitude,longitude,is_visible)
+   values(auth.uid(),'company','Test City','HVAC',25.75,-80.2,true);
+  raise exception 'ineligible company pin accepted';
+ exception when insufficient_privilege then null;
+ end;
+end
+$map_test$;
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_profiles_on_map(25.75,-80.2,30,'','all')),'blocked viewer cannot retrieve opted-in pin');
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+update public.jcard_visibility set personal_enabled=true,business_enabled=false where owner_id=auth.uid();
+select set_config('request.jwt.claim.sub','d4444444-4444-4444-8444-444444444444',true);
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_profiles_on_map(25.75,-80.2,30,'','all')),'hidden business automatically suppresses pin');
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+update public.jobeen_map_presence set is_visible=false where owner_id=auth.uid();
+select pg_temp.privacy_assert((select not is_visible from public.jobeen_map_presence),'owner may opt out even when no longer eligible');
+update public.jcard_visibility set business_enabled=true where owner_id=auth.uid();
+select set_config('request.jwt.claim.sub','d4444444-4444-4444-8444-444444444444',true);
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_profiles_on_map(25.75,-80.2,30,'','all')),'explicit opt-out survives card reactivation');
+select set_config('request.jwt.claim.sub','',true);
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_profiles_on_map(25.75,-80.2,30,'','all')),'missing identity cannot discover pins');
 rollback;
