@@ -91,6 +91,7 @@ $rank_fixture$;
 \ir ../supabase/security-review/social-audience-privacy.sql
 \ir ../supabase/security-review/work-media-privacy.sql
 \ir ../supabase/security-review/studio-review-privacy.sql
+\ir ../supabase/security-review/active-content-boundary.sql
 
 create function pg_temp.combined_assert(ok boolean,label text) returns void language plpgsql as $assert$
 begin if not coalesce(ok,false) then raise exception 'COMBINED SECURITY: %',label; end if; end
@@ -169,4 +170,47 @@ select pg_temp.combined_assert(not has_function_privilege('anon','public.jobin_w
 select pg_temp.combined_assert(not has_function_privilege('anon','public.jobin_moderation_review_artifact(uuid)','EXECUTE'),'anonymous review RPC revoked');
 select pg_temp.combined_assert(not has_column_privilege('authenticated','public.work_media','playback_url','SELECT'),'raw playback URL remains unavailable');
 select pg_temp.combined_assert(not has_table_privilege('authenticated','public.jobin_employer_links','SELECT'),'employer table remains private');
+
+-- Active-account and marketplace rules are evaluated alongside both previous
+-- groups, not just on the standalone legacy schema.
+select set_config('request.jwt.claim.sub','',true);
+insert into public.jshop_seller_locations(seller_id,city,label,location_lat,location_lon)
+ values('a1111111-1111-4111-8111-111111111111','Test City','Test City',10,20);
+insert into public.jshop_listings(id,seller_id,title,description,category,item_condition,price,currency,location,location_lat,location_lon,photo_paths)
+ values('f1111111-1111-4111-8111-111111111111','a1111111-1111-4111-8111-111111111111','Fixture tool','Test description','Herramientas','Nuevo',10,'USD','Test City',10,20,array['a1111111-1111-4111-8111-111111111111/listing.jpg']);
+insert into public.jobeen_feed_posts(author_id,body,kind)
+ values('c3333333-3333-4333-8333-333333333333','combined shared forum','text');
+insert into public.jobeen_feed_comments(post_id,author_id,body)
+ select id,'b2222222-2222-4222-8222-222222222222','combined blocked comment' from public.jobeen_feed_posts where body='combined shared forum';
+insert into public.jobeen_feed_likes(post_id,profile_id)
+ select id,'b2222222-2222-4222-8222-222222222222' from public.jobeen_feed_posts where body='combined shared forum';
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.combined_assert(not exists(select 1 from public.jshop_listings where id='f1111111-1111-4111-8111-111111111111'),'blocked viewer cannot read listing directly');
+select pg_temp.combined_assert(not exists(select 1 from public.jshop_listings_within_area(10,20,10,150) where id='f1111111-1111-4111-8111-111111111111'),'blocked viewer cannot discover listing by radius');
+select set_config('request.jwt.claim.sub','c3333333-3333-4333-8333-333333333333',true);
+select pg_temp.combined_assert(exists(select 1 from public.jshop_listings where id='f1111111-1111-4111-8111-111111111111'),'unblocked active viewer can read listing');
+insert into public.jshop_favorites(user_id,listing_id) values(auth.uid(),'f1111111-1111-4111-8111-111111111111');
+select pg_temp.combined_assert(exists(select 1 from public.jobeen_feed_comments where body='combined blocked comment'),'unblocked forum reader sees comment');
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+select pg_temp.combined_assert(not exists(select 1 from public.jshop_favorites),'seller cannot read another user favorites');
+select pg_temp.combined_assert(not exists(select 1 from public.jobeen_feed_comments where body='combined blocked comment'),'blocked comment hidden even on third party post');
+select pg_temp.combined_assert(not exists(select 1 from public.jobeen_feed_likes),'blocked like hidden even on third party post');
+select pg_temp.combined_deny($q$update public.jshop_listings set title='Bypassed edit' where id='f1111111-1111-4111-8111-111111111111'$q$);
+update public.jshop_listings set status='paused' where id='f1111111-1111-4111-8111-111111111111';
+select pg_temp.combined_assert(exists(select 1 from public.jshop_listings where id='f1111111-1111-4111-8111-111111111111' and status='paused'),'owner can still pause listing');
+update public.jobeen_feed_posts set removed_at=now() where body='combined private post';
+select pg_temp.combined_assert(exists(select 1 from public.jobeen_feed_posts where body='combined private post' and removed_at is not null),'owner can soft delete a post');
+update public.jobeen_feed_posts set removed_at=null where body='combined private post';
+select pg_temp.combined_assert(exists(select 1 from public.jobeen_feed_posts where body='combined private post' and removed_at is not null),'direct update cannot resurrect post');
+reset role;
+update public.profiles set deactivated_at=now() where id='a1111111-1111-4111-8111-111111111111';
+set local role authenticated;
+select pg_temp.combined_assert(not exists(select 1 from public.jobeen_feed_posts),'deactivated authenticated account cannot read feed');
+select pg_temp.combined_assert(not exists(select 1 from public.jshop_listings),'deactivated authenticated account cannot read own listings');
+select pg_temp.combined_assert(not exists(select 1 from storage.objects where name like '%/combined-draft.jpg'),'deactivated account cannot request private draft media');
+select pg_temp.combined_deny($q$insert into public.jobeen_feed_posts(author_id,body,kind) values(auth.uid(),'inactive post','text')$q$);
+reset role;
+select pg_temp.combined_assert(not has_table_privilege('anon','public.jshop_listings','SELECT'),'anonymous listing table access withdrawn');
 rollback;
