@@ -163,10 +163,12 @@ export default function PostCreate(){
   // release the unsaved-draft guard and Android to dismiss native Modal windows
   // before popping only this screen. InteractionManager can wait indefinitely
   // while an animated interaction remains active, leaving a blank gray view.
-  if(destination)markPublishedPostForHome(destination);
+  const scope=scopeRef.current;if(!scope)return;
   const timer=setTimeout(()=>{
+   void captureMessageScope(scope).then(()=>{if(!liveScope(scope))return;
+   if(destination)markPublishedPostForHome(destination,scope);
    if(navigation.canGoBack())navigation.goBack();
-   else router.replace("/(tabs)/index");
+   else router.replace("/(tabs)/index");}).catch(()=>{});
   },350);
   return()=>clearTimeout(timer);
  },[editingDone,destination,navigation]);
