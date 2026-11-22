@@ -151,12 +151,13 @@ export default function Profile() {
   const [addOpen, setAddOpen] = useState(false);
   const [editingId,setEditingId] = useState<string|null>(null);
   const [formError,setFormError] = useState("");
-  const historyScope=useRef<MessageScope|null>(null),historyRevision=useRef(0),historyFormScope=useRef<MessageScope|null>(null),historySaving=useRef(false);
+  const historyScope=useRef<MessageScope|null>(null),historyRevision=useRef(0),historyFormScope=useRef<MessageScope|null>(null),historySaving=useRef(false),historyEntryId=useRef<string|null>(null);
   const [historyReady,setHistoryReady]=useState(false),[historyBusy,setHistoryBusy]=useState(false),[historyRetry,setHistoryRetry]=useState(0);
   function openEmployment(entry?:EmploymentEntry){
     const scope=historyScope.current;
     if(!historyReady||!scope||scope.owner!==ownerId||historySaving.current|| (entry&&!history.some(row=>row.id===entry.id)))return;
     historyFormScope.current=scope;
+    historyEntryId.current=entry?.id??(Date.now()+"-"+Math.random().toString(36).slice(2));
     setEditingId(entry?.id??null);
     setDraft(entry?{company:entry.company,role:entry.role,from:String(entry.from),to:entry.to===null?"":String(entry.to),profession:(entry.professions??[]).join(", "),fromMonth:String(entry.fromMonth??1),toMonth:String(entry.toMonth??12),address:entry.address??"",contact:entry.contact??""}:{company:"",role:"",from:"",to:"",profession:"",fromMonth:"1",toMonth:"12",address:"",contact:""});
     setFormError("");setShowEmploymentProfessionPicker(false);setAddOpen(true);
@@ -257,7 +258,7 @@ export default function Profile() {
 
   async function add() {
     const scope=historyFormScope.current,owner=scope?.owner;
-    if(!scope||!owner||owner!==ownerId||historyScope.current!==scope||!historyReady||historySaving.current)return;
+    if(!scope||!owner||owner!==ownerId||historyScope.current!==scope||!historyReady||historySaving.current||!historyEntryId.current)return;
     const from = Number(draft.from), to = draft.to ? Number(draft.to) : null;
     const currentYear=new Date().getFullYear();
     const fromMonth=Number(draft.fromMonth),toMonth=Number(draft.toMonth);
@@ -268,8 +269,9 @@ export default function Profile() {
       setFormError("Completa empresa, cargo y años válidos (el final no puede ser anterior al inicio).");
       return;
     }
+    if(draft.address.trim().length>500||draft.contact.trim().length>500){setFormError("Dirección y contacto admiten hasta 500 caracteres cada uno.");return;}
     Keyboard.dismiss();
-    const updated:EmploymentEntry={id:editingId??Date.now()+"",company:draft.company.trim(),role:selectedEmploymentProfession.label,professions:[selectedEmploymentProfession.code],fromMonth,toMonth,from,to,address:draft.address.trim(),contact:draft.contact.trim(),status:"pending",verifiedBy:null};
+    const updated:EmploymentEntry={id:historyEntryId.current!,company:draft.company.trim(),role:selectedEmploymentProfession.label,professions:[selectedEmploymentProfession.code],fromMonth,toMonth,from,to,address:draft.address.trim(),contact:draft.contact.trim(),status:"pending",verifiedBy:null};
     historySaving.current=true;setHistoryBusy(true);
     const valid=()=>historyScope.current===scope&&historyFormScope.current===scope;
     try{
@@ -283,7 +285,7 @@ export default function Profile() {
      setHistoryState({owner,rows});
     }catch(e){if(valid())setFormError(e instanceof Error?e.message:"No se pudo guardar la experiencia.");return;}
     finally{historySaving.current=false;setHistoryBusy(false);}
-    historyFormScope.current=null;
+    historyFormScope.current=null;historyEntryId.current=null;
     setDraft({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address: "", contact: "" });
     setAddOpen(false);setEditingId(null);setFormError("");setShowEmploymentProfessionPicker(false);
     setNotice("Experiencia guardada. Cualquier cambio requiere una nueva verificación de la empresa.");
