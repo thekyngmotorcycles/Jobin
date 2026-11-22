@@ -1,3 +1,4 @@
+import {userImageSource} from "../../lib/media-urls";
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useFocusEffect,useLocalSearchParams} from "expo-router";
 import {useCallback,useRef,useState} from "react";
@@ -71,7 +72,7 @@ export default function StoryViewer(){
     </View>
     <View style={{flex:1,borderRadius:23,overflow:"hidden",backgroundColor:current.kind==="text"?t.cream:t.ink,justifyContent:"center",alignItems:"center",padding:current.kind==="text"?22:0}}>
      {current.kind==="photo"?<>
-      {current.imageUrl?<Image source={{uri:current.imageUrl}} resizeMode="contain" style={{width:"100%",height:"100%"}}/>:<Text style={{color:t.bg,padding:20}}>La fotografía ya no está disponible.</Text>}
+      {current.imageUrl?<Image source={userImageSource(current.imageUrl)} resizeMode="contain" style={{width:"100%",height:"100%"}}/>:<Text style={{color:t.bg,padding:20}}>La fotografía ya no está disponible.</Text>}
       {!!current.body&&<View style={{position:"absolute",bottom:25,left:15,right:15,borderRadius:15,backgroundColor:t.videoViewsOverlay,padding:13}}>
        <Text style={{fontSize:16,color:t.videoViewsText,fontWeight:"600",textAlign:"center"}}>{current.body}</Text>
       </View>}
