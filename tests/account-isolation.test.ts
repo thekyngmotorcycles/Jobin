@@ -49,7 +49,7 @@ test("Changing authenticated identity remounts state providers and rejects previ
 test("Private device collections require the current authenticated UUID, not just a cache key",()=>{
  const guard=src("src/lib/account-scope.ts");
  assert.ok(guard.includes("data.session?.user.id!==owner"));
- for(const [file,owner] of [["post-drafts.ts","owner"],["jshop-local.ts","ownerId"],["search-history.ts","ownerId"],["feed-preferences.ts","owner"],["jshop-location.ts","owner"],["jshop-selling-location.ts","owner"]]){
+ for(const [file,owner] of [["post-drafts.ts","owner"],["jshop-local.ts","ownerId"],["feed-preferences.ts","owner"],["jshop-location.ts","owner"],["jshop-selling-location.ts","owner"]]){
   const s=src("src/lib/"+file);
   assert.ok(s.includes("await assertAccountOwner("+owner+")"),file);
   assert.ok(s.includes("import {assertAccountOwner}"),file);
@@ -114,4 +114,18 @@ test("Draft photo links are scoped to the initiating account and session",()=>{
  assert.ok(editor.includes("restorePostDraftPhotoUrls(draft.photos,author)"));
  assert.ok(editor.includes("item.id===photo.id&&item.backupPath===photo.backupPath"));
  assert.ok(editor.includes("item.id===draft.id&&item.updatedAt===draft.updatedAt"));
+});
+
+test("Search results, profile navigation and recent terms are bound to originating session",()=>{
+ const search=src("src/app/search.tsx"),history=src("src/lib/search-history.ts"),api=src("src/lib/professional-api.ts");
+ assert.ok(!history.includes("AsyncStorage"));
+ assert.ok(history.includes("await assertAccountOwner(ownerId,scope.session)"));
+ assert.ok(history.includes('event==="SIGNED_OUT"'));
+ assert.ok(history.includes("createBusinessSessionMemory<string[]>()"));
+ assert.ok(search.includes("scopeRef.current===scope&&searchRevision.current===generation"));
+ assert.ok(search.includes("historyRevision.current===revision"));
+ assert.ok(search.includes("await captureMessageScope(scope)"));
+ assert.ok(search.includes("findAllAccounts(term,city||currentIntent.city,scope)"));
+ assert.ok(search.includes("respectJCardVisibility"));
+ assert.ok(api.includes("await assertMessageScope(scope)"));
 });
