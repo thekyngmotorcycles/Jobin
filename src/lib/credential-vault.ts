@@ -33,9 +33,10 @@ function parseManifest(raw:string):Manifest{
 }
 export function createCredentialVault(backend:NativeSecretBackend,authStorageKey:string){
  if(!/^sb-[a-zA-Z0-9.-]+-auth-token$/.test(authStorageKey))throw Error("Identificador de almacenamiento inválido.");
- const allowed=new Set([authStorageKey,authStorageKey+"-code-verifier",authStorageKey+"-user"]);
+ const allowed=new Set([authStorageKey,authStorageKey+"-code-verifier",authStorageKey+"-user",authStorageKey+"-flows-code-verifier"]);
  function secureKey(key:string){
-  if(!allowed.has(key))throw Error("Clave de credenciales no permitida.");
+  const suffix=key.startsWith(authStorageKey)?key.slice(authStorageKey.length):"";
+  if(!allowed.has(key)&&!(/^-flow-[a-zA-Z0-9_-]{8,64}-code-verifier$/.test(suffix)))throw Error("Clave de credenciales no permitida.");
   return "jobeen.native.auth.v2."+key;
  }
  // One adapter instance per app runtime; the native backend must acknowledge durable writes.
