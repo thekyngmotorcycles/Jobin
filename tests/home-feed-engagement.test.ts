@@ -78,7 +78,7 @@ test("Saved posts can be revisited and shared links have a detail route",()=>{
  assert.ok(prefs.includes("setSavedPost"));
  assert.ok(profile.includes("Guardadas"));
  assert.ok(profile.includes('pathname:"/post/[id]"'));
- assert.ok(route.includes("loadHomePosts(user,undefined,id)"));
+ assert.ok(route.includes("loadHomePosts(user,undefined,id,undefined,0,scope)"));
  assert.ok(home.includes('Linking.createURL("post/"+post.id)'));
 });
 
