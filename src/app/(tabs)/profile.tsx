@@ -112,7 +112,7 @@ export default function Profile() {
   }
   function shareCV(){setCvShareOpen(true);}
   
-  const [employerLink,setEmployerLink]=useState<{id:string;name:string;handle:string}|null>(null);
+  const [employerLink,setEmployerLink]=useState<{owner:string;id:string;name:string;handle:string}|null>(null);
   const [businessRating,setBusinessRating]=useState<{rating:number|null;count:number}>({rating:null,count:0});
   const [businessExcellence,setBusinessExcellence]=useState<Pick<BusinessCardData,"excellenceVotes"|"excellenceReviewCount">>({});
   const [businessOpen,setBusinessOpen]=useState(false);
@@ -200,7 +200,19 @@ export default function Profile() {
   const catalogProfessions=professionCatalog.data?.professions??[];
   const findCatalogProfession=(value:string)=>catalogProfessions.find(p=>p.code===value||p.label.toLocaleLowerCase("es")===value.trim().toLocaleLowerCase("es"));
   const selectedEmploymentProfession=findCatalogProfession(draft.role);
-  useFocusEffect(useCallback(()=>{let live=true;void getEmployerLinks().then(rows=>{if(live){const verified=rows.find(row=>row.worker_id===workspace.data?.card.id&&row.status==="approved");setEmployerLink(verified?{id:verified.company_id,name:verified.name,handle:verified.handle}:null);}}).catch(()=>{if(live)setEmployerLink(null);});return()=>{live=false;};},[workspace.data?.card.id]));
+  useFocusEffect(useCallback(()=>{
+   let live=true;setEmployerLink(null);
+   const owner=ownerId;if(!owner)return()=>{live=false;};
+   void(async()=>{try{
+    const scope=await captureMessageScope();
+    if(scope.owner!==owner)throw Error("La cuenta cambió.");
+    const rows=await getEmployerLinks(scope);
+    await assertMessageScope(scope);
+    const verified=rows.find(row=>row.worker_id===owner&&row.status==="approved");
+    if(live)setEmployerLink(verified?{owner,id:verified.company_id,name:verified.name,handle:verified.handle}:null);
+   }catch{if(live)setEmployerLink(null);}})();
+   return()=>{live=false;setEmployerLink(null);};
+  },[ownerId]));
   useEffect(()=>{let live=true;void readBusinessRating(workspace.data?.card.id??"").then(value=>{if(live)setBusinessRating(value);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
   useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void readBusinessExcellence(id).then(data=>{if(live)setBusinessExcellence(data);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
   useFocusEffect(useCallback(()=>{if(ownerId)void refreshCV();return()=>{cvRevision.current++;cvScope.current=null;setIncomingCV([]);};},[ownerId]));
@@ -337,7 +349,7 @@ export default function Profile() {
         <Animated.View style={{gap:16,paddingHorizontal:16,paddingBottom:20,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         <ProfileIdentityHeader
-          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
+          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink?.owner===ownerId?employerLink:null}/>
             {!!workspace.error&&isJCardConnectivityError(workspace.error)&&<View style={{marginTop:12}}>
               <JCardOfflineNotice retry={workspace.reload} cached/>
             </View>}
