@@ -1,6 +1,7 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import {assertAccountOwner} from "./account-scope";
-import {requireSupabase} from "./supabase";
+import {requireSupabase,supabase} from "./supabase";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "./message-session";
+import {sessionMarkerKey} from "./session-lifetime";
+import {createBusinessSessionMemory} from "./business-session-memory";
 import type {JShopPlace} from "./jshop-location-core";
 
 /** Seller's private default and listing-specific one-time map choice.
@@ -8,7 +9,22 @@ import type {JShopPlace} from "./jshop-location-core";
 export type SaleLocation=Pick<JShopPlace,"city"|"label"|"lat"|"lon"|"zoom">;
 type SaleRow={seller_id:string;city:string;label:string;location_lat:number;location_lon:number};
 const select="seller_id,city,label,location_lat,location_lon";
-const pendingKey=(owner:string,session:string)=>"jobeen.jshop.sale-location.pending.v1."+owner+"."+session;
+// Temporary article locations belong to the exact authentication session and editor ID.
+const pending=createBusinessSessionMemory<Map<string,SaleLocation>>();
+let observed:string|null=null;
+supabase?.auth.onAuthStateChange((event,session)=>{
+ let next:string|null=null;
+ try{if(session)next=sessionMarkerKey(session.user.id,session.access_token);}catch{}
+ if(next!==observed||event==="SIGNED_OUT")pending.clear();
+ observed=next;
+});
+async function confirm(owner:string,expectedScope:MessageScope){
+ const scope=await captureMessageScope(expectedScope);
+ if(scope.owner!==owner)throw Error("La cuenta cambió.");
+ return scope;
+}
+function validEditor(editor:string){return typeof editor==="string"&&/^[a-zA-Z0-9_-]{1,119}$/.test(editor);}
+
 export function validSaleLocation(value:unknown):value is SaleLocation{
  if(!value||typeof value!=="object")return false;
  const p=value as Partial<SaleLocation>;
@@ -21,50 +37,47 @@ export function validSaleLocation(value:unknown):value is SaleLocation{
 function fromRow(r:SaleRow):SaleLocation{
  return {city:r.city,label:r.label,lat:r.location_lat,lon:r.location_lon,zoom:11};
 }
-export async function readDefaultSaleLocation(owner:string):Promise<SaleLocation|null>{
- if(!owner||owner==="guest")return null;
- await assertAccountOwner(owner);
+export async function readDefaultSaleLocation(owner:string,expectedScope:MessageScope):Promise<SaleLocation|null>{
+ const scope=await confirm(owner,expectedScope);
  const {data,error}=await requireSupabase().from("jshop_seller_locations" as never).select(select).eq("seller_id",owner).maybeSingle();
  if(error)throw error;
- await assertAccountOwner(owner);
- return data?fromRow(data as unknown as SaleRow):null;
+ await assertMessageScope(scope);
+ if(!data)return null;
+ const row=data as unknown as SaleRow;
+ if(row.seller_id!==owner)throw Error("La ubicación pertenece a otra cuenta.");
+ const place=fromRow(row);
+ if(!validSaleLocation(place))throw Error("Ubicación de venta inválida.");
+ return place;
 }
-export async function writeDefaultSaleLocation(owner:string,point:SaleLocation):Promise<void>{
- if(!owner||owner==="guest"||!validSaleLocation(point))throw Error("Ubicación de venta inválida.");
- await assertAccountOwner(owner);
- const db=requireSupabase();
+export async function writeDefaultSaleLocation(owner:string,point:SaleLocation,expectedScope:MessageScope):Promise<void>{
+ if(!validSaleLocation(point))throw Error("Ubicación de venta inválida.");
+ const scope=await confirm(owner,expectedScope),db=requireSupabase();
  const values={city:point.city.trim(),label:point.label.trim(),
   location_lat:point.lat,location_lon:point.lon,updated_at:new Date().toISOString()};
- const {data:existing,error:readError}=await db.from("jshop_seller_locations" as never)
-  .select("seller_id").eq("seller_id",owner).maybeSingle();
- if(readError)throw readError;
- if(existing){
-  const {data,error}=await db.from("jshop_seller_locations" as never)
-   .update(values as never).eq("seller_id",owner).select("seller_id").maybeSingle();
-  if(error)throw error;
-  if(!data)throw Error("No se pudo actualizar tu ubicación de venta.");
- }else{
-  const {error}=await db.from("jshop_seller_locations" as never).insert({seller_id:owner,...values} as never);
-  if(error&&error.code==="23505"){
-   // Duplicate creation from another device: update without modifying the owner.
-   const retry=await db.from("jshop_seller_locations" as never).update(values as never).eq("seller_id",owner);
-   if(retry.error)throw retry.error;
-  }else if(error)throw error;
- }
+ await assertMessageScope(scope);
+ const {data,error}=await db.from("jshop_seller_locations" as never)
+  .upsert({seller_id:owner,...values} as never,{onConflict:"seller_id"}).select("seller_id").single();
+ if(error)throw error;
+ await assertMessageScope(scope);
+ if((data as unknown as {seller_id:string}|null)?.seller_id!==owner)throw Error("No se pudo confirmar la ubicación de venta.");
 }
-export async function readPendingArticleLocation(owner:string,session:string):Promise<SaleLocation|null>{
- if(!owner||!session)return null;
- try{await assertAccountOwner(owner);const raw=await AsyncStorage.getItem(pendingKey(owner,session));await assertAccountOwner(owner);
-  if(!raw)return null;
-  const p:unknown=JSON.parse(raw);
-  return validSaleLocation(p)?p:null;
- }catch{return null;}
+export async function readPendingArticleLocation(owner:string,editor:string,expectedScope:MessageScope):Promise<SaleLocation|null>{
+ const scope=await confirm(owner,expectedScope);
+ if(!validEditor(editor))throw Error("Editor inválido.");
+ const place=pending.read(scope)?.get(editor);
+ return place?{...place}:null;
 }
-export async function writePendingArticleLocation(owner:string,session:string,point:SaleLocation):Promise<void>{
- if(!owner||!session||!validSaleLocation(point))throw Error("Ubicación del artículo inválida.");
- await assertAccountOwner(owner);
- await AsyncStorage.setItem(pendingKey(owner,session),JSON.stringify(point));
+export async function writePendingArticleLocation(owner:string,editor:string,point:SaleLocation,expectedScope:MessageScope):Promise<void>{
+ if(!validEditor(editor)||!validSaleLocation(point))throw Error("Ubicación del artículo inválida.");
+ const scope=await confirm(owner,expectedScope);
+ const entries=new Map(pending.read(scope)??[]);
+ entries.set(editor,{...point});
+ if(entries.size>20){const first=entries.keys().next().value;if(first!==undefined)entries.delete(first);}
+ pending.write(scope,entries);
 }
-export async function clearPendingArticleLocation(owner:string,session:string):Promise<void>{
- if(owner&&session){await assertAccountOwner(owner);await AsyncStorage.removeItem(pendingKey(owner,session));}
+export async function clearPendingArticleLocation(owner:string,editor:string,expectedScope:MessageScope):Promise<void>{
+ const scope=await confirm(owner,expectedScope);
+ if(!validEditor(editor))throw Error("Editor inválido.");
+ const entries=new Map(pending.read(scope)??[]);
+ entries.delete(editor);pending.write(scope,entries);
 }
