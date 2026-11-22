@@ -38,7 +38,7 @@ export default function JShopPublish(){
    try{
     const scope=await captureMessageScope(),owner=scope.owner;
     if(!live)return;
-    const [defaultLocation,preferredCurrency]=await Promise.all([readDefaultSaleLocation(owner,scope),readSellerCurrency(owner)]);
+    const [defaultLocation,preferredCurrency]=await Promise.all([readDefaultSaleLocation(owner,scope),readSellerCurrency(owner,scope)]);
     await assertMessageScope(scope);
     if(!live)return;
     setDefaultPlace(defaultLocation);
