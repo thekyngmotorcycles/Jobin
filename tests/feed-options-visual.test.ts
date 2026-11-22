@@ -24,6 +24,7 @@ test("Help and failure messages are readable within the approved publication she
  assert.ok(s.includes("jobeenModalTokens(theme)"),"Keep approved premium warm palette");
  assert.ok(s.includes("JOBEEN_TYPE.secondary"),"Use existing type system");
  assert.ok(s.includes("accessibilityLiveRegion=\"polite\""),"Announce errors inside the sheet");
- assert.ok(s.includes("const close=()=>{if(!busy)"),"Do not dismiss an in-flight action");
- assert.ok(s.includes("disabled={busy}"),"Actions cannot fire twice while processing");
+ assert.ok(s.includes("const close=()=>{if(!busyRef.current)"),"Do not dismiss an in-flight action");
+ assert.ok(s.includes("disabled={busy||!ready}"),"Actions stay disabled until the session is verified and while processing");
+ assert.ok(s.includes("if(!scope||busyRef.current)return;"),"Synchronous guard prevents duplicate actions");
 });
