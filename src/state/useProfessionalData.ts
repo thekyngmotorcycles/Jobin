@@ -3,6 +3,7 @@ import { useFocusEffect } from "expo-router";
 import { supabase } from "../lib/supabase";
 import {sessionMarkerKey} from "../lib/session-lifetime";
 import type {MessageScope} from "../lib/session-continuity";
+import {captureMessageScope,assertMessageScope} from "../lib/message-session";
 import {createWorkspaceSessionCache} from "../lib/workspace-session-cache";
 
 const workspaceMemory=createWorkspaceSessionCache();
@@ -22,8 +23,9 @@ function sameScope(a:MessageScope|null,b:MessageScope|null){
 
 /** Reload on focus and auth changes; never substitute fictional data for a failed request. */
 /** Show a matching in-memory workspace while refreshing within the same session. Never restore legacy disk snapshots. */
-export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=false) {
+export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=false,strict=false) {
  const [data,setData]=useState<T|null>(null);
+ const [scope,setScope]=useState<MessageScope|null>(null);
  const [error,setError]=useState("");
  const [loading,setLoading]=useState(true);
  const [version,setVersion]=useState(0);
@@ -33,7 +35,7 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
   const subscription=supabase?.auth.onAuthStateChange(()=>{
    generation.current++;
    workspaceMemory.clear();
-   setData(null);
+   setData(null);setScope(null);
    setLoading(true);
    reload();
   });
@@ -58,7 +60,7 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
    try{
     const value=await loader();
     if(!await sameOwner()){
-     if(valid()){workspaceMemory.clear();setData(null);setError("La sesión cambió. Vuelve a cargar el perfil.");}
+     if(valid()){workspaceMemory.clear();setData(null);setScope(null);setError("La sesión cambió. Vuelve a cargar el perfil.");}
      return;
     }
     if(cacheWorkspace){
@@ -68,20 +70,20 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
       throw new Error("La sesión cambió. Vuelve a cargar el perfil.");
      }
     }
-    setData(value);
+    setData(value);setScope(initial);
    }catch(cause){
     if(valid()){
      let stillCurrent=false;
      try{stillCurrent=await sameOwner();}catch{/* Fail closed when identity cannot be read. */}
      if(!valid())return;
-     if(!stillCurrent){workspaceMemory.clear();setData(null);}
+     if(!stillCurrent||strict){workspaceMemory.clear();setData(null);setScope(null);}
      setError(cause instanceof Error?cause.message:String(cause));
     }
    }finally{if(valid())setLoading(false);}
-  })().catch(cause=>{if(valid()){workspaceMemory.clear();setData(null);setError(cause instanceof Error?cause.message:String(cause));setLoading(false);}});
+  })().catch(cause=>{if(valid()){workspaceMemory.clear();setData(null);setScope(null);setError(cause instanceof Error?cause.message:String(cause));setLoading(false);}});
   return ()=>{current=false;};
- },[loader,version,cacheWorkspace]));
- return {data,error,loading,reload};
+ },[loader,version,cacheWorkspace,strict]));
+ return {data,error,loading,reload,scope};
 }
 export function useProfessionalAction(reload:()=>void) {
  const guard=useRef(false);const [busy,setBusy]=useState(false);const [notice,setNotice]=useState("");
@@ -89,6 +91,37 @@ export function useProfessionalAction(reload:()=>void) {
   if(guard.current)return false;guard.current=true;setBusy(true);setNotice("");
   try {await action();setNotice(success);reload();return true;}
   catch(cause){setNotice(cause instanceof Error?cause.message:String(cause));return false;}
+  finally{guard.current=false;setBusy(false);}
+ }
+ return {run,busy,notice,setNotice};
+}
+
+/** Privileged actions bind the resource's verified identity to the initiating screen.
+ * A later refresh may replace the object, but never authorize a different session.
+ * check() must be called immediately before opening an external capability URL.
+ */
+export function useScopedProfessionalAction(reload:()=>void,origin:MessageScope|null){
+ const guard=useRef(false),generation=useRef(0),focused=useRef(false),current=useRef(origin);
+ current.current=origin;
+ const [busy,setBusy]=useState(false),[notice,setNotice]=useState("");
+ useFocusEffect(useCallback(()=>{
+  focused.current=true;generation.current++;
+  return()=>{focused.current=false;generation.current++;setNotice("");};
+ },[]));
+ useEffect(()=>{
+  const subscription=supabase?.auth.onAuthStateChange(()=>{generation.current++;setNotice("");});
+  return()=>subscription?.data.subscription.unsubscribe();
+ },[]);
+ async function run(task:(scope:MessageScope,check:()=>Promise<void>)=>Promise<unknown>,success:string){
+  if(!origin||!focused.current||guard.current||!sameScope(origin,current.current))return false;
+  const revision=generation.current;
+  const live=()=>focused.current&&generation.current===revision&&sameScope(origin,current.current);
+  const check=async()=>{await assertMessageScope(origin);if(!live())throw Error("La sesión cambió.");};
+  guard.current=true;setBusy(true);setNotice("");
+  try{
+   const scope=await captureMessageScope(origin);await check();
+   await task(scope,check);await check();setNotice(success);reload();return true;
+  }catch(cause){if(live())setNotice(cause instanceof Error?cause.message:String(cause));return false;}
   finally{guard.current=false;setBusy(false);}
  }
  return {run,busy,notice,setNotice};
