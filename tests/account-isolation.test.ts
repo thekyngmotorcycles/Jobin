@@ -3,18 +3,24 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 const src=(path:string)=>readFileSync(path,"utf8");
 
-test("Professional history never reads or migrates unowned legacy storage",()=>{
+test("Professional history never reads or migrates legacy storage and preserves session origin",()=>{
  const page=src("src/app/(tabs)/profile.tsx");
  const cloud=src("src/lib/jcard-cloud.ts");
  assert.ok(!page.includes("jobin.professional.history.v1"));
- assert.ok(page.includes('"jobeen.professional.history.v2."+owner'));
+ assert.ok(!page.includes("jobeen.professional.history.v2."));
+ assert.ok(!page.includes("AsyncStorage"));
  assert.ok(page.includes("historyState.owner===ownerId"));
- assert.ok(page.includes("await readCloudHistory(owner)"));
- assert.ok(page.includes("await writeCloudHistory(updated,owner)"));
- assert.ok(!page.includes("for(const item of local)"));
- assert.ok(cloud.includes("writeCloudHistory(entry:EmploymentEntry,expectedOwner:string)"));
+ assert.ok(page.includes("await readCloudHistory(owner,scope)"));
+ assert.ok(page.includes("await writeCloudHistory(updated,owner,scope)"));
+ assert.ok(page.includes("historyFormScope.current=scope"));
+ assert.ok(page.includes("historyScope.current===scope&&historyFormScope.current===scope"));
+ assert.ok(page.includes("historyRevision.current===generation"));
+ assert.ok(cloud.includes("writeCloudHistory(entry:EmploymentEntry,expectedOwner:string,expectedScope?:MessageScope)"));
  assert.ok(cloud.includes("if(expectedOwner!==owner)throw"));
  assert.ok(cloud.includes('eq("owner_id",owner)'));
+ assert.ok(cloud.includes('rpc("jobeen_save_private_employment"'));
+ assert.ok(cloud.includes('from("jobeen_employment_private_contact")'));
+ assert.ok(cloud.includes("await assertMessageScope(scope)"));
 });
 test("Changing authenticated identity remounts state providers and rejects previous responses",()=>{
  const auth=src("src/components/AuthGate.tsx");
