@@ -19,6 +19,15 @@ jobs:
           test "$(npm view expo-secure-store@15.0.8 dist.integrity --registry=https://registry.npmjs.org)" = "$(node -p "require('./package-lock.json').packages['node_modules/expo-secure-store'].integrity")"
       - run: npm ci --no-audit --no-fund
       - run: npx expo install --check
+      - name: Validate isolated security pilot Expo config (no native build)
+        env:
+          JOBEEN_SECURITY_PILOT: "1"
+          EXPO_PUBLIC_JOBEEN_SECURITY_PILOT: "1"
+          EXPO_PUBLIC_SUPABASE_URL: "https://abcdefghijklmnopqrst.supabase.co"
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_synthetic-never-used"
+        run: |
+          npx expo config --type public --json > "$RUNNER_TEMP/jobeen-pilot-expo-config.json"
+          node scripts/check-security-pilot-config.mjs "$RUNNER_TEMP/jobeen-pilot-expo-config.json"
       - name: Verify Android native autolinking (no build)
         run: |
           npx --no-install expo-modules-autolinking resolve --platform android --json > "$RUNNER_TEMP/jobeen-autolinking.json"
