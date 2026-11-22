@@ -20,7 +20,7 @@ module.exports=({config})=>{
  const originalExpoProjectId=config.extra?.eas?.projectId??"a6befb1a-dc03-45a8-a18c-294643e99434";
  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pilotExpoProjectId??"")||
     pilotExpoProjectId===originalExpoProjectId||
-    pilotExpoProjectId==="a6befb1a-dc03-45a8-a18c-294643e99434")
+    pilotExpoProjectId!=="de0b71bb-0646-48fa-a875-6b9662c3c2c7")
   throw Error("Security pilot requires a separate Expo EAS project ID.");
  return {
   ...config,

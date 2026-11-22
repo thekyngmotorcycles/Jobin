@@ -36,13 +36,16 @@ test("Security pilot requires distinct backend, native identity, and disables OT
   assert.throws(()=>dynamic({config:base}),/separate Expo EAS project ID/);
   process.env.JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID=base.extra.eas.projectId;
   assert.throws(()=>dynamic({config:base}),/separate Expo EAS project ID/);
-  const pilotExpoId="11111111-2222-4333-8444-555555555555";
+  process.env.JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID="11111111-2222-4333-8444-555555555555";
+  assert.throws(()=>dynamic({config:base}),/separate Expo EAS project ID/);
+  const pilotExpoId="de0b71bb-0646-48fa-a875-6b9662c3c2c7";
   process.env.JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID=pilotExpoId;
   const variant=dynamic({config:base});
   assert.equal(variant.android.package,"com.thekyngmotorcycles.jobin.securitypilot");
   assert.equal(variant.slug,"jobeen-security-pilot");
   assert.equal(variant.extra.eas.projectId,pilotExpoId);
   assert.equal(eas.build["security-pilot"].environment,"preview");
+  assert.equal(eas.build["security-pilot"].env.JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID,pilotExpoId);
   assert.equal(variant.ios.bundleIdentifier,"com.thekyngmotorcycles.jobin.securitypilot");
   assert.equal(variant.scheme,"jobeen-security-pilot");
   assert.equal(variant.updates.enabled,false);

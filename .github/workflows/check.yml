@@ -25,7 +25,7 @@ jobs:
           EXPO_PUBLIC_JOBEEN_SECURITY_PILOT: "1"
           EXPO_PUBLIC_SUPABASE_URL: "https://mkvzkvkmrribcaecvphq.supabase.co"
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_synthetic-never-used"
-          JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID: "11111111-2222-4333-8444-555555555555"
+          JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID: "de0b71bb-0646-48fa-a875-6b9662c3c2c7"
         run: |
           npx expo config --type public --json > "$RUNNER_TEMP/jobeen-pilot-expo-config.json"
           node scripts/check-security-pilot-config.mjs "$RUNNER_TEMP/jobeen-pilot-expo-config.json"

@@ -14,7 +14,8 @@ assert.equal(eas.build["security-pilot"]?.env?.EXPO_PUBLIC_SUPABASE_URL, "https:
 assert.equal(eas.build["security-pilot"]?.android?.buildType, "apk");
 assert.equal(eas.build["security-pilot"]?.channel, "security-pilot");
 const originalExpoId = "a6befb1a-dc03-45a8-a18c-294643e99434";
-const pilotExpoId = "11111111-2222-4333-8444-555555555555";
+const pilotExpoId = "de0b71bb-0646-48fa-a875-6b9662c3c2c7";
+const unrelatedExpoId = "11111111-2222-4333-8444-555555555555";
 const base = { name: "Jobin", android: { package: "com.thekyngmotorcycles.jobin" }, extra: { eas: {projectId:originalExpoId} } };
 const isolated = "https://mkvzkvkmrribcaecvphq.supabase.co";
 const unrelated = "https://abcdefghijklmnopqrst.supabase.co";
@@ -62,6 +63,12 @@ try {
     EXPO_PUBLIC_SUPABASE_URL: isolated, EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishable,
     JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID: originalExpoId,
   }), /separate Expo EAS project ID/);
+  assert.throws(() => configureWith({
+    JOBEEN_SECURITY_PILOT: "1", EXPO_PUBLIC_JOBEEN_SECURITY_PILOT: "1",
+    EXPO_PUBLIC_SUPABASE_URL: isolated, EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishable,
+    JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID: unrelatedExpoId,
+  }), /separate Expo EAS project ID/);
+  assert.equal(eas.build["security-pilot"].env.JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID,pilotExpoId);
   const pilot = configureWith({
     JOBEEN_SECURITY_PILOT: "1", EXPO_PUBLIC_JOBEEN_SECURITY_PILOT: "1",
     EXPO_PUBLIC_SUPABASE_URL: isolated, EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishable,

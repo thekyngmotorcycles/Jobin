@@ -10,6 +10,6 @@ if(expo.name!=="Jobeen Security Pilot"||
  expo.slug!=="jobeen-security-pilot"||
  !process.env.JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID||
  expo.extra?.eas?.projectId!==process.env.JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID||
- expo.extra?.eas?.projectId==="a6befb1a-dc03-45a8-a18c-294643e99434")
+ expo.extra?.eas?.projectId!=="de0b71bb-0646-48fa-a875-6b9662c3c2c7")
  throw Error("Resolved security pilot configuration differs from the reviewed isolated variant.");
 console.log("Pilot Expo configuration isolated; no APK or OTA built.");
