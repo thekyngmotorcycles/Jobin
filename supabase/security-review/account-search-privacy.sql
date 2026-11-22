@@ -46,7 +46,7 @@ language sql stable security definer set search_path='' as $all$
    and jobeen_private.can_bookmark_jcard(b.owner_id,'business')
  )
  select v.* from visible v
- where (nullif(btrim(p_query),'') is null or v.name ilike '%'||left(btrim(p_query),200)||'%' or v.handle ilike '%'||left(btrim(p_query),200)||'%' or v.profession ilike '%'||left(btrim(p_query),200)||'%')
+ where (nullif(btrim(p_query),'') is null or v.name ilike '%'||left(btrim(p_query),200)||'%' or v.handle ilike '%'||left(btrim(p_query),200)||'%' or v.profession ilike '%'||left(btrim(p_query),200)||'%' or (jobeen_private.search_visible_person(v.id) and exists(select 1 from public.person_professions pp join public.profession_catalog pc on pc.code=pp.profession_code where pp.worker_id=v.id and pc.label ilike '%'||left(btrim(p_query),200)||'%')))
  and (nullif(btrim(p_city),'') is null or coalesce(v.city,'') ilike '%'||left(btrim(p_city),100)||'%')
  order by v.name,v.id limit least(greatest(coalesce(p_limit,50),1),50)
 $all$;
@@ -70,14 +70,22 @@ begin
   raise exception 'Professional search contract missing; inspect deployed schema first';
  end if;
  select pg_get_functiondef('public.jobin_find_professionals(text,text,text,text,integer)'::regprocedure) into original;
- if position('AND jobeen_private.search_visible_person(p.id)' in original)=0 then
+ if to_regprocedure('jobeen_private.ranked_professional_search(text,text,text,text,integer)') is null then
   if (length(original)-length(replace(original,anchor,'')))/length(anchor)<>1 then
    raise exception 'Professional search authorization anchor changed; review before deploying';
   end if;
   secured:=replace(original,anchor,anchor||' AND jobeen_private.search_visible_person(p.id)');
+  if position('FUNCTION public.jobin_find_professionals(' in secured)=0 then raise exception 'Unexpected search signature'; end if;
+  secured:=replace(secured,'FUNCTION public.jobin_find_professionals(','FUNCTION jobeen_private.ranked_professional_search(');
   execute secured;
  end if;
 end
 $rank$;
+revoke all on function jobeen_private.ranked_professional_search(text,text,text,text,integer) from public,anon,authenticated;
+grant execute on function jobeen_private.ranked_professional_search(text,text,text,text,integer) to authenticated;
+create or replace function public.jobin_find_professionals(p_query text default '',p_city text default '',p_profession text default '',p_specialty text default '',p_limit integer default 30)
+returns jsonb language sql stable security invoker set search_path='' as $api$
+ select jobeen_private.ranked_professional_search(p_query,p_city,p_profession,p_specialty,p_limit)
+$api$;
 revoke all on function public.jobin_find_professionals(text,text,text,text,integer) from public,anon,authenticated;
 grant execute on function public.jobin_find_professionals(text,text,text,text,integer) to authenticated;
