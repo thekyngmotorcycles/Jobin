@@ -6,7 +6,7 @@ import {ActivityIndicator,Alert,Image,Pressable,Text,View} from "react-native";
 import {JShopButton,JShopEmpty,JShopIconButton,JShopPage,JShopPhoto,JShopTitle} from "../../../components/JShopUI";
 import {PublicProfileAvatar} from "../../../components/PublicProfileAvatar";
 import {JobeenShareSheet} from "../../../components/JCardShareSheet";
-import {deleteJShopDraft,jshopAccountId,readJShopDrafts} from "../../../lib/jshop-local";
+import {deleteJShopDraft,readJShopDrafts} from "../../../lib/jshop-local";
 import {deleteJShopListing,loadJShopFavoriteIds,loadJShopListing,setJShopFavorite,setJShopListingStatus} from "../../../lib/jshop-api";
 import {formatJShopPrice,type JShopDraft,type JShopListing} from "../../../lib/jshop-model";
 import {startJShopConversation} from "../../../lib/jshop-messaging";
@@ -27,21 +27,20 @@ export default function JShopItemDetail(){
  const [shareOpen,setShareOpen]=useState(false);
  const [busy,setBusy]=useState(false);
  useFocusEffect(useCallback(()=>{
-  let live=true;scopeRef.current=null;setLoading(true);
+  let live=true;scopeRef.current=null;setLoading(true);setItem(null);setViewer("");setSaved(false);setShareOpen(false);
   void(async()=>{
    try{
     const scope=await captureMessageScope();
-    const user=await jshopAccountId();
-    if(user!==scope.owner)throw Error("La sesión cambió.");
+    const user=scope.owner;
     let found:JShopListing|JShopDraft|null=await loadJShopListing(id);
-    if(!found){const drafts=await readJShopDrafts(user);found=drafts.find(row=>row.id===id)??null;}
+    if(!found){const drafts=await readJShopDrafts(user,scope);found=drafts.find(row=>row.id===id)??null;}
     const favorites=found&&!("ownerId" in found)?await loadJShopFavoriteIds(user):[];
     await assertMessageScope(scope);
     if(live){scopeRef.current=scope;setViewer(user);setItem(found);setSaved(favorites.includes(id));setSelectedPhoto(0);setError("");}
    }catch(e){if(live){setItem(null);setError(e instanceof Error?e.message:"No se pudo abrir el artículo.");}}
    finally{if(live)setLoading(false);}
   })();
-  return()=>{live=false;scopeRef.current=null;};
+  return()=>{live=false;scopeRef.current=null;setItem(null);setViewer("");setSaved(false);setShareOpen(false);};
  },[id]));
  const listing=item&&!('ownerId' in item)?item:null;
  const draft=item&&'ownerId' in item?item:null;
@@ -60,19 +59,23 @@ export default function JShopItemDetail(){
   catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar el favorito.");}
   finally{setBusy(false);}
  }
- async function deleteItem(){
-  if(!item||busy)return;setBusy(true);
+ async function deleteItem(origin:MessageScope,targetId:string){
+  if(scopeRef.current!==origin||origin.owner!==viewer||!item||item.id!==targetId||busy)return;setBusy(true);
   try{
-   if(draft)await deleteJShopDraft(viewer,draft.id);
+   await captureMessageScope(origin);if(scopeRef.current!==origin)return;
+   if(draft)await deleteJShopDraft(viewer,draft.id,origin);
    else if(listing&&owner)await deleteJShopListing(viewer,listing);
    else throw Error("No tienes permiso para eliminar este artículo.");
-   router.replace("/jshop/mine");
+   await assertMessageScope(origin);if(scopeRef.current===origin)router.replace("/jshop/mine");
   }catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar el anuncio.");}
   finally{setBusy(false);}
  }
- const requestDelete=()=>Alert.alert("Eliminar anuncio","Esta acción no se puede deshacer.",[
-  {text:"Cancelar",style:"cancel"},{text:"Eliminar",style:"destructive",onPress:()=>void deleteItem()}
- ]);
+ const requestDelete=()=>{
+  const origin=scopeRef.current,targetId=item?.id;if(!origin||!targetId)return;
+  Alert.alert("Eliminar anuncio","Esta acción no se puede deshacer.",[
+   {text:"Cancelar",style:"cancel"},{text:"Eliminar",style:"destructive",onPress:()=>void deleteItem(origin,targetId)}
+  ]);
+ };
  async function contactSeller(){
   const scope=scopeRef.current;
   if(!scope||!listing||owner||busy||scope.owner!==viewer)return;
