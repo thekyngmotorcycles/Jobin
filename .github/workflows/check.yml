@@ -19,6 +19,10 @@ jobs:
           test "$(npm view expo-secure-store@15.0.8 dist.integrity --registry=https://registry.npmjs.org)" = "$(node -p "require('./package-lock.json').packages['node_modules/expo-secure-store'].integrity")"
       - run: npm ci --no-audit --no-fund
       - run: npx expo install --check
+      - name: Verify Android native autolinking (no build)
+        run: |
+          npx --no-install expo-modules-autolinking resolve --platform android > "$RUNNER_TEMP/jobeen-autolinking.json"
+          node scripts/check-native-autolinking.mjs "$RUNNER_TEMP/jobeen-autolinking.json"
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
