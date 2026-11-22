@@ -226,7 +226,22 @@ export async function deleteHomePost(id:string,expectedScope?:MessageScope){
  if(error)throw error;
  if(!data)throw Error("No se pudo eliminar la publicación.");
  await assertMessageScope(scope);
- // Preserve potentially shared objects for server-side reference reconciliation.
+ const removed=data as unknown as {photo_paths:string[];photo_bucket:string};
+ // Public files bypass read RLS, so remove owned, no-longer-referenced
+ // public files promptly. Private files are denied by row authorization.
+ if(removed.photo_bucket===POSTS_BUCKET){
+  const candidates=[...new Set((removed.photo_paths??[]).filter(p=>p.startsWith(owner+"/")))];
+  if(candidates.length){
+   const {data:references,error:refError}=await db.from("jobeen_feed_posts" as never)
+    .select("photo_paths").eq("author_id",owner).eq("photo_bucket",POSTS_BUCKET).is("removed_at",null).overlaps("photo_paths",candidates);
+   await assertMessageScope(scope);
+   if(!refError){
+    const inUse=new Set(((references??[]) as unknown as {photo_paths:string[]}[]).flatMap(row=>row.photo_paths));
+    const unused=candidates.filter(path=>!inUse.has(path));
+    if(unused.length){await db.storage.from(POSTS_BUCKET).remove(unused);await assertMessageScope(scope);}
+   }
+  }
+ }
 }
 
 export type HomePostComment={
