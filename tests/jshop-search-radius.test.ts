@@ -19,8 +19,8 @@ test("Dynamic RPC leaves previous integer-radius RPC intact",()=>{
  const sql=read("supabase/migrations/20261117235138_jshop_dynamic_search_area.sql");
  assert.ok(api.includes('rpc("jshop_listings_within_area"'));
  assert.ok(api.includes("insideJShopRadius("));
- assert.ok(cat.includes("loadJShopListingsNear(selectedPlace)"));
- assert.ok(cat.includes("loadJShopListings()"));
+ assert.ok(cat.includes("loadJShopListingsNear(selectedPlace,scope)"));
+ assert.ok(cat.includes("loadJShopListings(scope)"));
  assert.ok(sql.includes("security invoker"));
  assert.ok(sql.includes("p_radius_miles between 0.05 and 4000"));
  assert.ok(!sql.includes("drop function"));
