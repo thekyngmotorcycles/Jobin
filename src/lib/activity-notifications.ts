@@ -33,12 +33,12 @@ export async function loadActivityNotifications(limit=100,expectedScope?:Message
    actorId:actorId||null,actorName:names.get(actorId)??"Usuario de Jobeen"};
  });
 }
-export async function countUnreadActivityNotifications():Promise<number>{
- const db=requireSupabase();const {data:{user}}=await db.auth.getUser();
- if(!user)return 0;
+export async function countUnreadActivityNotifications(expectedScope?:MessageScope):Promise<number>{
+ const db=requireSupabase(),scope=await captureMessageScope(expectedScope),user={id:scope.owner};
  const {count,error}=await db.from("notifications" as never)
   .select("id",{head:true,count:"exact"}).eq("recipient_id",user.id).is("read_at",null);
  if(error)throw error;
+ await assertMessageScope(scope);
  return count??0;
 }
 /**
@@ -46,11 +46,8 @@ export async function countUnreadActivityNotifications():Promise<number>{
  * notification was already opened. Do not double-count requests that still
  * have an unread activity notification.
  */
-export async function countPendingProfileAlerts():Promise<number>{
- const db=requireSupabase();
- const {data:{user},error:authError}=await db.auth.getUser();
- if(authError)throw authError;
- if(!user)return 0;
+export async function countPendingProfileAlerts(expectedScope?:MessageScope):Promise<number>{
+ const db=requireSupabase(),scope=await captureMessageScope(expectedScope),user={id:scope.owner};
  const [unread,pending,unreadCv,pendingContacts,unreadContacts]=await Promise.all([
   db.from("notifications" as never)
    .select("id",{head:true,count:"exact"}).eq("recipient_id",user.id).is("read_at",null),
@@ -76,6 +73,7 @@ export async function countPendingProfileAlerts():Promise<number>{
   .map(n=>n.payload?.request_id).filter((id):id is string=>typeof id==="string"));
  const pendingUncountedContacts=((pendingContacts.data??[]) as unknown as {id:string}[])
   .filter(request=>!alreadyCountedContacts.has(request.id)).length;
+ await assertMessageScope(scope);
  return (unread.count??0)+pendingUncounted+pendingUncountedContacts;
 }
 export async function markActivityNotificationsRead(ids?:string[],expectedScope?:MessageScope):Promise<void>{

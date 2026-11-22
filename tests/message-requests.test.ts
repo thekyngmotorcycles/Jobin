@@ -72,11 +72,13 @@ test("Accepted contacts bypass duplicate message requests without changing conse
 
 test("Messaging reads and actions carry the original authenticated session",()=>{
  const scope=read("src/lib/message-session.ts");
+ const guard=read("src/lib/session-continuity.ts");
  const api=read("src/lib/message-requests.ts");
  const chat=read("src/app/message.tsx");
  const requests=read("src/app/message-requests.tsx");
- assert.ok(scope.includes("expected.session!==session"));
- assert.ok(scope.includes("await assertAccountOwner(owner,session)"));
+ assert.ok(guard.includes("expected.session!==session"));
+ assert.ok(guard.includes("await assertCurrent(owner,session)"));
+ assert.ok(scope.includes("},assertAccountOwner,expected)"));
  assert.ok(api.includes("await assertMessageScope(scope)"));
  assert.ok(chat.includes("if(revision.current!==generation)return;"));
  assert.ok(chat.includes("scopeRef.current=scope;setMe(scope.owner)"));

@@ -132,3 +132,8 @@ No se desplegaron estos cambios. Las pruebas de archivos usaron datos ficticios 
 
 ### Continuidad de la sesión en el historial profesional
 - 367c768 superó validate y database (run 44958091176). Se extiende la protección al cliente de solicitudes CV, el perfil propio, la JCard visitante y Notificaciones: comprobar UUID y session_id, filtrar participantes, invalidar respuestas tras pérdida de foco, consultar nuevamente el permiso al abrir el CV y no presentar datos de otro perfil o sesión tras una espera. La autorización definitiva sigue en las RPC del servidor; no equivale a revocación instantánea de datos ya visibles. Sin modificar SQL de producción, APK ni OTA. Validación automatizada y ensayo Android pendientes.
+
+### Pruebas ejecutables del guard de continuidad y distintivo de notificaciones
+- 0f48804 superó validate y database (run 44969841758). Se extrae el guard de captura de sesión usado realmente por el cliente a un módulo puro, conservando Auth.getUser y assertAccountOwner como fuentes de verificación. Añadir pruebas de comportamiento con dependencias simuladas y esperas controladas: misma sesión, identidad A→B→A con session_id nuevo, cambio durante Auth, usuario ausente o error, cierre, revocación de continuidad. Estas pruebas validan la lógica, no sustituyen Auth/Android real.
+- Los contadores de notificaciones ahora verifican el ámbito de origen antes de devolver datos; la campana evita solapar consultas, descarta resultados al perder foco, borra el contador en error y no vuelve a enlazar una sesión invalidada. Sin cambiar apariencia ni activar notificaciones push.
+- Sin despliegue, sin APK, sin OTA. Mantener bloqueo de privacidad. Pendiente CI del nuevo commit.
