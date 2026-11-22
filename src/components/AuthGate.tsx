@@ -4,6 +4,8 @@ import * as Linking from "expo-linking";
 import { AppState } from "react-native";
 import {classifyAuthNavigation,type AuthNavigationPhase} from "../lib/auth-navigation-phase";
 import { supabase } from "../lib/supabase";
+import {exchangePendingGoogle} from "../lib/auth-entry";
+import {parseGoogleCallback} from "../lib/auth-entry-boundary";
 import { sessionMarkerKey,sessionLifetimeState } from "../lib/session-lifetime";
 
 const LEGACY_KEY = "jobin:session-start";
@@ -94,20 +96,19 @@ export function AuthGate({ children }: { children: ReactNode }) {
    finally{if(valid())setReady(true);}
   }
   async function handleOAuthUrl(url:string|null){
-   if(!url || !url.startsWith("jobin:"))return false;
-   const code = /[?&]code=([^&#]+)/.exec(url)?.[1];
-   if(!code)return false;
+   if(!parseGoogleCallback(url))return false;
    if(oauthInFlight)return true;
-   oauthInFlight=true;
-   revision++;
-   if(active)setHandlingOAuth(true);
+   oauthInFlight=true;revision++;
    try{
-    if(!supabase)throw new Error("Supabase no está configurado");
-    const {data,error}=await supabase.auth.exchangeCodeForSession(decodeURIComponent(code));
-    if(error)throw error;
-    if(!data.session)throw new Error("El proveedor de acceso no devolvió una sesión válida");
-    await startJobinSession(data.session.user.id,data.session.access_token);
-   }catch{if(active)setSessionScope(null);}
+    await exchangePendingGoogle(url,async code=>{
+     if(!active||!supabase)throw Error("Acceso no disponible.");
+     setHandlingOAuth(true);
+     const {data,error}=await supabase.auth.exchangeCodeForSession(code);
+     if(error||!data.session)throw Error("No se pudo iniciar sesión.");
+     await startJobinSession(data.session.user.id,data.session.access_token);
+     return true;
+    });
+   }catch{/* Unsolicited or failed callbacks must not clear another signed-in session. */}
    finally{oauthInFlight=false;if(active){setHandlingOAuth(false);void check();}}
    return true;
   }
