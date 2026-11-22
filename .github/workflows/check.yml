@@ -62,3 +62,4 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f tests/social-media-ownership.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/message-jshop-authorization.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/employer-links-authorization.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/security-integration.test.sql
