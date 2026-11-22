@@ -8,10 +8,10 @@ test("Home publication menu preserves behavior with shared compact action rows",
  const s=read("src/components/FeedPostOptions.tsx");
  assert.ok(s.includes('<BottomSheet visible={visible} onClose={close} title="Opciones de publicación">'));
  assert.equal((s.match(/<SettingsMenuRow variant="action"/g)??[]).length,4);
- assert.ok(s.includes('await setSavedPost(viewerId,postId,!saved)'));
- assert.ok(s.includes('await hidePostFromHome(viewerId,postId)'));
+ assert.ok(s.includes('await setSavedPost(viewerId,postId,!saved,scope)'));
+ assert.ok(s.includes('await hidePostFromHome(viewerId,postId,scope)'));
  assert.ok(s.includes('await onShareLink()'));
- assert.ok(s.includes("getSavedPostIds(viewerId)"));
+ assert.ok(s.includes("getSavedPostIds(viewerId,scope)"));
  for(const label of ["Guardar publicación","Compartir enlace","Ocultar publicación","¿Por qué veo esta publicación?"]){
   assert.ok(s.includes(label),"Missing option: "+label);
  }
