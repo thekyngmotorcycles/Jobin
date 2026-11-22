@@ -19,7 +19,7 @@ test("Android-only candidate uses nonexported per-owner keys and noBackup app st
  assert.ok(!native.includes("destination.delete()"));
  assert.ok(!native.includes("getEncoded()"));
  assert.ok(bridge.includes('if(Platform.OS!=="android")throw'));
- assert.ok(bridge.includes('if(!native)throw'));
+ assert.ok(bridge.includes('if(!native||typeof native.readPicked!=="function"'));
  assert.ok(bridge.includes("createPrivateFileVault(crypto,files,assertMessageScope)"));
  assert.ok(!bridge.includes("AsyncStorage")&&!bridge.includes("Math.random"));
 });

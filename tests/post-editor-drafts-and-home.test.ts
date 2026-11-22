@@ -52,14 +52,14 @@ test("Publishing routes Home with the exact new ID; the feed promotes it above o
  assert.ok(postList.includes("featuredPostId"));
  assert.ok(postList.includes('a.id===featuredPostId?-1'));
 });
-test("Private draft image backups are saved and published without making originals public",()=>{
+test("Encrypted draft photos publish explicitly and existing owner backups stay recoverable",()=>{
  assert.ok(migration.includes("'jobeen-post-draft-photos',false"));
  assert.ok(migration.includes('Jobeen draft photo owner insert'));
  assert.ok(migration.includes('Jobeen draft photo owner select'));
- assert.ok(editor.includes('uploadPhoto(author,photo.uri,DRAFT_PHOTO_BUCKET,scope)'));
+ assert.ok(editor.includes('pickSecuredPhotos(scope,"draft-photo",'));
  assert.ok(drafts.includes('createSignedUrls(paths,DRAFT_PREVIEW_TTL_SECONDS)'));
- assert.ok(drafts.includes('photos:draft.photos.map(toStoredDraftPhoto)'));
- assert.ok(feed.includes('bucket===POSTS_BUCKET?{}:{cacheControl:"0"}'));
+ assert.ok(drafts.includes('photos:draft.photos.map(photo=>checkedPhoto(photo,owner))'));
+ assert.ok(feed.includes('await uploadSecuredFile(scope,"draft-photo",local,bucket)'));
  assert.ok(feed.includes('db.storage.from(DRAFT_POSTS_BUCKET).copy(saved,path,{destinationBucket:bucket})'));
  assert.ok(!feed.includes('await blob.arrayBuffer()'));
  assert.ok(feed.includes('if(!saved.startsWith(owner+"/"))'));

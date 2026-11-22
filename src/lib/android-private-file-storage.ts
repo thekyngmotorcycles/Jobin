@@ -13,13 +13,16 @@ type NativePrivateFiles={
  createCiphertext(owner:string,id:string,input:Uint8Array):void;
  ciphertextSize(owner:string,id:string):number;
  readCiphertext(owner:string,id:string,output:Uint8Array):void;
+ readPicked(uri:string,output:Uint8Array,normalize:boolean):number;
+ discardImagePickerCopy(uri:string):void;
 };
 // Do not import/instantiate on unsupported platforms, or use a fallback.
 // Consumers must be explicitly wired after physical native tests.
 export function createAndroidPrivateFileStorage(){
  if(Platform.OS!=="android")throw Error("Almacenamiento de archivos no disponible.");
  const native=requireOptionalNativeModule<NativePrivateFiles>("JobeenPrivateFiles");
- if(!native)throw Error("Se necesita una aplicación compatible con almacenamiento privado.");
+ if(!native||typeof native.readPicked!=="function"||typeof native.discardImagePickerCopy!=="function")
+  throw Error("Se necesita una aplicación compatible con almacenamiento privado.");
  const crypto:PrivateFileCrypto={
   async randomId(){return native.randomId()},
   async seal(owner,bytes,aad){
@@ -42,5 +45,9 @@ export function createAndroidPrivateFileStorage(){
    native.readCiphertext(location.owner,location.id,output);return output;
   }
  };
- return createPrivateFileVault(crypto,files,assertMessageScope);
+ return {...createPrivateFileVault(crypto,files,assertMessageScope),
+  randomId(){return native.randomId();},
+  readPicked(uri:string,output:Uint8Array,normalize:boolean){return native.readPicked(uri,output,normalize);},
+  discardImagePickerCopy(uri:string){native.discardImagePickerCopy(uri);},
+ };
 }

@@ -1,3 +1,5 @@
+import {uploadSecuredFile} from "./private-attachment-android";
+import type {PendingEvidence} from "./private-attachment";
 import { requireSupabase } from "./supabase";
 import {captureMessageScope,assertMessageScope,type MessageScope} from "./message-session";
 import type { Database,Json } from "./database.types";
@@ -16,7 +18,7 @@ export interface SafetyQueue {
  held:{id:string;creator_id:string;title:string;kind:string}[];
 }
 type F=Database["public"]["Functions"];
-type Mutation="jobin_clear_held_media"|"jobin_request_work_live"|"jobin_submit_work_video"|"jobin_end_work_live"|"jobin_report_employer"|"jobin_review_employer_report"|"jobin_appeal_safety"|"jobin_review_safety_appeal"|"jobin_confirm_held_media";
+type Mutation="jobin_clear_held_media"|"jobin_request_work_live"|"jobin_end_work_live"|"jobin_report_employer"|"jobin_review_employer_report"|"jobin_appeal_safety"|"jobin_review_safety_appeal"|"jobin_confirm_held_media";
 export async function safetyMutation<N extends Mutation>(name:N,args:F[N]["Args"],expectedScope?:MessageScope){
  const scope=await captureMessageScope(expectedScope);
  const {data,error}=await requireSupabase().rpc(name,args);if(error)throw new Error(error.message);await assertMessageScope(scope);return data;
@@ -53,30 +55,9 @@ export async function loadSafetyQueue(expectedScope?:MessageScope):Promise<Safet
 export async function loadTrustMark(worker:string):Promise<{marked:boolean;reason:string|null}>{
  const scope=await captureMessageScope();const {data,error}=await requireSupabase().rpc("jobin_public_trust_mark",{worker});await assertMessageScope(scope);return decode(data,error);
 }
-export async function uploadWorkVideo(asset:{uri:string;fileSize?:number;mimeType?:string},input:{title:string;profession:string;activity:string;employer?:string;consent:boolean;start_ms:number;end_ms:number},expectedScope?:MessageScope){
- const scope=await captureMessageScope(expectedScope),client=requireSupabase();
- const safety=await loadSafety(scope);if(!safety||safety.mediaBlocked)throw new Error("La publicación está restringida. Consulta tus sanciones.");
- if(asset.fileSize&&asset.fileSize>524288000)throw new Error("El archivo supera 500 MB.");
- const response=await fetch(asset.uri);if(!response.ok)throw new Error("No se pudo leer el video.");
- const mime=asset.mimeType||"video/mp4";const extension=mime==="video/quicktime"?"mov":mime==="video/webm"?"webm":"mp4";
- const bytes=await response.arrayBuffer();if(bytes.byteLength>524288000)throw Error("El archivo supera 500 MB.");
- const path=scope.owner+"/"+Date.now()+"-"+Math.random().toString(36).slice(2)+"."+extension;
- await assertMessageScope(scope);
- const uploaded=await client.storage.from("video-originals").upload(path,bytes,{contentType:mime,upsert:false,cacheControl:"0"});
- if(uploaded.error)throw new Error(uploaded.error.message);
- await assertMessageScope(scope);
- return safetyMutation("jobin_submit_work_video",{...input,path},scope);
-}
-export async function submitEmployerReport(media:string,description:string,file:{uri:string;mimeType?:string|null;size?:number},expectedScope?:MessageScope){
- const scope=await captureMessageScope(expectedScope),client=requireSupabase();
- if(file.size&&file.size>10485760)throw new Error("La prueba no puede superar 10 MB.");
- const mime=file.mimeType||"application/pdf";
- const path=scope.owner+"/"+Date.now()+"-"+Math.random().toString(36).slice(2)+(mime==="image/png"?".png":mime==="image/jpeg"?".jpg":".pdf");
- const response=await fetch(file.uri);if(!response.ok)throw new Error("No se pudo leer la prueba.");
- const bytes=await response.arrayBuffer();if(bytes.byteLength>10485760)throw Error("La prueba no puede superar 10 MB.");
- await assertMessageScope(scope);
- const {error}=await client.storage.from("employer-report-evidence").upload(path,bytes,{contentType:mime,upsert:false,cacheControl:"0"});if(error)throw new Error(error.message);
- await assertMessageScope(scope);
+export async function submitEmployerReport(media:string,description:string,file:PendingEvidence,expectedScope?:MessageScope){
+ const scope=await captureMessageScope(expectedScope);
+ const path=await uploadSecuredFile(scope,"report-evidence",file,"employer-report-evidence");
  return safetyMutation("jobin_report_employer",{media,path,description},scope);
 }
 export const WORK_ACTIVITIES=[

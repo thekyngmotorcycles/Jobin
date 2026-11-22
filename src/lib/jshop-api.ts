@@ -1,4 +1,4 @@
-import * as ImageManipulator from "expo-image-manipulator";
+import {uploadSecuredFile} from "./private-attachment-android";
 import {requireSupabase} from "./supabase";
 import type {JShopDraft,JShopListing} from "./jshop-model";
 import type {JShopPlace} from "./jshop-location-core";
@@ -139,7 +139,8 @@ export async function publishJShopDraft(ownerId:string,draft:JShopDraft,expected
  if(draft.ownerId!==ownerId)throw Error("Este borrador pertenece a otra cuenta.");
  if(draft.title.trim().length<3||!draft.description.trim()||draft.price===null||draft.price<=0||!draft.location.trim())
   throw Error("Completa título, descripción, precio y ubicación antes de publicar.");
- if(!draft.photos.length||draft.photos.length>5)throw Error("Añade entre 1 y 5 fotografías para publicar.");
+ const photos=draft.privatePhotos??[];
+ if(!photos.length||photos.length>5)throw Error("Añade entre 1 y 5 fotografías para publicar.");
  if(typeof draft.locationLat!=="number"||typeof draft.locationLon!=="number"
   ||!Number.isFinite(draft.locationLat)||!Number.isFinite(draft.locationLon)
   ||Math.abs(draft.locationLat)>90||Math.abs(draft.locationLon)>180)
@@ -149,18 +150,8 @@ export async function publishJShopDraft(ownerId:string,draft:JShopDraft,expected
  const locationPoint={lat:Number(draft.locationLat.toFixed(2)),lon:Number(draft.locationLon.toFixed(2))};
  const db=client();const uploaded:string[]=[];let insertStarted=false;
  try{
-  for(const [i,uri] of draft.photos.entries()){
-   await assertMessageScope(scope);
-   const normalized=await ImageManipulator.manipulateAsync(uri,[{resize:{width:1400}}],{compress:0.76,format:ImageManipulator.SaveFormat.JPEG,base64:true});
-   if(!normalized.base64)throw Error("No se pudo leer una fotografía.");
-   const decoded=atob(normalized.base64);const bytes=new Uint8Array(decoded.length);
-   for(let n=0;n<decoded.length;n++)bytes[n]=decoded.charCodeAt(n);
-   if(bytes.byteLength>6291456)throw Error("Una fotografía supera 6 MB.");
-   const path=ownerId+"/"+Date.now()+"-"+i+"-"+Math.random().toString(36).slice(2,12)+".jpg";
-   await assertMessageScope(scope);
-   const {error}=await db.storage.from(BUCKET).upload(path,bytes,{contentType:"image/jpeg",upsert:false});
-   if(error)throw error;
-   uploaded.push(path);await assertMessageScope(scope);
+  for(const file of photos){
+   uploaded.push(await uploadSecuredFile(scope,"draft-photo",file,BUCKET));await assertMessageScope(scope);
   }
   await assertMessageScope(scope);insertStarted=true;
   const {data,error}=await db.from("jshop_listings" as never).insert({

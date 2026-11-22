@@ -1,3 +1,4 @@
+import type {PrivateAttachment} from "./private-attachment";
 /** JShop presentation models shared by public listings and local drafts. */
 export const JSHOP_CATEGORIES=["Todo","Herramientas","Tecnología","Vehículos","Hogar","Moda","Repuestos","Otros"] as const;
 export type JShopCategory=Exclude<(typeof JSHOP_CATEGORIES)[number],"Todo">;
@@ -9,7 +10,7 @@ export type JShopOrder="recent"|"price_low"|"price_high";
 export type JShopDraft={
  id:string;ownerId:string;title:string;description:string;category:JShopCategory;
  condition:JShopCondition;price:number|null;currency:JShopCurrency;location:string;locationLat?:number|null;locationLon?:number|null;
- photos:string[];createdAt:number;updatedAt:number;
+ photos:string[];privatePhotos?:PrivateAttachment[];createdAt:number;updatedAt:number;
 };
 export type JShopListing=Omit<JShopDraft,"ownerId">&{
  sellerId:string;sellerName:string;sellerHandle:string;locationLat?:number|null;locationLon?:number|null;photoPaths?:string[];status:"published"|"paused"|"sold";

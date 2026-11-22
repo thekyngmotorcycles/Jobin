@@ -5,7 +5,7 @@ import {usePreventRemove} from "@react-navigation/native";
 import {FlashComposer} from "../../components/FlashComposer";
 import { WorkRulesFields,useWorkDraft } from "../../components/WorkRulesFields";
 import { MyWorkMedia } from "../../components/MyWorkMedia";
-import { uploadWorkVideo } from "../../lib/safety-api";
+import {createWorkVideoUpload,rememberWorkVideoSelection} from "../../lib/private-work-video";
 import {captureMessageScope,assertMessageScope,type MessageScope} from "../../lib/message-session";
 import {serializePrivateWrite} from "../../lib/private-write-queue";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -20,10 +20,46 @@ const localVideo=(uri:string)=>/^(file:|content:|ph:|assets-library:|blob:)/i.te
 function Editor({asset,edit,onEdit,scope}:{asset:ImagePicker.ImagePickerAsset;edit:VideoEditorState;onEdit:(edit:VideoEditorState)=>void;scope:MessageScope}){
  const {s,colors}=useUi();const {title,start,end}=edit;const [notice,setNotice]=useState("");
  const draft=useWorkDraft();const [sending,setSending]=useState(false);const sendingGuard=useRef(false);
+ const pending=useRef<{key:string;upload:ReturnType<typeof createWorkVideoUpload>}|null>(null);
+ const generation=useRef(0),mounted=useRef(false);
  const player=useVideoPlayer({uri:asset.uri,useCaching:false},p=>{p.timeUpdateEventInterval=0.25;});
  const from=Number(start),to=Number(end),valid=Number.isFinite(from)&&Number.isFinite(to)&&from>=0&&to>from&&to-from<=180;
  useEffect(()=>{const sub=player.addListener("timeUpdate",e=>{if(e.currentTime>=to&&to>0)player.pause();});return()=>sub.remove();},[player,to]);
  useEffect(()=>{const sub=AppState.addEventListener("change",state=>{if(state!=="active")player.pause();});return()=>sub.remove();},[player]);
+ useEffect(()=>{
+  mounted.current=true;
+  const stop=()=>{generation.current++;pending.current?.upload.stop();};
+  const sub=AppState.addEventListener("change",state=>{if(state!=="active")stop();});
+  return()=>{mounted.current=false;sub.remove();stop();pending.current=null;};
+ },[asset,scope]);
+ async function sendVideo(){
+  if(sendingGuard.current)return;
+  sendingGuard.current=true;
+  setSending(true);
+  const started=generation.current;
+  let attempt:typeof pending.current=null;
+  try{
+   if(!valid||!title.trim()||to>player.duration)throw Error("Completa un título y un intervalo válido de hasta 180 segundos.");
+   const input={title,profession:draft.profession,activity:draft.activity,employer:draft.employer,consent:draft.consent,
+    start_ms:Math.round(from*1000),end_ms:Math.round(to*1000)};
+   const key=JSON.stringify(input);
+   await captureMessageScope(scope);
+   if(generation.current!==started||AppState.currentState!=="active")return;
+   if(pending.current&&pending.current.key!==key)throw Error("Para reintentar, conserva los datos del envío anterior o vuelve a seleccionar el video.");
+   attempt=pending.current??{key,upload:createWorkVideoUpload(asset,input,scope)};
+   pending.current=attempt;
+   await attempt.upload.send();
+   await assertMessageScope(scope);
+   if(generation.current===started&&pending.current===attempt)setNotice("Video enviado de forma privada. Solo se publicará después del procesamiento, la moderación completa y la confirmación del proveedor.");
+  }catch(error){
+   await assertMessageScope(scope).then(()=>{
+    if(generation.current===started&&(!attempt||pending.current===attempt))setNotice(error instanceof Error?error.message:"No se pudo enviar el video.");
+   }).catch(()=>{});
+  }finally{
+   sendingGuard.current=false;
+   if(mounted.current)setSending(false);
+  }
+ }
  const input={borderWidth:1,borderColor:colors.line,color:colors.ink,padding:12,borderRadius:10};
  return <View style={s.panel}><Text style={s.h2}>Tu resumen del día</Text>
  <VideoView player={player} style={{height:280,width:"100%",borderRadius:12}} nativeControls contentFit="contain"/>
@@ -34,13 +70,7 @@ function Editor({asset,edit,onEdit,scope}:{asset:ImagePicker.ImagePickerAsset;ed
  <Button secondary title="Ver recorte" onPress={()=>{if(!valid||to>player.duration){setNotice("Selecciona un intervalo válido dentro del video de hasta 180 segundos.");return;}player.currentTime=from;player.play();}}/>
  <Text style={s.muted}>Los cambios en el título y el recorte se guardan automáticamente como borrador local.</Text>
  <WorkRulesFields draft={draft} live={false}/>
- <Button title={sending?"Enviando a procesamiento…":"Enviar video a procesamiento y moderación"} onPress={()=>{if(sendingGuard.current)return;sendingGuard.current=true;void (async()=>{setSending(true);try{
- if(!valid||!title.trim()||to>player.duration)throw new Error("Completa un título y un intervalo válido de hasta 180 segundos.");
- await captureMessageScope(scope);
- await uploadWorkVideo(asset,{title,profession:draft.profession,activity:draft.activity,employer:draft.employer,consent:draft.consent,start_ms:Math.round(from*1000),end_ms:Math.round(to*1000)},scope);
- await assertMessageScope(scope);
- setNotice("Video enviado de forma privada. Solo se publicará después del procesamiento, la moderación completa y la confirmación del proveedor.");
- }catch(e){setNotice(e instanceof Error?e.message:String(e));}finally{sendingGuard.current=false;setSending(false);}})();}}/>
+ <Button title={sending?"Enviando a procesamiento…":"Enviar video a procesamiento y moderación"} onPress={()=>void sendVideo()}/>
  <Text style={s.muted}>El borrador es local. Enviar el video registra una solicitud real; no equivale a que haya sido analizado o publicado.</Text>
  {!!notice&&<Notice text={notice} onClose={()=>setNotice("")}/>}
  </View>;
@@ -118,7 +148,7 @@ function CreateVideo(){
   const options:ImagePicker.ImagePickerOptions={mediaTypes:["videos"],allowsEditing:false,videoMaxDuration:CLIP_SECONDS};
   const result=camera?await ImagePicker.launchCameraAsync(options):await ImagePicker.launchImageLibraryAsync(options);
   await assertMessageScope(scope);if(scopeRef.current!==scope)return;
-  if(!result.canceled){const a=result.assets[0];if(!a||!localVideo(a.uri))throw Error("Selecciona un video local.");setAsset(a);setEdit({title:"",start:"0",end:String(Math.min(180,(a.duration??180000)/1000))});setClips(c=>({...c,[chapter.id]:c[chapter.id].map((x,i)=>i===open?a.uri:x)}));setNotice("");}
+  if(!result.canceled){const a=result.assets[0];if(!a||!localVideo(a.uri))throw Error("Selecciona un video local.");rememberWorkVideoSelection(a,scope);setAsset(a);setEdit({title:"",start:"0",end:String(Math.min(180,(a.duration??180000)/1000))});setClips(c=>({...c,[chapter.id]:c[chapter.id].map((x,i)=>i===open?a.uri:x)}));setNotice("");}
  }catch(error){if(scopeRef.current===scope)setNotice(error instanceof Error?error.message:"Could not open the video.");}finally{picking.current=false;}}
  function remove(id:ChapterId,index:number){setClips(c=>({...c,[id]:c[id].map((x,i)=>i===index?null:x)}));}
  return <Screen bottomPadding={contentBottom} demo={false} title="Crear video profesional" subtitle={"Graba o selecciona clips de "+CLIP_SECONDS+" segundos. Tus avances se guardan localmente."}>

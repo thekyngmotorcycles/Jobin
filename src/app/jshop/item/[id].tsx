@@ -1,7 +1,8 @@
+import {previewSecuredPhoto,watchAttachmentScope} from "../../../lib/private-attachment-android";
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useFocusEffect,useLocalSearchParams} from "expo-router";
 import * as Linking from "expo-linking";
-import {useCallback,useRef,useState} from "react";
+import {useCallback,useEffect,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Image,Pressable,Text,View} from "react-native";
 import {JShopButton,JShopEmpty,JShopIconButton,JShopPage,JShopPhoto,JShopTitle} from "../../../components/JShopUI";
 import {PublicProfileAvatar} from "../../../components/PublicProfileAvatar";
@@ -26,17 +27,31 @@ export default function JShopItemDetail(){
  const [error,setError]=useState("");
  const [shareOpen,setShareOpen]=useState(false);
  const [busy,setBusy]=useState(false);
+ useEffect(()=>watchAttachmentScope(()=>scopeRef.current,()=>{
+  scopeRef.current=null;setItem(null);setViewer("");setShareOpen(false);
+ }),[]);
  useFocusEffect(useCallback(()=>{
   let live=true;scopeRef.current=null;setLoading(true);setBusy(false);setItem(null);setViewer("");setSaved(false);setShareOpen(false);
   void(async()=>{
    try{
     const scope=await captureMessageScope();
+    if(!live)return;
+    scopeRef.current=scope;
     const user=scope.owner;
-    let found:JShopListing|JShopDraft|null=await loadJShopListing(id,scope);
-    if(!found){const drafts=await readJShopDrafts(user,scope);found=drafts.find(row=>row.id===id)??null;}
+    const drafts=await readJShopDrafts(user,scope).catch(async()=>{
+     await assertMessageScope(scope);return [];
+    });
+    let found:JShopListing|JShopDraft|null=drafts.find(row=>row.id===id)??null;
+    if(found&&"ownerId" in found){
+     const photos:string[]=[];
+     for(const file of found.privatePhotos??[]){
+      try{photos.push(await previewSecuredPhoto(scope,"draft-photo",file));}catch{await assertMessageScope(scope);}
+     }
+     found={...found,photos};
+    }else found=await loadJShopListing(id,scope);
     const favorites=found&&!("ownerId" in found)?await loadJShopFavoriteIds(user,scope):[];
     await assertMessageScope(scope);
-    if(live){scopeRef.current=scope;setViewer(user);setItem(found);setSaved(favorites.includes(id));setSelectedPhoto(0);setError("");}
+    if(live&&scopeRef.current===scope){setViewer(user);setItem(found);setSaved(favorites.includes(id));setSelectedPhoto(0);setError("");}
    }catch(e){if(live){setItem(null);setError(e instanceof Error?e.message:"No se pudo abrir el artículo.");}}
    finally{if(live)setLoading(false);}
   })();

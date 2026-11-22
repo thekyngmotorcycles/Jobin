@@ -1,3 +1,5 @@
+import {parsePrivateAttachment} from "./private-attachment";
+import {previewSecuredPhoto} from "./private-attachment-android";
 import {privateMetadataStorage} from "./private-metadata-storage";
 import {assertAccountOwner} from "./account-scope";
 import {type MessageScope} from "./message-session";
@@ -31,7 +33,13 @@ async function confirm(owner:string,scope:MessageScope){
  if(!scope||scope.owner!==owner)throw Error("La cuenta cambió.");
  await assertAccountOwner(owner,scope.session);
 }
-export async function readPostDrafts(owner:string,scope:MessageScope):Promise<PostDraft[]>{
+function checkedPhoto(photo:PostDraftPhoto,owner:string){
+ if(!photo||typeof photo.id!=="string"||(photo.backupPath&&!photo.backupPath.startsWith(owner+"/")))throw Error("No se pudo verificar la propiedad de las fotos.");
+ const stored=toStoredDraftPhoto(photo);
+ if(stored.attachment)stored.attachment=parsePrivateAttachment(stored.attachment,owner,"draft-photo");
+ return stored;
+}
+async function readPostDraftRecords(owner:string,scope:MessageScope):Promise<PostDraft[]>{
  await confirm(owner,scope);
  const raw=await privateMetadataStorage.read("post-drafts",scope);
  await confirm(owner,scope);
@@ -41,20 +49,24 @@ export async function readPostDrafts(owner:string,scope:MessageScope):Promise<Po
  return data.map(value=>{
   if(!value||typeof value!=="object"||typeof value.id!=="string"||typeof value.body!=="string"||!Array.isArray(value.photos))throw Error("Hay un borrador que necesita recuperación.");
   const draft=value as PostDraft;
-  if(draft.photos.some(p=>!p||typeof p.id!=="string"||(p.backupPath&&!p.backupPath.startsWith(owner+"/"))))throw Error("No se pudo verificar la propiedad de las fotos.");
-  return {...draft,photos:draft.photos.map(toStoredDraftPhoto)};
+  for(const photo of draft.photos)checkedPhoto(photo,owner);
+  return draft;
  }).sort((a,b)=>b.updatedAt-a.updatedAt);
+}
+export async function readPostDrafts(owner:string,scope:MessageScope):Promise<PostDraft[]>{
+ const records=await readPostDraftRecords(owner,scope);
+ await confirm(owner,scope);
+ return records.map(draft=>({...draft,photos:draft.photos.map(photo=>checkedPhoto(photo,owner))}));
 }
 export async function savePostDraft(owner:string,draft:PostDraft,scope:MessageScope){
  if(!hasDraftContent(draft))return;
  await confirm(owner,scope);
  await serializePrivateWrite(key(owner),async()=>{
   await confirm(owner,scope);
-  const previous=await readPostDrafts(owner,scope);
+  const previous=await readPostDraftRecords(owner,scope);
   if(!previous.some(x=>x.id===draft.id)&&previous.length>=MAX_POST_DRAFTS)
    throw Error("Has alcanzado el límite de "+MAX_POST_DRAFTS+" borradores. Elimina uno de los anteriores para guardar otro.");
-  if(draft.photos.some(p=>p.backupPath&&!p.backupPath.startsWith(owner+"/")))throw Error("La fotografía pertenece a otra cuenta.");
-  const next=[{...draft,photos:draft.photos.map(toStoredDraftPhoto),updatedAt:Date.now()},...previous.filter(x=>x.id!==draft.id)];
+  const next=[{...draft,photos:draft.photos.map(photo=>checkedPhoto(photo,owner)),updatedAt:Date.now()},...previous.filter(x=>x.id!==draft.id)];
   await confirm(owner,scope);
   await privateMetadataStorage.write("post-drafts",scope,JSON.stringify(next));
   await confirm(owner,scope);
@@ -64,7 +76,7 @@ export async function deletePostDraft(owner:string,id:string,scope:MessageScope,
  await confirm(owner,scope);
  await serializePrivateWrite(key(owner),async()=>{
   await confirm(owner,scope);
-  const previous=await readPostDrafts(owner,scope);
+  const previous=await readPostDraftRecords(owner,scope);
   const found=previous.find(x=>x.id===id),remaining=previous.filter(x=>x.id!==id);
   await confirm(owner,scope);
   await privateMetadataStorage.write("post-drafts",scope,JSON.stringify(remaining));
@@ -79,15 +91,22 @@ export async function deletePostDraft(owner:string,id:string,scope:MessageScope,
 }
 export async function restorePostDraftPhotoUrls(photos:PostDraftPhoto[],owner:string,scope:MessageScope):Promise<PostDraftPhoto[]>{
  await confirm(owner,scope);
- const session=scope.session;
- const backed=photos.filter(p=>p.backupPath);
- if(!backed.length)return photos.map(toStoredDraftPhoto);
- const paths=backed.map(p=>p.backupPath!);
- if(paths.some(path=>!path.startsWith(owner+"/")))throw new Error("No se pudo verificar la propiedad de las fotos.");
- const {data,error}=await requireSupabase().storage.from(DRAFT_PHOTO_BUCKET).createSignedUrls(paths,DRAFT_PREVIEW_TTL_SECONDS);
- await assertAccountOwner(owner,session);
- if(error)throw error;
- const urls=new Map<string,string>();
- for(const link of data??[])if(link.path&&link.signedUrl)urls.set(link.path,link.signedUrl);
- return photos.map(p=>p.backupPath?{...toStoredDraftPhoto(p),previewUri:urls.get(p.backupPath)}:toStoredDraftPhoto(p));
+ const next=photos.map(photo=>checkedPhoto(photo,owner));
+ for(const photo of next){
+  if(photo.attachment){
+   try{photo.previewUri=await previewSecuredPhoto(scope,"draft-photo",photo.attachment);}
+   catch{await confirm(owner,scope);}
+  }
+ }
+ const paths=next.flatMap(p=>p.backupPath&&!p.previewUri?[p.backupPath]:[]);
+ if(paths.length){
+  const {data,error}=await requireSupabase().storage.from(DRAFT_PHOTO_BUCKET).createSignedUrls(paths,DRAFT_PREVIEW_TTL_SECONDS);
+  await confirm(owner,scope);
+  if(error&&!next.some(p=>p.previewUri))throw error;
+  const urls=new Map<string,string>();
+  for(const link of data??[])if(link.path&&link.signedUrl)urls.set(link.path,link.signedUrl);
+  for(const photo of next)if(!photo.previewUri&&photo.backupPath)photo.previewUri=urls.get(photo.backupPath);
+ }
+ await confirm(owner,scope);
+ return next;
 }
