@@ -2,7 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
     "deploymentEnabled": {
-      "integration/security-pilot-native-20261122": false
+      "integration/security-pilot-native-20261122": false,
+      "test/sec06-hosted-isolation-harness-20261122": false
     }
   }
 }
