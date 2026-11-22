@@ -7,7 +7,8 @@ import {useEffect,useRef,useState} from "react";
 import {ActivityIndicator,AppState,Image,Keyboard,Modal,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {PublicProfileAvatar} from "../../components/PublicProfileAvatar";
-import {currentSocialUser,publishHomePost,shareApprovedMedia,uploadPhoto,type FeedPostKind,type FeedAudience} from "../../lib/social-content";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../../lib/message-session";
+import {publishHomePost,shareApprovedMedia,uploadPhoto,type FeedPostKind,type FeedAudience} from "../../lib/social-content";
 import {PostComposerSheets} from "../../components/PostComposerSheets";
 import {draftPhotoDisplayUri} from "../../lib/post-draft-photo";
 import {DRAFT_PHOTO_BUCKET,emptyPostDraft,hasDraftContent,readPostDrafts,savePostDraft,deletePostDraft,restorePostDraftPhotoUrls,type PostDraft,type PostDraftPhoto} from "../../lib/post-drafts";
@@ -68,6 +69,9 @@ export default function PostCreate(){
  const savingChainRef=useRef<Promise<void>>(Promise.resolve());
  const pendingUploadsRef=useRef<Promise<void>[]>([]);
  const autosaveEnabledRef=useRef(true);
+ const scopeRef=useRef<MessageScope|null>(null),submitting=useRef(false);
+ const liveScope=(scope:MessageScope)=>scopeRef.current===scope;
+ function editorScope(){const scope=scopeRef.current;if(!scope||scope.owner!==author)throw Error("La sesión del editor cambió.");return scope;}
 
  const snapshot:PostDraft={
   id:draftId,updatedAt:Date.now(),body,kind,photos,mediaId,audience,
@@ -76,12 +80,13 @@ export default function PostCreate(){
  draftSnapshotRef.current=snapshot;
  const hasWork=hasDraftContent(snapshot);
  function persistSnapshot(value:PostDraft){
-  if(!author||!hydrated||!autosaveEnabledRef.current||!hasDraftContent(value))return savingChainRef.current;
+  const scope=scopeRef.current;
+  if(!scope||scope.owner!==author||!hydrated||!autosaveEnabledRef.current||!hasDraftContent(value))return savingChainRef.current;
   savingChainRef.current=savingChainRef.current.catch(()=>{}).then(async()=>{
-   if(autosaveEnabledRef.current){
-    await savePostDraft(author,value);
-    const saved=await readPostDrafts(author);
-    setDraftCount(count=>count===saved.length?count:saved.length);
+   if(autosaveEnabledRef.current&&liveScope(scope)){
+    await savePostDraft(author,value,scope);
+    const saved=await readPostDrafts(author,scope);
+    if(liveScope(scope))setDraftCount(count=>count===saved.length?count:saved.length);
    }
   });
   return savingChainRef.current;
@@ -94,37 +99,37 @@ export default function PostCreate(){
   refreshDraftPhotoPreviews(d.photos);
  }
  function refreshDraftPhotoPreviews(selectedPhotos:PostDraftPhoto[]){
-  if(!selectedPhotos.some(photo=>photo.backupPath))return;
-  void restorePostDraftPhotoUrls(selectedPhotos,author).then(restored=>setPhotos(current=>current.map(photo=>{
+  const scope=scopeRef.current;if(!scope||!selectedPhotos.some(photo=>photo.backupPath))return;
+  void restorePostDraftPhotoUrls(selectedPhotos,author,scope).then(restored=>{if(liveScope(scope))setPhotos(current=>current.map(photo=>{
    const refreshed=restored.find(item=>item.id===photo.id&&item.backupPath===photo.backupPath);
    return refreshed?{...photo,previewUri:refreshed.previewUri}:photo;
-  }))).catch(()=>{
-   setError("Algunas fotos necesitan conexión o volver a seleccionarse.");
+  }));}).catch(()=>{
+   if(liveScope(scope))setError("Algunas fotos necesitan conexión o volver a seleccionarse.");
   });
  }
  useEffect(()=>{let active=true;void(async()=>{
   try{
-   const uid=await currentSocialUser();
+   const scope=await captureMessageScope(),uid=scope.owner;
    if(!active)return;
-   setAuthor(uid);
-   const saved=await readPostDrafts(uid);
+   const saved=await readPostDrafts(uid,scope);
+   await assertMessageScope(scope);
    if(!active)return;
-   setDrafts(saved);
+   scopeRef.current=scope;setAuthor(uid);setDrafts(saved);
    setDraftCount(saved.length);
    // New publication always starts empty; drafts are opened explicitly from Borradores.
    void Promise.all([
     requireSupabase().from("profiles").select("display_name").eq("id",uid).maybeSingle(),
     requireSupabase().from("jcard_profiles").select("handle").eq("profile_id",uid).maybeSingle()
-   ]).then(([person,card])=>{
-    if(!active)return;
+   ]).then(async([person,card])=>{
+    await assertMessageScope(scope);if(!active||!liveScope(scope))return;
     if(person.data?.display_name)setAuthorName(person.data.display_name);
     if(card.data?.handle)setAuthorHandle(card.data.handle.replace(/^@/,""));
    }).catch(()=>{});
    const approved=await Promise.all([shareApprovedMedia("video",uid),shareApprovedMedia("live",uid)]);
-   if(active)setMedia([...approved[0],...approved[1]]);
+   await assertMessageScope(scope);if(active&&liveScope(scope))setMedia([...approved[0],...approved[1]]);
   }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudo cargar la cuenta.");}
-  finally{if(active){setHydrated(true);setLoading(false);}}
- })();return()=>{active=false;};},[]);
+  finally{if(active){setHydrated(!!scopeRef.current);setLoading(false);}}
+ })();return()=>{active=false;scopeRef.current=null;autosaveEnabledRef.current=false;};},[]);
  useEffect(()=>{
   if(!hydrated||!author||!hasWork||!autosaveEnabledRef.current)return;
   const timer=setTimeout(()=>{
@@ -188,46 +193,49 @@ export default function PostCreate(){
   }
  }
  async function saveDraftNow(){
-  await Promise.allSettled(pendingUploadsRef.current);
+  const scope=editorScope();
+  await Promise.allSettled(pendingUploadsRef.current);await assertMessageScope(scope);if(!liveScope(scope))throw Error("El editor cambió.");
   await persistSnapshot(draftSnapshotRef.current);
-  const saved=await readPostDrafts(author);setDrafts(saved);setDraftCount(saved.length);
+  const saved=await readPostDrafts(author,scope);await assertMessageScope(scope);if(!liveScope(scope))throw Error("El editor cambió.");setDrafts(saved);setDraftCount(saved.length);
  }
  async function saveAndExit(){
-  try{await saveDraftNow();finishHome("");}
+  try{const scope=editorScope();await saveDraftNow();if(liveScope(scope))finishHome("");}
   catch(e){setError(e instanceof Error?e.message:"No se pudo guardar el borrador.");setExitOpen(false);}
  }
  async function discardAndExit(){
   try{
-   autosaveEnabledRef.current=false;
-   await savingChainRef.current.catch(()=>{});
-   await deletePostDraft(author,draftSnapshotRef.current.id);
-   finishHome("");
+   const scope=editorScope();autosaveEnabledRef.current=false;
+   await savingChainRef.current.catch(()=>{});await assertMessageScope(scope);if(!liveScope(scope))return;
+   await deletePostDraft(author,draftSnapshotRef.current.id,scope);
+   if(liveScope(scope))finishHome("");
   }catch(e){autosaveEnabledRef.current=true;setError(e instanceof Error?e.message:"No se pudo descartar el borrador.");setExitOpen(false);}
  }
  async function openDrafts(){
-  try{
+  try{const scope=editorScope();
    if(hasDraftContent(draftSnapshotRef.current)){
     await saveDraftNow().catch(e=>setError(e instanceof Error?e.message:"No se pudo guardar el borrador actual."));
    }
-   const saved=await readPostDrafts(author);
+   const saved=await readPostDrafts(author,scope);if(!liveScope(scope))return;
    setDrafts(saved);setDraftCount(saved.length);setDraftsOpen(true);
    // Private draft photos may have temporary local URIs; refresh covers without
    // delaying opening the gallery or exposing any private bucket publicly.
    void Promise.all(saved.map(async draft=>{
-    try{return {...draft,photos:await restorePostDraftPhotoUrls(draft.photos,author)};}
+    try{return {...draft,photos:await restorePostDraftPhotoUrls(draft.photos,author,scope)};}
     catch{return draft;}
-   })).then(refreshed=>setDrafts(current=>current.map(draft=>{
+   })).then(refreshed=>{if(liveScope(scope))setDrafts(current=>current.map(draft=>{
     const match=refreshed.find(item=>item.id===draft.id&&item.updatedAt===draft.updatedAt);
     return match??draft;
-   }))).catch(()=>{});
+   }));}).catch(()=>{});
   }catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar los borradores.");}
  }
  async function deleteDraft(d:PostDraft){
   // A queued background save must not recreate a draft the user explicitly deletes.
+  const scope=scopeRef.current;if(!scope||scope.owner!==author||!drafts.some(item=>item.id===d.id))return;
   autosaveEnabledRef.current=false;
   try{
    await savingChainRef.current.catch(()=>{});
-   await deletePostDraft(author,d.id);
+   await assertMessageScope(scope);if(!liveScope(scope))return;
+   await deletePostDraft(author,d.id,scope);if(!liveScope(scope))return;
    if(d.id===draftSnapshotRef.current.id){
     const empty=emptyPostDraft();
     draftSnapshotRef.current=empty;
@@ -235,10 +243,10 @@ export default function PostCreate(){
     setAudience("public");setAudienceFollowers(true);setAudienceContacts(false);
     setConsent(false);setMentionedProfileIds([]);setBusinessMentions([]);
    }
-   const saved=await readPostDrafts(author);
+   const saved=await readPostDrafts(author,scope);if(!liveScope(scope))return;
    setDrafts(saved);setDraftCount(saved.length);
   }catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar el borrador.");}
-  finally{autosaveEnabledRef.current=true;}
+  finally{if(liveScope(scope))autosaveEnabledRef.current=true;}
  }
  function chooseMention(person:PostMention){
   const token="@"+(person.handle.replace(/^@/,"")||(person.kind==="business"?person.name.trim():person.name.trim().replace(/\s+/g,"")));
@@ -253,21 +261,22 @@ export default function PostCreate(){
   setMentionQuery("");setMentionResults([]);
  }
  async function choosePhotos(){
-  if(photos.length>=5)return;
-  try{
+  const scope=scopeRef.current;if(!scope||scope.owner!==author||submitting.current||photos.length>=5)return;
+  try{await captureMessageScope(scope);if(!liveScope(scope))return;
    const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:["images"],allowsMultipleSelection:true,selectionLimit:Math.max(1,5-photos.length),quality:0.8});
+   await assertMessageScope(scope);if(!liveScope(scope))return;
    if(!result.canceled){
     const fresh:PostDraftPhoto[]=result.assets.map(asset=>({
      id:Date.now().toString(36)+"-"+Math.random().toString(36).slice(2),
      uri:asset.uri,altText:""
     }));
     setPhotos(current=>[...current,...fresh].slice(0,5));setError("");
-    const tasks=fresh.map(photo=>uploadPhoto(author,photo.uri,DRAFT_PHOTO_BUCKET).then(path=>{
-     setPhotos(current=>current.map(p=>p.id===photo.id?{...p,backupPath:path}:p));
+    const tasks=fresh.map(photo=>uploadPhoto(author,photo.uri,DRAFT_PHOTO_BUCKET,scope).then(path=>{
+     if(liveScope(scope))setPhotos(current=>current.map(p=>p.id===photo.id?{...p,backupPath:path}:p));
     }).catch(()=>{
-     setError("El texto se guardará automáticamente. Algunas fotos no tienen respaldo y podrían requerir volver a seleccionarse.");
+     if(liveScope(scope))setError("El texto se guardará automáticamente. Algunas fotos no tienen respaldo y podrían requerir volver a seleccionarse.");
     }));
-    pendingUploadsRef.current=tasks.map(task=>task.then(()=>{}));
+    pendingUploadsRef.current=[...pendingUploadsRef.current,...tasks.map(task=>task.then(()=>{}))];
    }
   }catch(e){setError(e instanceof Error?e.message:"No se pudieron seleccionar fotos.");}
  }
@@ -293,12 +302,13 @@ export default function PostCreate(){
   else openAt(windowWidth-120,100,100,36);
  }
  async function submit(){
-  if(busy)return;
+  const scope=scopeRef.current;if(!scope||scope.owner!==author||submitting.current)return;
   if(!consent){setError("Confirma que la publicación cumple las normas de contenido profesional.");return;}
   if(audience==="private"&&!audienceFollowers&&!audienceContacts){setError("Selecciona seguidores, contactos o ambos.");return;}
-  setBusy(true);setError("");
+  submitting.current=true;setBusy(true);setError("");
   try{
-   await Promise.allSettled(pendingUploadsRef.current);
+   await captureMessageScope(scope);if(!liveScope(scope))return;
+   await Promise.allSettled(pendingUploadsRef.current);await assertMessageScope(scope);if(!liveScope(scope))return;
    await persistSnapshot(draftSnapshotRef.current);
    const selected=draftSnapshotRef.current.photos;
    const publishedId=await publishHomePost({
@@ -309,18 +319,19 @@ export default function PostCreate(){
     mediaId:(kind==="video"||kind==="live")?mediaId:null,
     audience,audienceFollowers:audience==="private"&&audienceFollowers,
     audienceContacts:audience==="private"&&audienceContacts
-   });
+   },scope);await assertMessageScope(scope);if(!liveScope(scope))return;
    // The post now exists. Do not keep the editor busy while remote draft
    // photos are deleted: a slow Storage request must never block navigation.
    autosaveEnabledRef.current=false;
    await savingChainRef.current.catch(()=>{});
-   await deletePostDraft(author,draftSnapshotRef.current.id,false).catch(()=>{});
+   await deletePostDraft(author,draftSnapshotRef.current.id,scope,false).catch(()=>{});await assertMessageScope(scope);if(!liveScope(scope))return;
    finishHome(publishedId);
    const draftPaths=[...new Set(selected.map(photo=>photo.backupPath)
     .filter((path):path is string=>!!path&&path.startsWith(author+"/")))];
-   if(draftPaths.length)void requireSupabase().storage.from(DRAFT_PHOTO_BUCKET).remove(draftPaths).catch(()=>{});
+   // Retain possibly shared backup references for owner-only reconciliation.
+   void draftPaths;
   }catch(e){setError(e instanceof Error?e.message:"No se pudo publicar.");}
-  finally{setBusy(false);}
+  finally{submitting.current=false;if(liveScope(scope))setBusy(false);}
  }
  const eligible=(kind==="text"?!!body.trim():kind==="photos"?photos.length>0:!!mediaId)&&(audience==="public"||audienceFollowers||audienceContacts);
  return <>
