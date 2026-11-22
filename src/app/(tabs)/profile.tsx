@@ -8,7 +8,8 @@ import {assertMessageScope,captureMessageScope,type MessageScope} from "../../li
 import {identityVerified} from "../../lib/identity-status";
 import {pickBusinessGalleryPhoto,uploadBusinessPhoto} from "../../lib/business-media";
 import {cloudOwner} from "../../lib/jcard-cloud";
-import {EMPTY_BUSINESS_CARD,readScopedBusinessCard,writeScopedBusinessCard} from "../../lib/business-card-cache";
+import {assertAccountOwner} from "../../lib/account-scope";
+import {EMPTY_BUSINESS_CARD,readScopedBusinessCard,writeScopedBusinessCard,clearBusinessCardMemory} from "../../lib/business-card-cache";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { employmentMonths,experienceLabel } from "../../lib/employment";
 import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness,readBusinessRating,readBusinessExcellence } from "../../lib/jcard-cloud";
@@ -120,14 +121,34 @@ export default function Profile() {
   const [businessCategoryQuery,setBusinessCategoryQuery]=useState("");
   const [business,setBusiness]=useState<BusinessCardData>(EMPTY_BUSINESS_CARD);
   const [businessOwner,setBusinessOwner]=useState("");
+  const businessScope=useRef<MessageScope|null>(null),businessRevision=useRef(0);
   const [businessDraft,setBusinessDraft]=useState({name:"",opened:"",closed:"",services:"",category:"",email:"",emailSecondary:"",phone:"",phoneSecondary:"",phoneLabel:"",phoneSecondaryLabel:"",location:""});
   // Business records are loaded only for the authenticated owner below; never import an unscoped legacy card.
   
   function changePersonalPhoto(){router.push("/personal-avatar-editor");}
   const [businessImageBusy,setBusinessImageBusy]=useState(false);
-  async function replaceBusinessImage(slot:"banner"|"avatar"){if(slot==="avatar"){router.push({pathname:"/personal-avatar-editor",params:{target:"business"}});return;}if(businessImageBusy)return;setBusinessImageBusy(true);try{const photo=await pickBusinessGalleryPhoto(slot);if(!photo)return;const owner=await cloudOwner();const uploaded=await uploadBusinessPhoto("business-profile-media",owner,photo,slot);if(owner!==workspace.data?.card.id||owner!==businessOwner)throw new Error("La cuenta cambió. Abre de nuevo tu JCard.");const updated={...business,[slot==="banner"?"bannerUrl":"avatarUrl"]:uploaded.url};await writeCloudBusiness(updated,owner);await writeScopedBusinessCard(owner,updated);setBusiness(updated);}catch(e){setNotice(e instanceof Error?e.message:"No se pudo actualizar la imagen.");}finally{setBusinessImageBusy(false);}}
-  function editBusiness(){router.push("/jcard-business-edit");}
-  function saveBusiness(){Keyboard.dismiss();if(businessDraft.name.trim().length>30){setNotice("El nombre de empresa admite un máximo de 30 caracteres.");return;}if(businessDraft.email.trim()&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessDraft.email.trim())){setNotice("Revisa el correo empresarial.");return;}if(businessDraft.emailSecondary.trim()&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessDraft.emailSecondary.trim())){setNotice("Revisa el correo secundario.");return;}for(const label of [businessDraft.phoneLabel,businessDraft.phoneSecondaryLabel]){if(!validPhoneLabel(label)){setNotice("La identificación permite hasta 4 caracteres de texto o un único emoji.");return;}}if(businessDraft.services.length>100){setNotice("Los servicios admiten un máximo de 100 caracteres.");return;}if(businessDraft.category&&!["Climatización HVAC","Refrigeración"].includes(businessDraft.category)&&!professionCatalog.data?.categories.some(c=>c.code===businessDraft.category||c.label===businessDraft.category)){setNotice("Selecciona una categoría del catálogo de Jobin.");return;}const services=businessDraft.services.split(",").map(x=>x.trim()).filter(Boolean);if(services.length>3){setNotice("Máximo tres servicios.");return;}const opened=businessDraft.opened.trim(),closed=businessDraft.closed.trim(),year=new Date().getFullYear();if((opened&&(!/^\d{4}$/.test(opened)||Number(opened)>year||Number(opened)<1800))||(closed&&(!/^\d{4}$/.test(closed)||Number(closed)>year||Number(closed)<Number(opened)))){setNotice("Revisa los años de apertura y cierre.");return;}const updated={...business,...businessDraft,name:businessDraft.name.trim(),category:professionCatalog.data?.categories.find(c=>c.code===businessDraft.category||c.label===businessDraft.category)?.label??businessDraft.category,email:businessDraft.email.trim(),emailSecondary:businessDraft.emailSecondary.trim(),phone:businessDraft.phone.trim(),phoneSecondary:businessDraft.phoneSecondary.trim(),phoneLabel:businessDraft.phoneLabel.trim(),phoneSecondaryLabel:businessDraft.phoneSecondaryLabel.trim(),location:businessDraft.location.trim(),services,licenseVerified:business.licenseVerified};void(async()=>{const owner=await cloudOwner();if(owner!==workspace.data?.card.id||owner!==businessOwner)throw new Error("La cuenta cambió. Abre de nuevo tu JCard.");await writeCloudBusiness(updated,owner);await writeScopedBusinessCard(owner,updated);setBusiness(updated);setBusinessOpen(false);})().catch(e=>setNotice(e instanceof Error?e.message:"No se pudo guardar la JCard."));}
+  async function replaceBusinessImage(slot:"banner"|"avatar"){
+   const scope=businessScope.current;
+   if(!scope||scope.owner!==businessOwner||scope.owner!==workspace.data?.card.id||businessImageBusy)return;
+   if(slot==="avatar"){router.push({pathname:"/personal-avatar-editor",params:{target:"business"}});return;}
+   setBusinessImageBusy(true);
+   try{
+    await captureMessageScope(scope);
+    const photo=await pickBusinessGalleryPhoto(slot);if(!photo)return;
+    await assertMessageScope(scope);
+    if(businessScope.current!==scope)return;
+    const uploaded=await uploadBusinessPhoto("business-profile-media",scope.owner,photo,slot,scope);
+    const current=await readCloudBusiness(scope.owner,scope);
+    if(businessScope.current!==scope)return;
+    const updated={...EMPTY_BUSINESS_CARD,...(current??{}),[slot==="banner"?"bannerUrl":"avatarUrl"]:uploaded.url};
+    await writeCloudBusiness(updated,scope.owner,scope);
+    await writeScopedBusinessCard(scope.owner,updated,scope);
+    if(businessScope.current===scope)setBusiness(updated);
+   }catch(e){if(businessScope.current===scope)setNotice(e instanceof Error?e.message:"No se pudo actualizar la imagen.");}
+   finally{setBusinessImageBusy(false);}
+  }
+  function editBusiness(){clearBusinessCardMemory();router.push("/jcard-business-edit");}
+  function saveBusiness(){Keyboard.dismiss();if(businessDraft.name.trim().length>30){setNotice("El nombre de empresa admite un máximo de 30 caracteres.");return;}if(businessDraft.email.trim()&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessDraft.email.trim())){setNotice("Revisa el correo empresarial.");return;}if(businessDraft.emailSecondary.trim()&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessDraft.emailSecondary.trim())){setNotice("Revisa el correo secundario.");return;}for(const label of [businessDraft.phoneLabel,businessDraft.phoneSecondaryLabel]){if(!validPhoneLabel(label)){setNotice("La identificación permite hasta 4 caracteres de texto o un único emoji.");return;}}if(businessDraft.services.length>100){setNotice("Los servicios admiten un máximo de 100 caracteres.");return;}if(businessDraft.category&&!["Climatización HVAC","Refrigeración"].includes(businessDraft.category)&&!professionCatalog.data?.categories.some(c=>c.code===businessDraft.category||c.label===businessDraft.category)){setNotice("Selecciona una categoría del catálogo de Jobin.");return;}const services=businessDraft.services.split(",").map(x=>x.trim()).filter(Boolean);if(services.length>3){setNotice("Máximo tres servicios.");return;}const opened=businessDraft.opened.trim(),closed=businessDraft.closed.trim(),year=new Date().getFullYear();if((opened&&(!/^\d{4}$/.test(opened)||Number(opened)>year||Number(opened)<1800))||(closed&&(!/^\d{4}$/.test(closed)||Number(closed)>year||Number(closed)<Number(opened)))){setNotice("Revisa los años de apertura y cierre.");return;}const updated={...business,...businessDraft,name:businessDraft.name.trim(),category:professionCatalog.data?.categories.find(c=>c.code===businessDraft.category||c.label===businessDraft.category)?.label??businessDraft.category,email:businessDraft.email.trim(),emailSecondary:businessDraft.emailSecondary.trim(),phone:businessDraft.phone.trim(),phoneSecondary:businessDraft.phoneSecondary.trim(),phoneLabel:businessDraft.phoneLabel.trim(),phoneSecondaryLabel:businessDraft.phoneSecondaryLabel.trim(),location:businessDraft.location.trim(),services,licenseVerified:business.licenseVerified};const scope=businessScope.current;if(!scope||scope.owner!==businessOwner||scope.owner!==workspace.data?.card.id)return;void(async()=>{await captureMessageScope(scope);if(businessScope.current!==scope)return;await writeCloudBusiness(updated,scope.owner,scope);await writeScopedBusinessCard(scope.owner,updated,scope);if(businessScope.current===scope){setBusiness(updated);setBusinessOpen(false);}})().catch(e=>{if(businessScope.current===scope)setNotice(e instanceof Error?e.message:"No se pudo guardar la JCard.");});}
   const [sendOpen, setSendOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editingId,setEditingId] = useState<string|null>(null);
@@ -166,33 +187,37 @@ export default function Profile() {
 
  useFocusEffect(useCallback(()=>{
   if(consumePersonalPhotoChange())void workspace.reload();
-  const owner=workspace.data?.card.id;
+  const owner=workspace.data?.card.id,generation=++businessRevision.current;
   let active=true;
-  if(!owner){setBusinessOwner("");setBusiness(EMPTY_BUSINESS_CARD);return()=>{active=false;};}
-  // Server data is authoritative. A legacy local value is never migrated or
-  // uploaded because it might belong to a different signed-in account.
-  void (async()=>{
+  const valid=()=>active&&businessRevision.current===generation;
+  businessScope.current=null;setBusinessOwner("");setBusiness(EMPTY_BUSINESS_CARD);
+  if(!owner)return()=>{active=false;};
+  void(async()=>{
+   let scope:MessageScope|null=null;
    try{
-    if((await cloudOwner())!==owner)return;
-    // Show the scoped card immediately on return or a card flip. Refresh from
-    // Supabase afterward, instead of briefly rendering the personal fallback.
-    const cached=await readScopedBusinessCard(owner).catch(()=>null);
-    if(!active||(await cloudOwner())!==owner)return;
+    scope={owner,session:await assertAccountOwner(owner)};
+    if(!valid())return;
+    const cached=await readScopedBusinessCard(owner,scope);
+    if(!valid())return;
     if(cached){setBusiness(cached);setBusinessOwner(owner);}
-    const row=await readCloudBusiness(owner);
-    if(!active||(await cloudOwner())!==owner)return;
+    const row=await readCloudBusiness(owner,scope);
+    await assertMessageScope(scope);
+    if(!valid())return;
     const current={...EMPTY_BUSINESS_CARD,...(row??{})};
-    setBusiness(current);setBusinessOwner(owner);
-    if(row)void writeScopedBusinessCard(owner,current).catch(()=>{});
+    clearBusinessCardMemory();
+    if(row)await writeScopedBusinessCard(owner,current,scope);
+    if(!valid())return;
+    businessScope.current=scope;setBusiness(current);setBusinessOwner(owner);
    }catch{
-    const cached=await readScopedBusinessCard(owner).catch(()=>null);
-    if(active&&(await cloudOwner().catch(()=>null))===owner){
-     setBusiness(cached??EMPTY_BUSINESS_CARD);setBusinessOwner(owner);
+    if(!valid())return;
+    const cached=scope?await readScopedBusinessCard(owner,scope).catch(()=>null):null;
+    if(valid()){
+     businessScope.current=null;setBusiness(cached??EMPTY_BUSINESS_CARD);setBusinessOwner(cached?owner:"");
      setNotice("No se pudo sincronizar la JCard de negocio. Verifica tu conexión.");
     }
    }
   })();
-  return()=>{active=false;};
+  return()=>{active=false;businessScope.current=null;};
  },[workspace.reload,workspace.data?.card.id]));
   useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void identityVerified(id).then(v=>{if(live)setVerifiedIdentity(v);}).catch(()=>{if(live)setVerifiedIdentity(false);});return()=>{live=false;};},[workspace.data?.card.id]);
   const professionCatalog=useProfessionalData(loadCatalog);
