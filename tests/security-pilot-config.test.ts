@@ -27,6 +27,8 @@ test("Security pilot requires distinct backend, native identity, and disables OT
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY="sb_publishable_synthetic-not-real";
   assert.throws(()=>dynamic({config:base}),/isolated Supabase/);
   process.env.EXPO_PUBLIC_SUPABASE_URL="https://abcdefghijklmnopqrst.supabase.co";
+  assert.throws(()=>dynamic({config:base}),/isolated Supabase/);
+  process.env.EXPO_PUBLIC_SUPABASE_URL="https://mkvzkvkmrribcaecvphq.supabase.co";
   const variant=dynamic({config:base});
   assert.equal(variant.android.package,"com.thekyngmotorcycles.jobin.securitypilot");
   assert.equal(variant.ios.bundleIdentifier,"com.thekyngmotorcycles.jobin.securitypilot");
