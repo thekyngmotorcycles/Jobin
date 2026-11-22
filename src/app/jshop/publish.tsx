@@ -4,7 +4,8 @@ import * as ImagePicker from "expo-image-picker";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Image,Pressable,Text,TextInput,View} from "react-native";
 import {JShopButton,JShopPage,JShopTitle} from "../../components/JShopUI";
-import {jshopAccountId,readJShopDrafts,saveJShopDraft,deleteJShopDraft} from "../../lib/jshop-local";
+import {readJShopDrafts,saveJShopDraft,deleteJShopDraft} from "../../lib/jshop-local";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../../lib/message-session";
 import {publishJShopDraft} from "../../lib/jshop-api";
 import {readDefaultSaleLocation,readPendingArticleLocation,clearPendingArticleLocation,type SaleLocation} from "../../lib/jshop-selling-location";
 import {readSellerCurrency} from "../../lib/jshop-selling-preferences";
@@ -30,19 +31,20 @@ export default function JShopPublish(){
  const [busy,setBusy]=useState(false);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
+ const scopeRef=useRef<MessageScope|null>(null),saving=useRef(false),focusRevision=useRef(0);
  useEffect(()=>{
-  let live=true;
+  let live=true;scopeRef.current=null;setOwnerId("");setLoading(true);setDefaultPlace(null);setArticlePlace(null);setExisting(null);setPhotos([]);setTitle("");setDescription("");setPrice("");
   void(async()=>{
    try{
-    const owner=await jshopAccountId();
+    const scope=await captureMessageScope(),owner=scope.owner;
     if(!live)return;
-    setOwnerId(owner);
-    const [defaultLocation,preferredCurrency]=await Promise.all([readDefaultSaleLocation(owner),readSellerCurrency(owner)]);
+    const [defaultLocation,preferredCurrency]=await Promise.all([readDefaultSaleLocation(owner,scope),readSellerCurrency(owner)]);
+    await assertMessageScope(scope);
     if(!live)return;
     setDefaultPlace(defaultLocation);
     if(!draft)setCurrency(preferredCurrency);
     if(draft){
-     const drafts=await readJShopDrafts(owner);
+     const drafts=await readJShopDrafts(owner);await assertMessageScope(scope);
      const found=drafts.find(item=>item.id===draft);
      if(!found)throw new Error("El borrador no existe o pertenece a otra cuenta.");
      if(!live)return;
@@ -53,54 +55,58 @@ export default function JShopPublish(){
       setArticlePlace({city:found.location,label:found.location,lat:found.locationLat,lon:found.locationLon,zoom:11});
      }
     }
-    const pending=await readPendingArticleLocation(owner,session);
-    if(live&&pending)setArticlePlace(pending);
+    const pending=await readPendingArticleLocation(owner,session,scope);await assertMessageScope(scope);
+    if(live){scopeRef.current=scope;setOwnerId(owner);if(pending)setArticlePlace(pending);}
    }catch(e){if(live)setError(e instanceof Error?e.message:"No se pudo abrir el editor.");}
    finally{if(live)setLoading(false);}
   })();
-  return()=>{live=false;};
+  return()=>{live=false;scopeRef.current=null;focusRevision.current++;};
  },[draft]);
  useFocusEffect(useCallback(()=>{
-  if(!ownerId)return;
-  let active=true;
+  const scope=scopeRef.current;if(!scope||scope.owner!==ownerId)return;
+  const generation=++focusRevision.current;let active=true;
   void(async()=>{
    try{
     const [freshDefault,pending]=await Promise.all([
-     readDefaultSaleLocation(ownerId),readPendingArticleLocation(ownerId,session)
+     readDefaultSaleLocation(ownerId,scope),readPendingArticleLocation(ownerId,session,scope)
     ]);
-    if(active){setDefaultPlace(freshDefault);if(pending)setArticlePlace(pending);}
+    await assertMessageScope(scope);
+    if(active&&scopeRef.current===scope&&focusRevision.current===generation){setDefaultPlace(freshDefault);if(pending)setArticlePlace(pending);}
    }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudo actualizar la ubicación de venta.");}
   })();
-  return()=>{active=false;};
+  return()=>{active=false;focusRevision.current++;};
  },[ownerId,session]));
  const selectedLocation=articlePlace??defaultPlace;
- function openLocation(){
+ async function openLocation(){
+  const scope=scopeRef.current;if(!scope||saving.current)return;
+  try{await captureMessageScope(scope);}catch{return;}
+  if(scopeRef.current!==scope)return;
   if(!defaultPlace){router.push({pathname:"/jshop/sale-location",params:{target:"default"}});return;}
   router.push({pathname:"/jshop/sale-location",params:{target:"article",session}});
  }
- function useDefaultLocation(){
-  if(!defaultPlace)return;
-  setArticlePlace(null);
-  if(ownerId)void clearPendingArticleLocation(ownerId,session).catch(()=>{});
+ async function useDefaultLocation(){
+  const scope=scopeRef.current;if(!scope||!defaultPlace||saving.current)return;
+  try{await clearPendingArticleLocation(ownerId,session,scope);if(scopeRef.current===scope)setArticlePlace(null);}catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo restaurar la ubicación.");}
  }
  async function pickPhotos(){
-  if(photos.length>=5)return;
-  try{
+  const scope=scopeRef.current;if(!scope||saving.current||photos.length>=5)return;
+  try{await captureMessageScope(scope);if(scopeRef.current!==scope)return;
    const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:["images"],allowsMultipleSelection:true,selectionLimit:5-photos.length,quality:0.8});
-   if(result.canceled)return;
+   await assertMessageScope(scope);if(result.canceled||scopeRef.current!==scope)return;
    setPhotos(current=>[...current,...result.assets.map(x=>x.uri)].slice(0,5));
   }catch(e){setError(e instanceof Error?e.message:"No se pudieron seleccionar las fotografías.");}
  }
  async function save(publish=false){
-  if(busy||!ownerId)return;
+  const scope=scopeRef.current;if(!scope||scope.owner!==ownerId||saving.current)return;
   if(draft&&!existing){setError("El borrador solicitado no está disponible.");return;}
   if(publish&&!defaultPlace){setError("Primero configurá tu ubicación de venta en JShop.");return;}
   if(publish&&!selectedLocation){setError("Elige la ubicación del artículo antes de publicarlo.");return;}
   if(title.trim().length<3){setError("Escribe un título de al menos 3 caracteres.");return;}
   const amount=parseJShopPrice(price);
   if(price.trim()&&amount===null){setError("Introduce un precio válido mayor que cero o déjalo vacío.");return;}
-  setBusy(true);setError("");
+  saving.current=true;setBusy(true);setError("");
   try{
+   await captureMessageScope(scope);if(scopeRef.current!==scope)return;
    const now=Date.now();
    const item:JShopDraft={
     id:existing?.id??("draft-"+now.toString(36)+"-"+Math.random().toString(36).slice(2,9)),
@@ -110,17 +116,19 @@ export default function JShopPublish(){
     photos,createdAt:existing?.createdAt??now,updatedAt:now
    };
    if(publish){
-    const publishedId=await publishJShopDraft(ownerId,item);
+    const publishedId=await publishJShopDraft(ownerId,item,scope);
+    await assertMessageScope(scope);if(scopeRef.current!==scope)return;
     if(existing)await deleteJShopDraft(ownerId,existing.id).catch(()=>{});
-    await clearPendingArticleLocation(ownerId,session).catch(()=>{});
-    router.replace({pathname:"/jshop/item/[id]",params:{id:publishedId}});
+    await clearPendingArticleLocation(ownerId,session,scope).catch(()=>{});
+    await assertMessageScope(scope);if(scopeRef.current===scope)router.replace({pathname:"/jshop/item/[id]",params:{id:publishedId}});
    }else{
-    await saveJShopDraft(ownerId,item);
-    await clearPendingArticleLocation(ownerId,session).catch(()=>{});
-    router.replace("/jshop/mine");
+    await assertMessageScope(scope);await saveJShopDraft(ownerId,item);
+    await assertMessageScope(scope);if(scopeRef.current!==scope)return;
+    await clearPendingArticleLocation(ownerId,session,scope).catch(()=>{});
+    await assertMessageScope(scope);if(scopeRef.current===scope)router.replace("/jshop/mine");
    }
   }catch(e){setError(e instanceof Error?e.message:"No se pudo completar la operación.");}
-  finally{setBusy(false);}
+  finally{saving.current=false;setBusy(false);}
  }
  const field=(label:string,value:string,onChangeText:(value:string)=>void,placeholder:string,options?:{multiline?:boolean;numeric?:boolean;maxLength?:number})=>
   <View style={{gap:7}}><Text style={{fontSize:14,color:t.ink,fontWeight:"700"}}>{label}</Text>
