@@ -63,9 +63,10 @@ test("Public profile closes its existing menu before opening the branded share p
 test("Published feed keeps share counts confirmed and avoids overlapping action sheets",()=>{
  const home=source("src/components/HomePublishedPosts.tsx");
  assert.ok(home.includes("setOptionsOpen(false);"));
- assert.ok(home.includes("setTimeout(()=>setShareOpen(true),350)"));
+ assert.ok(home.includes("shareTimer.current=setTimeout(()=>{void captureMessageScope(scope).then(()=>{if(live(scope))setShareOpen(true);}).catch(()=>{});},350)"));
+ assert.ok(home.includes("if(shareTimer.current)clearTimeout(shareTimer.current)"));
  assert.ok(home.includes("onShared={()=>void confirmNativeShare()}"));
- assert.ok(home.includes("await recordHomePostShare(post.id)"));
+ assert.ok(home.includes("await recordHomePostShare(post.id,scope)"));
  assert.ok(home.includes("setShares(n=>n+1)"));
  assert.ok(home.includes('Linking.createURL("post/"+post.id)'));
  const options=source("src/components/FeedPostOptions.tsx");
