@@ -35,7 +35,7 @@ export default function JShop(){
   const generation=++revision.current;scopeRef.current=null;setLoading(true);setDrafts([]);setFavorites([]);setSearchArea(null);setOwnerId("");setRemoteListings([]);
   void(async()=>{try{
    const scope=await captureMessageScope(),userId=scope.owner;
-   const [savedDrafts,savedFavorites,selectedPlace]=await Promise.all([readJShopDrafts(userId),loadJShopFavoriteIds(userId),readJShopLocation(userId,scope)]);
+   const [savedDrafts,savedFavorites,selectedPlace]=await Promise.all([readJShopDrafts(userId,scope),loadJShopFavoriteIds(userId),readJShopLocation(userId,scope)]);
    await assertMessageScope(scope);if(revision.current!==generation)return;
    const listed=selectedPlace?await loadJShopListingsNear(selectedPlace):await loadJShopListings();
    await assertMessageScope(scope);if(revision.current!==generation)return;
