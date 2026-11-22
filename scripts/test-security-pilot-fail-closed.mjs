@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
@@ -7,6 +8,10 @@ const original = Object.fromEntries(
   ["JOBEEN_SECURITY_PILOT", "EXPO_PUBLIC_JOBEEN_SECURITY_PILOT", "EXPO_PUBLIC_SUPABASE_URL", "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY"]
     .map((key) => [key, process.env[key]]),
 );
+const eas = JSON.parse(readFileSync(new URL("../eas.json", import.meta.url), "utf8"));
+assert.equal(eas.build["security-pilot"]?.environment, "security-pilot", "Pilot must not inherit shared EAS development/preview/production variables");
+assert.equal(eas.build["security-pilot"]?.android?.buildType, "apk");
+assert.equal(eas.build["security-pilot"]?.channel, "security-pilot");
 const base = { name: "Jobin", android: { package: "com.thekyngmotorcycles.jobin" }, extra: {} };
 const isolated = "https://abcdefghijklmnopqrst.supabase.co";
 const existing = "https://nwiimdmtddjquwxtjxmw.supabase.co";
