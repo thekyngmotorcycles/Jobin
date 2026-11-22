@@ -213,4 +213,47 @@ select pg_temp.combined_assert(not exists(select 1 from storage.objects where na
 select pg_temp.combined_deny($q$insert into public.jobeen_feed_posts(author_id,body,kind) values(auth.uid(),'inactive post','text')$q$);
 reset role;
 select pg_temp.combined_assert(not has_table_privilege('anon','public.jshop_listings','SELECT'),'anonymous listing table access withdrawn');
+
+-- Recovery authority: synthetic session catalog only; no hosted data.
+create table if not exists auth.sessions(id uuid primary key,user_id uuid not null references auth.users(id),not_after timestamptz);
+create or replace function auth.jwt() returns jsonb language sql stable as $jwt$
+ select coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb,'{}'::jsonb)
+$jwt$;
+grant execute on function auth.jwt() to authenticated,anon;
+\ir ../supabase/security-review/legacy-recovery-authorization.sql
+-- A was deactivated in the preceding test. Use active C as the verified owner.
+insert into auth.sessions(id,user_id) values
+ ('e3333333-3333-4333-8333-333333333333','c3333333-3333-4333-8333-333333333333'),
+ ('e2222222-2222-4222-8222-222222222222','b2222222-2222-4222-8222-222222222222'),
+ ('e4444444-4444-4444-8444-444444444444','c3333333-3333-4333-8333-333333333333');
+insert into jobeen_private.legacy_recovery_grants(id,owner_id,session_id,category,payload_sha256,proof_reference,reauthenticated_at,consented_at,expires_at)
+values('d3333333-3333-4333-8333-333333333333','c3333333-3333-4333-8333-333333333333','e3333333-3333-4333-8333-333333333333',
+ 'post-drafts',repeat('a',64),gen_random_uuid(),now()-interval '30 seconds',now()-interval '10 seconds',now()+interval '2 minutes');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','c3333333-3333-4333-8333-333333333333',true);
+select set_config('request.jwt.claims','{"session_id":"e3333333-3333-4333-8333-333333333333","is_anonymous":false}',true);
+select pg_temp.combined_assert(public.jobin_legacy_recovery_authorized('d3333333-3333-4333-8333-333333333333','post-drafts',repeat('a',64)),'exact owner session category and payload approved');
+select pg_temp.combined_assert(not public.jobin_legacy_recovery_authorized('d3333333-3333-4333-8333-333333333333','flash-draft',repeat('a',64)),'category substitution denied');
+select pg_temp.combined_assert(not public.jobin_legacy_recovery_authorized('d3333333-3333-4333-8333-333333333333','post-drafts',repeat('b',64)),'payload substitution denied');
+select pg_temp.combined_deny($q$select * from jobeen_private.legacy_recovery_grants$q$);
+select pg_temp.combined_deny($q$update jobeen_private.legacy_recovery_grants set revoked_at=null$q$);
+select set_config('request.jwt.claims','{"session_id":"e4444444-4444-4444-8444-444444444444"}',true);
+select pg_temp.combined_assert(not public.jobin_legacy_recovery_authorized('d3333333-3333-4333-8333-333333333333','post-drafts',repeat('a',64)),'another session of same owner denied');
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select set_config('request.jwt.claims','{"session_id":"e2222222-2222-4222-8222-222222222222"}',true);
+select pg_temp.combined_assert(not public.jobin_legacy_recovery_authorized('d3333333-3333-4333-8333-333333333333','post-drafts',repeat('a',64)),'other owner denied');
+reset role;
+update jobeen_private.legacy_recovery_grants set revoked_at=now() where id='d3333333-3333-4333-8333-333333333333';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','c3333333-3333-4333-8333-333333333333',true);
+select set_config('request.jwt.claims','{"session_id":"e3333333-3333-4333-8333-333333333333"}',true);
+select pg_temp.combined_assert(not public.jobin_legacy_recovery_authorized('d3333333-3333-4333-8333-333333333333','post-drafts',repeat('a',64)),'revoked grant denied');
+reset role;
+update jobeen_private.legacy_recovery_grants set revoked_at=null where id='d3333333-3333-4333-8333-333333333333';
+delete from auth.sessions where id='e3333333-3333-4333-8333-333333333333';
+set local role authenticated;
+select pg_temp.combined_assert(not public.jobin_legacy_recovery_authorized('d3333333-3333-4333-8333-333333333333','post-drafts',repeat('a',64)),'deleted session denied even with old JWT');
+reset role;
+select pg_temp.combined_assert(not has_function_privilege('anon','public.jobin_legacy_recovery_authorized(uuid,text,text)','EXECUTE'),'anonymous recovery denied');
+
 rollback;
