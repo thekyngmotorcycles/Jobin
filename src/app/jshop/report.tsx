@@ -1,10 +1,10 @@
 import {Ionicons} from "@expo/vector-icons";
-import {router,Stack,useLocalSearchParams} from "expo-router";
-import {useState} from "react";
-import {ActivityIndicator,Pressable,Text,TextInput,View} from "react-native";
+import {router,Stack,useFocusEffect,useLocalSearchParams} from "expo-router";
+import {useCallback,useRef,useState} from "react";
+import {Pressable,Text,TextInput,View} from "react-native";
 import {JShopButton,JShopPage,JShopTitle} from "../../components/JShopUI";
-import {jshopAccountId} from "../../lib/jshop-local";
-import {reportJShopListing} from "../../lib/jshop-api";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../../lib/message-session";
+import {loadJShopListing,reportJShopListing} from "../../lib/jshop-api";
 import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
 
@@ -15,15 +15,31 @@ export default function ReportJShopItem(){
  const [reason,setReason]=useState<(typeof REASONS)[number]|"">("");
  const [details,setDetails]=useState("");
  const [busy,setBusy]=useState(false);const [error,setError]=useState("");const [sent,setSent]=useState(false);
+ const originRef=useRef<{scope:MessageScope;listing:string}|null>(null),sending=useRef(false);
+ const [ready,setReady]=useState(false);
+ useFocusEffect(useCallback(()=>{
+  let live=true;originRef.current=null;setReady(false);setReason("");setDetails("");setError("");setSent(false);setBusy(false);
+  void(async()=>{try{
+   if(!listing)throw Error("Artículo no disponible.");
+   const scope=await captureMessageScope(),item=await loadJShopListing(listing,scope);
+   await assertMessageScope(scope);
+   if(!item||item.sellerId===scope.owner||item.status!=="published")throw Error("Artículo no disponible para denunciar.");
+   if(live){originRef.current={scope,listing};setReady(true);}
+  }catch(e){if(live)setError(e instanceof Error?e.message:"No se pudo verificar el artículo.");}})();
+  return()=>{live=false;originRef.current=null;setReady(false);setReason("");setDetails("");};
+ },[listing]));
  async function send(){
-  if(!listing||!reason||details.trim().length<10){setError("Selecciona un motivo y explicá qué ocurrió (mínimo 10 caracteres).");return;}
-  setBusy(true);setError("");
+  const origin=originRef.current;
+  if(!origin||origin.listing!==listing||sending.current)return;
+  if(!reason||details.trim().length<10){setError("Selecciona un motivo y explicá qué ocurrió (mínimo 10 caracteres).");return;}
+  sending.current=true;setBusy(true);setError("");
   try{
-   const user=await jshopAccountId();
-   await reportJShopListing(listing,user,reason,details);
-   setSent(true);
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo enviar la denuncia.");}
-  finally{setBusy(false);}
+   await captureMessageScope(origin.scope);if(originRef.current!==origin)return;
+   await reportJShopListing(origin.listing,origin.scope.owner,reason,details,origin.scope);
+   await assertMessageScope(origin.scope);
+   if(originRef.current===origin){setDetails("");setSent(true);}
+  }catch(e){if(originRef.current===origin)setError(e instanceof Error?e.message:"No se pudo enviar la denuncia.");}
+  finally{sending.current=false;if(originRef.current===origin)setBusy(false);}
  }
  return <>
   <Stack.Screen options={{title:"Denunciar artículo"}}/>
@@ -48,7 +64,7 @@ export default function ReportJShopItem(){
      style={{borderWidth:1,borderColor:t.line,backgroundColor:t.surface,borderRadius:17,minHeight:140,padding:13,color:t.ink}}/>
     <Text style={{fontSize:12,color:t.ink2}}>{details.length}/1000 caracteres</Text>
     {!!error&&<Text accessibilityLiveRegion="polite" style={{color:t.ink,fontWeight:"700"}}>{error}</Text>}
-    <JShopButton title={busy?"Enviando...":"Enviar denuncia"} disabled={busy} onPress={()=>void send()}/>
+    <JShopButton title={busy?"Enviando...":"Enviar denuncia"} disabled={busy||!ready} onPress={()=>void send()}/>
     <JShopButton title="Cancelar" secondary onPress={()=>router.back()}/>
    </>}
   </JShopPage>
