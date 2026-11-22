@@ -88,4 +88,52 @@ select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222'
 select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_public_business_cards where business_handle='legacy_company'),'blocked business cannot be read');
 select set_config('request.jwt.claim.sub','',true);
 select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_public_business_cards),'missing JWT identity denied even with authenticated role');
+reset role;
+\ir ../supabase/security-review/saved-jcard-visibility.sql
+select pg_temp.privacy_assert(not has_function_privilege('anon','public.jobeen_saved_jcard_previews()','EXECUTE'),'anonymous saved preview denied');
+select pg_temp.privacy_assert(not has_table_privilege('authenticated','public.jobeen_saved_jcards','TRUNCATE'),'bookmark truncate denied');
+insert into auth.users(id,raw_user_meta_data) values('d4444444-4444-4444-8444-444444444444','{"display_name":"No business"}');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+update public.jcard_visibility set business_enabled=true where owner_id=auth.uid();
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+insert into public.jobeen_saved_jcards(saver_id,target_id,card_side) values
+ (auth.uid(),'a1111111-1111-4111-8111-111111111111','personal'),
+ (auth.uid(),'a1111111-1111-4111-8111-111111111111','business');
+select pg_temp.privacy_assert((select count(*)=2 and bool_and(available) from public.jobeen_saved_jcard_previews()),'B can see both saved public faces');
+select pg_temp.privacy_assert((select title='Public HVAC' from public.jobeen_saved_jcard_previews() where card_side='business'),'business preview uses current name');
+select pg_temp.privacy_assert(not (select to_jsonb(v) ?| array['email','phone','location','contact'] from public.jobeen_saved_jcard_previews() v limit 1),'preview has no private fields');
+do $assert$
+begin
+ begin
+  insert into public.jobeen_saved_jcards(saver_id,target_id,card_side)
+   values(auth.uid(),'c3333333-3333-4333-8333-333333333333','personal');
+  raise exception 'blocked personal bookmark accepted';
+ exception when insufficient_privilege then null;
+ end;
+ begin
+  insert into public.jobeen_saved_jcards(saver_id,target_id,card_side)
+   values(auth.uid(),'d4444444-4444-4444-8444-444444444444','business');
+  raise exception 'nonexistent business bookmark accepted';
+ exception when insufficient_privilege then null;
+ end;
+end
+$assert$;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+update public.jcard_visibility set personal_enabled=false where owner_id=auth.uid();
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.privacy_assert((select not available and title='JCard no disponible' from public.jobeen_saved_jcard_previews() where card_side='personal'),'revoked personal face no longer exposes title');
+select pg_temp.privacy_assert((select available from public.jobeen_saved_jcard_previews() where card_side='business'),'other visible face unaffected');
+reset role;
+insert into public.blocks(blocker_id,blocked_id) values('a1111111-1111-4111-8111-111111111111','b2222222-2222-4222-8222-222222222222');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.privacy_assert((select count(*)=2 and bool_and(not available and title='JCard no disponible') from public.jobeen_saved_jcard_previews()),'block invalidates both previews without deleting references');
+select set_config('request.jwt.claim.sub','c3333333-3333-4333-8333-333333333333',true);
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_saved_jcard_previews()),'C cannot see B collection');
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+delete from public.jobeen_saved_jcards where card_side='personal';
+select pg_temp.privacy_assert((select count(*)=1 from public.jobeen_saved_jcard_previews()),'blocked reference can still be removed');
+select set_config('request.jwt.claim.sub','',true);
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_saved_jcard_previews()),'no identity cannot read previews');
 rollback;
