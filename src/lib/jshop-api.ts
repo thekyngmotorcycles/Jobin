@@ -3,6 +3,7 @@ import {requireSupabase} from "./supabase";
 import type {JShopDraft,JShopListing} from "./jshop-model";
 import type {JShopPlace} from "./jshop-location-core";
 import {readDefaultSaleLocation} from "./jshop-selling-location";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "./message-session";
 import {insideJShopRadius} from "./jshop-geo";
 
 const BUCKET="jshop-photos";
@@ -97,7 +98,9 @@ export async function deleteJShopListing(ownerId:string,item:JShopListing){
  if(!data)throw Error("No se pudo eliminar el anuncio.");
  if(item.photoPaths?.length)void client().storage.from(BUCKET).remove(item.photoPaths).catch(()=>{});
 }
-export async function publishJShopDraft(ownerId:string,draft:JShopDraft):Promise<string>{
+export async function publishJShopDraft(ownerId:string,draft:JShopDraft,expectedScope:MessageScope):Promise<string>{
+ const scope=await captureMessageScope(expectedScope);
+ if(scope.owner!==ownerId)throw Error("La cuenta cambió.");
  if(draft.ownerId!==ownerId)throw Error("Este borrador pertenece a otra cuenta.");
  if(draft.title.trim().length<3||!draft.description.trim()||draft.price===null||draft.price<=0||!draft.location.trim())
   throw Error("Completa título, descripción, precio y ubicación antes de publicar.");
@@ -106,31 +109,36 @@ export async function publishJShopDraft(ownerId:string,draft:JShopDraft):Promise
   ||!Number.isFinite(draft.locationLat)||!Number.isFinite(draft.locationLon)
   ||Math.abs(draft.locationLat)>90||Math.abs(draft.locationLon)>180)
   throw Error("Elige la ubicación del artículo en el mapa antes de publicar.");
- const saleDefault=await readDefaultSaleLocation(ownerId);
+ const saleDefault=await readDefaultSaleLocation(ownerId,scope);
  if(!saleDefault)throw Error("Configurá primero tu ubicación de venta en JShop.");
- const locationPoint={lat:draft.locationLat,lon:draft.locationLon};
- const db=client();const uploaded:string[]=[];
+ const locationPoint={lat:Number(draft.locationLat.toFixed(2)),lon:Number(draft.locationLon.toFixed(2))};
+ const db=client();const uploaded:string[]=[];let insertStarted=false;
  try{
   for(const [i,uri] of draft.photos.entries()){
+   await assertMessageScope(scope);
    const normalized=await ImageManipulator.manipulateAsync(uri,[{resize:{width:1400}}],{compress:0.76,format:ImageManipulator.SaveFormat.JPEG,base64:true});
    if(!normalized.base64)throw Error("No se pudo leer una fotografía.");
    const decoded=atob(normalized.base64);const bytes=new Uint8Array(decoded.length);
    for(let n=0;n<decoded.length;n++)bytes[n]=decoded.charCodeAt(n);
    if(bytes.byteLength>6291456)throw Error("Una fotografía supera 6 MB.");
    const path=ownerId+"/"+Date.now()+"-"+i+"-"+Math.random().toString(36).slice(2,12)+".jpg";
+   await assertMessageScope(scope);
    const {error}=await db.storage.from(BUCKET).upload(path,bytes,{contentType:"image/jpeg",upsert:false});
    if(error)throw error;
-   uploaded.push(path);
+   uploaded.push(path);await assertMessageScope(scope);
   }
+  await assertMessageScope(scope);insertStarted=true;
   const {data,error}=await db.from("jshop_listings" as never).insert({
    seller_id:ownerId,title:draft.title.trim(),description:draft.description.trim(),
    category:draft.category,item_condition:draft.condition,price:draft.price,currency:draft.currency,
    location:draft.location.trim(),location_lat:locationPoint.lat,location_lon:locationPoint.lon,photo_paths:uploaded,status:"published"
   } as never).select("id").single();
   if(error)throw error;
+  await assertMessageScope(scope);
   return (data as unknown as {id:string}).id;
  }catch(e){
-  if(uploaded.length)await db.storage.from(BUCKET).remove(uploaded).catch(()=>{});
+  // After an insert was attempted, do not delete possibly committed media.
+  if(!insertStarted&&uploaded.length){try{await captureMessageScope(scope);await db.storage.from(BUCKET).remove(uploaded);}catch{/* retain for owner reconciliation */}}
   throw e;
  }
 }
