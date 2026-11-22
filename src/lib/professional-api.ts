@@ -62,9 +62,13 @@ export async function loadWorkspace(expectedScope?:MessageScope):Promise<Profess
  const primary=professions.find(p=>p.primary_profession);
  return {...result,professions,card:primary?{...result.card,role:primary.label}:result.card};
 }
-export async function loadPublicCard(id:string):Promise<RealCard> {
+export async function loadPublicCard(id:string,expectedScope?:MessageScope):Promise<RealCard> {
+ const scope=await captureMessageScope(expectedScope);
  const {data,error}=await requireSupabase().rpc("jobin_jcard_data",{target:id});
- return decode<RealCard>(data,error);
+ const result=decode<RealCard>(data,error);
+ await assertMessageScope(scope);
+ if(result.id!==id)throw Error("El perfil no está disponible.");
+ return result;
 }
 export async function loadOrganization(id?:string):Promise<OrganizationData> {
  const {data,error}=await requireSupabase().rpc("jobin_organization_data",id?{target:id}:{});
