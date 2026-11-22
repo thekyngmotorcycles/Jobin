@@ -336,7 +336,18 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  },[ownerId,publicScope,publicVisibility?.personal_enabled]));
  const [appearance,setAppearance]=useState<JCardPremiumBackgroundId>("original");
  const [businessAppearance,setBusinessAppearance]=useState<JCardPremiumBackgroundId>("original");
- useFocusEffect(useCallback(()=>{let live=true;if(ownerId)void Promise.all([readJCardAppearance(ownerId),readJCardAppearance(ownerId,"business")]).then(([personal,business])=>{if(live){setAppearance(personal);setBusinessAppearance(business);}}).catch(()=>{});return()=>{live=false;};},[ownerId]));
+ useFocusEffect(useCallback(()=>{
+  let live=true;setAppearance("original");setBusinessAppearance("original");
+  if(!ownerId||!showOwnerActions)return()=>{live=false;};
+  void(async()=>{try{
+   const scope=await captureMessageScope(publicScope);
+   if(scope.owner!==ownerId||!live)return;
+   const [personal,business]=await Promise.all([readJCardAppearance(ownerId,"personal",scope),readJCardAppearance(ownerId,"business",scope)]);
+   await assertMessageScope(scope);
+   if(live){setAppearance(personal);setBusinessAppearance(business);}
+  }catch{/* Default appearance until verified. */}})();
+  return()=>{live=false;setAppearance("original");setBusinessAppearance("original");};
+ },[ownerId,showOwnerActions,publicScope]));
  const [loadedVisibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
  const visibility=publicVisibility??loadedVisibility;
  useFocusEffect(useCallback(()=>{let live=true;if(ownerId&&!publicVisibility)void readJCardVisibility(ownerId).then(v=>{if(live)setVisibility(v);}).catch(()=>{});return()=>{live=false;};},[ownerId,publicVisibility]));
@@ -348,18 +359,21 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const [hintVisible,setHintVisible]=useState(false);
  const activeBusiness=!visibility.personal_enabled&&visibility.business_enabled;
  useEffect(()=>{onActiveSideChange?.(canFlip?(back?"business":"personal"):(activeBusiness?"business":"personal"));},[back,canFlip,activeBusiness,onActiveSideChange]);
- useEffect(()=>{
-  if(!canFlip||!ownerId||reducedMotion){setHintVisible(false);return;}
+ useFocusEffect(useCallback(()=>{
+  setHintVisible(false);
+  if(!canFlip||!ownerId||reducedMotion)return;
   let active=true;
-  const key="jobeen.jcard.flip.ghost.v2."+ownerId;
-  void AsyncStorage.getItem(key).then(value=>{
-   if(active&&!value){
-    setHintVisible(true);
-    void AsyncStorage.setItem(key,"1").catch(()=>{});
-   }
-  }).catch(()=>{});
-  return()=>{active=false;};
- },[ownerId,canFlip,reducedMotion]);
+  void(async()=>{try{
+   const scope=await captureMessageScope(publicScope);
+   // The gesture hint belongs to the viewer, never the visited profile.
+   const key="jobeen.jcard.flip.ghost.v3."+scope.owner;
+   const value=await AsyncStorage.getItem(key);
+   await assertMessageScope(scope);if(!active||value)return;
+   await AsyncStorage.setItem(key,"1");await assertMessageScope(scope);
+   if(active)setHintVisible(true);
+  }catch{/* Optional hint; fail closed. */}})();
+  return()=>{active=false;setHintVisible(false);};
+ },[ownerId,canFlip,reducedMotion,publicScope]));
  useEffect(()=>{
   if(!hintVisible)return;
   const timeout=setTimeout(()=>setHintVisible(false),1750);
