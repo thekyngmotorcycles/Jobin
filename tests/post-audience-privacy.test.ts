@@ -51,7 +51,14 @@ test("Private photographs cannot be delivered with public storage URLs",()=>{
  assert.ok(feed.includes('signedUrls.get(path)'));
  assert.ok(feed.includes('photo_bucket:bucket'));
  assert.ok(feed.includes('db.storage.from(bucket).remove(uploaded)'));
- assert.ok(feed.includes('stored.photo_bucket===PRIVATE_POSTS_BUCKET?PRIVATE_POSTS_BUCKET:POSTS_BUCKET'));
+ const removal=feed.slice(feed.indexOf("export async function deleteHomePost"),feed.indexOf("export type HomePostComment"));
+ assert.ok(removal.includes('if(removed.photo_bucket===POSTS_BUCKET)'));
+ assert.ok(removal.includes('p.startsWith(owner+"/")'));
+ assert.ok(removal.includes('.overlaps("photo_paths",candidates)'));
+ assert.ok(removal.includes('candidates.filter(path=>!inUse.has(path))'));
+ assert.ok(removal.includes('db.storage.from(POSTS_BUCKET).remove(unused)'));
+ assert.ok(!removal.includes('getPublicUrl'));
+ assert.ok(!removal.includes('db.storage.from(PRIVATE_POSTS_BUCKET).remove'));
 });
 
 test("Existing posts retain public audience and published live media is not mislabeled private",()=>{
