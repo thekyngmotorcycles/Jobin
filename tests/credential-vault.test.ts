@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {createCredentialVault,type NativeSecretBackend} from "../src/lib/credential-vault.ts";
+import {createCredentialVault,VAULT_PART_BYTES,VAULT_MAX_PARTS,type NativeSecretBackend} from "../src/lib/credential-vault.ts";
 const key="sb-test-project-auth-token";
 function fixture(){
  const values=new Map<string,string>(),calls:string[]=[];
@@ -36,5 +36,56 @@ test("unavailable or failing native store fails closed and redacts backend error
 test("queued sign-out removes credentials after earlier writes",async()=>{
  const f=fixture(),vault=createCredentialVault(f.backend,key);
  await Promise.all([vault.setItem(key,"fixture"),vault.removeItem(key)]);
+ assert.equal(await vault.getItem(key),null);
+});
+
+test("large Unicode session values fit bounded native entries and survive adapter restart",async()=>{
+ const f=fixture(),vault=createCredentialVault(f.backend,key);
+ const large=JSON.stringify({token:"fixture",name:"á漢🙂".repeat(1400)});
+ await vault.setItem(key,large);
+ assert.ok(f.values.size>2);
+ for(const value of f.values.values())assert.ok(Buffer.byteLength(value,"utf8")<=VAULT_PART_BYTES);
+ const restarted=createCredentialVault(f.backend,key);
+ assert.equal(await restarted.getItem(key),large);
+ await restarted.setItem(key,"smaller");
+ assert.equal(await restarted.getItem(key),"smaller");
+ assert.equal(f.values.size,2,"old chunks must be removed on shrink");
+ await restarted.removeItem(key);assert.equal(f.values.size,0);
+});
+test("interrupted credential replacement never returns an older or mixed session",async()=>{
+ const f=fixture(),initial=createCredentialVault(f.backend,key);
+ await initial.setItem(key,"old-fixture");
+ const failing:NativeSecretBackend={...f.backend,async setItemAsync(name,value){
+  if(name.endsWith(".part.1"))throw Error("fixture failure");
+  await f.backend.setItemAsync(name,value);
+ }};
+ await assert.rejects(createCredentialVault(failing,key).setItem(key,"new".repeat(1000)),/Almacenamiento seguro/);
+ const restarted=createCredentialVault(f.backend,key);
+ await assert.rejects(restarted.getItem(key),/Almacenamiento seguro/);
+ await restarted.removeItem(key);
+ assert.equal(await restarted.getItem(key),null);assert.equal(f.values.size,0);
+});
+test("interrupted sign-out is unreadable after restart and can be retried safely",async()=>{
+ const f=fixture(),vault=createCredentialVault(f.backend,key);
+ await vault.setItem(key,"fixture".repeat(900));
+ const failing:NativeSecretBackend={...f.backend,async deleteItemAsync(name){
+  if(name.endsWith(".part.1"))throw Error("fixture failure");
+  await f.backend.deleteItemAsync(name);
+ }};
+ await assert.rejects(createCredentialVault(failing,key).removeItem(key),/Almacenamiento seguro/);
+ const restarted=createCredentialVault(f.backend,key);
+ await assert.rejects(restarted.getItem(key),/Almacenamiento seguro/);
+ await restarted.removeItem(key);
+ assert.equal(await restarted.getItem(key),null);assert.equal(f.values.size,0);
+});
+test("corrupt or oversized values cannot silently load or overwrite credentials",async()=>{
+ const f=fixture(),vault=createCredentialVault(f.backend,key);
+ await vault.setItem(key,"valid-fixture");
+ await assert.rejects(vault.setItem(key,"x".repeat(VAULT_PART_BYTES*VAULT_MAX_PARTS+1)),/Almacenamiento seguro/);
+ assert.equal(await vault.getItem(key),"valid-fixture");
+ const part=[...f.values.keys()].find(name=>name.endsWith(".part.0"))!;
+ f.values.delete(part);
+ await assert.rejects(vault.getItem(key),/Almacenamiento seguro/);
+ await vault.removeItem(key);
  assert.equal(await vault.getItem(key),null);
 });
