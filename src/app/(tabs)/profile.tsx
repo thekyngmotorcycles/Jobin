@@ -7,10 +7,8 @@ import {cvRequests,respondCV,revokeCV,type CVRequest} from "../../lib/cv-access"
 import {assertMessageScope,captureMessageScope,type MessageScope} from "../../lib/message-session";
 import {identityVerified} from "../../lib/identity-status";
 import {pickBusinessGalleryPhoto,uploadBusinessPhoto} from "../../lib/business-media";
-import {cloudOwner} from "../../lib/jcard-cloud";
 import {assertAccountOwner} from "../../lib/account-scope";
 import {EMPTY_BUSINESS_CARD,readScopedBusinessCard,writeScopedBusinessCard,clearBusinessCardMemory} from "../../lib/business-card-cache";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { employmentMonths,experienceLabel } from "../../lib/employment";
 import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness,readBusinessRating,readBusinessExcellence } from "../../lib/jcard-cloud";
 import { useTabClearance } from "../../theme/navigation";
@@ -153,7 +151,12 @@ export default function Profile() {
   const [addOpen, setAddOpen] = useState(false);
   const [editingId,setEditingId] = useState<string|null>(null);
   const [formError,setFormError] = useState("");
+  const historyScope=useRef<MessageScope|null>(null),historyRevision=useRef(0),historyFormScope=useRef<MessageScope|null>(null),historySaving=useRef(false);
+  const [historyReady,setHistoryReady]=useState(false),[historyBusy,setHistoryBusy]=useState(false),[historyRetry,setHistoryRetry]=useState(0);
   function openEmployment(entry?:EmploymentEntry){
+    const scope=historyScope.current;
+    if(!historyReady||!scope||scope.owner!==ownerId||historySaving.current|| (entry&&!history.some(row=>row.id===entry.id)))return;
+    historyFormScope.current=scope;
     setEditingId(entry?.id??null);
     setDraft(entry?{company:entry.company,role:entry.role,from:String(entry.from),to:entry.to===null?"":String(entry.to),profession:(entry.professions??[]).join(", "),fromMonth:String(entry.fromMonth??1),toMonth:String(entry.toMonth??12),address:entry.address??"",contact:entry.contact??""}:{company:"",role:"",from:"",to:"",profession:"",fromMonth:"1",toMonth:"12",address:"",contact:""});
     setFormError("");setShowEmploymentProfessionPicker(false);setAddOpen(true);
@@ -165,24 +168,24 @@ export default function Profile() {
   const [historyState,setHistoryState]=useState<{owner:string;rows:EmploymentEntry[]}|null>(null);
   const history=historyState&&historyState.owner===ownerId?historyState.rows:[];
   useFocusEffect(useCallback(()=>{
-   let active=true;
+   let active=true;const generation=++historyRevision.current;
+   const valid=()=>active&&historyRevision.current===generation;
+   historyScope.current=null;historyFormScope.current=null;
+   setHistoryState(null);setHistoryReady(false);setAddOpen(false);setEditingId(null);
    if(!ownerId)return()=>{active=false;};
    const owner=ownerId;
-   void (async()=>{
+   void(async()=>{
     try{
-     const rows=await readCloudHistory(owner);
-     if(!active||(await cloudOwner())!==owner||!active)return;
-     const key="jobeen.professional.history.v2."+owner;
-     const raw=await AsyncStorage.getItem(key);
-     const local:EmploymentEntry[]=raw?JSON.parse(raw):[];
-     if(!active||await cloudOwner()!==owner)return;
-     const merged=rows.map(row=>{const saved=local.find(entry=>entry.id===row.id);return {...row,address:saved?.address??row.address,contact:saved?.contact??row.contact};});
-     setHistoryState({owner,rows:merged});
-     await AsyncStorage.setItem(key,JSON.stringify(merged));
-    }catch{if(active)setNotice("No se pudo recuperar el historial de esta cuenta.");}
+     const scope=await captureMessageScope();
+     if(scope.owner!==owner||!valid())return;
+     const rows=await readCloudHistory(owner,scope);
+     await assertMessageScope(scope);
+     if(!valid())return;
+     historyScope.current=scope;setHistoryState({owner,rows});setHistoryReady(true);
+    }catch{if(valid())setNotice("No se pudo recuperar el historial privado. Vuelve a intentarlo.");}
    })();
-   return()=>{active=false;};
-  },[ownerId]));
+   return()=>{active=false;historyRevision.current++;historyScope.current=null;historyFormScope.current=null;};
+  },[ownerId,historyRetry]));
   useEffect(()=>{setHistoryState(null);setAddOpen(false);setEditingId(null);setCvShareOpen(false);setBusinessOpen(false);setBusinessRating({rating:null,count:0});setBusinessExcellence({});setEmployerLink(null);setVerifiedIdentity(false);setIncomingCV([]);},[ownerId]);
 
  useFocusEffect(useCallback(()=>{
@@ -253,8 +256,8 @@ export default function Profile() {
   }
 
   async function add() {
-    const owner=ownerId;
-    if(!owner||await cloudOwner().catch(()=>null)!==owner){setFormError("La sesión cambió. Vuelve a abrir el perfil.");return;}
+    const scope=historyFormScope.current,owner=scope?.owner;
+    if(!scope||!owner||owner!==ownerId||historyScope.current!==scope||!historyReady||historySaving.current)return;
     const from = Number(draft.from), to = draft.to ? Number(draft.to) : null;
     const currentYear=new Date().getFullYear();
     const fromMonth=Number(draft.fromMonth),toMonth=Number(draft.toMonth);
@@ -267,13 +270,20 @@ export default function Profile() {
     }
     Keyboard.dismiss();
     const updated:EmploymentEntry={id:editingId??Date.now()+"",company:draft.company.trim(),role:selectedEmploymentProfession.label,professions:[selectedEmploymentProfession.code],fromMonth,toMonth,from,to,address:draft.address.trim(),contact:draft.contact.trim(),status:"pending",verifiedBy:null};
+    historySaving.current=true;setHistoryBusy(true);
+    const valid=()=>historyScope.current===scope&&historyFormScope.current===scope;
     try{
-     await writeCloudHistory(updated,owner);
-     if(await cloudOwner()!==owner)return;
-     const rows=editingId?history.map(entry=>entry.id===editingId?updated:entry):[...history,updated];
-     await AsyncStorage.setItem("jobeen.professional.history.v2."+owner,JSON.stringify(rows));
+     await captureMessageScope(scope);
+     if(!valid())return;
+     await writeCloudHistory(updated,owner,scope);
+     await assertMessageScope(scope);
+     if(!valid())return;
+     const rows=await readCloudHistory(owner,scope);
+     if(!valid())return;
      setHistoryState({owner,rows});
-    }catch(e){setFormError(e instanceof Error?e.message:"No se pudo guardar la experiencia.");return;}
+    }catch(e){if(valid())setFormError(e instanceof Error?e.message:"No se pudo guardar la experiencia.");return;}
+    finally{historySaving.current=false;setHistoryBusy(false);}
+    historyFormScope.current=null;
     setDraft({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address: "", contact: "" });
     setAddOpen(false);setEditingId(null);setFormError("");setShowEmploymentProfessionPicker(false);
     setNotice("Experiencia guardada. Cualquier cambio requiere una nueva verificación de la empresa.");
@@ -400,8 +410,8 @@ export default function Profile() {
         {mode === "cv" && (
           <View style={{ gap: 14 }}>
             <Text style={s.h2}>Historial profesional</Text>
-            <Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}. Agrega cada empresa, el cargo y los años trabajados. Los datos se guardan en este dispositivo; la verificación por la empresa aún no está conectada.</Text>
-            {history.length===0&&<Text style={s.muted}>Todavía no agregaste empleos. Pulsa Agregar para comenzar.</Text>}
+            <Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}. Agrega cada empresa, el cargo y los años trabajados. El historial y los contactos privados se guardan en tu cuenta. La verificación por la empresa aún no está conectada.</Text>
+            {!historyReady?<Button secondary title="Volver a cargar historial" onPress={()=>setHistoryRetry(v=>v+1)}/>:history.length===0&&<Text style={s.muted}>Todavía no agregaste empleos. Pulsa Agregar para comenzar.</Text>}
             {history.map(entry => (
               <View key={entry.id} style={[s.panel, { flexDirection: "row", gap: 12, alignItems: "center" }]}>
                 <View style={{ flex: 1, gap: 4 }}>
@@ -418,7 +428,7 @@ export default function Profile() {
             <View style={{gap:8}}><Button secondary title="Actualizar solicitudes de CV" onPress={()=>void refreshCV()}/>{incomingCV.filter(req=>req.owner_id===ownerId).map(req=><View key={req.id} style={{gap:6,padding:10,borderWidth:1,borderColor:colors.line,borderRadius:10}}><Text style={s.text}>Solicitud {req.requester_id.slice(0,8)} · {req.status}</Text>{req.status==="pending"&&<View style={s.row}><Button title="Autorizar" onPress={()=>void answerCV(req.id,true)}/><Button secondary title="Rechazar" onPress={()=>void answerCV(req.id,false)}/></View>}{req.status==="approved"&&<Button secondary title="Revocar acceso" onPress={()=>void cancelCV(req.id)}/>}</View>)}</View>
             <View style={s.row}>
               <Button secondary title="Compartir CV" onPress={() => void shareCV()} />
-              <Button title="Agregar" onPress={() => openEmployment()} />
+              {historyReady&&<Button title="Agregar" onPress={() => openEmployment()} />}
             </View>
           </View>
         )}
@@ -449,7 +459,7 @@ export default function Profile() {
         </View>
       </BottomSheet>
 
-      <BottomSheet visible={addOpen} onClose={() => setAddOpen(false)} title={editingId?"Editar experiencia":"Agregar experiencia"}>
+      <BottomSheet visible={addOpen&&historyReady} onClose={() => {if(!historySaving.current){historyFormScope.current=null;setAddOpen(false);}}} title={editingId?"Editar experiencia":"Agregar experiencia"}>
         <View style={{ gap: 12, paddingVertical: 16 }}>
           <View style={{gap:6}}><Text style={s.muted}>Empresa</Text>
            <TextInput accessibilityLabel="Empresa" placeholder="Empresa" placeholderTextColor={colors.muted} value={draft.company} onChangeText={v=>setDraft(d=>({...d,company:v}))} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>
@@ -481,7 +491,7 @@ export default function Profile() {
           <Text style={s.muted}>Teléfono o correo de la empresa</Text>
           <TextInput accessibilityLabel="Teléfono o correo de la empresa" placeholder="Teléfono o email de contacto" placeholderTextColor={colors.muted} value={draft.contact} onChangeText={v=>setDraft(d=>({...d,contact:v}))} autoCapitalize="none" style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>
           <Text style={s.muted}>Puedes editar estos datos cuando quieras. Al modificarlos se reinicia la verificación de la empresa.</Text>
-          <Button title="Guardar" onPress={add} />
+          <Button title={historyBusy?"Guardando…":"Guardar"} onPress={add} />
         </View>
       </BottomSheet>
       <JobeenShareSheet visible={cvShareOpen} onClose={()=>setCvShareOpen(false)} label="Currículum"
