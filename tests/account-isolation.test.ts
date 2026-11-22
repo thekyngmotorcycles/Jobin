@@ -80,15 +80,24 @@ test("Avatar saves cannot attach a previous user's photo to a new session",()=>{
  assert.ok(upload.indexOf("await assertMessageScope(scope);",profileIndex)>profileIndex);
 });
 
-test("Saved-card actions and collections are bound to the account that rendered them",()=>{
+test("Saved-card actions and collections are bound to the account, session and target face that rendered them",()=>{
  const api=src("src/lib/saved-jcards.ts");
  const gallery=src("src/components/SavedJCardsGallery.tsx");
  const visitor=src("src/app/jcard.tsx");
- assert.ok(api.includes("user.id!==expectedOwner"));
- assert.ok(api.includes("await assertAccountOwner(uid)"));
- assert.ok(gallery.includes("listSavedJCards(owner)"));
- assert.ok(gallery.includes("removeSavedJCard(item.targetId,item.side,owner)"));
- assert.ok(visitor.includes("saveVisibleJCard(user,activeCardSide,viewer)"));
+ assert.ok(api.includes("scope.owner!==expectedOwner"));
+ assert.ok(api.includes("await captureMessageScope(expectedScope)"));
+ assert.ok(api.includes("await assertMessageScope(scope)"));
+ assert.ok(api.includes("r.saver_id===uid"));
+ assert.ok(!api.includes("AsyncStorage"));
+ assert.ok(gallery.includes("listSavedJCards(owner,scope)"));
+ assert.ok(gallery.includes("removeSavedJCard(item.targetId,item.side,owner,scope)"));
+ assert.ok(gallery.includes("revision.current===generation"));
+ assert.ok(gallery.includes("scopeRef.current===scope"));
+ assert.ok(gallery.includes("setReady(false);setItems([])"));
+ assert.ok(visitor.includes("saveVisibleJCard(user,activeCardSide,viewer,origin.scope)"));
+ assert.ok(visitor.includes("origin.target!==user||origin.side!==activeCardSide"));
+ assert.ok(visitor.includes("savedScope.current===origin&&savedRevision.current===origin.generation"));
+ assert.ok(visitor.includes("savedReady&&cardVisibilityReady&&sideIsPublic"));
 });
 
 test("Draft photo links are scoped to the initiating account and session",()=>{
