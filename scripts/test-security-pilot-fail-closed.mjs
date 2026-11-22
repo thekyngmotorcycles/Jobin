@@ -13,7 +13,8 @@ assert.equal(eas.build["security-pilot"]?.environment, "security-pilot", "Pilot 
 assert.equal(eas.build["security-pilot"]?.android?.buildType, "apk");
 assert.equal(eas.build["security-pilot"]?.channel, "security-pilot");
 const base = { name: "Jobin", android: { package: "com.thekyngmotorcycles.jobin" }, extra: {} };
-const isolated = "https://abcdefghijklmnopqrst.supabase.co";
+const isolated = "https://mkvzkvkmrribcaecvphq.supabase.co";
+const unrelated = "https://abcdefghijklmnopqrst.supabase.co";
 const existing = "https://nwiimdmtddjquwxtjxmw.supabase.co";
 const publishable = "sb_publishable_synthetic-never-used";
 
@@ -37,11 +38,15 @@ try {
   }), /Refusing a security pilot/);
   assert.throws(() => configureWith({
     JOBEEN_SECURITY_PILOT: "1", EXPO_PUBLIC_JOBEEN_SECURITY_PILOT: "1",
+    EXPO_PUBLIC_SUPABASE_URL: unrelated, EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishable,
+  }), /Refusing a security pilot/);
+  assert.throws(() => configureWith({
+    JOBEEN_SECURITY_PILOT: "1", EXPO_PUBLIC_JOBEEN_SECURITY_PILOT: "1",
     EXPO_PUBLIC_SUPABASE_URL: isolated,
   }), /Refusing a security pilot/);
   assert.throws(() => configureWith({
     JOBEEN_SECURITY_PILOT: "1", EXPO_PUBLIC_JOBEEN_SECURITY_PILOT: "1",
-    EXPO_PUBLIC_SUPABASE_URL: "http://abcdefghijklmnopqrst.supabase.co",
+    EXPO_PUBLIC_SUPABASE_URL: "http://mkvzkvkmrribcaecvphq.supabase.co",
     EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishable,
   }), /Refusing a security pilot/);
   const pilot = configureWith({

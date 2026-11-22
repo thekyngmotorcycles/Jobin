@@ -23,7 +23,7 @@ jobs:
         env:
           JOBEEN_SECURITY_PILOT: "1"
           EXPO_PUBLIC_JOBEEN_SECURITY_PILOT: "1"
-          EXPO_PUBLIC_SUPABASE_URL: "https://abcdefghijklmnopqrst.supabase.co"
+          EXPO_PUBLIC_SUPABASE_URL: "https://mkvzkvkmrribcaecvphq.supabase.co"
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_synthetic-never-used"
         run: |
           npx expo config --type public --json > "$RUNNER_TEMP/jobeen-pilot-expo-config.json"

@@ -9,7 +9,7 @@ module.exports=({config})=>{
  try{parsed=new URL(raw??"");}catch{throw Error("Security pilot requires its own Supabase project.");}
  if(parsed.protocol!=="https:"||parsed.port||parsed.username||parsed.password||
     !/^[a-z0-9]{20}\.supabase\.co$/.test(parsed.hostname)||
-    parsed.hostname==="nwiimdmtddjquwxtjxmw.supabase.co"||
+    parsed.hostname!=="mkvzkvkmrribcaecvphq.supabase.co"||
     parsed.pathname!=="/"||parsed.search||parsed.hash||
     !key?.startsWith("sb_publishable_")||key.length<24)
   throw Error("Refusing a security pilot without an isolated Supabase origin and publishable key.");
