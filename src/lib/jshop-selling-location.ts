@@ -55,11 +55,20 @@ export async function writeDefaultSaleLocation(owner:string,point:SaleLocation,e
  const values={city:point.city.trim(),label:point.label.trim(),
   location_lat:point.lat,location_lon:point.lon,updated_at:new Date().toISOString()};
  await assertMessageScope(scope);
- const {data,error}=await db.from("jshop_seller_locations" as never)
-  .upsert({seller_id:owner,...values} as never,{onConflict:"seller_id"}).select("seller_id").single();
- if(error)throw error;
+ const update=async()=>{
+  await assertMessageScope(scope);
+  const {data,error}=await db.from("jshop_seller_locations" as never).update(values as never).eq("seller_id",owner).select("seller_id").single();
+  if(error)throw error;
+  await assertMessageScope(scope);
+  if((data as unknown as {seller_id:string}|null)?.seller_id!==owner)throw Error("No se pudo confirmar la ubicación de venta.");
+ };
+ const existing=await readDefaultSaleLocation(owner,scope);
+ if(existing){await update();return;}
  await assertMessageScope(scope);
- if((data as unknown as {seller_id:string}|null)?.seller_id!==owner)throw Error("No se pudo confirmar la ubicación de venta.");
+ const {error}=await db.from("jshop_seller_locations" as never).insert({seller_id:owner,...values} as never);
+ await assertMessageScope(scope);
+ if(error?.code==="23505"){await update();return;}
+ if(error)throw error;
 }
 export async function readPendingArticleLocation(owner:string,editor:string,expectedScope:MessageScope):Promise<SaleLocation|null>{
  const scope=await confirm(owner,expectedScope);
