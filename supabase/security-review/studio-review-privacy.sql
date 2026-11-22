@@ -112,3 +112,15 @@ returns jsonb language sql stable security invoker set search_path='' as $api$
 $api$;
 revoke all on function public.jobin_safety_review_queue() from public,anon,authenticated;
 grant execute on function public.jobin_safety_review_queue() to authenticated;
+
+-- Prevent the legacy generic moderator read policies from bypassing the
+-- case-specific projections above. Moderation writes remain server RPCs.
+drop policy if exists jobeen_raw_work_media_owner on public.work_media;
+create policy jobeen_raw_work_media_owner on public.work_media as restrictive for select to authenticated
+ using ((select auth.uid()) is not null and creator_id=(select auth.uid()));
+drop policy if exists jobeen_raw_incident_owner on public.safety_incidents;
+create policy jobeen_raw_incident_owner on public.safety_incidents as restrictive for select to authenticated
+ using ((select auth.uid()) is not null and user_id=(select auth.uid()));
+drop policy if exists jobeen_raw_appeal_owner on public.safety_appeals;
+create policy jobeen_raw_appeal_owner on public.safety_appeals as restrictive for select to authenticated
+ using ((select auth.uid()) is not null and user_id=(select auth.uid()));
