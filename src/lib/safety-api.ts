@@ -1,3 +1,5 @@
+import {uploadSecuredFile} from "./private-attachment-android";
+import type {PendingEvidence} from "./private-attachment";
 import { requireSupabase } from "./supabase";
 import {captureMessageScope,assertMessageScope,type MessageScope} from "./message-session";
 import type { Database,Json } from "./database.types";
@@ -67,16 +69,9 @@ export async function uploadWorkVideo(asset:{uri:string;fileSize?:number;mimeTyp
  await assertMessageScope(scope);
  return safetyMutation("jobin_submit_work_video",{...input,path},scope);
 }
-export async function submitEmployerReport(media:string,description:string,file:{uri:string;mimeType?:string|null;size?:number},expectedScope?:MessageScope){
- const scope=await captureMessageScope(expectedScope),client=requireSupabase();
- if(file.size&&file.size>10485760)throw new Error("La prueba no puede superar 10 MB.");
- const mime=file.mimeType||"application/pdf";
- const path=scope.owner+"/"+Date.now()+"-"+Math.random().toString(36).slice(2)+(mime==="image/png"?".png":mime==="image/jpeg"?".jpg":".pdf");
- const response=await fetch(file.uri);if(!response.ok)throw new Error("No se pudo leer la prueba.");
- const bytes=await response.arrayBuffer();if(bytes.byteLength>10485760)throw Error("La prueba no puede superar 10 MB.");
- await assertMessageScope(scope);
- const {error}=await client.storage.from("employer-report-evidence").upload(path,bytes,{contentType:mime,upsert:false,cacheControl:"0"});if(error)throw new Error(error.message);
- await assertMessageScope(scope);
+export async function submitEmployerReport(media:string,description:string,file:PendingEvidence,expectedScope?:MessageScope){
+ const scope=await captureMessageScope(expectedScope);
+ const path=await uploadSecuredFile(scope,"report-evidence",file,"employer-report-evidence");
  return safetyMutation("jobin_report_employer",{media,path,description},scope);
 }
 export const WORK_ACTIVITIES=[

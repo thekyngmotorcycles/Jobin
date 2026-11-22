@@ -1,3 +1,5 @@
+import {uploadSecuredFile} from "./private-attachment-android";
+import type {PendingEvidence} from "./private-attachment";
 import { requireSupabase } from "./supabase";
 import {assertMessageScope,captureMessageScope,type MessageScope} from "./message-session";
 import type { Database, Json } from "./database.types";
@@ -89,21 +91,9 @@ export async function searchCareers(profession:string,city:string,mode:"students
  const {data,error}=await requireSupabase().rpc("jobin_career_search",{profession,city,mode});
  return decode<CareerResult[]>(data,error);
 }
-export async function uploadCredential(file:{uri:string;name:string;mimeType?:string|null;size?:number},profession:string,expectedScope:MessageScope) {
- const client=requireSupabase(),scope=await captureMessageScope(expectedScope),user={id:scope.owner};
- if(file.size && file.size>10485760)throw new Error("El documento no puede superar 10 MB.");
- const mime=file.mimeType||"application/pdf";
- const extension=mime==="image/jpeg"?"jpg":mime==="image/png"?"png":"pdf";
- if(!["application/pdf","image/jpeg","image/png"].includes(mime))throw new Error("Selecciona PDF, JPEG o PNG.");
- const path=user.id+"/"+Date.now()+"-"+Math.random().toString(36).slice(2)+"."+extension;
- const response=await fetch(file.uri);
- if(!response.ok)throw new Error("No se pudo leer el documento seleccionado.");
- const bytes=await response.arrayBuffer();
- if(bytes.byteLength>10485760)throw Error("El documento no puede superar 10 MB.");
- await assertMessageScope(scope);
- const uploaded=await client.storage.from("professional-certificates").upload(path,bytes,{contentType:mime,upsert:false,cacheControl:"0"});
- if(uploaded.error)throw new Error(uploaded.error.message);
- await assertMessageScope(scope);
+export async function uploadCredential(file:PendingEvidence,profession:string,expectedScope:MessageScope){
+ const scope=await captureMessageScope(expectedScope);
+ const path=await uploadSecuredFile(scope,"report-evidence",file,"professional-certificates");
  try { await professionalMutation("jobin_submit_credential",{profession,path},scope); }
  catch { throw new Error("No se pudo confirmar el registro del documento. Actualiza tus solicitudes antes de reintentar."); }
 }

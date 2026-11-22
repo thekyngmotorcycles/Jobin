@@ -1,6 +1,7 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useLocalSearchParams,useFocusEffect} from "expo-router";
-import * as ImagePicker from "expo-image-picker";
+import {pickSecuredPhotos,previewSecuredPhoto,watchAttachmentScope} from "../../lib/private-attachment-android";
+import type {PrivateAttachment} from "../../lib/private-attachment";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Image,Pressable,Text,TextInput,View} from "react-native";
 import {JShopButton,JShopPage,JShopTitle} from "../../components/JShopUI";
@@ -27,36 +28,48 @@ export default function JShopPublish(){
  const session=useRef(draft??("listing-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,10))).current;
  const [defaultPlace,setDefaultPlace]=useState<SaleLocation|null>(null);
  const [articlePlace,setArticlePlace]=useState<SaleLocation|null>(null);
- const [photos,setPhotos]=useState<string[]>([]);
+ const [photos,setPhotos]=useState<{file:PrivateAttachment;preview?:string}[]>([]);
  const [busy,setBusy]=useState(false);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
- const scopeRef=useRef<MessageScope|null>(null),saving=useRef(false),focusRevision=useRef(0);
+ const scopeRef=useRef<MessageScope|null>(null),saving=useRef(false),picking=useRef(false),focusRevision=useRef(0);
+ useEffect(()=>watchAttachmentScope(()=>scopeRef.current,()=>{
+  scopeRef.current=null;setOwnerId("");setExisting(null);setPhotos([]);setTitle("");setDescription("");setPrice("");
+ }),[]);
  useEffect(()=>{
   let live=true;scopeRef.current=null;setOwnerId("");setLoading(true);setDefaultPlace(null);setArticlePlace(null);setExisting(null);setPhotos([]);setTitle("");setDescription("");setPrice("");
   void(async()=>{
    try{
     const scope=await captureMessageScope(),owner=scope.owner;
     if(!live)return;
+    scopeRef.current=scope;
     const [defaultLocation,preferredCurrency]=await Promise.all([readDefaultSaleLocation(owner,scope),readSellerCurrency(owner,scope)]);
     await assertMessageScope(scope);
-    if(!live)return;
+    if(!live||scopeRef.current!==scope)return;
     setDefaultPlace(defaultLocation);
     if(!draft)setCurrency(preferredCurrency);
     if(draft){
      const drafts=await readJShopDrafts(owner,scope);await assertMessageScope(scope);
      const found=drafts.find(item=>item.id===draft);
      if(!found)throw new Error("El borrador no existe o pertenece a otra cuenta.");
-     if(!live)return;
+     if(!live||scopeRef.current!==scope)return;
      setExisting(found);setTitle(found.title);setDescription(found.description);setCategory(found.category);
      setCondition(found.condition);setPrice(found.price===null?"":String(found.price));
-     setCurrency(found.currency);setPhotos(found.photos);
+     setCurrency(found.currency);
+     const protectedPhotos=[];
+     for(const file of found.privatePhotos??[]){
+      let preview:string|undefined;
+      try{preview=await previewSecuredPhoto(scope,"draft-photo",file);}catch{await assertMessageScope(scope);}
+      protectedPhotos.push({file,preview});
+     }
+     if(!live||scopeRef.current!==scope)return;
+     setPhotos(protectedPhotos);
      if(typeof found.locationLat==="number"&&typeof found.locationLon==="number"){
       setArticlePlace({city:found.location,label:found.location,lat:found.locationLat,lon:found.locationLon,zoom:11});
      }
     }
     const pending=await readPendingArticleLocation(owner,session,scope);await assertMessageScope(scope);
-    if(live){scopeRef.current=scope;setOwnerId(owner);if(pending)setArticlePlace(pending);}
+    if(live&&scopeRef.current===scope){setOwnerId(owner);if(pending)setArticlePlace(pending);}
    }catch(e){if(live)setError(e instanceof Error?e.message:"No se pudo abrir el editor.");}
    finally{if(live)setLoading(false);}
   })();
@@ -89,15 +102,20 @@ export default function JShopPublish(){
   try{await clearPendingArticleLocation(ownerId,session,scope);if(scopeRef.current===scope)setArticlePlace(null);}catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo restaurar la ubicación.");}
  }
  async function pickPhotos(){
-  const scope=scopeRef.current;if(!scope||saving.current||photos.length>=5)return;
+  const scope=scopeRef.current;
+  if(!scope||saving.current||picking.current||photos.length>=5)return;
+  picking.current=true;
   try{await captureMessageScope(scope);if(scopeRef.current!==scope)return;
-   const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:["images"],allowsMultipleSelection:true,selectionLimit:5-photos.length,quality:0.8});
-   await assertMessageScope(scope);if(result.canceled||scopeRef.current!==scope)return;
-   setPhotos(current=>[...current,...result.assets.map(x=>x.uri)].slice(0,5));
-  }catch(e){setError(e instanceof Error?e.message:"No se pudieron seleccionar las fotografías.");}
+   const files=await pickSecuredPhotos(scope,"draft-photo",{allowsMultipleSelection:true,selectionLimit:5-photos.length,quality:0.8});
+   const prepared:{file:PrivateAttachment;preview:string}[]=[];
+   for(const file of files)prepared.push({file,preview:await previewSecuredPhoto(scope,"draft-photo",file)});
+   await assertMessageScope(scope);if(scopeRef.current!==scope)return;
+   setPhotos(current=>[...current,...prepared].slice(0,5));
+  }catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudieron seleccionar las fotografías.");}
+  finally{picking.current=false;}
  }
  async function save(publish=false){
-  const scope=scopeRef.current;if(!scope||scope.owner!==ownerId||saving.current)return;
+  const scope=scopeRef.current;if(!scope||scope.owner!==ownerId||saving.current||picking.current)return;
   if(draft&&!existing){setError("El borrador solicitado no está disponible.");return;}
   if(publish&&!defaultPlace){setError("Primero configurá tu ubicación de venta en JShop.");return;}
   if(publish&&!selectedLocation){setError("Elige la ubicación del artículo antes de publicarlo.");return;}
@@ -113,7 +131,7 @@ export default function JShopPublish(){
     ownerId,title:title.trim().slice(0,100),description:description.trim().slice(0,2000),
     category,condition,price:amount,currency,location:selectedLocation?.label.slice(0,120)??"",
     locationLat:selectedLocation?.lat??null,locationLon:selectedLocation?.lon??null,
-    photos,createdAt:existing?.createdAt??now,updatedAt:now
+    photos:[],privatePhotos:photos.map(photo=>photo.file),createdAt:existing?.createdAt??now,updatedAt:now
    };
    if(publish){
     const publishedId=await publishJShopDraft(ownerId,item,scope);
@@ -148,8 +166,8 @@ export default function JShopPublish(){
       <Text style={{color:t.ink2}}>{photos.length}/5</Text>
      </View>
      <View style={{flexDirection:"row",flexWrap:"wrap",gap:10}}>
-      {photos.map((uri,index)=><View key={uri+"-"+index} style={{width:104,height:104,borderRadius:16,overflow:"hidden",borderWidth:1,borderColor:t.line}}>
-       <Image source={{uri}} style={{width:"100%",height:"100%"}} resizeMode="cover"/>
+      {photos.map((photo,index)=><View key={photo.file.ref.id} style={{width:104,height:104,borderRadius:16,overflow:"hidden",borderWidth:1,borderColor:t.line}}>
+       <Image source={photo.preview?{uri:photo.preview}:undefined} style={{width:"100%",height:"100%"}} resizeMode="cover"/>
        <Pressable accessibilityRole="button" accessibilityLabel={"Eliminar foto "+(index+1)} onPress={()=>setPhotos(current=>current.filter((_,i)=>i!==index))}
         style={{position:"absolute",top:4,right:4,width:35,height:35,borderRadius:18,alignItems:"center",justifyContent:"center",backgroundColor:t.surface}}>
         <Ionicons name="close" size={21} color={t.ink}/>
@@ -160,7 +178,7 @@ export default function JShopPublish(){
        <Ionicons name="camera-outline" color={t.ink} size={27}/><Text style={{fontSize:12,color:t.ink,fontWeight:"700"}}>Añadir fotos</Text>
       </Pressable>}
      </View>
-     <Text style={{fontSize:12,color:t.ink2,lineHeight:18}}>Las fotografías permanecen en el dispositivo y pueden dejar de verse si Android limpia sus archivos temporales.</Text>
+     <Text style={{fontSize:12,color:t.ink2,lineHeight:18}}>Las fotos del borrador se guardan de forma privada en este dispositivo. Máximo 2 MiB por foto.</Text>
     </View>
     {field("Título",title,setTitle,"¿Qué estás vendiendo?",{maxLength:100})}
     {field("Descripción",description,setDescription,"Características, estado y detalles del artículo",{multiline:true,maxLength:2000})}

@@ -1,6 +1,7 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useLocalSearchParams} from "expo-router";
-import * as ImagePicker from "expo-image-picker";
+import {pickSecuredPhotos,previewSecuredPhoto,watchAttachmentScope} from "../../lib/private-attachment-android";
+import type {PrivateAttachment} from "../../lib/private-attachment";
 import {useEffect,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Image,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -17,12 +18,15 @@ export default function StoryCreate(){
  const [kind,setKind]=useState<StoryKind>(params.kind==="photo"?"photo":params.kind==="video"?"video":"text");
  const [userId,setUserId]=useState("");
  const [caption,setCaption]=useState("");
- const [photoUri,setPhotoUri]=useState("");
+ const [photo,setPhoto]=useState<{file:PrivateAttachment;preview:string}|null>(null);
  const [videos,setVideos]=useState<PublishedMedia[]>([]);
  const [mediaId,setMediaId]=useState("");
  const [consent,setConsent]=useState(false);
  const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [error,setError]=useState("");
  const scopeRef=useRef<MessageScope|null>(null),submitting=useRef(false),picking=useRef(false);
+ useEffect(()=>watchAttachmentScope(()=>scopeRef.current,()=>{
+  scopeRef.current=null;setPhoto(null);setCaption("");setUserId("");setConsent(false);
+ }),[]);
  useEffect(()=>{let live=true;void(async()=>{
   try{const scope=await captureMessageScope(),owner=scope.owner;const published=await shareApprovedMedia("video",owner);await assertMessageScope(scope);if(live){scopeRef.current=scope;setUserId(owner);setVideos(published);}}
   catch(e){if(live)setError(e instanceof Error?e.message:"No se pudo cargar el editor.");}
@@ -32,23 +36,25 @@ export default function StoryCreate(){
   const scope=scopeRef.current;if(!scope||submitting.current||picking.current)return;
   picking.current=true;
   try{await captureMessageScope(scope);if(scopeRef.current!==scope)return;
-   const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:["images"],quality:0.85});
+   const [file]=await pickSecuredPhotos(scope,"draft-photo",{quality:0.85});
+   if(!file)return;
+   const preview=await previewSecuredPhoto(scope,"draft-photo",file);
    await assertMessageScope(scope);if(scopeRef.current!==scope)return;
-   if(!result.canceled&&result.assets[0]){setPhotoUri(result.assets[0].uri);setError("");}
+   setPhoto({file,preview});setError("");
   }catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo abrir la galería.");}
   finally{picking.current=false;}
  }
  async function submit(scope:MessageScope){
-  if(scopeRef.current!==scope||scope.owner!==userId||submitting.current||!consent)return;
+  if(scopeRef.current!==scope||scope.owner!==userId||submitting.current||picking.current||!consent)return;
   submitting.current=true;setBusy(true);setError("");
   try{
    await captureMessageScope(scope);if(scopeRef.current!==scope)return;
-   await publishStory({kind,body:caption,photoUri:kind==="photo"?photoUri:undefined,mediaId:kind==="video"?mediaId:null},scope);
+   await publishStory({kind,body:caption,photo:kind==="photo"?photo?.file:undefined,mediaId:kind==="video"?mediaId:null},scope);
    await assertMessageScope(scope);if(scopeRef.current===scope)router.back();
   }catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo compartir la historia.");}
   finally{submitting.current=false;if(scopeRef.current===scope)setBusy(false);}
  }
- const ready=kind==="text"?!!caption.trim():kind==="photo"?!!photoUri:!!mediaId;
+ const ready=kind==="text"?!!caption.trim():kind==="photo"?!!photo:!!mediaId;
  return <>
   <Stack.Screen options={{title:"Crear historia"}}/>
   <SafeAreaView edges={["bottom"]} style={{flex:1,backgroundColor:t.bg}}>
@@ -70,7 +76,7 @@ export default function StoryCreate(){
     {kind==="photo"&&<View style={{gap:12}}>
      <Pressable accessibilityRole="button" accessibilityLabel="Seleccionar fotografía de la historia" onPress={()=>void choosePhoto()}
       style={{aspectRatio:9/11,borderRadius:23,overflow:"hidden",backgroundColor:t.cream,alignItems:"center",justifyContent:"center",gap:10}}>
-      {photoUri?<Image source={{uri:photoUri}} resizeMode="cover" style={{height:"100%",width:"100%"}}/>:<><Ionicons name="camera-outline" size={45} color={t.ink}/><Text style={{fontWeight:"700",color:t.ink}}>Seleccionar foto</Text></>}
+      {photo?<Image source={{uri:photo.preview}} resizeMode="cover" style={{height:"100%",width:"100%"}}/>:<><Ionicons name="camera-outline" size={45} color={t.ink}/><Text style={{fontWeight:"700",color:t.ink}}>Seleccionar foto</Text></>}
      </Pressable>
      <TextInput accessibilityLabel="Texto de la foto" value={caption} onChangeText={setCaption} maxLength={280} placeholder="Añadir texto a la historia" placeholderTextColor={t.ink2}
       style={{minHeight:50,borderRadius:16,borderColor:t.line,borderWidth:1,padding:14,backgroundColor:t.surface,color:t.ink}}/>

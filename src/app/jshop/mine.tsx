@@ -1,3 +1,5 @@
+import {previewSecuredPhoto,watchAttachmentScope} from "../../lib/private-attachment-android";
+import type {MessageScope} from "../../lib/message-session";
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect,Stack} from "expo-router";
 import {useCallback,useMemo,useState} from "react";
@@ -33,16 +35,24 @@ export default function MyJShop(){
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
  useFocusEffect(useCallback(()=>{
-  let live=true;setLoading(true);setDrafts([]);setPublished([]);
+  let live=true;let invalidated=false;
+  setLoading(true);setDrafts([]);setPublished([]);
+  const selected:{scope:MessageScope|null}={scope:null};
+  const stop=watchAttachmentScope(()=>selected.scope,()=>{invalidated=true;setDrafts([]);setPublished([]);});
   void(async()=>{
    try{
     const scope=await captureMessageScope(),owner=scope.owner;
-    const [rows,online]=await Promise.all([readJShopDrafts(owner,scope),loadMyJShopListings(owner,scope)]);
+    selected.scope=scope;
+    const [rows,online]=await Promise.all([readJShopDrafts(owner,scope),loadMyJShopListings(owner,scope).catch(()=>null)]);
+    for(const draft of rows.slice(0,10)){
+     const first=draft.privatePhotos?.[0];
+     if(first)try{draft.photos=[await previewSecuredPhoto(scope,"draft-photo",first)];}catch{await assertMessageScope(scope);}
+    }
     await assertMessageScope(scope);
-    if(live){setDrafts(rows);setPublished(online);setError("");}
+    if(live&&!invalidated){setDrafts(rows);setPublished(online??[]);setError(online?"":"Anuncios publicados no disponibles sin conexión.");}
    }catch(e){if(live){setDrafts([]);setPublished([]);setError(e instanceof Error?e.message:"No se pudieron cargar los anuncios.");}}
    finally{if(live)setLoading(false);}
-  })();return()=>{live=false;setDrafts([]);setPublished([]);};
+  })();return()=>{live=false;stop();setDrafts([]);setPublished([]);};
  },[]));
  const all=useMemo<MineItem[]>(()=>[...published,...drafts].sort((a,b)=>b.createdAt-a.createdAt),[published,drafts]);
  const filtered=useMemo(()=>filterMine(all,status),[all,status]);

@@ -3,16 +3,16 @@ import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useLocalSearchParams,useNavigation} from "expo-router";
 import {markPublishedPostForHome} from "../../lib/post-return";
 import {usePreventRemove} from "@react-navigation/native";
-import * as ImagePicker from "expo-image-picker";
 import {useEffect,useRef,useState} from "react";
 import {ActivityIndicator,AppState,Image,Keyboard,Modal,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {PublicProfileAvatar} from "../../components/PublicProfileAvatar";
 import {captureMessageScope,assertMessageScope,type MessageScope} from "../../lib/message-session";
-import {publishHomePost,shareApprovedMedia,uploadPhoto,type FeedPostKind,type FeedAudience} from "../../lib/social-content";
+import {publishHomePost,shareApprovedMedia,type FeedPostKind,type FeedAudience} from "../../lib/social-content";
 import {PostComposerSheets} from "../../components/PostComposerSheets";
+import {pickSecuredPhotos,previewSecuredPhoto,watchAttachmentScope} from "../../lib/private-attachment-android";
 import {draftPhotoDisplayUri} from "../../lib/post-draft-photo";
-import {DRAFT_PHOTO_BUCKET,emptyPostDraft,hasDraftContent,readPostDrafts,savePostDraft,deletePostDraft,restorePostDraftPhotoUrls,type PostDraft,type PostDraftPhoto} from "../../lib/post-drafts";
+import {emptyPostDraft,hasDraftContent,readPostDrafts,savePostDraft,deletePostDraft,restorePostDraftPhotoUrls,type PostDraft,type PostDraftPhoto} from "../../lib/post-drafts";
 import {searchPostMentions,type PostMention,type PostBusinessMention} from "../../lib/post-mentions";
 import {requireSupabase} from "../../lib/supabase";
 import type {PublishedMedia} from "../../lib/safety-api";
@@ -68,7 +68,7 @@ export default function PostCreate(){
  const [businessMentions,setBusinessMentions]=useState<PostBusinessMention[]>([]);
  const draftSnapshotRef=useRef<PostDraft>(emptyPostDraft());
  const savingChainRef=useRef<Promise<void>>(Promise.resolve());
- const pendingUploadsRef=useRef<Promise<void>[]>([]);
+ const picking=useRef(false);
  const autosaveEnabledRef=useRef(true);
  const scopeRef=useRef<MessageScope|null>(null),submitting=useRef(false);
  const liveScope=(scope:MessageScope)=>scopeRef.current===scope;
@@ -100,22 +100,27 @@ export default function PostCreate(){
   refreshDraftPhotoPreviews(d.photos);
  }
  function refreshDraftPhotoPreviews(selectedPhotos:PostDraftPhoto[]){
-  const scope=scopeRef.current;if(!scope||!selectedPhotos.some(photo=>photo.backupPath))return;
+  const scope=scopeRef.current;if(!scope||!selectedPhotos.some(photo=>photo.backupPath||photo.attachment))return;
   void restorePostDraftPhotoUrls(selectedPhotos,author,scope).then(restored=>{if(liveScope(scope))setPhotos(current=>current.map(photo=>{
-   const refreshed=restored.find(item=>item.id===photo.id&&item.backupPath===photo.backupPath);
+   const refreshed=restored.find(item=>item.id===photo.id&&item.backupPath===photo.backupPath&&item.attachment?.ref.id===photo.attachment?.ref.id);
    return refreshed?{...photo,previewUri:refreshed.previewUri}:photo;
   }));}).catch(()=>{
    if(liveScope(scope))setError("Algunas fotos necesitan conexión o volver a seleccionarse.");
   });
  }
+ useEffect(()=>watchAttachmentScope(()=>scopeRef.current,()=>{
+  scopeRef.current=null;autosaveEnabledRef.current=false;
+  setPhotos([]);setDrafts([]);setBody("");setAuthor("");setDraftCount(0);setHydrated(false);
+ }),[]);
  useEffect(()=>{let active=true;void(async()=>{
   try{
    const scope=await captureMessageScope(),uid=scope.owner;
    if(!active)return;
+   scopeRef.current=scope;
    const saved=await readPostDrafts(uid,scope);
    await assertMessageScope(scope);
-   if(!active)return;
-   scopeRef.current=scope;setAuthor(uid);setDrafts(saved);
+   if(!active||!liveScope(scope))return;
+   setAuthor(uid);setDrafts(saved);
    setDraftCount(saved.length);
    // New publication always starts empty; drafts are opened explicitly from Borradores.
    void Promise.all([
@@ -197,7 +202,7 @@ export default function PostCreate(){
  }
  async function saveDraftNow(){
   const scope=editorScope();
-  await Promise.allSettled(pendingUploadsRef.current);await assertMessageScope(scope);if(!liveScope(scope))throw Error("El editor cambió.");
+  await assertMessageScope(scope);if(!liveScope(scope))throw Error("El editor cambió.");
   await persistSnapshot(draftSnapshotRef.current);
   const saved=await readPostDrafts(author,scope);await assertMessageScope(scope);if(!liveScope(scope))throw Error("El editor cambió.");setDrafts(saved);setDraftCount(saved.length);
  }
@@ -220,15 +225,19 @@ export default function PostCreate(){
    }
    const saved=await readPostDrafts(author,scope);if(!liveScope(scope))return;
    setDrafts(saved);setDraftCount(saved.length);setDraftsOpen(true);
-   // Private draft photos may have temporary local URIs; refresh covers without
-   // delaying opening the gallery or exposing any private bucket publicly.
-   void Promise.all(saved.map(async draft=>{
-    try{return {...draft,photos:await restorePostDraftPhotoUrls(draft.photos,author,scope)};}
-    catch{return draft;}
-   })).then(refreshed=>{if(liveScope(scope))setDrafts(current=>current.map(draft=>{
-    const match=refreshed.find(item=>item.id===draft.id&&item.updatedAt===draft.updatedAt);
-    return match??draft;
-   }));}).catch(()=>{});
+   // Restore one cover at a time. Full photos are read only when editing the draft.
+   void(async()=>{
+    const refreshed:PostDraft[]=[];
+    for(const draft of saved){
+     if(!liveScope(scope))return;
+     try{refreshed.push({...draft,photos:[...(await restorePostDraftPhotoUrls(draft.photos.slice(0,1),author,scope)),...draft.photos.slice(1)]});}
+     catch{refreshed.push(draft);}
+    }
+    if(liveScope(scope))setDrafts(current=>current.map(draft=>{
+     const match=refreshed.find(item=>item.id===draft.id&&item.updatedAt===draft.updatedAt);
+     return match??draft;
+    }));
+   })().catch(()=>{});
   }catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar los borradores.");}
  }
  async function deleteDraft(d:PostDraft){
@@ -264,24 +273,23 @@ export default function PostCreate(){
   setMentionQuery("");setMentionResults([]);
  }
  async function choosePhotos(){
-  const scope=scopeRef.current;if(!scope||scope.owner!==author||submitting.current||photos.length>=5)return;
-  try{await captureMessageScope(scope);if(!liveScope(scope))return;
-   const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:["images"],allowsMultipleSelection:true,selectionLimit:Math.max(1,5-photos.length),quality:0.8});
-   await assertMessageScope(scope);if(!liveScope(scope))return;
-   if(!result.canceled){
-    const fresh:PostDraftPhoto[]=result.assets.map(asset=>({
-     id:Date.now().toString(36)+"-"+Math.random().toString(36).slice(2),
-     uri:asset.uri,altText:""
-    }));
-    setPhotos(current=>[...current,...fresh].slice(0,5));setError("");
-    const tasks=fresh.map(photo=>uploadPhoto(author,photo.uri,DRAFT_PHOTO_BUCKET,scope).then(path=>{
-     if(liveScope(scope))setPhotos(current=>current.map(p=>p.id===photo.id?{...p,backupPath:path}:p));
-    }).catch(()=>{
-     if(liveScope(scope))setError("El texto se guardará automáticamente. Algunas fotos no tienen respaldo y podrían requerir volver a seleccionarse.");
-    }));
-    pendingUploadsRef.current=[...pendingUploadsRef.current,...tasks.map(task=>task.then(()=>{}))];
+  const scope=scopeRef.current,originalDraft=draftSnapshotRef.current.id;
+  if(!scope||scope.owner!==author||submitting.current||picking.current||photos.length>=5)return;
+  picking.current=true;
+  try{
+   await captureMessageScope(scope);if(!liveScope(scope))return;
+   const files=await pickSecuredPhotos(scope,"draft-photo",{allowsMultipleSelection:true,selectionLimit:5-photos.length,quality:0.8});
+   const fresh:PostDraftPhoto[]=[];
+   for(const attachment of files){
+    const previewUri=await previewSecuredPhoto(scope,"draft-photo",attachment);
+    fresh.push({id:attachment.ref.id,attachment,altText:"",previewUri});
    }
-  }catch(e){setError(e instanceof Error?e.message:"No se pudieron seleccionar fotos.");}
+   await assertMessageScope(scope);
+   if(liveScope(scope)&&draftSnapshotRef.current.id===originalDraft){
+    setPhotos(current=>[...current,...fresh].slice(0,5));setError("");
+   }
+  }catch(e){if(liveScope(scope))setError(e instanceof Error?e.message:"No se pudieron seleccionar fotos.");}
+  finally{picking.current=false;}
  }
  function switchKind(next:FeedPostKind){
   // The text field is always present; tapping the selected media type again returns to text only.
@@ -305,17 +313,18 @@ export default function PostCreate(){
   else openAt(windowWidth-120,100,100,36);
  }
  async function submit(){
-  const scope=scopeRef.current;if(!scope||scope.owner!==author||submitting.current)return;
+  const scope=scopeRef.current;if(!scope||scope.owner!==author||submitting.current||picking.current)return;
   if(!consent){setError("Confirma que la publicación cumple las normas de contenido profesional.");return;}
   if(audience==="private"&&!audienceFollowers&&!audienceContacts){setError("Selecciona seguidores, contactos o ambos.");return;}
   submitting.current=true;setBusy(true);setError("");
   try{
    await captureMessageScope(scope);if(!liveScope(scope))return;
-   await Promise.allSettled(pendingUploadsRef.current);await assertMessageScope(scope);if(!liveScope(scope))return;
+   await assertMessageScope(scope);if(!liveScope(scope))return;
    await persistSnapshot(draftSnapshotRef.current);
    const selected=draftSnapshotRef.current.photos;
    const publishedId=await publishHomePost({
-    body,kind,photos:kind==="photos"?selected.map(p=>p.uri):[],
+    body,kind,
+    privatePhotos:kind==="photos"?selected.map(p=>p.attachment??null):[],
     photoDraftPaths:kind==="photos"?selected.map(p=>p.backupPath??null):[],
     photoAltTexts:kind==="photos"?selected.map(p=>p.altText):[],
     mentionedProfileIds,businessMentions,

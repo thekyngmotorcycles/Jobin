@@ -1,5 +1,6 @@
 import { useCallback,useRef,useState } from "react";
-import * as DocumentPicker from "expo-document-picker";
+import {pickSecuredEvidence} from "../lib/private-attachment-android";
+import type {PendingEvidence} from "../lib/private-attachment";
 import { router,useFocusEffect } from "expo-router";
 import { Text, View } from "react-native";
 import { Button, Notice, Screen, useUi } from "../components/ui";
@@ -15,7 +16,7 @@ export default function Certificates(){
  const action=useProfessionalAction(workspace.reload);
  const scopeRef=useRef<MessageScope|null>(null),revision=useRef(0),picking=useRef(false);
  const [scope,setScope]=useState<MessageScope|null>(null);
- const [profession,setProfession]=useState("");const [file,setFile]=useState<{asset:DocumentPicker.DocumentPickerAsset;scope:MessageScope}|null>(null);
+ const [profession,setProfession]=useState("");const [file,setFile]=useState<{asset:PendingEvidence;scope:MessageScope}|null>(null);
  const w=workspace.data?.card.id===scope?.owner?workspace.data:null;
  useFocusEffect(useCallback(()=>{
   const generation=++revision.current;scopeRef.current=null;setScope(null);setFile(null);setProfession("");
@@ -29,9 +30,9 @@ export default function Certificates(){
   try{
    await captureMessageScope(origin);
    if(scopeRef.current!==origin)return;
-   const result=await DocumentPicker.getDocumentAsync({type:["application/pdf","image/jpeg","image/png"],copyToCacheDirectory:true});
+   const [asset]=await pickSecuredEvidence(origin,["application/pdf","image/jpeg","image/png"]);
    await assertMessageScope(origin);
-   if(scopeRef.current===origin&&!result.canceled&&result.assets[0])setFile({asset:result.assets[0],scope:origin});
+   if(scopeRef.current===origin&&asset)setFile({asset,scope:origin});
   }catch(e){if(scopeRef.current===origin)action.setNotice(e instanceof Error?e.message:String(e));}
   finally{picking.current=false;}
  }
@@ -56,7 +57,7 @@ export default function Certificates(){
    <Text style={s.muted}>{w.organization?"La revisión acredita a esta organización para el rubro elegido. No permite otorgar otros sellos.":"Primero agrega la profesión a tu JCard. Los sellos aprobados por documentos propios se conservan al salir de una empresa."}</Text>
    {!!catalog.error&&<Text style={s.muted}>{catalog.error}</Text>}
    <ProfessionPicker catalog={catalog.data} value={profession} onChange={setProfession}/>
-   <Button secondary title={file?.asset.name??"Seleccionar PDF, JPEG o PNG · máx. 10 MB"} onPress={()=>void pick()}/>
+   <Button secondary title={file?.asset.name??"Seleccionar PDF, JPEG o PNG · máx. 2 MiB"} onPress={()=>void pick()}/>
    <Button title={action.busy?"Enviando…":"Enviar a revisión"} onPress={()=>void submit()}/>
    <Button secondary title="Editar mis profesiones" onPress={()=>router.push("/professional")}/>
   </View>

@@ -2,14 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {DRAFT_PREVIEW_TTL_SECONDS,draftPhotoDisplayUri,toStoredDraftPhoto} from "../src/lib/post-draft-photo.ts";
 
-test("Draft backups use memory-only previews while retaining device-local originals",()=>{
+test("Draft backups use memory-only previews without reopening unverified device paths",()=>{
  const photo={
   id:"draft-photo",uri:"content://media/photos/42",backupPath:"owner/photo.jpg",altText:"A tool",
   previewUri:"https://storage.example.invalid/object/sign/bucket/photo.jpg?token=opaque",
  };
  assert.equal(draftPhotoDisplayUri(photo),photo.previewUri);
  const stored=toStoredDraftPhoto(photo);
- assert.equal(draftPhotoDisplayUri(stored),photo.uri);
+ assert.equal(draftPhotoDisplayUri(stored),undefined);
+ assert.ok(!JSON.stringify(stored).includes("content://"));
  assert.equal(stored.backupPath,photo.backupPath);
  assert.equal(stored.altText,photo.altText);
  assert.ok(!JSON.stringify(stored).includes("token="));
