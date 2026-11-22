@@ -4,8 +4,31 @@ import type {EmploymentEntry} from "./me";
 import type {BusinessCardData} from "./jcard";
 export const BUSINESS_HANDLE_PATTERN=/^[a-z][a-z0-9_.]{2,29}$/;
 export async function cloudOwner(){const db=requireSupabase();const {data,error}=await db.auth.getUser();if(error)throw error;if(!data.user)throw new Error("Inicia sesión para sincronizar.");return data.user.id;}
-export async function readCloudHistory(expectedOwner?:string):Promise<EmploymentEntry[]>{const db=requireSupabase(),owner=await cloudOwner();if(expectedOwner&&expectedOwner!==owner)throw new Error("La sesión cambió.");const {data,error}=await (db as any).from("jcard_employment_history").select("*").eq("owner_id",owner);if(error)throw error;return (data??[]).map((r:any)=>({id:r.client_id,company:r.company,role:r.role,professions:r.professions,from:r.from_year,fromMonth:r.from_month,to:r.to_year,toMonth:r.to_month,status:r.verified_by?"approved":"pending",verifiedBy:r.verified_by}));}
-export async function writeCloudHistory(entry:EmploymentEntry,expectedOwner:string){const db=requireSupabase(),owner=await cloudOwner();if(expectedOwner!==owner)throw new Error("La sesión cambió.");const {error}=await (db as any).from("jcard_employment_history").upsert({owner_id:owner,client_id:entry.id,company:entry.company,role:entry.role,professions:entry.professions??[],from_year:entry.from,from_month:entry.fromMonth??1,to_year:entry.to,to_month:entry.toMonth??12,verified_by:null,updated_at:new Date().toISOString()},{onConflict:"owner_id,client_id"});if(error)throw error;}
+export async function readCloudHistory(expectedOwner?:string,expectedScope?:MessageScope):Promise<EmploymentEntry[]>{
+ const db=requireSupabase(),scope=await captureMessageScope(expectedScope),owner=scope.owner;
+ if(expectedOwner&&expectedOwner!==owner)throw Error("La sesión cambió.");
+ const [history,details]=await Promise.all([
+  (db as any).from("jcard_employment_history").select("owner_id,client_id,company,role,professions,from_year,from_month,to_year,to_month,verified_by").eq("owner_id",owner),
+  (db as any).from("jobeen_employment_private_contact").select("owner_id,client_id,address,contact").eq("owner_id",owner)
+ ]);
+ if(history.error)throw history.error;
+ if(details.error)throw details.error;
+ await assertMessageScope(scope);
+ const contacts=new Map<string,{address:string;contact:string}>((details.data??[]).filter((r:any)=>r.owner_id===owner).map((r:any)=>[r.client_id,{address:r.address,contact:r.contact}]));
+ return (history.data??[]).filter((r:any)=>r.owner_id===owner).map((r:any)=>({id:r.client_id,company:r.company,role:r.role,professions:r.professions,from:r.from_year,fromMonth:r.from_month,to:r.to_year,toMonth:r.to_month,status:r.verified_by?"approved":"pending",verifiedBy:r.verified_by,...contacts.get(r.client_id)}));
+}
+export async function writeCloudHistory(entry:EmploymentEntry,expectedOwner:string,expectedScope?:MessageScope){
+ const db=requireSupabase(),scope=await captureMessageScope(expectedScope),owner=scope.owner;
+ if(expectedOwner!==owner)throw Error("La sesión cambió.");
+ await assertMessageScope(scope);
+ const {error}=await db.rpc("jobeen_save_private_employment" as never,{
+  p_client_id:entry.id,p_company:entry.company,p_role:entry.role,p_professions:entry.professions??[],
+  p_from_year:entry.from,p_from_month:entry.fromMonth??1,p_to_year:entry.to,p_to_month:entry.toMonth??12,
+  p_address:entry.address??"",p_contact:entry.contact??""
+ } as never);
+ if(error)throw error;
+ await assertMessageScope(scope);
+}
 export async function readCloudBusiness(expectedOwner?:string,expectedScope?:MessageScope):Promise<Partial<BusinessCardData>|null>{const db=requireSupabase(),scope=await captureMessageScope(expectedScope),owner=scope.owner;if(expectedOwner&&expectedOwner!==owner)throw new Error("La sesión cambió.");const {data,error}=await (db as any).from("jcard_business_details").select("name,business_handle,opened,closed,services,location,category,email,email_secondary,phone,phone_secondary,phone_label,phone_secondary_label,banner_url,avatar_url").eq("owner_id",owner).maybeSingle();if(error)throw error;await assertMessageScope(scope);return data?{...data,businessHandle:data.business_handle??"",emailSecondary:data.email_secondary,phoneSecondary:data.phone_secondary,phoneLabel:data.phone_label,phoneSecondaryLabel:data.phone_secondary_label,bannerUrl:data.banner_url,avatarUrl:data.avatar_url}:null;}
 export async function writeCloudBusiness(b:BusinessCardData,expectedOwner?:string,expectedScope?:MessageScope){const db=requireSupabase(),scope=await captureMessageScope(expectedScope),owner=scope.owner;if(expectedOwner&&expectedOwner!==owner)throw new Error("La sesión cambió. Vuelve a abrir la JCard antes de guardar.");await assertMessageScope(scope);const {error}=await (db as any).from("jcard_business_details").upsert({owner_id:owner,name:b.name,...(b.businessHandle!==undefined?{business_handle:b.businessHandle?.trim().toLowerCase()||null}:{}),opened:b.opened,closed:b.closed,services:b.services,location:b.location,category:b.category??null,email:b.email??null,email_secondary:b.emailSecondary??null,phone:b.phone??null,phone_secondary:b.phoneSecondary??null,phone_label:b.phoneLabel??null,phone_secondary_label:b.phoneSecondaryLabel??null,banner_url:b.bannerUrl??null,avatar_url:b.avatarUrl??null,updated_at:new Date().toISOString()},{onConflict:"owner_id"});if(error)throw error;await assertMessageScope(scope);}
 export async function readBusinessRating(ownerId:string){const db=requireSupabase();const {data,error}=await (db as any).from("jcard_business_ratings").select("average_rating,review_count").eq("business_owner_id",ownerId).maybeSingle();if(error)throw error;return {rating:data?.average_rating??null,count:data?.review_count??0};}
