@@ -67,6 +67,32 @@ export function createPrivateMetadataVault(backend:NativeSecretBackend,verify:Ve
   for(let i=0;i<total;i++)await backend.deleteItemAsync(chunkKey(root,bank,i));
   await backend.deleteItemAsync(bankKey(root,bank)+".count");
  }
+ async function commit(root:string,scope:MessageScope,value:string,recovery?:()=>Promise<void>){
+   const chunks=split(value);
+   const active=manifest(await backend.getItemAsync(root+".manifest"));
+   if(recovery){
+    // An existing manifest includes empty collections and discard tombstones.
+    // Staging without a manifest may be an interrupted save, not absence.
+    if(active||await backend.getItemAsync(bankKey(root,0)+".count")!==null||
+       await backend.getItemAsync(bankKey(root,1)+".count")!==null)return false;
+    await recovery();
+    await verify(scope);
+   }
+   const target:Bank=active?.bank===0?1:0;
+   const oldCount=count(await backend.getItemAsync(bankKey(root,target)+".count"));
+   // Keep a cleanup bound even if the process dies halfway through staging.
+   await backend.setItemAsync(bankKey(root,target)+".count",String(Math.max(oldCount,chunks.length)));
+   for(let i=0;i<chunks.length;i++)await backend.setItemAsync(chunkKey(root,target,i),chunks[i]);
+   for(let i=chunks.length;i<oldCount;i++)await backend.deleteItemAsync(chunkKey(root,target,i));
+   await backend.setItemAsync(bankKey(root,target)+".count",String(chunks.length));
+   if(recovery)await recovery();
+   await verify(scope);
+   await backend.setItemAsync(root+".manifest",JSON.stringify({bank:target,count:chunks.length}));
+   // Never expose the old bank once committed. A failed cleanup leaves
+   // encrypted entries that can be reconciled on the next write.
+   if(active)try{await cleanup(root,active.bank);}catch{/* still encrypted, no fallback */}
+   return true;
+ }
  return {
   read(kind:PrivateMetadataKind,scope:MessageScope){return run(kind,scope,async root=>{
    const active=manifest(await backend.getItemAsync(root+".manifest"));
@@ -81,21 +107,14 @@ export function createPrivateMetadataVault(backend:NativeSecretBackend,verify:Ve
    }
    return chunks.join("");
   });},
-  write(kind:PrivateMetadataKind,scope:MessageScope,value:string){return run(kind,scope,async root=>{
-   const chunks=split(value);
-   const active=manifest(await backend.getItemAsync(root+".manifest"));
-   const target:Bank=active?.bank===0?1:0;
-   const oldCount=count(await backend.getItemAsync(bankKey(root,target)+".count"));
-   // Keep a cleanup bound even if the process dies halfway through staging.
-   await backend.setItemAsync(bankKey(root,target)+".count",String(Math.max(oldCount,chunks.length)));
-   for(let i=0;i<chunks.length;i++)await backend.setItemAsync(chunkKey(root,target,i),chunks[i]);
-   for(let i=chunks.length;i<oldCount;i++)await backend.deleteItemAsync(chunkKey(root,target,i));
-   await backend.setItemAsync(bankKey(root,target)+".count",String(chunks.length));
-   await verify(scope);
-   await backend.setItemAsync(root+".manifest",JSON.stringify({bank:target,count:chunks.length}));
-   // Never expose the old bank once committed. A failed cleanup leaves
-   // encrypted entries that can be reconciled on the next write.
-   if(active)try{await cleanup(root,active.bank);}catch{/* still encrypted, no fallback */}
-  });}
+  async write(kind:PrivateMetadataKind,scope:MessageScope,value:string):Promise<void>{
+   await run(kind,scope,root=>commit(root,scope,value));
+  },
+  // Recovery must share the normal write queue. Never overwrite ANY prior
+  // snapshot. The caller is responsible for independent authenticated server
+  // proof and consent; this guard is not itself proof of ownership.
+  restoreIfNeverInitialized(kind:PrivateMetadataKind,scope:MessageScope,value:string,revalidate:()=>Promise<void>){
+   return run(kind,scope,root=>commit(root,scope,value,revalidate));
+  }}
  };
 }
