@@ -58,6 +58,25 @@ alter table public.jobin_employer_links enable row level security;
 grant all on public.jobin_employer_links to authenticated,anon;
 grant update(status) on public.jobin_employer_links to authenticated;
 
+-- Reproduce the hosted purpose-specific preferences and old login-contact RPC.
+create table public.jcard_contact_preferences(owner_id uuid primary key references auth.users(id),
+ show_email boolean not null default false,show_phone boolean not null default false,updated_at timestamptz default now());
+alter table public.jcard_contact_preferences enable row level security;
+grant select,insert,update on public.jcard_contact_preferences to authenticated;
+create policy fixture_contact_preferences on public.jcard_contact_preferences for all to authenticated using(owner_id=auth.uid()) with check(owner_id=auth.uid());
+create function public.jcard_public_contact(target uuid) returns jsonb language sql security definer set search_path='' as $legacy_contact$ select jsonb_build_object('email',u.email,'phone',u.phone) from auth.users u where u.id=target $legacy_contact$;
+grant execute on function public.jcard_public_contact(uuid) to anon,authenticated;
+
+-- CI baseline lacks hosted ranking RPC; equivalent authorization/limit fixture.
+create or replace function public.jobin_find_professionals(p_query text default '',p_city text default '',p_profession text default '',p_specialty text default '',p_limit integer default 30)
+returns jsonb language sql stable security definer set search_path='' as $rank_fixture$
+ select coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) from (
+  select p.id,p.display_name as name from public.profiles p where p.deactivated_at is null
+  AND NOT private.is_blocked(p.id,auth.uid())
+  order by p.display_name,p.id limit p_limit
+ ) x
+$rank_fixture$;
+
 \ir ../supabase/security-review/business-card-projection.sql
 \ir ../supabase/security-review/business-card-privacy.sql
 \ir ../supabase/security-review/saved-jcard-visibility.sql
