@@ -28,7 +28,6 @@ import {readPublicBusinessCard} from "../lib/jcard-cloud";
 import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import {isSavedJCard,removeSavedJCard,saveVisibleJCard,type SavedJCardSide} from "../lib/saved-jcards";
 import type {BusinessCardData} from "../lib/jcard";
-import { useProfessionalData } from "../state/useProfessionalData";
 export default function PublicJCard(){
  const {user,card}=useLocalSearchParams<{user?:string;card?:string}>();
  const {colors,s}=useUi();
@@ -39,17 +38,35 @@ export default function PublicJCard(){
  const [viewer,setViewer]=useState("");
  const [profileMenuOpen,setProfileMenuOpen]=useState(false);
  const [activeCardSide,setActiveCardSide]=useState<SavedJCardSide>(card==="business"?"business":"personal");
- const [cardVisibility,setCardVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
- const [cardVisibilityReady,setCardVisibilityReady]=useState(false);
+ const publicRevision=useRef(0);
+ const [publicSnapshot,setPublicSnapshot]=useState<{target:string;scope:MessageScope;data:Awaited<ReturnType<typeof loadPublicCard>>;visibility:Awaited<ReturnType<typeof readJCardVisibility>>;business:BusinessCardData|null}|null>(null);
+ const [publicLoading,setPublicLoading]=useState(true),[publicError,setPublicError]=useState(""),[publicRetry,setPublicRetry]=useState(0);
+ const snapshot=publicSnapshot?.target===user?publicSnapshot:null;
+ const cardVisibility=snapshot?.visibility??{...DEFAULT_JCARD_VISIBILITY,personal_enabled:false,business_enabled:false};
+ const cardVisibilityReady=!!snapshot;
+ const publicBusiness=cardVisibility.business_enabled?snapshot?.business??null:null;
  const [cardSaved,setCardSaved]=useState(false);
  const [savingCard,setSavingCard]=useState(false);
- const sideIsPublic=activeCardSide==="personal"?cardVisibility.personal_enabled:cardVisibility.business_enabled;
+ const sideIsPublic=activeCardSide==="personal"?cardVisibility.personal_enabled:cardVisibility.business_enabled&&!!publicBusiness;
  useEffect(()=>setActiveCardSide(card==="business"?"business":"personal"),[card,user]);
- useEffect(()=>{if(!user)return;let live=true;setCardVisibilityReady(false);
-  void readJCardVisibility(user).then(v=>{if(live){setCardVisibility(v);setCardVisibilityReady(true);}}).catch(()=>{if(live)setCardVisibilityReady(false);});
-  return()=>{live=false;};},[user]);
-  const [publicBusiness,setPublicBusiness]=useState<BusinessCardData|null>(null);
-  useEffect(()=>{if(!user)return;let active=true;setPublicBusiness(null);void readPublicBusinessCard(user).then(v=>{if(active)setPublicBusiness(v);}).catch(()=>{if(active)setPublicBusiness(null);});return()=>{active=false;};},[user]);
+ useFocusEffect(useCallback(()=>{
+  const generation=++publicRevision.current;
+  setPublicSnapshot(null);setPublicLoading(true);setPublicError("");setProfileMenuOpen(false);
+  void(async()=>{
+   try{
+    if(!user||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user))throw Error("Enlace de JCard inválido.");
+    const scope=await captureMessageScope();
+    const [data,visibility,business]=await Promise.all([loadPublicCard(user,scope),readJCardVisibility(user,scope),readPublicBusinessCard(user,scope)]);
+    await assertMessageScope(scope);
+    if(publicRevision.current!==generation)return;
+    if(data.id!==user||(!visibility.personal_enabled&&(!visibility.business_enabled||!business)))throw Error("El perfil no está disponible.");
+    setPublicSnapshot({target:user,scope,data,visibility,business});
+   }catch(e){if(publicRevision.current===generation){setPublicSnapshot(null);setPublicError(e instanceof Error?e.message:"El perfil no está disponible.");}}
+   finally{if(publicRevision.current===generation)setPublicLoading(false);}
+  })();
+  return()=>{publicRevision.current++;setPublicSnapshot(null);};
+ },[user,publicRetry]));
+ const resource={data:snapshot?.data??null,loading:publicLoading,error:publicError,reload:()=>setPublicRetry(v=>v+1)};
  const [section,setSection]=useState<ProfileSection>("grid");
  const profileScroll=useRef<ScrollView|null>(null);
  const profileScrollY=useRef(new Animated.Value(0)).current;
@@ -149,10 +166,6 @@ export default function PublicJCard(){
   }catch(e){if(valid()){savedScope.current=null;setSavedReady(false);setCardSaved(false);Alert.alert("Mis JCards",e instanceof Error?e.message:"No se pudo actualizar tu colección.");}}
   finally{saveGuard.current=false;setSavingCard(false);}
  };
- const resource=useProfessionalData(useCallback(()=>{
-  if(!user||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user))return Promise.reject(new Error("Enlace de JCard inválido."));
-  return loadPublicCard(user);
- },[user]));
  return <>
   <Stack.Screen options={{headerShown:false}}/>
   <SafeAreaView edges={["top","left","right"]} style={[s.screen,{backgroundColor:jt.bg}]}>
@@ -199,7 +212,7 @@ export default function PublicJCard(){
     })}>
    <Animated.View style={{gap:14,paddingHorizontal:20,paddingBottom:20,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
     {resource.data?<ProfileIdentityHeader
-     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"} onActiveSideChange={setActiveCardSide}/>}
+     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"} onActiveSideChange={setActiveCardSide} publicVisibility={cardVisibility} publicScope={snapshot?.scope}/>}
      actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
       onToggleSaved={savedReady&&cardVisibilityReady&&sideIsPublic?()=>void toggleSaved():undefined}
       savedJCard={cardSaved} savingJCard={savingCard} visibleCardSide={activeCardSide}/>}
