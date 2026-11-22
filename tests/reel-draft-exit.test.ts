@@ -17,10 +17,28 @@ test("Video preparation stores clip and trim metadata without pretending it has 
  assert.ok(video.includes('jobeen.reel.draft.v1.'));
  assert.ok(video.includes('AppState.addEventListener("change"'));
  assert.ok(video.includes('usePreventRemove(!exitAllowed'));
- assert.ok(video.includes('<Editor key={asset.uri} asset={asset} edit={edit} onEdit={setEdit}/>'));
+ assert.ok(video.includes('<Editor key={asset.uri} asset={asset} edit={edit} onEdit={setEdit} scope={scopeRef.current}/>'));
  assert.ok(video.includes('onPress={requestExit}'));
  assert.ok(video.includes("Guardar borrador"));
  assert.ok(video.includes("Descartar cambios"));
  assert.ok(video.includes('router.replace("/(tabs)/index")'));
  assert.ok(video.includes('Si Android borra un archivo temporal'));
+});
+
+test("Media drafts and private playback preserve the initiating account and avoid persistent player caching",()=>{
+ const api=readFileSync("src/lib/safety-api.ts","utf8");
+ const room=readFileSync("src/app/work-media/[id].tsx","utf8");
+ for(const editor of [flash,video]){
+  assert.ok(editor.includes("await assertMessageScope(scope)"));
+  assert.ok(editor.includes("scopeRef.current!==scope"));
+  assert.ok(editor.includes("serializePrivateWrite("));
+  assert.ok(editor.includes("useCaching:false"));
+  assert.ok(editor.includes("localVideo("));
+ }
+ assert.ok(api.includes('return safetyMutation("jobin_submit_work_video",{...input,path},scope)'));
+ assert.ok(api.includes('if(media.some(row=>row.creator_id!==scope.owner))'));
+ assert.ok(room.includes("await loadMedia(id,origin)"));
+ assert.ok(room.includes("useCaching:false"));
+ assert.ok(room.includes('setError("No se pudo renovar el permiso de reproducción.")'));
+ assert.ok(room.includes("invalidate();"));
 });
