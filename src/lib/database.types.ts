@@ -2990,6 +2990,10 @@ export type Database = {
         Returns: undefined
       }
       jobin_jcard_data: { Args: { target?: string }; Returns: Json }
+      jobin_legacy_recovery_text_posts: {
+        Args: { requested_grant: string }
+        Returns: string | null
+      }
       jobin_moderation_job_failed: {
         Args: { job: string; reason: string; token: string }
         Returns: undefined

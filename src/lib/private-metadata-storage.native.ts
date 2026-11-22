@@ -15,3 +15,7 @@ const backend:NativeSecretBackend={
 };
 // No automatic import from legacy plaintext.
 export const privateMetadataStorage=createPrivateMetadataVault(backend,assertMessageScope);
+
+export function restoreVerifiedNativePostDrafts(scope:import("./message-session").MessageScope,payload:string,revalidate:()=>Promise<void>){
+ return privateMetadataStorage.restoreIfNeverInitialized("post-drafts",scope,payload,revalidate);
+}

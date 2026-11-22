@@ -229,9 +229,17 @@ insert into auth.sessions(id,user_id) values
 insert into jobeen_private.legacy_recovery_grants(id,owner_id,session_id,category,payload_sha256,proof_reference,reauthenticated_at,consented_at,expires_at)
 values('d3333333-3333-4333-8333-333333333333','c3333333-3333-4333-8333-333333333333','e3333333-3333-4333-8333-333333333333',
  'post-drafts',repeat('a',64),gen_random_uuid(),now()-interval '30 seconds',now()-interval '10 seconds',now()+interval '2 minutes');
+insert into jobeen_private.legacy_recovery_grants(id,owner_id,session_id,category,payload_sha256,proof_reference,reauthenticated_at,consented_at,expires_at)
+values('d4444444-4444-4444-8444-444444444444','c3333333-3333-4333-8333-333333333333','e3333333-3333-4333-8333-333333333333',
+ 'post-drafts',encode(sha256(convert_to('fixture authorized bytes','UTF8')),'hex'),gen_random_uuid(),now()-interval '30 seconds',now()-interval '10 seconds',now()+interval '2 minutes');
+insert into jobeen_private.legacy_recovery_payloads(grant_id,payload) values('d4444444-4444-4444-8444-444444444444','fixture authorized bytes');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','c3333333-3333-4333-8333-333333333333',true);
 select set_config('request.jwt.claims','{"session_id":"e3333333-3333-4333-8333-333333333333","is_anonymous":false}',true);
+select pg_temp.combined_assert(public.jobin_legacy_recovery_text_posts('d4444444-4444-4444-8444-444444444444')='fixture authorized bytes','authorized exact payload delivered');
+select pg_temp.combined_assert(public.jobin_legacy_recovery_text_posts('d3333333-3333-4333-8333-333333333333') is null,'grant without payload cannot fetch data');
+select pg_temp.combined_deny($q$select * from jobeen_private.legacy_recovery_payloads$q$);
+select pg_temp.combined_deny($q$update jobeen_private.legacy_recovery_payloads set payload='forged'$q$);
 select pg_temp.combined_assert(public.jobin_legacy_recovery_authorized('d3333333-3333-4333-8333-333333333333','post-drafts',repeat('a',64)),'exact owner session category and payload approved');
 select pg_temp.combined_assert(not public.jobin_legacy_recovery_authorized('d3333333-3333-4333-8333-333333333333','flash-draft',repeat('a',64)),'category substitution denied');
 select pg_temp.combined_assert(not public.jobin_legacy_recovery_authorized('d3333333-3333-4333-8333-333333333333','post-drafts',repeat('b',64)),'payload substitution denied');
@@ -242,12 +250,15 @@ select pg_temp.combined_assert(not public.jobin_legacy_recovery_authorized('d333
 select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
 select set_config('request.jwt.claims','{"session_id":"e2222222-2222-4222-8222-222222222222"}',true);
 select pg_temp.combined_assert(not public.jobin_legacy_recovery_authorized('d3333333-3333-4333-8333-333333333333','post-drafts',repeat('a',64)),'other owner denied');
+select pg_temp.combined_assert(public.jobin_legacy_recovery_text_posts('d4444444-4444-4444-8444-444444444444') is null,'other owner cannot fetch recovery payload');
 reset role;
+update jobeen_private.legacy_recovery_payloads set payload='tampered fixture' where grant_id='d4444444-4444-4444-8444-444444444444';
 update jobeen_private.legacy_recovery_grants set revoked_at=now() where id='d3333333-3333-4333-8333-333333333333';
 set local role authenticated;
 select set_config('request.jwt.claim.sub','c3333333-3333-4333-8333-333333333333',true);
 select set_config('request.jwt.claims','{"session_id":"e3333333-3333-4333-8333-333333333333"}',true);
 select pg_temp.combined_assert(not public.jobin_legacy_recovery_authorized('d3333333-3333-4333-8333-333333333333','post-drafts',repeat('a',64)),'revoked grant denied');
+select pg_temp.combined_assert(public.jobin_legacy_recovery_text_posts('d4444444-4444-4444-8444-444444444444') is null,'changed payload fails digest verification');
 reset role;
 update jobeen_private.legacy_recovery_grants set revoked_at=null where id='d3333333-3333-4333-8333-333333333333';
 delete from auth.sessions where id='e3333333-3333-4333-8333-333333333333';

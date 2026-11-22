@@ -51,3 +51,31 @@ grant execute on function public.jobin_legacy_recovery_authorized(uuid,text,text
 -- No content, URLs, hash list, other account UUIDs or proof references are
 -- returned. A boolean is not a payload, signature or authorization to accept
 -- bytes from legacy storage without matching independently verified content.
+
+
+-- First recovery scope: independently verified, reconstructed text-only post
+-- drafts. A restricted operator provides exact bytes; never store client
+-- uploads of unverified legacy records here.
+create table if not exists jobeen_private.legacy_recovery_payloads(
+ grant_id uuid primary key references jobeen_private.legacy_recovery_grants(id) on delete cascade,
+ payload text not null check(octet_length(payload) between 2 and 96000)
+);
+alter table jobeen_private.legacy_recovery_payloads enable row level security;
+revoke all on jobeen_private.legacy_recovery_payloads from public,anon,authenticated,service_role;
+create or replace function jobeen_private.legacy_recovery_text_posts(requested_grant uuid)
+returns text language sql stable security definer set search_path='' as $fn$
+ select r.payload from jobeen_private.legacy_recovery_payloads r
+ join jobeen_private.legacy_recovery_grants g on g.id=r.grant_id
+ where r.grant_id=requested_grant
+ and g.category='post-drafts'
+ and g.payload_sha256=pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(r.payload,'UTF8')),'hex')
+ and jobeen_private.legacy_recovery_authorized(g.id,g.category,g.payload_sha256)
+$fn$;
+revoke all on function jobeen_private.legacy_recovery_text_posts(uuid) from public,anon,authenticated;
+grant execute on function jobeen_private.legacy_recovery_text_posts(uuid) to authenticated;
+create or replace function public.jobin_legacy_recovery_text_posts(requested_grant uuid)
+returns text language sql stable security invoker set search_path='' as $fn$
+ select jobeen_private.legacy_recovery_text_posts(requested_grant)
+$fn$;
+revoke all on function public.jobin_legacy_recovery_text_posts(uuid) from public,anon,authenticated;
+grant execute on function public.jobin_legacy_recovery_text_posts(uuid) to authenticated;

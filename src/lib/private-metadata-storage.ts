@@ -26,3 +26,7 @@ export const privateMetadataStorage={
   await assertMessageScope(scope);
  }
 };
+
+export async function restoreVerifiedNativePostDrafts(_scope:MessageScope,_payload:string,_revalidate:()=>Promise<void>):Promise<boolean>{
+ throw Error("La recuperación requiere almacenamiento nativo seguro.");
+}
