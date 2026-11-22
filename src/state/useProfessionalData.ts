@@ -1,14 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { supabase } from "../lib/supabase";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {sessionMarkerKey} from "../lib/session-lifetime";
+import type {MessageScope} from "../lib/session-continuity";
+import {createWorkspaceSessionCache} from "../lib/workspace-session-cache";
 
-const workspaceMemory=new Map<string,unknown>();
-const cachePrefix="jobin.workspace.cache.v1.";
+const workspaceMemory=createWorkspaceSessionCache();
+async function readScope():Promise<MessageScope|null>{
+ if(!supabase)return null;
+ const {data,error}=await supabase.auth.getSession();
+ if(error)throw error;
+ const session=data.session;
+ if(!session)return null;
+ const owner=session.user.id;
+ return {owner,session:sessionMarkerKey(owner,session.access_token)};
+}
+function sameScope(a:MessageScope|null,b:MessageScope|null){
+ return a===null||b===null?a===b:a.owner===b.owner&&a.session===b.session;
+}
 
 
 /** Reload on focus and auth changes; never substitute fictional data for a failed request. */
-/** Show a user-scoped cached workspace while refreshing it from the server. */
+/** Show a matching in-memory workspace while refreshing within the same session. Never restore legacy disk snapshots. */
 export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=false) {
  const [data,setData]=useState<T|null>(null);
  const [error,setError]=useState("");
@@ -17,12 +30,11 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
  const generation=useRef(0);
  const reload=useCallback(()=>setVersion(value=>value+1),[]);
  useEffect(()=>{
-  const subscription=supabase?.auth.onAuthStateChange((_event,session)=>{
+  const subscription=supabase?.auth.onAuthStateChange(()=>{
    generation.current++;
    workspaceMemory.clear();
    setData(null);
    setLoading(true);
-   if(!session?.user)void AsyncStorage.getAllKeys().then(keys=>AsyncStorage.multiRemove(keys.filter(key=>key.startsWith(cachePrefix)))).catch(()=>{});
    reload();
   });
   return ()=>subscription?.data.subscription.unsubscribe();
@@ -33,40 +45,40 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
   const valid=()=>current&&generation.current===requestGeneration;
   setError("");
   void (async()=>{
-   let cacheKey:string|null=null;
-   const initial=(await supabase?.auth.getSession())?.data.session?.user.id??null;
+   const initial=await readScope();
    if(!valid())return;
-   const sameOwner=async()=>valid()&&((await supabase?.auth.getSession())?.data.session?.user.id??null)===initial&&valid();
+   const sameOwner=async()=>valid()&&sameScope(initial,await readScope())&&valid();
    if(cacheWorkspace){
-    if(!valid())return;
-    const userId=initial;
-    if(userId){
-     cacheKey=cachePrefix+userId;
-     const memory=workspaceMemory.get(cacheKey);
-     if(memory&&typeof memory==="object"&&"card" in memory&&(memory as {card?:{id?:string}}).card?.id===userId){setData(memory as T);setLoading(false);}
-     else{
-      try{
-       const raw=await AsyncStorage.getItem(cacheKey);
-       if(!await sameOwner())return;
-       if(raw){const cached=JSON.parse(raw) as T;if(cached&&typeof cached==="object"&&"card" in cached&&(cached as {card?:{id?:string}}).card?.id===userId){setData(cached);setLoading(false);workspaceMemory.set(cacheKey,cached);}}
-      }catch{/* A corrupt cache must never block the server request. */}
-     }
-    }else{setData(null);}
+    if(!await sameOwner())return;
+    const memory=initial?workspaceMemory.read(initial):null;
+    setData(memory as T|null);
+    if(memory)setLoading(false);
    }
    if(!valid())return;
    try{
     const value=await loader();
-    if(!await sameOwner())return;
-    if(cacheWorkspace&&value&&(!initial||(value as {card?:{id?:string}}).card?.id!==initial))throw new Error("La sesión cambió. Vuelve a cargar el perfil.");
-    setData(value);
-    if(cacheWorkspace&&cacheKey&&value){
-     workspaceMemory.set(cacheKey,value);
-     void AsyncStorage.setItem(cacheKey,JSON.stringify(value)).catch(()=>{});
+    if(!await sameOwner()){
+     if(valid()){workspaceMemory.clear();setData(null);setError("La sesión cambió. Vuelve a cargar el perfil.");}
+     return;
     }
+    if(cacheWorkspace){
+     if(!initial||!value){workspaceMemory.clear();setData(null);return;}
+     if(!workspaceMemory.write(initial,value)){
+      setData(null);
+      throw new Error("La sesión cambió. Vuelve a cargar el perfil.");
+     }
+    }
+    setData(value);
    }catch(cause){
-    if(valid())setError(cause instanceof Error?cause.message:String(cause));
+    if(valid()){
+     let stillCurrent=false;
+     try{stillCurrent=await sameOwner();}catch{/* Fail closed when identity cannot be read. */}
+     if(!valid())return;
+     if(!stillCurrent){workspaceMemory.clear();setData(null);}
+     setError(cause instanceof Error?cause.message:String(cause));
+    }
    }finally{if(valid())setLoading(false);}
-  })().catch(cause=>{if(valid()){setError(cause instanceof Error?cause.message:String(cause));setLoading(false);}});
+  })().catch(cause=>{if(valid()){workspaceMemory.clear();setData(null);setError(cause instanceof Error?cause.message:String(cause));setLoading(false);}});
   return ()=>{current=false;};
  },[loader,version,cacheWorkspace]));
  return {data,error,loading,reload};

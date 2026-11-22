@@ -31,8 +31,13 @@ test("Changing authenticated identity remounts state providers and rejects previ
  assert.ok(layout.includes("<AuthGate><AppProvider><SocialProvider><NoticeProvider>"));
  assert.ok(cache.includes("generation.current===requestGeneration"));
  assert.ok(cache.includes("await sameOwner()"));
- assert.ok(cache.includes("card?.id===userId"));
- assert.ok(cache.includes("card?.id!==initial"));
+ assert.ok(cache.includes("sameScope(initial,await readScope())"));
+ assert.ok(cache.includes("sessionMarkerKey(owner,session.access_token)"));
+ assert.ok(cache.includes("workspaceMemory.write(initial,value)"));
+ assert.ok(!cache.includes("AsyncStorage"),"Never restore or persist unencrypted professional workspace");
+ const memory=src("src/lib/workspace-session-cache.ts");
+ assert.ok(memory.includes("workspaceOwner(value)!==scope.owner"));
+ assert.ok(memory.includes("entry.scope.session!==scope.session"));
  assert.ok(src("src/lib/professional-api.ts").includes("result.card.id!==user.id"));
 });
 test("Private device collections require the current authenticated UUID, not just a cache key",()=>{
