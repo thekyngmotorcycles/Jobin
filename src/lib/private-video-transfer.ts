@@ -7,25 +7,26 @@
 import type {MessageScope} from "./session-continuity";
 export const VIDEO_CHUNK_BYTES=6*1024*1024;
 export const VIDEO_MAX_BYTES=500*1024*1024;
-type Mime="video/mp4"|"video/quicktime"|"video/webm";
-const extension:Record<Mime,string>={"video/mp4":"mp4","video/quicktime":"mov","video/webm":"webm"};
+export type VideoMime="video/mp4"|"video/quicktime"|"video/webm";
+const extension:Record<VideoMime,string>={"video/mp4":"mp4","video/quicktime":"mov","video/webm":"webm"};
+export function isPrivateVideoMime(value:string):value is VideoMime{return Object.hasOwn(extension,value);}
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export interface SelectedVideoSource{
  readonly size:number;
- readonly mime:Mime;
+ readonly mime:VideoMime;
  /** Immutable selected file snapshot, no persisted URI or automatic restore.
   * Read one bounded slice, never load the whole source into memory. */
  read(offset:number,length:number):Promise<Uint8Array>;
 }
-type UploadRequest={bucket:"video-originals";path:string;size:number;mime:Mime;cacheControl:"0";upsert:false};
+export type PrivateVideoUploadRequest={bucket:"video-originals";path:string;size:number;mime:VideoMime;cacheControl:"0";upsert:false};
 export interface PrivateVideoTransport{
  /** An opaque, in-memory handle bound to this request and exact scope.
   * It must not contain or return an unrestricted external URL. */
- create(request:UploadRequest,scope:MessageScope):Promise<string>;
+ create(request:PrivateVideoUploadRequest,scope:MessageScope):Promise<string>;
  offset(handle:string,scope:MessageScope):Promise<number>;
  append(handle:string,offset:number,bytes:Uint8Array,scope:MessageScope):Promise<number>;
  /** Verify completed object identity/size/ticket before publication RPC. */
- confirm(handle:string,request:UploadRequest,scope:MessageScope):Promise<void>;
+ confirm(handle:string,request:PrivateVideoUploadRequest,scope:MessageScope):Promise<void>;
 }
 export function createPrivateVideoTransfer(
  source:SelectedVideoSource,scope:MessageScope,transport:PrivateVideoTransport,
@@ -35,7 +36,7 @@ export function createPrivateVideoTransfer(
  if(!uuid.test(origin.owner)||!origin.session.startsWith("jobeen.session.started.v3."+origin.owner+".")
  ||!Number.isSafeInteger(size)||size<1||size>VIDEO_MAX_BYTES||!Object.hasOwn(extension,mime))
   throw Error("Video no admitido.");
- let request:UploadRequest|undefined,handle:string|undefined,busy=false,complete=false,stopped=false;
+ let request:PrivateVideoUploadRequest|undefined,handle:string|undefined,busy=false,complete=false,stopped=false;
  async function check(){
   if(stopped)throw Error();
   await verify(origin);
