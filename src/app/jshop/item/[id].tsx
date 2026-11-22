@@ -27,14 +27,14 @@ export default function JShopItemDetail(){
  const [shareOpen,setShareOpen]=useState(false);
  const [busy,setBusy]=useState(false);
  useFocusEffect(useCallback(()=>{
-  let live=true;scopeRef.current=null;setLoading(true);setItem(null);setViewer("");setSaved(false);setShareOpen(false);
+  let live=true;scopeRef.current=null;setLoading(true);setBusy(false);setItem(null);setViewer("");setSaved(false);setShareOpen(false);
   void(async()=>{
    try{
     const scope=await captureMessageScope();
     const user=scope.owner;
-    let found:JShopListing|JShopDraft|null=await loadJShopListing(id);
+    let found:JShopListing|JShopDraft|null=await loadJShopListing(id,scope);
     if(!found){const drafts=await readJShopDrafts(user,scope);found=drafts.find(row=>row.id===id)??null;}
-    const favorites=found&&!("ownerId" in found)?await loadJShopFavoriteIds(user):[];
+    const favorites=found&&!("ownerId" in found)?await loadJShopFavoriteIds(user,scope):[];
     await assertMessageScope(scope);
     if(live){scopeRef.current=scope;setViewer(user);setItem(found);setSaved(favorites.includes(id));setSelectedPhoto(0);setError("");}
    }catch(e){if(live){setItem(null);setError(e instanceof Error?e.message:"No se pudo abrir el artículo.");}}
@@ -45,30 +45,35 @@ export default function JShopItemDetail(){
  const listing=item&&!('ownerId' in item)?item:null;
  const draft=item&&'ownerId' in item?item:null;
  const owner=!!listing&&viewer===listing.sellerId;
+ const operation=useRef(false);
  async function changeStatus(status:"published"|"paused"|"sold"){
-  if(!listing||!owner||busy)return;
-  setBusy(true);
-  try{await setJShopListingStatus(viewer,listing.id,status);setItem({...listing,status});setError("");}
-  catch(e){setError(e instanceof Error?e.message:"No se pudo cambiar el estado.");}
-  finally{setBusy(false);}
+  const scope=scopeRef.current;
+  if(!scope||scope.owner!==viewer||!listing||!owner||operation.current)return;
+  operation.current=true;setBusy(true);
+  try{await setJShopListingStatus(viewer,listing.id,status,scope);await assertMessageScope(scope);
+   if(scopeRef.current===scope){setItem({...listing,status});setError("");}}
+  catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo cambiar el estado.");}
+  finally{operation.current=false;if(scopeRef.current===scope)setBusy(false);}
  }
  async function toggleFavorite(){
-  if(!listing||owner||busy)return;
-  setBusy(true);
-  try{await setJShopFavorite(viewer,listing.id,!saved);setSaved(!saved);setError("");}
-  catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar el favorito.");}
-  finally{setBusy(false);}
+  const scope=scopeRef.current;
+  if(!scope||scope.owner!==viewer||!listing||owner||operation.current)return;
+  operation.current=true;setBusy(true);
+  try{await setJShopFavorite(viewer,listing.id,!saved,scope);await assertMessageScope(scope);
+   if(scopeRef.current===scope){setSaved(!saved);setError("");}}
+  catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo actualizar el favorito.");}
+  finally{operation.current=false;if(scopeRef.current===scope)setBusy(false);}
  }
  async function deleteItem(origin:MessageScope,targetId:string){
-  if(scopeRef.current!==origin||origin.owner!==viewer||!item||item.id!==targetId||busy)return;setBusy(true);
+  if(scopeRef.current!==origin||origin.owner!==viewer||!item||item.id!==targetId||operation.current)return;operation.current=true;setBusy(true);
   try{
    await captureMessageScope(origin);if(scopeRef.current!==origin)return;
    if(draft)await deleteJShopDraft(viewer,draft.id,origin);
-   else if(listing&&owner)await deleteJShopListing(viewer,listing);
+   else if(listing&&owner)await deleteJShopListing(viewer,listing,origin);
    else throw Error("No tienes permiso para eliminar este artículo.");
    await assertMessageScope(origin);if(scopeRef.current===origin)router.replace("/jshop/mine");
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar el anuncio.");}
-  finally{setBusy(false);}
+  }catch(e){if(scopeRef.current===origin)setError(e instanceof Error?e.message:"No se pudo eliminar el anuncio.");}
+  finally{operation.current=false;if(scopeRef.current===origin)setBusy(false);}
  }
  const requestDelete=()=>{
   const origin=scopeRef.current,targetId=item?.id;if(!origin||!targetId)return;
@@ -78,14 +83,14 @@ export default function JShopItemDetail(){
  };
  async function contactSeller(){
   const scope=scopeRef.current;
-  if(!scope||!listing||owner||busy||scope.owner!==viewer)return;
-  setBusy(true);setError("");
+  if(!scope||!listing||owner||operation.current||scope.owner!==viewer)return;
+  operation.current=true;setBusy(true);setError("");
   try{
    const conversation=await startJShopConversation(listing,scope);
    if(scopeRef.current!==scope)return;
    router.push({pathname:"/message",params:{user:listing.sellerId,name:listing.sellerName,conversation:conversation.id}});
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo abrir la conversación con el vendedor.");}
-  finally{setBusy(false);}
+  }catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo abrir la conversación con el vendedor.");}
+  finally{operation.current=false;if(scopeRef.current===scope)setBusy(false);}
  }
  function share(){if(listing){setError("");setShareOpen(true);}}
  return <>
