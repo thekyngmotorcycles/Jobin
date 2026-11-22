@@ -8,15 +8,18 @@ import {useCallback,useEffect,useRef,useState} from "react";
 import {ActivityIndicator,AppState,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {BottomSheet} from "./social-ui";
-import {requireSupabase} from "../lib/supabase";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../lib/message-session";
+import {serializePrivateWrite} from "../lib/private-write-queue";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 
 type FlashDraft={title:string;videoUri:string;savedAt:number};
 const key=(id:string)=>"jobeen.flash.draft.v1."+id;
+const localVideo=(uri:string)=>/^(file:|content:|ph:|assets-library:|blob:)/i.test(uri);
 
 function FlashPreview({uri}:{uri:string}){
- const player=useVideoPlayer(uri);
+ const player=useVideoPlayer({uri,useCaching:false});
+ useEffect(()=>{const sub=AppState.addEventListener("change",state=>{if(state!=="active")player.pause();});return()=>sub.remove();},[player]);
  return <VideoView player={player} style={{width:"100%",aspectRatio:9/14,borderRadius:18}} nativeControls contentFit="contain"/>;
 }
 
@@ -34,15 +37,23 @@ export function FlashComposer(){
  const [exitAllowed,setExitAllowed]=useState(false);
  const [goHome,setGoHome]=useState(false);
  const suppressAutosave=useRef(false);
+ const scopeRef=useRef<MessageScope|null>(null),picking=useRef(false),saving=useRef(false);
  const snapshotRef=useRef({title:"",uri:""});
  snapshotRef.current={title,uri};
  async function persist(){
-  if(!userId||loading||suppressAutosave.current)return;
+  const scope=scopeRef.current;
+  if(!scope||scope.owner!==userId||loading||suppressAutosave.current)return;
   const value=snapshotRef.current;
   if(!value.uri&&!value.title.trim())return;
   const saved=Date.now();
-  await AsyncStorage.setItem(key(userId),JSON.stringify({title:value.title,videoUri:value.uri,savedAt:saved} satisfies FlashDraft));
-  setSavedAt(saved);
+  if(value.uri&&!localVideo(value.uri))throw Error("El archivo necesita verificación.");
+  await serializePrivateWrite(key(userId),async()=>{
+   await assertMessageScope(scope);
+   if(scopeRef.current!==scope||suppressAutosave.current)return;
+   await AsyncStorage.setItem(key(userId),JSON.stringify({title:value.title,videoUri:value.uri,savedAt:saved} satisfies FlashDraft));
+   await assertMessageScope(scope);
+   if(scopeRef.current===scope)setSavedAt(saved);
+  });
  }
  function home(){suppressAutosave.current=true;setExitOpen(false);setExitAllowed(true);setGoHome(true);}
  function requestExit(){
@@ -50,7 +61,7 @@ export function FlashComposer(){
   else home();
  }
  usePreventRemove(!exitAllowed,()=>requestExit());
- useEffect(()=>{if(goHome)router.replace("/(tabs)/index");},[goHome]);
+ useEffect(()=>{const scope=scopeRef.current;if(goHome&&scope)void captureMessageScope(scope).then(()=>{if(scopeRef.current===scope)router.replace("/(tabs)/index");}).catch(()=>{});},[goHome]);
  useEffect(()=>{
   if(!userId||loading||(!title.trim()&&!uri)||suppressAutosave.current)return;
   const timer=setTimeout(()=>{void persist().catch(()=>{});},180);
@@ -61,52 +72,57 @@ export function FlashComposer(){
   return()=>{sub.remove();void persist().catch(()=>{});};
  },[userId,loading]);
  async function discardAndExit(){
-  suppressAutosave.current=true;
-  try{if(userId)await AsyncStorage.removeItem(key(userId));home();}
-  catch(e){suppressAutosave.current=false;setNotice(e instanceof Error?e.message:"No se pudo descartar el borrador.");setExitOpen(false);}
+  const scope=scopeRef.current;if(!scope||scope.owner!==userId||saving.current)return;
+  suppressAutosave.current=true;saving.current=true;
+  try{await serializePrivateWrite(key(userId),async()=>{await assertMessageScope(scope);if(scopeRef.current!==scope)return;await AsyncStorage.removeItem(key(userId));await assertMessageScope(scope);});if(scopeRef.current===scope)home();}
+  catch(e){if(scopeRef.current===scope){suppressAutosave.current=false;setNotice(e instanceof Error?e.message:"No se pudo descartar el borrador.");setExitOpen(false);}}
+  finally{saving.current=false;}
  }
  useFocusEffect(useCallback(()=>{
-  let active=true;setLoading(true);
+  let active=true;scopeRef.current=null;setLoading(true);setUserId("");setTitle("");setUri("");setSavedAt(null);
   void(async()=>{
    try{
-    const {data:{user}}=await requireSupabase().auth.getUser();
-    if(!user)throw Error("Inicia sesión para crear contenido.");
-    const raw=await AsyncStorage.getItem(key(user.id));
-    if(!active)return;
-    setUserId(user.id);
+    const scope=await captureMessageScope();
+    const raw=await AsyncStorage.getItem(key(scope.owner));
+    await assertMessageScope(scope);if(!active)return;
     if(raw){
      const draft=JSON.parse(raw) as FlashDraft;
-     if(typeof draft.videoUri==="string"&&typeof draft.title==="string"){
-      setUri(draft.videoUri);setTitle(draft.title);setSavedAt(draft.savedAt);
-     }
+     if(typeof draft.videoUri!=="string"||typeof draft.title!=="string"||(draft.videoUri&&!localVideo(draft.videoUri)))throw Error("El borrador requiere recuperación segura.");
+     setUri(draft.videoUri);setTitle(draft.title);setSavedAt(draft.savedAt);
     }
+    scopeRef.current=scope;setUserId(scope.owner);suppressAutosave.current=false;
    }catch(e){if(active)setNotice(e instanceof Error?e.message:"No se pudo cargar el borrador.");}
    finally{if(active)setLoading(false);}
   })();
-  return()=>{active=false;};
+  return()=>{active=false;scopeRef.current=null;suppressAutosave.current=true;setUri("");setTitle("");setUserId("");};
  },[]));
  async function pick(camera:boolean){
-  try{
+  const scope=scopeRef.current;if(!scope||picking.current||saving.current)return;
+  picking.current=true;
+  try{await captureMessageScope(scope);if(scopeRef.current!==scope)return;
    if(camera){
     const permission=await ImagePicker.requestCameraPermissionsAsync();
+    await assertMessageScope(scope);if(scopeRef.current!==scope)return;
     if(!permission.granted){setNotice("Autoriza el acceso a la cámara para grabar.");return;}
    }
    const opts:ImagePicker.ImagePickerOptions={mediaTypes:["videos"],allowsEditing:false};
    const result=camera?await ImagePicker.launchCameraAsync(opts):await ImagePicker.launchImageLibraryAsync(opts);
-   if(!result.canceled&&result.assets[0]){setUri(result.assets[0].uri);setSavedAt(null);setNotice("");}
-  }catch(e){setNotice(e instanceof Error?e.message:"No se pudo abrir el video.");}
+   await assertMessageScope(scope);if(scopeRef.current!==scope)return;
+   if(!result.canceled&&result.assets[0]){if(!localVideo(result.assets[0].uri))throw Error("Selecciona un video local.");setUri(result.assets[0].uri);setSavedAt(null);setNotice("");}
+  }catch(e){if(scopeRef.current===scope)setNotice(e instanceof Error?e.message:"No se pudo abrir el video.");}
+  finally{picking.current=false;}
  }
  async function save(){
-  if(!userId||!uri||!title.trim()||busy){
+  const scope=scopeRef.current;
+  if(!scope||scope.owner!==userId||!uri||!title.trim()||saving.current){
    setNotice("Selecciona un video y escribe un título antes de guardar.");return;
   }
-  setBusy(true);
+  saving.current=true;setBusy(true);
   try{
-   const saved=Date.now();
-   await AsyncStorage.setItem(key(userId),JSON.stringify({title:title.trim(),videoUri:uri,savedAt:saved} satisfies FlashDraft));
-   setSavedAt(saved);setNotice("Borrador guardado en este dispositivo. Todavía no se ha publicado.");
-  }catch(e){setNotice(e instanceof Error?e.message:"No se pudo guardar el borrador.");}
-  finally{setBusy(false);}
+   await persist();await assertMessageScope(scope);
+   if(scopeRef.current===scope)setNotice("Borrador guardado en este dispositivo. Todavía no se ha publicado.");
+  }catch(e){if(scopeRef.current===scope)setNotice(e instanceof Error?e.message:"No se pudo guardar el borrador.");}
+  finally{saving.current=false;if(scopeRef.current===scope)setBusy(false);}
  }
  return <SafeAreaView edges={["top","left","right"]} style={{flex:1,backgroundColor:t.bg}}>
   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:18,paddingBottom:60,gap:18}} showsVerticalScrollIndicator={false}>
