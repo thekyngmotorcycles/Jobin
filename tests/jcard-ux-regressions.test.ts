@@ -93,10 +93,10 @@ test("More options invokes Android native share chooser after closing custom she
  const sheet=src("src/components/JCardShareSheet.tsx");
  assert.ok(sheet.includes('{id:"more",label:"Más opciones"'));
  assert.ok(sheet.includes('nativeSharePending.current=true'));
- assert.ok(sheet.includes('if(Platform.OS==="android"){dismiss();setTimeout(()=>void shareNative(),400);return;}'));
+ assert.ok(sheet.includes('if(Platform.OS==="android"){dismiss();timer.current=setTimeout(()=>void shareNative(),400);return;}'));
  assert.ok(sheet.includes('onDismiss={()=>{if(nativeSharePending.current)'));
- assert.ok(sheet.includes('Share.share({message,title:shareTitle+" · "+label})'));
- assert.ok(sheet.includes('if(result.action===Share.sharedAction)onShared?.()'));
+ assert.ok(sheet.includes('Share.share({message:task.message,title:task.title})'));
+ assert.ok(sheet.includes('if(result.action===Share.sharedAction&&await verifyDeferred(task))onShared?.()'));
  assert.ok(!sheet.includes("Para ver los contactos sugeridos y todas las apps instaladas"));
  assert.ok(sheet.indexOf('{id:"qr",label:"Mi QR"')<sheet.indexOf('{id:"whatsapp",label:"WhatsApp"'));
 });
