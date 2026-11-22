@@ -58,7 +58,9 @@ test("Incoming contacts are actionable and count toward notification badge",()=>
 test("JCard uses a one-time ghost reveal, no permanent button, and retains real gestures",()=>{
  const card=source("src/components/JobinCard.tsx");
  const flip=source("src/components/BusinessCard3D.tsx");
- assert.ok(card.includes("jobeen.jcard.flip.ghost.v2."));
+ assert.ok(card.includes('const key="jobeen.jcard.flip.ghost.v3."+scope.owner'));
+ assert.ok(!card.includes('const key="jobeen.jcard.flip.ghost.v2."+ownerId'));
+ assert.ok(card.includes("await assertMessageScope(scope);if(!active||value)return;"));
  assert.ok(card.includes("AsyncStorage.getItem(key)"));
  assert.ok(card.includes('AsyncStorage.setItem(key,"1")'));
  assert.ok(card.includes("ghostPreview={hintVisible}"));
