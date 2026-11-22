@@ -56,7 +56,7 @@ export function ProfessionalMapExplorer({initialQuery="",onList}:{initialQuery?:
   }).catch(e=>{if(valid()){setProfiles([]);setError(e instanceof Error?e.message:"No se pudo cargar el mapa.");}})
   .finally(()=>{if(valid())setLoading(false);});
   return()=>{active=false;};
- },[center.lat,center.lon,radius,kind,activeQuery,hasArea,scopeReady]);
+ },[center,radius,kind,activeQuery,hasArea,scopeReady]);
  async function searchCity(){
   const scope=scopeRef.current;if(!scope||resolving||city.trim().length<2)return;
   const revision=++areaRevision.current,valid=()=>scopeRef.current===scope&&areaRevision.current===revision;
