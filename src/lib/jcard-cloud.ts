@@ -22,7 +22,7 @@ export async function writeCloudHistory(entry:EmploymentEntry,expectedOwner:stri
  if(expectedOwner!==owner)throw Error("La sesión cambió.");
  await assertMessageScope(scope);
  const {error}=await db.rpc("jobeen_save_private_employment" as never,{
-  p_client_id:entry.id,p_company:entry.company,p_role:entry.role,p_professions:entry.professions??[],
+  p_expected_owner:owner,p_client_id:entry.id,p_company:entry.company,p_role:entry.role,p_professions:entry.professions??[],
   p_from_year:entry.from,p_from_month:entry.fromMonth??1,p_to_year:entry.to,p_to_month:entry.toMonth??12,
   p_address:entry.address??"",p_contact:entry.contact??""
  } as never);
