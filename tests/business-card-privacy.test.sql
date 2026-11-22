@@ -236,4 +236,33 @@ select set_config('request.jwt.claim.sub','d4444444-4444-4444-8444-444444444444'
 select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_profiles_on_map(25.75,-80.2,30,'','all')),'explicit opt-out survives card reactivation');
 select set_config('request.jwt.claim.sub','',true);
 select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_profiles_on_map(25.75,-80.2,30,'','all')),'missing identity cannot discover pins');
+reset role;
+\ir ../supabase/security-review/jshop-location-privacy.sql
+select pg_temp.privacy_assert(not has_table_privilege('anon','public.jshop_seller_locations','SELECT'),'anonymous seller default denied');
+select pg_temp.privacy_assert(not has_column_privilege('authenticated','public.jshop_seller_locations','seller_id','UPDATE'),'seller ID immutable');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+insert into public.jshop_seller_locations(seller_id,city,label,location_lat,location_lon)
+ values(auth.uid(),'Private A city','Private A label',25.751234,-80.201234);
+insert into public.jshop_listings(id,seller_id,title,category,item_condition,price,currency,location,location_lat,location_lon,photo_paths)
+ values('e5555555-5555-4555-8555-555555555555',auth.uid(),'Test tool','Herramientas','Nuevo',10,'USD','Public city',25.75,-80.20,array[auth.uid()::text||'/tool.jpg']);
+do $precise$
+begin
+ begin
+  insert into public.jshop_listings(seller_id,title,category,item_condition,price,currency,location,location_lat,location_lon,photo_paths)
+  values(auth.uid(),'Precise tool','Herramientas','Nuevo',10,'USD','Public city',25.751234,-80.201234,array[auth.uid()::text||'/tool.jpg']);
+  raise exception 'Precise listing unexpectedly accepted';
+ exception when check_violation then null;
+ end;
+end
+$precise$;
+select set_config('request.jwt.claim.sub','d4444444-4444-4444-8444-444444444444',true);
+select pg_temp.privacy_assert(not exists(select 1 from public.jshop_seller_locations),'other account cannot read seller default');
+update public.jshop_seller_locations set city='Wrong city' where seller_id='a1111111-1111-4111-8111-111111111111';
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+select pg_temp.privacy_assert((select city='Private A city' from public.jshop_seller_locations),'foreign update did not change seller default');
+update public.jshop_seller_locations set city='New private city',location_lat=26,location_lon=-81 where seller_id=auth.uid();
+select pg_temp.privacy_assert((select location_lat=25.75 and location_lon=-80.20 from public.jshop_listings where id='e5555555-5555-4555-8555-555555555555'),'changing default leaves listing snapshot unchanged');
+select set_config('request.jwt.claim.sub','',true);
+select pg_temp.privacy_assert(not exists(select 1 from public.jshop_seller_locations),'missing identity cannot read default');
 rollback;
