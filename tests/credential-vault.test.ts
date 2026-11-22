@@ -89,3 +89,16 @@ test("corrupt or oversized values cannot silently load or overwrite credentials"
  await vault.removeItem(key);
  assert.equal(await vault.getItem(key),null);
 });
+
+test("Auth 2.118 PKCE supports isolated index and flow slots without arbitrary key access",async()=>{
+ const f=fixture(),vault=createCredentialVault(f.backend,key);
+ const index=key+"-flows-code-verifier",a=key+"-flow-Abcd1234-code-verifier",b=key+"-flow-Efgh5678-code-verifier";
+ await vault.setItem(index,JSON.stringify(["Abcd1234","Efgh5678"]));
+ await vault.setItem(a,"A-fixture");await vault.setItem(b,"B-fixture");
+ assert.equal(await vault.getItem(a),"A-fixture");
+ await vault.removeItem(a);assert.equal(await vault.getItem(a),null);assert.equal(await vault.getItem(b),"B-fixture");
+ assert.equal(await vault.getItem(index),JSON.stringify(["Abcd1234","Efgh5678"]));
+ for(const bad of [key+"-flow-abc-code-verifier",key+"-flow-"+("x".repeat(65))+"-code-verifier",key+"-flow-../../other-code-verifier","sb-other-auth-token-flow-Abcd1234-code-verifier",key+"-manifest",key+"-other"]){
+  assert.throws(()=>vault.getItem(bad),/no permitida/);
+ }
+});
