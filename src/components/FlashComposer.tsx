@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {privateMetadataStorage} from "../lib/private-metadata-storage";
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import {usePreventRemove} from "@react-navigation/native";
@@ -50,7 +50,7 @@ export function FlashComposer(){
   await serializePrivateWrite(key(userId),async()=>{
    await assertMessageScope(scope);
    if(scopeRef.current!==scope||suppressAutosave.current)return;
-   await AsyncStorage.setItem(key(userId),JSON.stringify({title:value.title,videoUri:value.uri,savedAt:saved} satisfies FlashDraft));
+   await privateMetadataStorage.write("flash-draft",scope,JSON.stringify({title:value.title,videoUri:value.uri,savedAt:saved} satisfies FlashDraft));
    await assertMessageScope(scope);
    if(scopeRef.current===scope)setSavedAt(saved);
   });
@@ -61,7 +61,7 @@ export function FlashComposer(){
   else home();
  }
  usePreventRemove(!exitAllowed,()=>requestExit());
- useEffect(()=>{const scope=scopeRef.current;if(goHome&&scope)void captureMessageScope(scope).then(()=>{if(scopeRef.current===scope)router.replace("/(tabs)/index");}).catch(()=>{});},[goHome]);
+ useEffect(()=>{const scope=scopeRef.current;if(goHome&&!scope)router.replace("/(tabs)/index");else if(goHome&&scope)void captureMessageScope(scope).then(()=>{if(scopeRef.current===scope)router.replace("/(tabs)/index");}).catch(()=>{});},[goHome]);
  useEffect(()=>{
   if(!userId||loading||(!title.trim()&&!uri)||suppressAutosave.current)return;
   const timer=setTimeout(()=>{void persist().catch(()=>{});},180);
@@ -69,23 +69,29 @@ export function FlashComposer(){
  },[title,uri,userId,loading]);
  useEffect(()=>{
   const sub=AppState.addEventListener("change",status=>{if(status!=="active")void persist().catch(()=>{});});
-  return()=>{sub.remove();void persist().catch(()=>{});};
+  return()=>{sub.remove();};
  },[userId,loading]);
+ async function saveAndExit(){
+  const scope=scopeRef.current;
+  if(!scope)return;
+  try{await persist();await assertMessageScope(scope);if(scopeRef.current===scope)home();}
+  catch(e){if(scopeRef.current===scope)setNotice(e instanceof Error?e.message:"No se pudo guardar el borrador.");}
+ }
  async function discardAndExit(){
   const scope=scopeRef.current;if(!scope||scope.owner!==userId||saving.current)return;
   suppressAutosave.current=true;saving.current=true;
-  try{await serializePrivateWrite(key(userId),async()=>{await assertMessageScope(scope);if(scopeRef.current!==scope)return;await AsyncStorage.removeItem(key(userId));await assertMessageScope(scope);});if(scopeRef.current===scope)home();}
+  try{await serializePrivateWrite(key(userId),async()=>{await assertMessageScope(scope);if(scopeRef.current!==scope)return;await privateMetadataStorage.write("flash-draft",scope,"null");await assertMessageScope(scope);});if(scopeRef.current===scope)home();}
   catch(e){if(scopeRef.current===scope){suppressAutosave.current=false;setNotice(e instanceof Error?e.message:"No se pudo descartar el borrador.");setExitOpen(false);}}
   finally{saving.current=false;}
  }
  useFocusEffect(useCallback(()=>{
-  let active=true;scopeRef.current=null;setLoading(true);setUserId("");setTitle("");setUri("");setSavedAt(null);
+  let active=true;scopeRef.current=null;suppressAutosave.current=true;setNotice("");setLoading(true);setUserId("");setTitle("");setUri("");setSavedAt(null);
   void(async()=>{
    try{
     const scope=await captureMessageScope();
-    const raw=await AsyncStorage.getItem(key(scope.owner));
+    const raw=await privateMetadataStorage.read("flash-draft",scope);
     await assertMessageScope(scope);if(!active)return;
-    if(raw){
+    if(raw&&raw!=="null"){
      const draft=JSON.parse(raw) as FlashDraft;
      if(typeof draft.videoUri!=="string"||typeof draft.title!=="string"||(draft.videoUri&&!localVideo(draft.videoUri)))throw Error("El borrador requiere recuperación segura.");
      setUri(draft.videoUri);setTitle(draft.title);setSavedAt(draft.savedAt);
@@ -168,7 +174,7 @@ export function FlashComposer(){
  <BottomSheet visible={exitOpen} onClose={()=>setExitOpen(false)} title="¿Qué deseas hacer con tu Flash?">
   <View style={{gap:11,paddingTop:9}}>
    <Text style={{color:t.ink2,fontSize:13}}>Tu video aún no se ha publicado. Puedes conservar un borrador local o descartarlo.</Text>
-   <Pressable accessibilityRole="button" onPress={()=>void persist().then(home).catch(e=>setNotice(String(e)))}
+   <Pressable accessibilityRole="button" onPress={()=>void saveAndExit()}
     style={{backgroundColor:t.ink,minHeight:50,borderRadius:15,alignItems:"center",justifyContent:"center"}}>
     <Text style={{color:t.surface,fontWeight:"700"}}>Guardar borrador</Text>
    </Pressable>

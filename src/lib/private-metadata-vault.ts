@@ -5,8 +5,8 @@
  */
 import type {NativeSecretBackend} from "./credential-vault";
 import type {MessageScope} from "./session-continuity";
-export type PrivateMetadataKind="post-drafts"|"jshop-drafts"|"jshop-favorites";
-const KINDS=new Set<PrivateMetadataKind>(["post-drafts","jshop-drafts","jshop-favorites"]);
+export type PrivateMetadataKind="post-drafts"|"jshop-drafts"|"jshop-favorites"|"flash-draft"|"reel-draft";
+const KINDS=new Set<PrivateMetadataKind>(["post-drafts","jshop-drafts","jshop-favorites","flash-draft","reel-draft"]);
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export const METADATA_PART_BYTES=1200;
 export const METADATA_MAX_PARTS=80;

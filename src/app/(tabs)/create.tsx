@@ -1,6 +1,6 @@
 import { useTabClearance } from "../../theme/navigation";
-import {router,useLocalSearchParams} from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {router,useFocusEffect,useLocalSearchParams} from "expo-router";
+import {privateMetadataStorage} from "../../lib/private-metadata-storage";
 import {usePreventRemove} from "@react-navigation/native";
 import {FlashComposer} from "../../components/FlashComposer";
 import { WorkRulesFields,useWorkDraft } from "../../components/WorkRulesFields";
@@ -8,7 +8,7 @@ import { MyWorkMedia } from "../../components/MyWorkMedia";
 import { uploadWorkVideo } from "../../lib/safety-api";
 import {captureMessageScope,assertMessageScope,type MessageScope} from "../../lib/message-session";
 import {serializePrivateWrite} from "../../lib/private-write-queue";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState,Platform,Pressable,Text,TextInput,View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { VideoView, useVideoPlayer } from "expo-video";
@@ -65,27 +65,27 @@ function CreateVideo(){
   const key="jobeen.reel.draft.v1."+owner;
   await serializePrivateWrite(key,async()=>{
    await assertMessageScope(scope);if(scopeRef.current!==scope||suppressRef.current)return;
-   await AsyncStorage.setItem(key,JSON.stringify({...draft,savedAt:Date.now()}));await assertMessageScope(scope);
+   await privateMetadataStorage.write("reel-draft",scope,JSON.stringify({...draft,asset:draft.asset?{uri:draft.asset.uri,width:draft.asset.width,height:draft.asset.height,duration:draft.asset.duration,fileSize:draft.asset.fileSize,mimeType:draft.asset.mimeType,type:draft.asset.type}:null,savedAt:Date.now()}));await assertMessageScope(scope);
   });
  }
  function home(){suppressRef.current=true;setExitOpen(false);setExitAllowed(true);setGoHome(true);}
  function requestExit(){if(hasWork)setExitOpen(true);else home();}
  usePreventRemove(!exitAllowed,()=>requestExit());
- useEffect(()=>{const scope=scopeRef.current;if(goHome&&scope)void captureMessageScope(scope).then(()=>{if(scopeRef.current===scope)router.replace("/(tabs)/index");}).catch(()=>{});},[goHome]);
- useEffect(()=>{let active=true;void(async()=>{
+ useEffect(()=>{const scope=scopeRef.current;if(goHome&&!scope)router.replace("/(tabs)/index");else if(goHome&&scope)void captureMessageScope(scope).then(()=>{if(scopeRef.current===scope)router.replace("/(tabs)/index");}).catch(()=>{});},[goHome]);
+ useFocusEffect(useCallback(()=>{let active=true;scopeRef.current=null;suppressRef.current=true;setHydrated(false);setOwner("");setClips(emptyClips());setAsset(null);setEdit({title:"",start:"0",end:"180"});void(async()=>{
   try{
    const scope=await captureMessageScope(),id=scope.owner;
-   const raw=await AsyncStorage.getItem("jobeen.reel.draft.v1."+id);
+   const raw=await privateMetadataStorage.read("reel-draft",scope);
    await assertMessageScope(scope);if(!active)return;
-   if(raw){
+   if(raw&&raw!=="null"){
     const saved=JSON.parse(raw) as {clips:SlotClips;asset:ImagePicker.ImagePickerAsset|null;edit:VideoEditorState};
     if(!saved.clips||!saved.edit||typeof saved.edit.title!=="string"||typeof saved.edit.start!=="string"||typeof saved.edit.end!=="string"||(saved.asset&&(typeof saved.asset.uri!=="string"||!localVideo(saved.asset.uri)))||CHAPTERS.some(ch=>!Array.isArray(saved.clips[ch.id])||saved.clips[ch.id].some(uri=>uri!==null&&(typeof uri!=="string"||!localVideo(uri)))))throw Error("El borrador requiere recuperación segura.");
     setClips(saved.clips);setAsset(saved.asset);setEdit(saved.edit);
    }
-   scopeRef.current=scope;setOwner(id);
+   scopeRef.current=scope;setOwner(id);suppressRef.current=false;
   }catch(e){if(active)setNotice(e instanceof Error?e.message:"No se pudo recuperar el borrador.");}
   finally{if(active)setHydrated(true);}
- })();return()=>{active=false;scopeRef.current=null;suppressRef.current=true;};},[]);
+ })();return()=>{active=false;scopeRef.current=null;suppressRef.current=true;setOwner("");setAsset(null);setClips(emptyClips());setEdit({title:"",start:"0",end:"180"});};},[]));
  useEffect(()=>{
   if(!owner||!hydrated||!hasWork||suppressRef.current)return;
   const timer=setTimeout(()=>{void persist().catch(()=>{});},180);
@@ -93,12 +93,18 @@ function CreateVideo(){
  },[clips,asset,edit,owner,hydrated]);
  useEffect(()=>{
   const subscription=AppState.addEventListener("change",state=>{if(state!=="active")void persist().catch(()=>{});});
-  return()=>{subscription.remove();void persist().catch(()=>{});};
+  return()=>{subscription.remove();};
  },[owner,hydrated]);
+ async function saveAndExit(){
+  const scope=scopeRef.current;
+  if(!scope)return;
+  try{await persist();await assertMessageScope(scope);if(scopeRef.current===scope)home();}
+  catch(e){if(scopeRef.current===scope)setNotice(e instanceof Error?e.message:"No se pudo guardar el borrador.");}
+ }
  async function discardAndExit(){
   const scope=scopeRef.current;if(!scope||scope.owner!==owner||discarding.current)return;
   suppressRef.current=true;discarding.current=true;
-  try{const key="jobeen.reel.draft.v1."+owner;await serializePrivateWrite(key,async()=>{await assertMessageScope(scope);if(scopeRef.current!==scope)return;await AsyncStorage.removeItem(key);await assertMessageScope(scope);});if(scopeRef.current===scope)home();}
+  try{const key="jobeen.reel.draft.v1."+owner;await serializePrivateWrite(key,async()=>{await assertMessageScope(scope);if(scopeRef.current!==scope)return;await privateMetadataStorage.write("reel-draft",scope,"null");await assertMessageScope(scope);});if(scopeRef.current===scope)home();}
   catch(e){if(scopeRef.current===scope){suppressRef.current=false;setNotice(e instanceof Error?e.message:"No se pudo descartar el borrador.");setExitOpen(false);}}
   finally{discarding.current=false;}
  }
@@ -136,7 +142,7 @@ function CreateVideo(){
  <BottomSheet visible={exitOpen} onClose={()=>setExitOpen(false)} title="¿Qué deseas hacer con tu video?">
   <View style={{gap:10,paddingTop:9}}>
    <Text style={s.muted}>El video no se publicará al salir. Puedes conservar los datos de edición como borrador.</Text>
-   <Button title="Guardar borrador" onPress={()=>void persist().then(home).catch(e=>setNotice(String(e)))}/>
+   <Button title="Guardar borrador" onPress={()=>void saveAndExit()}/>
    <Button secondary title="Descartar cambios" onPress={()=>void discardAndExit()}/>
    <Button secondary title="Continuar editando" onPress={()=>setExitOpen(false)}/>
   </View>

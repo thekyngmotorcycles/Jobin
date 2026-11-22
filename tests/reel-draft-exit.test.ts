@@ -6,7 +6,12 @@ const flash=readFileSync("src/components/FlashComposer.tsx","utf8");
 test("Flash editor autosaves video metadata when editing and backgrounded",()=>{
  assert.ok(flash.includes('AppState.addEventListener("change"'));
  assert.ok(flash.includes('if(status!=="active")void persist()'));
- assert.ok(flash.includes('AsyncStorage.setItem(key(userId)'));
+ assert.ok(flash.includes('privateMetadataStorage.write("flash-draft",scope,'));
+ assert.ok(video.includes('privateMetadataStorage.write("reel-draft",scope,'));
+ for(const editor of [flash,video]){
+  assert.ok(!editor.includes("AsyncStorage"));
+  assert.ok(editor.includes("if(scopeRef.current===scope)home()"));
+ }
  assert.ok(flash.includes('onPress={requestExit}'));
  assert.ok(flash.includes('usePreventRemove(!exitAllowed'));
  assert.ok(flash.includes("Guardar borrador"));

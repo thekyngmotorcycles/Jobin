@@ -7,7 +7,9 @@ import type {PrivateMetadataKind} from "./private-metadata-vault";
 const prefixes:Record<PrivateMetadataKind,string>={
  "post-drafts":"jobeen.post.drafts.v1.",
  "jshop-drafts":"jobeen.jshop.drafts.v1.",
- "jshop-favorites":"jobeen.jshop.favorites.v1."
+ "jshop-favorites":"jobeen.jshop.favorites.v1.",
+ "flash-draft":"jobeen.flash.draft.v1.",
+ "reel-draft":"jobeen.reel.draft.v1."
 };
 async function key(kind:PrivateMetadataKind,scope:MessageScope){
  if(Platform.OS!=="web")throw Error("Almacenamiento privado nativo no disponible.");
