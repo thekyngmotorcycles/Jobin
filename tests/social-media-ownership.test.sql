@@ -110,4 +110,29 @@ select pg_temp.media_assert(not exists (select 1 from storage.objects where name
 select set_config('request.jwt.claim.sub', '', true);
 select pg_temp.media_assert(not exists (select 1 from storage.objects where bucket_id = 'jobeen-private-post-photos'),
  'A request without a subject cannot read private media');
+reset role;
+\ir ../supabase/security-review/social-audience-privacy.sql
+insert into public.profile_follows(follower_id,followed_id) values('b2222222-2222-4222-8222-222222222222','a1111111-1111-4111-8111-111111111111');
+insert into public.jobeen_feed_posts(author_id,body,kind) values('a1111111-1111-4111-8111-111111111111','Public by A','text');
+insert into storage.objects(bucket_id,name) values('jobeen-post-draft-photos','a1111111-1111-4111-8111-111111111111/draft.jpg');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.media_assert(exists(select 1 from public.jobeen_feed_posts where body='Shared'),'authorized follower retains access');
+select pg_temp.media_assert(exists(select 1 from storage.objects where name like '%/shared.jpg'),'authorized follower retains private photo');
+select pg_temp.media_assert(not exists(select 1 from storage.objects where name like '%/draft.jpg'),'following never grants access to drafts');
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+insert into public.blocks(blocker_id,blocked_id) values(auth.uid(),'b2222222-2222-4222-8222-222222222222');
+select pg_temp.media_assert(exists(select 1 from storage.objects where name like '%/draft.jpg'),'owner retains draft file');
+select pg_temp.media_assert(not has_column_privilege('authenticated','public.jobeen_feed_posts','audience','UPDATE'),'audience cannot be changed through raw update');
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.media_assert(not exists(select 1 from public.jobeen_feed_posts where body in ('Shared','Public by A')),'blocked follower cannot obtain either post');
+select pg_temp.media_assert(not exists(select 1 from public.jobeen_stories where author_id='a1111111-1111-4111-8111-111111111111'),'block hides story rows');
+select pg_temp.media_assert(not exists(select 1 from storage.objects where name like '%/shared.jpg' or name like '%/active.jpg'),'blocked follower cannot request shared or story objects');
+select pg_temp.media_assert(not exists(select 1 from public.jobeen_feed_engagement),'block hides engagement summary');
+select set_config('request.jwt.claim.sub','c3333333-3333-4333-8333-333333333333',true);
+select pg_temp.media_assert(exists(select 1 from public.jobeen_feed_posts where body='Public by A'),'unblocked account retains public post');
+select pg_temp.media_assert(exists(select 1 from storage.objects where name like '%/active.jpg'),'unblocked account retains active story media');
+select set_config('request.jwt.claim.sub','',true);
+select pg_temp.media_assert(not exists(select 1 from public.jobeen_feed_posts),'missing identity cannot read feed');
+select pg_temp.media_assert(not exists(select 1 from public.jobeen_stories),'missing identity cannot read stories');
 rollback;
