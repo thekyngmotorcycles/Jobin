@@ -1,4 +1,5 @@
 import {useEffect,useRef,useState} from "react";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../lib/message-session";
 import {ActivityIndicator,Linking,Modal,Platform,Pressable,ScrollView,Share,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {Ionicons} from "@expo/vector-icons";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -36,6 +37,10 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
  const [status,setStatus]=useState("");
  const [contactError,setContactError]=useState("");
  const nativeSharePending=useRef(false);
+ const scopeRef=useRef<MessageScope|null>(null),generation=useRef(0),mounted=useRef(true),sendGuard=useRef(false),timer=useRef<ReturnType<typeof setTimeout>|null>(null);
+ const deferred=useRef<{scope:MessageScope;revision:number;message:string;title:string}|null>(null);
+ const [ready,setReady]=useState(false);
+ useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;scopeRef.current=null;deferred.current=null;generation.current++;if(timer.current)clearTimeout(timer.current);};},[]);
  const cardType=side==="business"?"JCard de negocio":"JCard personal";
  const shareTitle=contentTitle??"Compartir "+cardType;
  const qrHeading=contentTitle?"Código QR":"Mi código QR";
@@ -50,24 +55,33 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
  const recipientSize=compact?JOBEEN_TYPE.modalRecipient:12;
  const actionSize=Math.max(44,Math.min(compact?48:62,(width-70)/4));
  useEffect(()=>{
-  if(!visible)return;
-  let active=true;
+  if(!visible){scopeRef.current=null;setReady(false);setContacts([]);setSelected([]);setQuery("");setShowQr(false);return;}
+  const revision=++generation.current;deferred.current=null;nativeSharePending.current=false;if(timer.current)clearTimeout(timer.current);
+  let active=true;scopeRef.current=null;setReady(false);setContacts([]);
   setQuery("");setShowQr(false);setSelected([]);setStatus("");setContactError("");setLoading(true);
-  void loadShareRecipients().then(rows=>{if(active)setContacts(rows);})
-   .catch(error=>{if(active){setContacts([]);setContactError(error instanceof Error?error.message:"No se pudieron cargar los contactos.");}})
-   .finally(()=>{if(active)setLoading(false);});
-  return()=>{active=false;};
- },[visible]);
+  void(async()=>{try{
+   const scope=await captureMessageScope();
+   const rows=await loadShareRecipients(scope);
+   await assertMessageScope(scope);
+   if(active&&generation.current===revision){scopeRef.current=scope;setContacts(rows);setReady(true);}
+  }catch(error){if(active&&generation.current===revision)setContactError(error instanceof Error?error.message:"No se pudieron cargar los contactos.");}
+  finally{if(active&&generation.current===revision)setLoading(false);}})();
+  return()=>{active=false;scopeRef.current=null;};
+ },[visible,link,contentMessage,label,side]);
  function toggleRecipient(id:string){
-  if(sending)return;
+  if(sending||!ready||!scopeRef.current)return;
   setStatus("");
   setSelected(previous=>previous.includes(id)?previous.filter(x=>x!==id):[...previous,id]);
  }
  async function sendSelected(){
-  if(sending||!selected.length)return;
-  setSending(true);setStatus("");setContactError("");
+  const scope=scopeRef.current,revision=generation.current;
+  if(!scope||sendGuard.current||!selected.length)return;
+  const live=()=>mounted.current&&generation.current===revision&&scopeRef.current===scope;
+  sendGuard.current=true;setSending(true);setStatus("");setContactError("");
   try{
-   const result=await sendToShareRecipients(selected,message);
+   await captureMessageScope(scope);if(!live())return;
+   const result=await sendToShareRecipients(selected,message,scope);
+   await assertMessageScope(scope);if(!live())return;
    const completed=[...result.sent,...result.requested];
    if(result.sent.length)onShared?.();
    setSelected(previous=>previous.filter(id=>!completed.includes(id)));
@@ -77,25 +91,36 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
     result.failed.length?result.failed.length+" sin enviar: "+result.failed.map(f=>contacts.find(c=>c.id===f.id)?.name??"Contacto").join(", ")+".":""
    ].filter(Boolean);
    setStatus(fragments.join(" "));
-  }catch(error){setContactError(error instanceof Error?error.message:"No se pudo compartir con los contactos.");}
-  finally{setSending(false);}
+  }catch(error){if(live())setContactError(error instanceof Error?error.message:"No se pudo compartir con los contactos.");}
+  finally{sendGuard.current=false;if(mounted.current)setSending(false);}
+ }
+ async function verifyDeferred(task:NonNullable<typeof deferred.current>){
+  await captureMessageScope(task.scope);
+  return mounted.current&&generation.current===task.revision&&deferred.current===task;
  }
  async function shareNative(){
+  const task=deferred.current;if(!task)return;
   try{
-   const result=await Share.share({message,title:shareTitle+" · "+label});
-   if(result.action===Share.sharedAction)onShared?.();
-  }catch{onError?.("No se pudo compartir. Inténtalo de nuevo.");}
+   if(!await verifyDeferred(task))return;
+   const result=await Share.share({message:task.message,title:task.title});
+   if(result.action===Share.sharedAction&&await verifyDeferred(task))onShared?.();
+  }catch{if(mounted.current&&deferred.current===task)onError?.("No se pudo compartir. Inténtalo de nuevo.");}
+  finally{if(deferred.current===task)deferred.current=null;}
  }
  async function openExternal(url:string){
-  try{await Linking.openURL(url);}catch{if(Platform.OS==="android")setTimeout(()=>void shareNative(),400);else await shareNative();}
+  const task=deferred.current;if(!task)return;
+  try{if(!await verifyDeferred(task))return;await Linking.openURL(url);if(deferred.current===task)deferred.current=null;}
+  catch{if(!mounted.current||deferred.current!==task)return;if(Platform.OS==="android")timer.current=setTimeout(()=>void shareNative(),400);else await shareNative();}
  }
  function dismiss(){setShowQr(false);setQuery("");onClose();}
  function choose(action:ShareAction){
+  const scope=scopeRef.current;if(!scope||!ready)return;
   if(action==="qr"){if(link.trim())setShowQr(true);return;}
+  deferred.current={scope,revision:generation.current,message,title:shareTitle+" · "+label};
   if(action==="whatsapp"){dismiss();void openExternal("https://wa.me/?text="+encodeURIComponent(message));return;}
   if(action==="sms"){dismiss();void openExternal("sms:?body="+encodeURIComponent(message));return;}
   // The chooser opens only after Jobeen's modal closes; no overlapping sheets.
-  if(Platform.OS==="android"){dismiss();setTimeout(()=>void shareNative(),400);return;}
+  if(Platform.OS==="android"){dismiss();timer.current=setTimeout(()=>void shareNative(),400);return;}
   nativeSharePending.current=true;dismiss();
  }
  return <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={dismiss}
@@ -173,7 +198,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
       </View>
       <View style={{flexDirection:"row",justifyContent:"space-between",gap:6,marginBottom:4}}>
        {options.map(option=><Pressable key={option.id} accessibilityRole="button"
-        accessibilityLabel={option.id==="qr"?"Mostrar código QR":option.label} onPress={()=>choose(option.id)}
+        accessibilityLabel={option.id==="qr"?"Mostrar código QR":option.label} disabled={!ready} onPress={()=>choose(option.id)}
         style={{flex:1,minWidth:0,alignItems:"center",gap:7}}>
         <View style={{height:actionSize,width:actionSize,borderRadius:actionSize/2,
          borderWidth:option.id==="qr"?2:1,borderColor:option.id==="qr"?t.yellow:t.line,
@@ -185,7 +210,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
       </View>
      </ScrollView>
      {!!selected.length&&<Pressable accessibilityRole="button"
-       accessibilityLabel={"Enviar a "+selected.length+" contactos"} disabled={sending}
+       accessibilityLabel={"Enviar a "+selected.length+" contactos"} disabled={sending||!ready}
        onPress={()=>void sendSelected()} style={{minHeight:JOBEEN_CONTROL.touchTarget,marginHorizontal:13,marginTop:2,marginBottom:8,
         alignItems:"center",justifyContent:"center",opacity:sending?0.6:1}}>
        <View style={{height:JOBEEN_CONTROL.visualAction,width:"100%",backgroundColor:t.yellow,borderRadius:20,
