@@ -14,9 +14,10 @@ export async function saveContactPreferences(p:ContactPreferences,expectedOwner?
  if(error)throw error;
  await assertMessageScope(scope);
 }
-export async function loadPublicContact(id:string):Promise<{email:string|null;phone:string|null}>{
+export async function loadPublicContact(id:string,expectedScope?:MessageScope):Promise<{email:string|null;phone:string|null}>{
+ const scope=await captureMessageScope(expectedScope);
  const {data,error}=await (requireSupabase() as any).rpc("jcard_public_contact",{target:id});
- if(error)throw error;return {email:data?.email??null,phone:data?.phone??null};
+ if(error)throw error;await assertMessageScope(scope);return {email:data?.email??null,phone:data?.phone??null};
 }
 
 export type PersonalContactDetails={email_primary:string;email_secondary:string;phone_primary:string;phone_secondary:string};
@@ -29,9 +30,11 @@ export async function loadPersonalContactDetails(ownerId?:string,expectedScope?:
  await assertMessageScope(scope);
  return {email_primary:data?.email_primary??"",email_secondary:data?.email_secondary??"",phone_primary:data?.phone_primary??"",phone_secondary:data?.phone_secondary??""};
 }
-export async function loadVisiblePersonalContactDetails(ownerId:string):Promise<PersonalContactDetails>{
+export async function loadVisiblePersonalContactDetails(ownerId:string,expectedScope?:MessageScope):Promise<PersonalContactDetails>{
+ const scope=await captureMessageScope(expectedScope);
  const {data,error}=await (requireSupabase() as any).rpc("jcard_public_contact_details",{target:ownerId});
  if(error)throw error;
+ await assertMessageScope(scope);
  return {email_primary:data?.email_primary??"",email_secondary:data?.email_secondary??"",phone_primary:data?.phone_primary??"",phone_secondary:data?.phone_secondary??""};
 }
 export async function savePersonalContactDetails(details:PersonalContactDetails,expectedOwner?:string,expectedScope?:MessageScope):Promise<void>{
