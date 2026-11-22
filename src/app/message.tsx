@@ -1,9 +1,10 @@
-import {useCallback,useEffect,useState} from "react";
+import {useCallback,useRef,useState} from "react";
 import {ActivityIndicator,Image,KeyboardAvoidingView,Platform,Pressable,ScrollView,Text,TextInput,View} from "react-native";
-import {router,useLocalSearchParams} from "expo-router";
+import {router,useFocusEffect,useLocalSearchParams} from "expo-router";
 import {Ionicons} from "@expo/vector-icons";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {requireSupabase} from "../lib/supabase";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
 import {useUi} from "../components/ui";
 import {jobeenTokens} from "../theme/jobeen";
 import {useTheme} from "../state/ThemeProvider";
@@ -16,6 +17,7 @@ type Message={id:string;sender_id:string;recipient_id:string;body:string;created
 export default function DirectMessage(){
  const {user,name,conversation}=useLocalSearchParams<{user?:string;name?:string;conversation?:string}>();
  const {colors}=useUi();const {theme}=useTheme();const brand=jobeenTokens(theme);const buttonBackground=theme==="light"?brand.yellow:colors.ink;const buttonText=theme==="light"?brand.ink:colors.inverse;
+ const scopeRef=useRef<MessageScope|null>(null),revision=useRef(0),threadRef=useRef("");
  const [me,setMe]=useState("");const [items,setItems]=useState<Message[]>([]);
  const [draft,setDraft]=useState("");const [busy,setBusy]=useState(false);const [loading,setLoading]=useState(true);const [error,setError]=useState("");
  const [listingThread,setListingThread]=useState<JShopConversation|null>(null);
@@ -27,79 +29,101 @@ export default function DirectMessage(){
  const [notice,setNotice]=useState("");
  const valid=!!user&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user);
  const validConversation=!conversation||/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(conversation);
- const canCompose=!!conversation?!!listingThread:contactAccess.kind==="none"||contactAccess.kind==="accepted";
+ const canCompose=!!scopeRef.current&&!loading&&(!conversation?(contactAccess.kind==="none"||contactAccess.kind==="accepted"):!!listingThread);
  const reload=useCallback(async()=>{
+  const generation=++revision.current;
+  const active=()=>revision.current===generation;
+  scopeRef.current=null;setItems([]);setListingThread(null);setMe("");
+  const threadKey=String(user)+":"+String(conversation??"");
+  if(threadRef.current!==threadKey){threadRef.current=threadKey;setDraft("");setContactAccess({kind:"none",request:null});}
   if(!valid||!validConversation){setError("Conversación inválida.");setLoading(false);return;}
   setLoading(true);
   try{
-   const db=requireSupabase();const {data:{user:session},error:authError}=await db.auth.getUser();
-   if(authError||!session)throw Error("Inicia sesión para enviar mensajes.");
-   setMe(session.id);
+   const db=requireSupabase(),scope=await captureMessageScope();
+   if(!active())return;
+   const session={id:scope.owner};
    if(session.id===user)throw Error("No puedes enviarte mensajes a ti mismo.");
    let selected:JShopConversation|null=null;
    if(conversation){
-    selected=await loadJShopConversation(conversation);
+    selected=await loadJShopConversation(conversation,scope);
     const other=selected.buyerId===session.id?selected.sellerId:selected.buyerId;
     if(other!==user)throw Error("La conversación no corresponde a este destinatario.");
    }
-   setListingThread(selected);
+   let spam=false;
    let access:ContactAccess={kind:"accepted",request:null};
    if(conversation){
-    const flags=await loadJShopSpamIds();
-    setJshopSpam(flags.has(conversation));
+    const flags=await loadJShopSpamIds(scope);
+    spam=flags.has(conversation);
    }else{
-    access=await loadContactAccess(user!);
-    setContactAccess(access);
+    access=await loadContactAccess(user!,scope);
    }
+   await assertMessageScope(scope);
+   if(!active())return;
    let query=db.from("jobeen_direct_messages" as never)
     .select("id,sender_id,recipient_id,body,created_at")
     .or(`and(sender_id.eq.${session.id},recipient_id.eq.${user}),and(sender_id.eq.${user},recipient_id.eq.${session.id})`);
    query=conversation?query.eq("jshop_conversation_id",conversation):query.is("jshop_conversation_id",null);
    const {data,error:readError}=await query.order("created_at",{ascending:true}).limit(200);
    if(readError)throw readError;
-   const messages=(data??[]) as Message[];
+   const messages=((data??[]) as Message[]).filter(r=>(r.sender_id===session.id&&r.recipient_id===user)||(r.recipient_id===session.id&&r.sender_id===user));
    if(!conversation&&access.kind==="accepted"&&access.request){
     const r=access.request;
     messages.push({id:"request-"+r.id,sender_id:r.senderId,recipient_id:r.recipientId,body:r.body,created_at:r.createdAt});
     messages.sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at));
    }
-   setItems(messages);setError("");
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo abrir la conversación.");}
-  finally{setLoading(false);}
+   await assertMessageScope(scope);
+   if(!active())return;
+   scopeRef.current=scope;setMe(scope.owner);setListingThread(selected);setContactAccess(access);setJshopSpam(spam);setItems(messages);setError("");
+  }catch(e){if(active()){scopeRef.current=null;setItems([]);setListingThread(null);setError(e instanceof Error?e.message:"No se pudo abrir la conversación.");}}
+  finally{if(active())setLoading(false);}
  },[user,valid,conversation,validConversation]);
- useEffect(()=>{void reload();},[reload]);
+ useFocusEffect(useCallback(()=>{void reload();return()=>{revision.current++;scopeRef.current=null;};},[reload]));
  async function send(){
-  const body=draft.trim();if(!body||!valid||!me||busy||(!!conversation&&!listingThread))return;
+  const scope=scopeRef.current,generation=revision.current;
+  const body=draft.trim();if(!scope||!body||!valid||!me||busy||loading||(!!conversation&&!listingThread))return;
   if(!conversation&&contactAccess.kind!=="accepted"&&contactAccess.kind!=="none")return;
   setBusy(true);setError("");
   try{
+   const db=requireSupabase();
+   await captureMessageScope(scope);
+   if(revision.current!==generation||scope.owner!==me)return;
+   if(!conversation){
+    const fresh=await loadContactAccess(user!,scope);
+    if(revision.current!==generation)return;
+    if(fresh.kind!==contactAccess.kind){setContactAccess(fresh);throw Error("El permiso de mensajes cambió. Revisa la conversación y vuelve a enviar.");}
+   }
+   await assertMessageScope(scope);
+   if(revision.current!==generation)return;
    if(!conversation&&contactAccess.kind==="none"){
-    await sendContactRequest(user!,body);
+    await sendContactRequest(user!,body,me,scope);
    }else{
-    const {error:sendError}=await requireSupabase().from("jobeen_direct_messages" as never).insert({sender_id:me,recipient_id:user,body,jshop_conversation_id:conversation||null} as never);
+    const {error:sendError}=await db.from("jobeen_direct_messages" as never).insert({sender_id:me,recipient_id:user,body,jshop_conversation_id:conversation||null} as never);
     if(sendError)throw sendError;
    }
-   setDraft("");await reload();
+   await assertMessageScope(scope);
+   if(revision.current===generation){setDraft("");await reload();}
   }catch(e){setError(e instanceof Error?e.message:"No se pudo enviar el mensaje.");}
   finally{setBusy(false);}
  }
  async function toggleSpam(){
-  if(!conversation||menuBusy)return;
+  const scope=scopeRef.current;
+  if(!scope||!conversation||menuBusy)return;
   setMenuBusy(true);setMenuError("");
   try{
-   await markJShopSpam(conversation,!jshopSpam);
+   await markJShopSpam(conversation,!jshopSpam,scope);
    setJshopSpam(!jshopSpam);setMenuStep(null);
   }catch(e){setMenuError(e instanceof Error?e.message:"No se pudo modificar la carpeta.");}
   finally{setMenuBusy(false);}
  }
  async function reportConversation(reason:"spam"|"estafa"|"acoso"){
-  if(!user||menuBusy)return;
+  const scope=scopeRef.current;
+  if(!scope||!user||menuBusy)return;
   setMenuBusy(true);setMenuError("");
   try{
-   await reportMessageUser(user,reason);
+   await reportMessageUser(user,reason,scope);
    let feedback="Reporte enviado. El reporte será revisado.";
    if(conversation){
-    try{await markJShopSpam(conversation,true);setJshopSpam(true);}
+    try{await markJShopSpam(conversation,true,scope);setJshopSpam(true);}
     catch{feedback="Reporte enviado, pero no se pudo mover esta conversación a Spam.";}
    }
    setNotice(feedback);setMenuStep(null);
@@ -111,9 +135,10 @@ export default function DirectMessage(){
   setTimeout(()=>setBlockOpen(true),300);
  }
  async function blockConversation(){
-  if(!user||menuBusy)return;
+  const scope=scopeRef.current;
+  if(!scope||!user||menuBusy)return;
   setMenuBusy(true);setBlockError("");
-  try{await blockMessageUser(user);setBlockOpen(false);router.back();}
+  try{await blockMessageUser(user,scope);if(scopeRef.current===scope){setBlockOpen(false);router.back();}}
   catch(e){setBlockError(e instanceof Error?e.message:"No se pudo bloquear.");}
   finally{setMenuBusy(false);}
  }

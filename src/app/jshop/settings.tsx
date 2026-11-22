@@ -1,10 +1,10 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useFocusEffect} from "expo-router";
-import {useCallback,useState} from "react";
+import {useCallback,useRef,useState} from "react";
 import {ActivityIndicator,Pressable,Text,View} from "react-native";
 import {BottomSheet} from "../../components/social-ui";
 import {JShopPage} from "../../components/JShopUI";
-import {jshopAccountId} from "../../lib/jshop-local";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../../lib/message-session";
 import {readDefaultSaleLocation,type SaleLocation} from "../../lib/jshop-selling-location";
 import {readSellerCurrency,writeSellerCurrency} from "../../lib/jshop-selling-preferences";
 import {JSHOP_CURRENCIES,type JShopCurrency} from "../../lib/jshop-model";
@@ -23,25 +23,27 @@ export default function JShopSettings(){
  const [loading,setLoading]=useState(true);
  const [saving,setSaving]=useState(false);
  const [error,setError]=useState("");
+ const scopeRef=useRef<MessageScope|null>(null);
  useFocusEffect(useCallback(()=>{
-  let active=true;setLoading(true);
+  let active=true;scopeRef.current=null;setLocation(null);setOwner("");setCurrencyOpen(false);setLoading(true);
   void(async()=>{
    try{
-    const id=await jshopAccountId();
-    const [place,preferred]=await Promise.all([readDefaultSaleLocation(id),readSellerCurrency(id)]);
-    if(active){setOwner(id);setLocation(place);setCurrency(preferred);setError("");}
+    const scope=await captureMessageScope(),id=scope.owner;
+    const [place,preferred]=await Promise.all([readDefaultSaleLocation(id,scope),readSellerCurrency(id,scope)]);
+    await assertMessageScope(scope);
+    if(active){scopeRef.current=scope;setOwner(id);setLocation(place);setCurrency(preferred);setError("");}
    }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudo cargar la configuración de venta.");}
    finally{if(active)setLoading(false);}
   })();
-  return()=>{active=false;};
+  return()=>{active=false;scopeRef.current=null;setOwner("");setLocation(null);setCurrencyOpen(false);};
  },[]));
  async function setPreferredCurrency(next:JShopCurrency){
-  if(saving||!owner)return;
+  const scope=scopeRef.current;if(!scope||scope.owner!==owner||saving)return;
   setSaving(true);setError("");
   try{
-   await writeSellerCurrency(owner,next);
-   setCurrency(next);setCurrencyOpen(false);
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo guardar la moneda.");}
+   await writeSellerCurrency(owner,next,scope);await assertMessageScope(scope);
+   if(scopeRef.current===scope){setCurrency(next);setCurrencyOpen(false);}
+  }catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo guardar la moneda.");}
   finally{setSaving(false);}
  }
  const row=(icon:Icon,title:string,detail:string,onPress:()=>void,disabled=false)=>

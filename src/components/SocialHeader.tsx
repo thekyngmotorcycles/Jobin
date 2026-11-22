@@ -11,7 +11,7 @@ import {JobeenCreateMenu} from "./JobeenCreateMenu";
 import {PostQuickComposer} from "./PostQuickComposer";
 import {StoryStrip} from "./StoryStrip";
 import {loadQuickComposerPreference,saveQuickComposerPreference} from "../lib/home-preferences";
-import {currentSocialUser} from "../lib/social-content";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../lib/message-session";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 
@@ -35,17 +35,19 @@ export function SocialHeader({showComposer=false}:{showComposer?:boolean}){
  const [composerHeight,setComposerHeight]=useState(0);
  const reopenMenuOnReturn=useRef(false);
  const lastToggleAt=useRef(0);
+ const scopeRef=useRef<MessageScope|null>(null),writing=useRef(false);
  const reveal=useSharedValue(0);
 
  useFocusEffect(useCallback(()=>{
   if(reopenMenuOnReturn.current){reopenMenuOnReturn.current=false;setMenu(true);}
   if(!showComposer)return;
-  let active=true;
+  let active=true;scopeRef.current=null;setOwner("");setComposerVisible(false);
   void(async()=>{
    try{
-    const id=await currentSocialUser().catch(()=>"");
-    const enabled=await loadQuickComposerPreference(id).catch(()=>false);
-    if(active){
+    const scope=await captureMessageScope(),id=scope.owner;
+    const enabled=await loadQuickComposerPreference(id,scope).catch(()=>false);
+    await assertMessageScope(scope);
+    if(active){scopeRef.current=scope;
      // Hydrate the saved preference immediately, without playing an opening
      // animation or triggering haptics merely because Home gained focus.
      reveal.value=enabled?1:0;
@@ -56,7 +58,7 @@ export function SocialHeader({showComposer=false}:{showComposer?:boolean}){
     if(active){reveal.value=0;setOwner("");setComposerVisible(false);}
    }
   })();
-  return()=>{active=false;};
+  return()=>{active=false;scopeRef.current=null;setOwner("");setComposerVisible(false);};
  },[showComposer,reveal]));
 
  useEffect(()=>{
@@ -69,7 +71,9 @@ export function SocialHeader({showComposer=false}:{showComposer?:boolean}){
  async function toggleComposer(){
   // Saving locks the preference, while the short guard also prevents a quick
   // succession of taps from starting conflicting visual transitions.
-  if(!owner||saving||Date.now()-lastToggleAt.current<DISCLOSURE_MS)return;
+  const scope=scopeRef.current;
+  if(!owner||saving||!scope||scope.owner!==owner||writing.current||Date.now()-lastToggleAt.current<DISCLOSURE_MS)return;
+  writing.current=true;
   lastToggleAt.current=Date.now();
   const next=!composerVisible;
   setComposerVisible(next);
@@ -77,11 +81,12 @@ export function SocialHeader({showComposer=false}:{showComposer?:boolean}){
   // A subtle selection tick, only on actual interaction. Unsupported devices
   // still use the same animation and remain fully functional.
   void Haptics.selectionAsync().catch(()=>{});
-  try{await saveQuickComposerPreference(owner,next);}
+  try{await saveQuickComposerPreference(owner,next,scope);}
   catch(e){
+   if(scopeRef.current!==scope)return;
    setComposerVisible(!next);
    Alert.alert("Personalizar inicio",e instanceof Error?e.message:"No se pudo guardar la preferencia.");
-  }finally{setSaving(false);}
+  }finally{writing.current=false;setSaving(false);}
  }
 
  const chevronStyle=useAnimatedStyle(()=>({

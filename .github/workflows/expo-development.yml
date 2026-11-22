@@ -7,7 +7,11 @@ on:
       build:
         description: Also create a new development build
         type: boolean
-        default: true
+        default: false
+      approved_commit:
+        description: 'Exact commit SHA approved for compilation (required when build is true)'
+        type: string
+        required: false
       platform:
         description: Android device, iOS simulator, or both
         type: choice
@@ -81,23 +85,13 @@ jobs:
             eas channel:create development --non-interactive
           fi
           eas channel:edit development --branch development --non-interactive
-      - name: Verify Mapbox public token for preview APK
-        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[expo-preview]')
-        run: |
-          eas env:exec preview "node -e 'const token=process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN||\"\";
-          if(!token.startsWith(\"pk.\") || token.length<26){
-            console.error(\"::error::Mapbox public token is missing or invalid in Expo preview environment. Check the exact variable name and Preview selection.\");
-            process.exit(1);
-          }
-          console.log(\"Mapbox public token is present in Expo preview environment.\");'" --non-interactive
-      - name: Build standalone Android preview APK (without development client)
-        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[expo-preview]')
-        run: eas build --profile preview --platform android --non-interactive --wait --json > expo-build.json
       - name: Build Android development app
-        if: (github.event_name == 'workflow_dispatch' && inputs.build) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[expo-build]'))
+        if: github.event_name == 'workflow_dispatch' && inputs.build && inputs.approved_commit == github.sha
         env:
           BUILD_PLATFORM: ${{ inputs.platform || 'android' }}
-        run: eas build --profile development --platform "$BUILD_PLATFORM" --non-interactive --wait --json > expo-build.json
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA" || { echo "::error::Commit changed after approval; request a new explicit approval."; exit 1; }
+          eas build --profile development --platform "$BUILD_PLATFORM" --non-interactive --wait --json > expo-build.json
       - name: Save Expo results
         if: always()
         uses: actions/upload-artifact@v4

@@ -32,10 +32,10 @@ test("Universal chooser keeps messaging apps and native system share behind More
  assert.ok(sheet.includes("https://wa.me/?text="));
  assert.ok(sheet.includes("sms:?body="));
  assert.ok(sheet.includes("nativeSharePending.current=true"));
- assert.ok(sheet.includes('if(Platform.OS==="android"){dismiss();setTimeout(()=>void shareNative(),400);return;}'));
+ assert.ok(sheet.includes('if(Platform.OS==="android"){dismiss();timer.current=setTimeout(()=>void shareNative(),400);return;}'));
  assert.ok(sheet.includes("onDismiss={()=>{if(nativeSharePending.current)"));
- assert.ok(sheet.includes("await Share.share({message,title:shareTitle"));
- assert.ok(sheet.includes("if(result.action===Share.sharedAction)onShared?.()"));
+ assert.ok(sheet.includes("await Share.share({message:task.message,title:task.title"));
+ assert.ok(sheet.includes("if(result.action===Share.sharedAction&&await verifyDeferred(task))onShared?.()"));
 });
 
 test("QR is offered for real links, never for CV or text-only demo posts",()=>{
@@ -63,9 +63,10 @@ test("Public profile closes its existing menu before opening the branded share p
 test("Published feed keeps share counts confirmed and avoids overlapping action sheets",()=>{
  const home=source("src/components/HomePublishedPosts.tsx");
  assert.ok(home.includes("setOptionsOpen(false);"));
- assert.ok(home.includes("setTimeout(()=>setShareOpen(true),350)"));
+ assert.ok(home.includes("shareTimer.current=setTimeout(()=>{void captureMessageScope(scope).then(()=>{if(live(scope))setShareOpen(true);}).catch(()=>{});},350)"));
+ assert.ok(home.includes("if(shareTimer.current)clearTimeout(shareTimer.current)"));
  assert.ok(home.includes("onShared={()=>void confirmNativeShare()}"));
- assert.ok(home.includes("await recordHomePostShare(post.id)"));
+ assert.ok(home.includes("await recordHomePostShare(post.id,scope)"));
  assert.ok(home.includes("setShares(n=>n+1)"));
  assert.ok(home.includes('Linking.createURL("post/"+post.id)'));
  const options=source("src/components/FeedPostOptions.tsx");

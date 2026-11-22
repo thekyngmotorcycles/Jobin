@@ -1,10 +1,11 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useLocalSearchParams} from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import {useEffect,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Image,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
-import {currentSocialUser,publishStory,shareApprovedMedia,type StoryKind} from "../../lib/social-content";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../../lib/message-session";
+import {publishStory,shareApprovedMedia,type StoryKind} from "../../lib/social-content";
 import type {PublishedMedia} from "../../lib/safety-api";
 import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
@@ -21,25 +22,31 @@ export default function StoryCreate(){
  const [mediaId,setMediaId]=useState("");
  const [consent,setConsent]=useState(false);
  const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [error,setError]=useState("");
+ const scopeRef=useRef<MessageScope|null>(null),submitting=useRef(false),picking=useRef(false);
  useEffect(()=>{let live=true;void(async()=>{
-  try{const owner=await currentSocialUser();if(!live)return;setUserId(owner);const published=await shareApprovedMedia("video",owner);if(live)setVideos(published);}
+  try{const scope=await captureMessageScope(),owner=scope.owner;const published=await shareApprovedMedia("video",owner);await assertMessageScope(scope);if(live){scopeRef.current=scope;setUserId(owner);setVideos(published);}}
   catch(e){if(live)setError(e instanceof Error?e.message:"No se pudo cargar el editor.");}
   finally{if(live)setLoading(false);}
- })();return()=>{live=false;};},[]);
+ })();return()=>{live=false;scopeRef.current=null;};},[]);
  async function choosePhoto(){
-  try{
+  const scope=scopeRef.current;if(!scope||submitting.current||picking.current)return;
+  picking.current=true;
+  try{await captureMessageScope(scope);if(scopeRef.current!==scope)return;
    const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:["images"],quality:0.85});
+   await assertMessageScope(scope);if(scopeRef.current!==scope)return;
    if(!result.canceled&&result.assets[0]){setPhotoUri(result.assets[0].uri);setError("");}
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo abrir la galería.");}
+  }catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo abrir la galería.");}
+  finally{picking.current=false;}
  }
- async function submit(){
-  if(busy||!userId||!consent)return;
-  setBusy(true);setError("");
+ async function submit(scope:MessageScope){
+  if(scopeRef.current!==scope||scope.owner!==userId||submitting.current||!consent)return;
+  submitting.current=true;setBusy(true);setError("");
   try{
-   await publishStory({kind,body:caption,photoUri:kind==="photo"?photoUri:undefined,mediaId:kind==="video"?mediaId:null});
-   router.back();
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo compartir la historia.");}
-  finally{setBusy(false);}
+   await captureMessageScope(scope);if(scopeRef.current!==scope)return;
+   await publishStory({kind,body:caption,photoUri:kind==="photo"?photoUri:undefined,mediaId:kind==="video"?mediaId:null},scope);
+   await assertMessageScope(scope);if(scopeRef.current===scope)router.back();
+  }catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo compartir la historia.");}
+  finally{submitting.current=false;if(scopeRef.current===scope)setBusy(false);}
  }
  const ready=kind==="text"?!!caption.trim():kind==="photo"?!!photoUri:!!mediaId;
  return <>
@@ -89,7 +96,7 @@ export default function StoryCreate(){
     {loading&&<ActivityIndicator color={t.yellow}/>}
     {!!error&&<Text accessibilityLiveRegion="polite" style={{color:t.ink,fontSize:13}}>{error}</Text>}
     <Pressable accessibilityRole="button" disabled={busy||!userId||!ready||!consent}
-     onPress={()=>Alert.alert("Publicar historia","Tu historia será visible durante 24 horas en Casa y Mensajes.",[{text:"Cancelar",style:"cancel"},{text:"Publicar",onPress:()=>void submit()}])}
+     onPress={()=>{const scope=scopeRef.current;if(scope)Alert.alert("Publicar historia","Tu historia será visible durante 24 horas en Casa y Mensajes.",[{text:"Cancelar",style:"cancel"},{text:"Publicar",onPress:()=>void submit(scope)}]);}}
      style={({pressed})=>({minHeight:53,borderRadius:18,backgroundColor:t.ink,justifyContent:"center",alignItems:"center",opacity:busy||!userId||!ready||!consent?0.45:pressed?0.72:1})}>
      <Text style={{fontWeight:"800",color:t.bg}}>{busy?"Publicando...":"Compartir historia"}</Text>
     </Pressable>

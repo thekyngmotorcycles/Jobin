@@ -31,6 +31,18 @@
         "withoutCredentials": true,
         "gradleCommand": ":app:assembleDebug"
       }
+    },
+    "security-pilot": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "channel": "security-pilot",
+      "environment": "development",
+      "env": {
+        "JOBEEN_SECURITY_PILOT": "1",
+        "EXPO_PUBLIC_JOBEEN_SECURITY_PILOT": "1"
+      }
     }
   },
   "submit": {

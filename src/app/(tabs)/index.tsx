@@ -15,6 +15,7 @@ import { FEED_POSTS } from "../../lib/feed";
 import { PHOTO_POSTS, POSTERS } from "../../lib/home";
 import { router,useLocalSearchParams } from "expo-router";
 import {takePublishedPostForHome} from "../../lib/post-return";
+import {captureMessageScope,assertMessageScope} from "../../lib/message-session";
 import { useUi } from "../../components/ui";
 
 export default function Home() {
@@ -26,12 +27,13 @@ export default function Home() {
   const { s } = useUi();const focused=useIsFocused();const window=useWindowDimensions();const [viewport,setViewport]=useState({width:window.width,height:window.height});const {contentBottom}=useTabClearance();const {reportScroll}=useScrollNavigation();
   useEffect(()=>{
     if(!focused)return;
-    const latest=takePublishedPostForHome();
-    if(latest){
-      setFilter("all");
-      setNewlyPublished(latest);
-      scrollRef.current?.scrollTo({y:0,animated:false});
-    }
+    let active=true;
+    void(async()=>{try{
+      const scope=await captureMessageScope();await assertMessageScope(scope);if(!active)return;
+      const latest=takePublishedPostForHome(scope);
+      if(latest){setFilter("all");setNewlyPublished(latest);scrollRef.current?.scrollTo({y:0,animated:false});}
+    }catch{if(active)setNewlyPublished("");}})();
+    return()=>{active=false;setNewlyPublished("");};
   },[focused]);
   const cards = [
     ...FEED_POSTS.slice(0, 2).map(p => ({ kind: "video" as const, key: p.postId, post: p })),

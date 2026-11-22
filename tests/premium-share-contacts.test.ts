@@ -7,7 +7,7 @@ const panel=src("src/components/JCardShareSheet.tsx");
 const contacts=src("src/lib/share-contacts.ts");
 
 test("Approved premium light panel has real accepted Jobeen contacts with circular avatars",()=>{
- assert.ok(panel.includes("loadShareRecipients()"));
+ assert.ok(panel.includes("loadShareRecipients(scope)"));
  assert.ok(contacts.includes('c.status==="accepted"'));
  assert.ok(panel.includes("<PublicProfileAvatar userId={contact.id}"));
  assert.ok(panel.includes("size={52} framed={false}"));
@@ -26,17 +26,17 @@ test("Multi-select and dynamic send button use real recipients, never mock conta
  assert.ok(panel.includes("setSelected(previous=>previous.includes(id)?previous.filter"));
  assert.ok(panel.includes('selected.length?"Seleccionados: "+selected.length'));
  assert.ok(panel.includes('!!selected.length&&<Pressable'));
- assert.ok(panel.includes("await sendToShareRecipients(selected,message)"));
+ assert.ok(panel.includes("await sendToShareRecipients(selected,message,scope)"));
  assert.ok(panel.includes("Aún no tienes contactos aceptados de Jobeen"));
  assert.ok(!panel.includes("Mariana Torres"));
 });
 test("Share messages obey existing privacy rules and distinguish delivered from pending",()=>{
- assert.ok(contacts.includes("const allowed=new Set((await loadShareRecipients())"));
- assert.ok(contacts.includes("const access=await loadContactAccess(id)"));
+ assert.ok(contacts.includes("const allowed=new Set((await loadShareRecipients(scope))"));
+ assert.ok(contacts.includes("const access=await loadContactAccess(id,scope)"));
  assert.ok(contacts.includes('access.kind==="accepted"'));
  assert.ok(contacts.includes('from("jobeen_direct_messages"'));
  assert.ok(contacts.includes('access.kind==="none"'));
- assert.ok(contacts.includes("await sendContactRequest(id,text.slice(0,500))"));
+ assert.ok(contacts.includes("await sendContactRequest(id,text.slice(0,500),scope.owner,scope)"));
  assert.ok(contacts.includes("result.failed.push"));
  assert.ok(panel.includes("result.sent.length?"));
  assert.ok(panel.includes("result.requested.length?"));

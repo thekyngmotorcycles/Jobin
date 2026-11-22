@@ -160,4 +160,75 @@ select pg_temp.safety_assert(exists(select 1 from private.safety_manual_decision
 select pg_temp.safety_assert(not exists(select 1 from public.videos where work_media_id=current_setting('test.low_confidence')::uuid),'human clearance still waits for actual video provider publication');
 select set_config('request.jwt.claim.sub','',true);
 
+-- Authorization review with synthetic assets only, isolated from all hosted data.
+\ir ../supabase/security-review/work-media-privacy.sql
+select set_config('test.review_video',pg_temp.fixture_media('30000000-0000-4000-8000-000000000006')::text,true);
+update public.work_media set status='published',safety_checked_at=now() where id=current_setting('test.review_video')::uuid;
+select set_config('test.review_pending',pg_temp.fixture_media('30000000-0000-4000-8000-000000000006')::text,true);
+-- A private room with an active safety lease; only accepted participants may see it.
+insert into public.work_media(id,creator_id,kind,title,profession_code,activity,employment_snapshot,visibility,consent_version,status,provider_asset_id,playback_url,safety_lease_until)
+values('30000000-0000-4000-8000-000000000099','30000000-0000-4000-8000-000000000006','live','Private candidate','electricista','work','[]','private','work-rules-v1','live','fixture-private','https://example.test/private',now()+interval '15 seconds');
+insert into public.live_sessions(id,host_id,title,visibility,purpose,work_media_id)
+values('30000000-0000-4000-8000-000000000098','30000000-0000-4000-8000-000000000006','Private candidate','private','daily_work','30000000-0000-4000-8000-000000000099');
+insert into public.live_participants(session_id,profile_id,role,accepted_at) values
+('30000000-0000-4000-8000-000000000098','30000000-0000-4000-8000-000000000005','viewer',now()),
+('30000000-0000-4000-8000-000000000098','30000000-0000-4000-8000-000000000003','viewer',null);
+select pg_temp.safety_assert(not has_function_privilege('anon','public.jobin_work_media(uuid)','EXECUTE'),'anonymous playback RPC denied');
+select pg_temp.safety_assert(not has_function_privilege('anon','public.jobin_published_work_media()','EXECUTE'),'anonymous catalog RPC denied');
+select pg_temp.safety_assert(not has_column_privilege('authenticated','public.work_media','playback_url','SELECT'),'raw playback URL not readable');
+select pg_temp.safety_assert(not has_column_privilege('authenticated','public.work_media','employment_snapshot','SELECT'),'raw employment snapshot not readable');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000005',true);
+select pg_temp.safety_assert(public.jobin_work_media(current_setting('test.review_video')::uuid)->>'playbackUrl' like 'https://%','ordinary viewer can access approved public video');
+select pg_temp.safety_assert(public.jobin_work_media(current_setting('test.review_pending')::uuid) is null,'unpublished video metadata denied to other users');
+select pg_temp.safety_assert(public.jobin_work_media('30000000-0000-4000-8000-000000000099')->>'playbackUrl'='https://example.test/private','accepted room participant receives authorized playback');
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000003',true);
+select pg_temp.safety_assert(public.jobin_work_media('30000000-0000-4000-8000-000000000099') is null,'unaccepted invitation cannot view private room');
+reset role;
+select set_config('request.jwt.claim.sub','',true);
+insert into public.blocks(blocker_id,blocked_id) values('30000000-0000-4000-8000-000000000006','30000000-0000-4000-8000-000000000005');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000005',true);
+select pg_temp.safety_assert(public.jobin_work_media(current_setting('test.review_video')::uuid) is null,'block denies public video detail');
+select pg_temp.safety_assert(public.jobin_work_media('30000000-0000-4000-8000-000000000099') is null,'block overrides accepted room invitation');
+select pg_temp.safety_assert(not exists(select 1 from jsonb_array_elements(public.jobin_published_work_media()) x where x->>'creator_id'='30000000-0000-4000-8000-000000000006'),'blocked creator excluded from media catalog');
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000006',true);
+select pg_temp.safety_assert(public.jobin_work_media(current_setting('test.review_pending')::uuid)->>'status'='moderating','owner can see pending request');
+select pg_temp.safety_assert(public.jobin_work_media(current_setting('test.review_pending')::uuid)->>'playbackUrl' is null,'owner cannot obtain unapproved playback through detail');
+select set_config('request.jwt.claim.sub','',true);
+select pg_temp.safety_assert(public.jobin_work_media(current_setting('test.review_video')::uuid) is null,'missing identity cannot obtain playback');
+reset role;
+select set_config('request.jwt.claim.sub','',true);
+\ir ../supabase/security-review/studio-review-privacy.sql
+insert into private.media_publisher_access(media_id,publisher_url)
+values('30000000-0000-4000-8000-000000000099','https://example.test/private-studio');
+insert into storage.objects(bucket_id,name) values('employer-report-evidence','30000000-0000-4000-8000-000000000003/unsubmitted.png');
+update public.work_media set status='held' where id=current_setting('test.review_pending')::uuid;
+select pg_temp.safety_assert(not has_function_privilege('anon','public.jobin_work_studio_link(uuid)','EXECUTE'),'anonymous studio denied');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000006',true);
+select pg_temp.safety_assert(exists(select 1 from jsonb_array_elements(public.jobin_my_work_media()) m where m->>'id'='30000000-0000-4000-8000-000000000099' and m->>'studioReady'='true' and m->>'publisherUrl' is null),'owner list never returns publisher secret');
+select pg_temp.safety_assert(public.jobin_work_studio_link('30000000-0000-4000-8000-000000000099')='https://example.test/private-studio','eligible creator can explicitly request studio link');
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000005',true);
+select pg_temp.safety_assert(public.jobin_work_studio_link('30000000-0000-4000-8000-000000000099') is null,'other account cannot obtain studio link');
+select pg_temp.safety_assert(public.jobin_moderation_review_artifact(current_setting('test.review_pending')::uuid) is null,'ordinary viewer cannot request private review artifact');
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000004',true);
+select pg_temp.safety_assert(public.jobin_work_studio_link('30000000-0000-4000-8000-000000000099') is null,'moderator role does not grant studio access');
+select pg_temp.safety_assert(public.jobin_moderation_review_artifact('30000000-0000-4000-8000-000000000099') is null,'moderator cannot browse unrelated private rooms');
+select pg_temp.safety_assert(not exists(select id from public.work_media where creator_id<>'30000000-0000-4000-8000-000000000004'),'moderator cannot bypass case projection through raw work media');
+select pg_temp.safety_assert(not exists(select id from public.safety_incidents where user_id<>'30000000-0000-4000-8000-000000000004'),'moderator cannot enumerate other users raw incidents');
+select pg_temp.safety_assert(not exists(select id from public.safety_appeals where user_id<>'30000000-0000-4000-8000-000000000004'),'moderator cannot enumerate other users raw appeals');
+select pg_temp.safety_assert(public.jobin_moderation_review_artifact(current_setting('test.review_pending')::uuid)->>'assetId' is not null,'independent moderator can review a held case');
+select pg_temp.safety_assert(exists(select 1 from jsonb_array_elements(public.jobin_safety_review_queue()->'held') m where m->>'id'=current_setting('test.review_pending') and not m?'provider_asset_id'),'queue exposes no provider asset identifiers');
+select pg_temp.safety_assert(exists(select 1 from storage.objects where bucket_id='employer-report-evidence' and name like '%/approved-worker.png'),'open report evidence is accessible to independent moderator');
+select pg_temp.safety_assert(not exists(select 1 from storage.objects where bucket_id='employer-report-evidence' and name like '%/unsubmitted.png'),'moderator cannot browse unsubmitted evidence');
+reset role;
+select set_config('request.jwt.claim.sub','',true);
+update public.work_media set status='ended' where id='30000000-0000-4000-8000-000000000099';
+update public.work_media set status='moderating' where id=current_setting('test.review_pending')::uuid;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000006',true);
+select pg_temp.safety_assert(public.jobin_work_studio_link('30000000-0000-4000-8000-000000000099') is null,'ended studio cannot issue another link');
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000004',true);
+select pg_temp.safety_assert(public.jobin_moderation_review_artifact(current_setting('test.review_pending')::uuid) is null,'closed held review cannot issue another link');
 rollback;

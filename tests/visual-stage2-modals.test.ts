@@ -31,7 +31,8 @@ test("Message privacy uses common sheet radius, colors, handle and scrollable sa
  assert.ok(s.includes("style={{flexShrink:1}}"));
  assert.ok(s.includes("paddingBottom:Math.max(insets.bottom,18)"));
  assert.ok(s.includes("fontSize:JOBEEN_TYPE.modalTitle"));
- assert.ok(s.includes("saveMessagePrivacy(next)"),"Do not change privacy persistence");
+ assert.ok(s.includes("await saveMessagePrivacy(next,scope)"),"Preserve privacy persistence with original session");
+ assert.ok(s.includes("if(scopeRef.current===scope)setPrivacy(next)"),"Do not render settings from a superseded session");
 });
 test("Confirmation dialogs stay open while an action is processing",()=>{
  const s=src("src/components/JobeenNoticeDialog.tsx");

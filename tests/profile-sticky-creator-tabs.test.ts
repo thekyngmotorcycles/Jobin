@@ -62,7 +62,9 @@ test("Existing contact controls, JCard editor, and professional history remain r
  assert.ok(owner.includes('mode === "cv"'));
  assert.ok(owner.includes('ProfileOwnedPosts filter="live"'));
  assert.ok(visitor.includes("<ProfileCommunityActions"));
- assert.ok(visitor.includes('requestCV(user!)'));
+ assert.ok(visitor.includes('onPress={()=>void sendCVRequest()}'),"CV request remains reachable from the visitor profile");
+ assert.ok(visitor.includes('await requestCV(user,scope)'),"CV request retains the originating authenticated session");
+ assert.ok(visitor.includes('cvTarget.current!==user||scope.owner!==viewer'),"Reject requests from a superseded profile or account");
  assert.ok(visitor.includes('section==="cv"'));
  assert.ok(visitor.includes('section==="live"'));
 });

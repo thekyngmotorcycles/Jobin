@@ -21,7 +21,7 @@ test("Seller selected currency is preserved for new drafts and unchanged for exi
  const publish=read("src/app/jshop/publish.tsx");
  assert.ok(pref.includes("readSellerCurrency"));
  assert.ok(pref.includes("AsyncStorage.setItem"));
- assert.ok(publish.includes("readSellerCurrency(owner)"));
+ assert.ok(publish.includes("readSellerCurrency(owner,scope)"));
  assert.ok(publish.includes("if(!draft)setCurrency(preferredCurrency)"));
  assert.ok(publish.includes("setCurrency(found.currency)"));
 });
@@ -35,6 +35,6 @@ test("Mapbox seller location avoids redundant reverse requests and validates bef
  assert.ok(geo.includes("Retry-After"));
  assert.ok(geo.includes("geocodeBlockedUntil"));
  assert.ok(!geo.includes('mapboxRequest("reverse",{longitude:lon.toFixed(6),latitude:lat.toFixed(6),types:LOCATION_TYPES,limit:"5"}'));
- assert.ok(picker.includes("if(!mapboxConfigured||!typing"));
+ assert.ok(picker.includes("if(!scope||!mapboxConfigured||!typing"));
  assert.ok(picker.includes("void searchOnSubmit()"));
 });

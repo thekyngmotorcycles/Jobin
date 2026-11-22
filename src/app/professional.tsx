@@ -1,6 +1,5 @@
-import {assertAccountOwner} from "../lib/account-scope";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
 import {consumePersonalPhotoChange} from "../lib/personal-jcard-photo";
-import {appearanceOwner} from "../lib/jcard-appearance";
 import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {router,Stack,useFocusEffect,useNavigation} from "expo-router";
@@ -34,9 +33,20 @@ export default function Professional() {
  const sunflower=theme==="sunflower";
  const glassPanel=(expanded:boolean)=>sunflower&&!expanded?{backgroundColor:colors.glassPanel,borderColor:colors.glassBorder,shadowColor:colors.glassShadow,shadowOpacity:0.27,shadowRadius:16,shadowOffset:{width:0,height:7},elevation:6}:undefined;
  const workspace=useProfessionalData(loadWorkspace,true);
- useFocusEffect(useCallback(()=>{if(consumePersonalPhotoChange())void workspace.reload();},[workspace.reload]));const catalog=useProfessionalData(loadCatalog);
+ useFocusEffect(useCallback(()=>{
+  let active=true;
+  void(async()=>{try{
+   const scope=await captureMessageScope();await assertMessageScope(scope);
+   if(active&&consumePersonalPhotoChange(scope))void workspace.reload();
+  }catch{/* An unverified session must not consume the avatar event. */}})();
+  return()=>{active=false;};
+ },[workspace.reload]));const catalog=useProfessionalData(loadCatalog);
  const action=useProfessionalAction(workspace.reload);
  const navigation=useNavigation();
+ const editorScopeRef=useRef<MessageScope|null>(null),activeRef=useRef(false);
+ const [editorScope,setEditorScope]=useState<MessageScope|null>(null);
+ const [editorError,setEditorError]=useState(""),[editorRevision,setEditorRevision]=useState(0);
+ const [settingsReady,setSettingsReady]=useState(false);
  const [unsavedDialogOpen,setUnsavedDialogOpen]=useState(false);
  const pendingExitRef=useRef<null|(()=>void)>(null);
  const keepEditing=()=>{pendingExitRef.current=null;setUnsavedDialogOpen(false);};
@@ -57,28 +67,14 @@ export default function Professional() {
  const [editedPrimary,setEditedPrimary]=useState(false);
  function openSection(id:Section){setSection(current=>current===id?null:id);}
  function openProfession(code:string,primary:boolean){setProfessionSaveError("");choose(code);setSpecialties(w?.professions.find(p=>p.profession_code===code)?.specialties??[]);setFormMode("edit");setEditedPrimary(primary);setEditingProfession(code);setProfessionFormOpen(true);}
- async function persistProfession(asPrimary:boolean){
-  setProfessionSaveError("");
-  if(!profession)throw new Error("Selecciona una profesión.");
-  if(w?.professions.some(p=>p.profession_code===profession&&p.primary_profession&&!asPrimary))throw new Error("Esta profesión ya es tu profesión principal.");
-  await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:asPrimary});
-  await saveProfessionSpecialties(profession,specialties);
-  const fresh=await loadWorkspace();
-  const saved=fresh?.professions.find(p=>p.profession_code===profession);
-  if(!saved||saved.primary_profession!==asPrimary||specialties.some(item=>!saved.specialties?.includes(item)))throw new Error("No se pudo confirmar el guardado. Actualiza e inténtalo nuevamente.");
-  setProfessionFormOpen(false);setEditingProfession(null);setProfession("");setSpecialties([]);
- }
  function addProfession(){setProfessionSaveError("");setSpecialties([]);setProfession("");setTraining("graduado");setInstitution(null);setFormMode("add");setEditingProfession(null);setEditedPrimary(false);setProfessionFormOpen(true);}
  useEffect(()=>{if(!section)return;const t=setTimeout(()=>scrollRef.current?.scrollTo({y:Math.max(0,(positions.current[section]??0)-18),animated:true}),160);return()=>clearTimeout(t);},[section]);
  const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
  const [savedVisibility,setSavedVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
- useEffect(()=>{let live=true;void (async()=>{try{const owner=await appearanceOwner();if(owner){const v=await readJCardVisibility(owner);if(live){setVisibility(v);setSavedVisibility(v);}}}catch{}})();return()=>{live=false;};},[]);
  const [showEmail,setShowEmail]=useState(false);const [showPhone,setShowPhone]=useState(false);
  const [savedContactPreferences,setSavedContactPreferences]=useState({show_email:false,show_phone:false});
- useEffect(()=>{let live=true;void loadContactPreferences().then(p=>{if(live){setShowEmail(p.show_email);setShowPhone(p.show_phone);setSavedContactPreferences({show_email:p.show_email,show_phone:p.show_phone});}}).catch(()=>{});return()=>{live=false;};},[]);
  const [personalContacts,setPersonalContacts]=useState({email_primary:"",email_secondary:"",phone_primary:"",phone_secondary:""});
  const [savedPersonalContacts,setSavedPersonalContacts]=useState({email_primary:"",email_secondary:"",phone_primary:"",phone_secondary:""});
- useEffect(()=>{let live=true;void loadPersonalContactDetails().then(c=>{if(live){setPersonalContacts(c);setSavedPersonalContacts(c);}}).catch(()=>{});return()=>{live=false;};},[]);
  function changePhoto(){router.push("/personal-avatar-editor");}
  const [name,setName]=useState("");const [handle,setHandle]=useState("");const [city,setCity]=useState("");const [region,setRegion]=useState("");
  const [availability,setAvailability]=useState<JCardStatus>("AVAILABLE");
@@ -87,7 +83,63 @@ export default function Professional() {
  const [profession,setProfession]=useState("");const [training,setTraining]=useState<"graduado"|"in_academy"|"practica">("graduado");
  const [institution,setInstitution]=useState<string|null>(null);
  const education=useProfessionalData(useCallback(()=>profession?loadEducation(profession):Promise.resolve([]),[profession]));
- const w=workspace.data;
+ const w=editorScope&&settingsReady&&workspace.data?.card.id===editorScope.owner?workspace.data:null;
+ useEffect(()=>{
+  let current=true;activeRef.current=true;setSettingsReady(false);setEditorError("");
+  void(async()=>{
+   try{
+    const scope=await captureMessageScope(editorScopeRef.current??undefined);
+    if(!current)return;
+    editorScopeRef.current=scope;
+    const [v,p,contacts]=await Promise.all([
+     readJCardVisibility(scope.owner,scope),loadContactPreferences(scope),loadPersonalContactDetails(scope.owner,scope)
+    ]);
+    await assertMessageScope(scope);
+    if(!current||editorScopeRef.current!==scope)return;
+    setVisibility(v);setSavedVisibility(v);
+    setShowEmail(p.show_email);setShowPhone(p.show_phone);setSavedContactPreferences(p);
+    setPersonalContacts(contacts);setSavedPersonalContacts(contacts);
+    setEditorScope(scope);setSettingsReady(true);
+   }catch(e){if(current){setSettingsReady(false);setEditorError(e instanceof Error?e.message:"No se pudo verificar la privacidad de tu JCard.");}}
+  })();
+  return()=>{current=false;activeRef.current=false;};
+ },[editorRevision]);
+ function retryEditor(){setEditorRevision(n=>n+1);workspace.reload();}
+ async function verifyEditor(origin:MessageScope){
+  if(!activeRef.current||editorScopeRef.current!==origin)throw Error("El editor ya no pertenece a esta sesión.");
+  await captureMessageScope(origin);
+  if(!activeRef.current||editorScopeRef.current!==origin)throw Error("La sesión cambió.");
+ }
+ async function saveProfession(asPrimary:boolean){
+  const origin=editorScope;
+  if(!origin||!w||action.busy)return;
+  await action.run(async()=>{
+   await verifyEditor(origin);
+   if(!profession)throw Error("Selecciona una profesión.");
+   if(w.professions.some(p=>p.profession_code===profession&&p.primary_profession&&!asPrimary))throw Error("Esta profesión ya es tu profesión principal.");
+   if(formMode==="edit"&&editingProfession&&editingProfession!==profession){
+    if(editedPrimary)await replacePrimaryProfession(editingProfession,profession,training,institution,origin);
+    else await replaceSecondaryProfession(editingProfession,profession,training,institution,origin);
+   }else await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:asPrimary},origin);
+   await verifyEditor(origin);
+   await saveProfessionSpecialties(profession,specialties,origin);
+   await verifyEditor(origin);
+   setProfessionFormOpen(false);setEditingProfession(null);
+  },formMode==="edit"?"Profesión actualizada.":asPrimary?"Profesión principal guardada.":"Profesión secundaria guardada.");
+ }
+ function removeProfession(code:string,primary:boolean){
+  const origin=editorScope;
+  if(!origin||!w)return;
+  Alert.alert("Eliminar profesión",primary?"¿Eliminar tu profesión principal? Puedes seleccionar otra después.":"¿Eliminar esta profesión?",[
+   {text:"Cancelar",style:"cancel"},
+   {text:"Eliminar",style:"destructive",onPress:()=>void action.run(async()=>{
+    await verifyEditor(origin);
+    await professionalMutation("jobin_remove_unverified_profession",{profession:code},origin);
+    await verifyEditor(origin);
+   },"Profesión eliminada.")}
+  ]);
+ }
+
 
  useEffect(()=>{if(!w)return;setName(w.card.name);setHandle(w.card.handle);setCity(w.profile.city||"");setRegion(w.profile.region||"");setAvailability(w.card.status);setLanguages(w.card.languages.map(l=>({name:l.name,fluency:String(l.fluency)})));},[w]);
  const input={color:colors.ink,borderColor:colors.line,borderWidth:1,borderRadius:10,padding:12,minHeight:JOBEEN_CONTROL.touchTarget};
@@ -109,15 +161,15 @@ export default function Professional() {
   ...(privacyDirty?["privacy" as const]:[])
  ];
  const saveSections=(targets:SaveTarget[])=>{
-  if(action.busy||!targets.length||!w?.card.id)return;
-  const owner=w.card.id;
+  if(action.busy||!targets.length||!w?.card.id||!editorScope||!settingsReady)return;
+  const owner=w.card.id,origin=editorScope;
   const saveIdentity=targets.includes("identity");
   const saveLanguages=targets.includes("languages");
   const savePrivacy=targets.includes("privacy");
   void action.run(async()=>{
-   await assertAccountOwner(owner);
+   await verifyEditor(origin);
    if(saveIdentity||saveLanguages){
-    const fresh=await loadWorkspace();if(!fresh||fresh.card.id!==owner)throw new Error("La cuenta cambió.");
+    const fresh=await loadWorkspace(origin);if(!fresh||fresh.card.id!==owner)throw new Error("La cuenta cambió.");
     const legalName=saveIdentity?name.trim().replace(/\s+/g," "):fresh.card.name;
     if(saveIdentity){
      if(!/^[\p{L}\p{M}]+(?:[ \u0027\u2019-][\p{L}\p{M}]+)*$/u.test(legalName)||Array.from(legalName).length>30)
@@ -132,22 +184,26 @@ export default function Professional() {
      throw new Error("Completa el idioma y selecciona un nivel válido.");
     if(new Set(nextLanguages.map(l=>canonicalLanguage(l.name))).size!==nextLanguages.length)
      throw new Error("No puedes agregar el mismo idioma dos veces.");
-    await assertAccountOwner(owner);
+    await verifyEditor(origin);
     await professionalMutation("jobin_save_jcard",{
      legal_name:legalName,handle:saveIdentity?handle:fresh.card.handle,
      city:saveIdentity?city:(fresh.profile.city??""),
      region:saveIdentity?region:(fresh.profile.region??""),
      availability:saveIdentity?availability:fresh.card.status,
      languages:nextLanguages.map(l=>({name:canonicalLanguage(l.name)!,fluency:Number(l.fluency)}))
-    });
-    if(saveIdentity)await savePersonalContactDetails(personalContacts,owner);
+    },origin);
+    if(saveIdentity){await verifyEditor(origin);await savePersonalContactDetails(personalContacts,owner,origin);}
    }
    if(savePrivacy){
-    await saveContactPreferences({show_email:showEmail,show_phone:showPhone},owner);
-    await saveJCardVisibility(visibility,owner);
+    await verifyEditor(origin);
+    await saveContactPreferences({show_email:showEmail,show_phone:showPhone},owner,origin);
+    await verifyEditor(origin);
+    await saveJCardVisibility(visibility,owner,origin);
    }
+   await verifyEditor(origin);
   },"").then(ok=>{
    if(!ok)return;
+   if(!activeRef.current||editorScopeRef.current!==origin)return;
    if(saveIdentity)setSavedPersonalContacts({...personalContacts});
    if(savePrivacy){
     setSavedContactPreferences({show_email:showEmail,show_phone:showPhone});
@@ -172,7 +228,7 @@ export default function Professional() {
    </Pressable>
   ):undefined}}/>
   <Screen demo={false} hideHeader hideFooter scrollRef={scrollRef} title="Editar mi JCard" subtitle="">
-  {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
+  {!w?<ProfessionalStatus loading={workspace.loading||(!settingsReady&&!editorError)} error={editorError||workspace.error} retry={retryEditor}/>:<>
    {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
    <View style={{gap:6,paddingTop:0,paddingBottom:8}}>
     <View onLayout={e=>{positions.current.identity=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap},glassPanel(section==="identity")]}>
@@ -216,7 +272,7 @@ export default function Professional() {
        <View style={{flexDirection:"row",alignItems:"flex-start",gap:12}}>
         <View style={{flex:1,gap:5}}><Text style={[s.h3,{fontSize:17}]}><ProfessionGlyph profession={p.profession_code} size={20} color={colors.ink}/>  {p.label}{p.primary_profession?" · Principal":""}</Text><Text style={s.muted}>{p.training_status==="in_academy"?"En formación":p.training_status==="practica"?"Aprendido en la práctica":"Graduado"} · {p.verified?"Verificado":"Sin verificar"}{p.school?" · "+p.school:""}</Text></View>
         <Pressable accessibilityRole="button" accessibilityLabel={"Editar "+p.label} onPress={()=>openProfession(p.profession_code,p.primary_profession)} style={{padding:8,borderRadius:8,borderWidth:1,borderColor:colors.line}}><Ionicons name="create-outline" size={23} color={colors.ink}/></Pressable>
-        {!p.verified&&<Pressable accessibilityRole="button" accessibilityLabel={"Eliminar "+p.label} onPress={()=>Alert.alert("Eliminar profesión",p.primary_profession?"¿Eliminar tu profesión principal? Puedes seleccionar otra después.":"¿Eliminar esta profesión?",[{text:"Cancelar",style:"cancel"},{text:"Eliminar",style:"destructive",onPress:()=>void action.run(()=>professionalMutation("jobin_remove_unverified_profession",{profession:p.profession_code}),"Profesión eliminada.")}])} style={{padding:8,borderRadius:8,borderWidth:1,borderColor:colors.line}}><Ionicons name="trash-outline" size={23} color={colors.ink}/></Pressable>}
+        {!p.verified&&<Pressable accessibilityRole="button" accessibilityLabel={"Eliminar "+p.label} onPress={()=>removeProfession(p.profession_code,p.primary_profession)} style={{padding:8,borderRadius:8,borderWidth:1,borderColor:colors.line}}><Ionicons name="trash-outline" size={23} color={colors.ink}/></Pressable>}
        </View>
       </View>)}
       {!professionFormOpen&&<Button secondary title="+ Agregar profesión" onPress={addProfession}/>}
@@ -233,9 +289,9 @@ export default function Professional() {
        {training!=="practica"&&<Button secondary title={institution?"Quitar institución":"Sin institución seleccionada"} onPress={()=>setInstitution(null)}/>}
        {training!=="practica"&&(education.loading?<Text style={s.muted}>Buscando instituciones…</Text>:education.error?<Text style={s.muted}>{education.error}</Text>:education.data?.map(school=><Button key={school.id} secondary title={(institution===school.id?"✓ ":"")+school.name} onPress={()=>setInstitution(school.id)}/>))}
        {training!=="practica"&&!education.loading&&!education.error&&education.data?.length===0&&<Text style={s.muted}>No hay instituciones preaprobadas para esta profesión. Puedes continuar sin seleccionar una.</Text>}
-       {formMode==="edit"?<Button title="Guardar" onPress={()=>void action.run(async()=>{if(!profession)throw new Error("Selecciona una profesión.");if(editedPrimary&&editingProfession&&editingProfession!==profession){await replacePrimaryProfession(editingProfession,profession,training,institution);}else if(!editedPrimary&&editingProfession&&editingProfession!==profession){await replaceSecondaryProfession(editingProfession,profession,training,institution);}else{await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:editedPrimary});}await saveProfessionSpecialties(profession,specialties);setProfessionFormOpen(false);setEditingProfession(null);},"Profesión actualizada.")}/>:<>
-        <Button secondary title="Guardar como secundaria" onPress={()=>void action.run(async()=>{if(!profession)throw new Error("Selecciona una profesión.");await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:false});await saveProfessionSpecialties(profession,specialties);setProfessionFormOpen(false);},"Profesión secundaria guardada.")}/>
-        <Button title="Guardar como principal" onPress={()=>void action.run(async()=>{if(!profession)throw new Error("Selecciona una profesión.");await professionalMutation("jobin_set_profession",{profession,training,institution:institution??undefined,make_primary:true});await saveProfessionSpecialties(profession,specialties);setProfessionFormOpen(false);},"Profesión principal guardada.")}/>
+       {formMode==="edit"?<Button title="Guardar" onPress={()=>void saveProfession(editedPrimary)}/>:<>
+        <Button secondary title="Guardar como secundaria" onPress={()=>void saveProfession(false)}/>
+        <Button title="Guardar como principal" onPress={()=>void saveProfession(true)}/>
        </>}
       </View>}
      </View>}

@@ -4,7 +4,8 @@ import {useReducedMotion} from "react-native-reanimated";
 import {BusinessCard3D,CardFlipInteractionContext} from "./BusinessCard3D";
 import {jobeenTokens} from "../theme/jobeen";
 import {personalAvatarUrl} from "../lib/personal-jcard-photo";
-import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
+import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY,type JCardVisibility} from "../lib/jcard-visibility";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
 import {useFocusEffect} from "expo-router";
 import {readJCardAppearance} from "../lib/jcard-appearance";
 import {getPremiumBackground,JCARD_PREMIUM_TRANSPARENT,type JCardPremiumBackgroundId} from "../theme/jcard-premium-backgrounds";
@@ -323,36 +324,56 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
  <Modal visible={selectedAward!==null} transparent animationType="fade" onRequestClose={()=>setSelectedAward(null)}><View style={{flex:1,justifyContent:"center",padding:24,backgroundColor:jcardFloating.modalBackdrop}}><Pressable style={StyleSheet.absoluteFill} onPress={()=>setSelectedAward(null)} accessibilityLabel="Cerrar información"/><View style={{backgroundColor:finish.start,borderRadius:20,padding:22,borderWidth:1,borderColor:finish.line}}><View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}><Text style={{fontSize:19,fontWeight:"800",color:finish.text,flex:1}}>{selectedAward?.label}</Text><Pressable onPress={()=>setSelectedAward(null)} accessibilityRole="button" accessibilityLabel="Cerrar"><Ionicons name="close-circle-outline" size={27} color={finish.text}/></Pressable></View><Text style={{fontSize:15,fontWeight:"700",color:finish.text,marginTop:12}}>{selectedAward?.level===3?"Oro":selectedAward?.level===2?"Plata":selectedAward?.level===1?"Bronce":"Sin color"}</Text><Text style={{fontSize:14,lineHeight:21,color:finish.secondary,marginTop:8}}>{selectedAward?.level===0?"Este negocio aún no reúne suficientes reseñas para obtener un sello de color. No significa que su servicio sea malo.":selectedAward?.level===1?"Bronce: los clientes han reconocido esta cualidad en sus reseñas.":selectedAward?.level===2?"Plata: una proporción importante de las reseñas reconoce esta cualidad.":"Oro: una proporción destacada de las reseñas reconoce esta cualidad."}</Text><Text style={{fontSize:12,lineHeight:18,color:finish.secondary,marginTop:12}}>Los sellos se calculan a partir de reseñas de usuarios y no son certificaciones profesionales de Jobeen.</Text></View></View></Modal>
  </View>;
 }
-export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,onEditPersonalPhoto,ownerId,showOwnerActions=false,initialSide="personal",employerLink,onDemoSaveContact,onActiveSideChange}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;onEditBusinessMedia?:(slot:"banner"|"avatar")=>void;onEditPersonalPhoto?:()=>void;ownerId?:string;showOwnerActions?:boolean;initialSide?:"personal"|"business";employerLink?:{id:string;name:string;handle:string}|null;onDemoSaveContact?:()=>void;onActiveSideChange?:(side:"personal"|"business")=>void}){
+export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,onEditPersonalPhoto,ownerId,showOwnerActions=false,initialSide="personal",employerLink,onDemoSaveContact,onActiveSideChange,publicVisibility,publicScope}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;onEditBusinessMedia?:(slot:"banner"|"avatar")=>void;onEditPersonalPhoto?:()=>void;ownerId?:string;showOwnerActions?:boolean;initialSide?:"personal"|"business";employerLink?:{id:string;name:string;handle:string}|null;onDemoSaveContact?:()=>void;onActiveSideChange?:(side:"personal"|"business")=>void;publicVisibility?:JCardVisibility;publicScope?:MessageScope}){
  const {theme}=useTheme();const {colors}=useUi();const {width,fontScale}=useWindowDimensions();
  const [measuredCardWidth,setMeasuredCardWidth]=useState(0);
  const [contact,setContact]=useState<{email:string|null;phone:string|null;details?:PersonalContactDetails}>({email:null,phone:null});
- useEffect(()=>{if(!ownerId){setContact({email:null,phone:null});return;}let live=true;void Promise.all([loadPublicContact(ownerId),loadVisiblePersonalContactDetails(ownerId)]).then(([value,details])=>{if(live)setContact({...value,details});}).catch(()=>{if(live)setContact({email:null,phone:null});});return()=>{live=false;};},[ownerId]);
+ useFocusEffect(useCallback(()=>{
+  let live=true;setContact({email:null,phone:null});
+  if(!ownerId||publicVisibility?.personal_enabled===false)return()=>{live=false;};
+  void(async()=>{try{const scope=await captureMessageScope(publicScope);const [value,details]=await Promise.all([loadPublicContact(ownerId,scope),loadVisiblePersonalContactDetails(ownerId,scope)]);await assertMessageScope(scope);if(live)setContact({...value,details});}catch{if(live)setContact({email:null,phone:null});}})();
+  return()=>{live=false;setContact({email:null,phone:null});};
+ },[ownerId,publicScope,publicVisibility?.personal_enabled]));
  const [appearance,setAppearance]=useState<JCardPremiumBackgroundId>("original");
  const [businessAppearance,setBusinessAppearance]=useState<JCardPremiumBackgroundId>("original");
- useFocusEffect(useCallback(()=>{let live=true;if(ownerId)void Promise.all([readJCardAppearance(ownerId),readJCardAppearance(ownerId,"business")]).then(([personal,business])=>{if(live){setAppearance(personal);setBusinessAppearance(business);}}).catch(()=>{});return()=>{live=false;};},[ownerId]));
- const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
- useFocusEffect(useCallback(()=>{let live=true;if(ownerId)void readJCardVisibility(ownerId).then(v=>{if(live)setVisibility(v);}).catch(()=>{});return()=>{live=false;};},[ownerId]));
+ useFocusEffect(useCallback(()=>{
+  let live=true;setAppearance("original");setBusinessAppearance("original");
+  if(!ownerId||!showOwnerActions)return()=>{live=false;};
+  void(async()=>{try{
+   const scope=await captureMessageScope(publicScope);
+   if(scope.owner!==ownerId||!live)return;
+   const [personal,business]=await Promise.all([readJCardAppearance(ownerId,"personal",scope),readJCardAppearance(ownerId,"business",scope)]);
+   await assertMessageScope(scope);
+   if(live){setAppearance(personal);setBusinessAppearance(business);}
+  }catch{/* Default appearance until verified. */}})();
+  return()=>{live=false;setAppearance("original");setBusinessAppearance("original");};
+ },[ownerId,showOwnerActions,publicScope]));
+ const [loadedVisibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
+ const visibility=publicVisibility??loadedVisibility;
+ useFocusEffect(useCallback(()=>{let live=true;if(ownerId&&!publicVisibility)void readJCardVisibility(ownerId).then(v=>{if(live)setVisibility(v);}).catch(()=>{});return()=>{live=false;};},[ownerId,publicVisibility]));
  const [back,setBack]=useState(initialSide==="business");
  const [shareSide,setShareSide]=useState<"personal"|"business"|null>(null);
   useEffect(()=>setBack(initialSide==="business"),[initialSide]);
- const canFlip=showOwnerActions||(visibility.personal_enabled&&visibility.business_enabled);
+ const canFlip=showOwnerActions||(visibility.personal_enabled&&visibility.business_enabled&&(!publicVisibility||!!card.business));
  const reducedMotion=useReducedMotion();
  const [hintVisible,setHintVisible]=useState(false);
  const activeBusiness=!visibility.personal_enabled&&visibility.business_enabled;
  useEffect(()=>{onActiveSideChange?.(canFlip?(back?"business":"personal"):(activeBusiness?"business":"personal"));},[back,canFlip,activeBusiness,onActiveSideChange]);
- useEffect(()=>{
-  if(!canFlip||!ownerId||reducedMotion){setHintVisible(false);return;}
+ useFocusEffect(useCallback(()=>{
+  setHintVisible(false);
+  if(!canFlip||!ownerId||reducedMotion)return;
   let active=true;
-  const key="jobeen.jcard.flip.ghost.v2."+ownerId;
-  void AsyncStorage.getItem(key).then(value=>{
-   if(active&&!value){
-    setHintVisible(true);
-    void AsyncStorage.setItem(key,"1").catch(()=>{});
-   }
-  }).catch(()=>{});
-  return()=>{active=false;};
- },[ownerId,canFlip,reducedMotion]);
+  void(async()=>{try{
+   const scope=await captureMessageScope(publicScope);
+   // The gesture hint belongs to the viewer, never the visited profile.
+   const key="jobeen.jcard.flip.ghost.v3."+scope.owner;
+   const value=await AsyncStorage.getItem(key);
+   await assertMessageScope(scope);if(!active||value)return;
+   await AsyncStorage.setItem(key,"1");await assertMessageScope(scope);
+   if(active)setHintVisible(true);
+  }catch{/* Optional hint; fail closed. */}})();
+  return()=>{active=false;setHintVisible(false);};
+ },[ownerId,canFlip,reducedMotion,publicScope]));
  useEffect(()=>{
   if(!hintVisible)return;
   const timeout=setTimeout(()=>setHintVisible(false),1750);

@@ -13,7 +13,11 @@ test("Notification dot counts pending CV access requests and unread activity wit
 });
 test("Bell uses small theme-colored dot, refreshes when focused and has accessibility label",()=>{
  const bell=src("src/components/NotificationBell.tsx");
- assert.ok(bell.includes("countPendingProfileAlerts()"));
+ assert.ok(bell.includes("countPendingProfileAlerts(scope)"));
+ assert.ok(bell.includes("await assertMessageScope(scope)"));
+ assert.ok(bell.includes("if(!active||running||invalidated)return;"));
+ assert.ok(bell.includes("invalidated=true"));
+ assert.ok(bell.includes("if(active)setCount(0)"));
  assert.ok(bell.includes("useJobinNotices()"));
  assert.ok(bell.includes("hasAlerts=count+unreadActivity>0"));
  assert.ok(bell.includes("backgroundColor:t.yellow"));

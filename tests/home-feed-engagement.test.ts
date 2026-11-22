@@ -23,7 +23,7 @@ test("Real Home posts have a paginated photo gallery and working social controls
  assert.ok(card.includes("addHomePostComment("));
  assert.ok(card.includes("recordHomePostShare("));
  assert.ok(card.includes("onShared={()=>void confirmNativeShare()"));
-  assert.ok(source("src/components/JCardShareSheet.tsx").includes("if(result.action===Share.sharedAction)onShared?.()"));
+  assert.ok(source("src/components/JCardShareSheet.tsx").includes("if(result.action===Share.sharedAction&&await verifyDeferred(task))onShared?.()"));
  const demo=source("src/components/PostCard.tsx");
  assert.ok(demo.includes("export function PostEngagementRow("));
  assert.ok(demo.includes('justifyContent:"flex-start"'));
@@ -78,7 +78,7 @@ test("Saved posts can be revisited and shared links have a detail route",()=>{
  assert.ok(prefs.includes("setSavedPost"));
  assert.ok(profile.includes("Guardadas"));
  assert.ok(profile.includes('pathname:"/post/[id]"'));
- assert.ok(route.includes("loadHomePosts(user,undefined,id)"));
+ assert.ok(route.includes("loadHomePosts(user,undefined,id,undefined,0,scope)"));
  assert.ok(home.includes('Linking.createURL("post/"+post.id)'));
 });
 

@@ -3,7 +3,8 @@ import {router,useFocusEffect,Stack} from "expo-router";
 import {useCallback,useMemo,useState} from "react";
 import {ActivityIndicator,Pressable,ScrollView,Text,View} from "react-native";
 import {JShopButton,JShopItemCard,JShopPage} from "../../components/JShopUI";
-import {jshopAccountId,readJShopDrafts} from "../../lib/jshop-local";
+import {readJShopDrafts} from "../../lib/jshop-local";
+import {captureMessageScope,assertMessageScope} from "../../lib/message-session";
 import {loadMyJShopListings} from "../../lib/jshop-api";
 import type {JShopDraft,JShopListing} from "../../lib/jshop-model";
 import {useTheme} from "../../state/ThemeProvider";
@@ -32,15 +33,16 @@ export default function MyJShop(){
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
  useFocusEffect(useCallback(()=>{
-  let live=true;setLoading(true);
+  let live=true;setLoading(true);setDrafts([]);setPublished([]);
   void(async()=>{
    try{
-    const owner=await jshopAccountId();
-    const [rows,online]=await Promise.all([readJShopDrafts(owner),loadMyJShopListings(owner)]);
+    const scope=await captureMessageScope(),owner=scope.owner;
+    const [rows,online]=await Promise.all([readJShopDrafts(owner,scope),loadMyJShopListings(owner,scope)]);
+    await assertMessageScope(scope);
     if(live){setDrafts(rows);setPublished(online);setError("");}
    }catch(e){if(live){setDrafts([]);setPublished([]);setError(e instanceof Error?e.message:"No se pudieron cargar los anuncios.");}}
    finally{if(live)setLoading(false);}
-  })();return()=>{live=false;};
+  })();return()=>{live=false;setDrafts([]);setPublished([]);};
  },[]));
  const all=useMemo<MineItem[]>(()=>[...published,...drafts].sort((a,b)=>b.createdAt-a.createdAt),[published,drafts]);
  const filtered=useMemo(()=>filterMine(all,status),[all,status]);

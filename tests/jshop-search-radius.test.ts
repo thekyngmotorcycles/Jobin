@@ -11,7 +11,7 @@ test("Buyer picker is minimal and radius follows viewport zoom",()=>{
  assert.ok(!picker.includes("JSHOP_RADIUS_MILES.map"));
  assert.ok(!picker.includes("Elegir punto"));
  assert.ok(map.includes("circleSize"));
- assert.ok(picker.includes("placeAtMapCenter(center.lat,center.lon)"));
+ assert.ok(picker.includes("placeAtMapCenter(lat,lon)"));
  assert.ok(picker.includes("confirmJShopPlace"));
 });
 test("Dynamic RPC leaves previous integer-radius RPC intact",()=>{
@@ -19,15 +19,15 @@ test("Dynamic RPC leaves previous integer-radius RPC intact",()=>{
  const sql=read("supabase/migrations/20261117235138_jshop_dynamic_search_area.sql");
  assert.ok(api.includes('rpc("jshop_listings_within_area"'));
  assert.ok(api.includes("insideJShopRadius("));
- assert.ok(cat.includes("loadJShopListingsNear(selectedPlace)"));
- assert.ok(cat.includes("loadJShopListings()"));
+ assert.ok(cat.includes("loadJShopListingsNear(selectedPlace,scope)"));
+ assert.ok(cat.includes("loadJShopListings(scope)"));
  assert.ok(sql.includes("security invoker"));
  assert.ok(sql.includes("p_radius_miles between 0.05 and 4000"));
  assert.ok(!sql.includes("drop function"));
 });
 test("Seller's article coordinates stay untouched",()=>{
  const api=read("src/lib/jshop-api.ts"),publish=read("src/app/jshop/publish.tsx");
- assert.ok(api.includes("readDefaultSaleLocation(ownerId)"));
+ assert.ok(api.includes("readDefaultSaleLocation(ownerId,scope)"));
  assert.ok(api.includes("location_lat:locationPoint.lat,location_lon:locationPoint.lon"));
  assert.ok(!api.includes("findJShopPlaces(draft.location)"));
  assert.ok(publish.includes("locationLat:selectedLocation?.lat"));

@@ -14,12 +14,13 @@ test("Buyer map uses navigate pointer with explicit foreground permission on tap
  assert.ok(picker.includes("onPress={()=>void centerOnDevice()}"));
  assert.ok(!picker.includes("Location.requestBackgroundPermissionsAsync"));
 });
-test("Previously selected buyer search takes precedence; GPS only auto-centers with existing permission",()=>{
+test("Buyer area is session-local; GPS only on explicit action",()=>{
  const picker=read("src/app/jshop/location.tsx");
- assert.ok(picker.includes("const place=saved??recent[0]??null"));
- assert.ok(picker.includes("if(place){"));
- assert.ok(picker.includes("if(!active||manualChoice.current||!permission.granted)return;"));
- assert.ok(picker.includes("setZoom(11);setMoved(true);"));
+ assert.ok(picker.includes("readJShopLocation(id,scope)"));
+ assert.ok(picker.includes("if(saved){"));
+ assert.equal((picker.match(/Location\.getCurrentPositionAsync\(/g)??[]).length,1);
+ assert.ok(picker.includes("await captureMessageScope(scope);if(!valid())return;"));
+ assert.ok(picker.includes("Number(latitude.toFixed(2))"));
  assert.ok(picker.includes("await saveJShopLocation(owner,"));
  assert.ok(!picker.includes('pathname:"/jshop/sale-location"'));
 });
@@ -36,7 +37,7 @@ test("Native location module permissions are foreground only and require a new b
 test("Moving buyer map does not automatically reverse-geocode on every pan",()=>{
  const picker=read("src/app/jshop/location.tsx");
  assert.ok(picker.includes("const place=chosen??(mapboxConfigured?"));
- assert.ok(picker.includes("await placeAtMapCenter(center.lat,center.lon)"));
+ assert.ok(picker.includes("await placeAtMapCenter(lat,lon)"));
  assert.ok(!picker.includes("if(!moved||typing)return;"));
  assert.ok(picker.includes("confirmJShopPlace("));
 });

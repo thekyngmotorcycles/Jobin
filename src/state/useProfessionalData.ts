@@ -1,28 +1,42 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { supabase } from "../lib/supabase";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {sessionMarkerKey} from "../lib/session-lifetime";
+import type {MessageScope} from "../lib/session-continuity";
+import {captureMessageScope,assertMessageScope} from "../lib/message-session";
+import {createWorkspaceSessionCache} from "../lib/workspace-session-cache";
 
-const workspaceMemory=new Map<string,unknown>();
-const cachePrefix="jobin.workspace.cache.v1.";
+const workspaceMemory=createWorkspaceSessionCache();
+async function readScope():Promise<MessageScope|null>{
+ if(!supabase)return null;
+ const {data,error}=await supabase.auth.getSession();
+ if(error)throw error;
+ const session=data.session;
+ if(!session)return null;
+ const owner=session.user.id;
+ return {owner,session:sessionMarkerKey(owner,session.access_token)};
+}
+function sameScope(a:MessageScope|null,b:MessageScope|null){
+ return a===null||b===null?a===b:a.owner===b.owner&&a.session===b.session;
+}
 
 
 /** Reload on focus and auth changes; never substitute fictional data for a failed request. */
-/** Show a user-scoped cached workspace while refreshing it from the server. */
-export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=false) {
+/** Show a matching in-memory workspace while refreshing within the same session. Never restore legacy disk snapshots. */
+export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=false,strict=false) {
  const [data,setData]=useState<T|null>(null);
+ const [scope,setScope]=useState<MessageScope|null>(null);
  const [error,setError]=useState("");
  const [loading,setLoading]=useState(true);
  const [version,setVersion]=useState(0);
  const generation=useRef(0);
  const reload=useCallback(()=>setVersion(value=>value+1),[]);
  useEffect(()=>{
-  const subscription=supabase?.auth.onAuthStateChange((_event,session)=>{
+  const subscription=supabase?.auth.onAuthStateChange(()=>{
    generation.current++;
    workspaceMemory.clear();
-   setData(null);
+   setData(null);setScope(null);
    setLoading(true);
-   if(!session?.user)void AsyncStorage.getAllKeys().then(keys=>AsyncStorage.multiRemove(keys.filter(key=>key.startsWith(cachePrefix)))).catch(()=>{});
    reload();
   });
   return ()=>subscription?.data.subscription.unsubscribe();
@@ -33,43 +47,43 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
   const valid=()=>current&&generation.current===requestGeneration;
   setError("");
   void (async()=>{
-   let cacheKey:string|null=null;
-   const initial=(await supabase?.auth.getSession())?.data.session?.user.id??null;
+   const initial=await readScope();
    if(!valid())return;
-   const sameOwner=async()=>valid()&&((await supabase?.auth.getSession())?.data.session?.user.id??null)===initial&&valid();
+   const sameOwner=async()=>valid()&&sameScope(initial,await readScope())&&valid();
    if(cacheWorkspace){
-    if(!valid())return;
-    const userId=initial;
-    if(userId){
-     cacheKey=cachePrefix+userId;
-     const memory=workspaceMemory.get(cacheKey);
-     if(memory&&typeof memory==="object"&&"card" in memory&&(memory as {card?:{id?:string}}).card?.id===userId){setData(memory as T);setLoading(false);}
-     else{
-      try{
-       const raw=await AsyncStorage.getItem(cacheKey);
-       if(!await sameOwner())return;
-       if(raw){const cached=JSON.parse(raw) as T;if(cached&&typeof cached==="object"&&"card" in cached&&(cached as {card?:{id?:string}}).card?.id===userId){setData(cached);setLoading(false);workspaceMemory.set(cacheKey,cached);}}
-      }catch{/* A corrupt cache must never block the server request. */}
-     }
-    }else{setData(null);}
+    if(!await sameOwner())return;
+    const memory=initial?workspaceMemory.read(initial):null;
+    setData(memory as T|null);
+    if(memory)setLoading(false);
    }
    if(!valid())return;
    try{
     const value=await loader();
-    if(!await sameOwner())return;
-    if(cacheWorkspace&&value&&(!initial||(value as {card?:{id?:string}}).card?.id!==initial))throw new Error("La sesión cambió. Vuelve a cargar el perfil.");
-    setData(value);
-    if(cacheWorkspace&&cacheKey&&value){
-     workspaceMemory.set(cacheKey,value);
-     void AsyncStorage.setItem(cacheKey,JSON.stringify(value)).catch(()=>{});
+    if(!await sameOwner()){
+     if(valid()){workspaceMemory.clear();setData(null);setScope(null);setError("La sesión cambió. Vuelve a cargar el perfil.");}
+     return;
     }
+    if(cacheWorkspace){
+     if(!initial||!value){workspaceMemory.clear();setData(null);return;}
+     if(!workspaceMemory.write(initial,value)){
+      setData(null);
+      throw new Error("La sesión cambió. Vuelve a cargar el perfil.");
+     }
+    }
+    setData(value);setScope(initial);
    }catch(cause){
-    if(valid())setError(cause instanceof Error?cause.message:String(cause));
+    if(valid()){
+     let stillCurrent=false;
+     try{stillCurrent=await sameOwner();}catch{/* Fail closed when identity cannot be read. */}
+     if(!valid())return;
+     if(!stillCurrent||strict){workspaceMemory.clear();setData(null);setScope(null);}
+     setError(cause instanceof Error?cause.message:String(cause));
+    }
    }finally{if(valid())setLoading(false);}
-  })().catch(cause=>{if(valid()){setError(cause instanceof Error?cause.message:String(cause));setLoading(false);}});
+  })().catch(cause=>{if(valid()){workspaceMemory.clear();setData(null);setScope(null);setError(cause instanceof Error?cause.message:String(cause));setLoading(false);}});
   return ()=>{current=false;};
- },[loader,version,cacheWorkspace]));
- return {data,error,loading,reload};
+ },[loader,version,cacheWorkspace,strict]));
+ return {data,error,loading,reload,scope};
 }
 export function useProfessionalAction(reload:()=>void) {
  const guard=useRef(false);const [busy,setBusy]=useState(false);const [notice,setNotice]=useState("");
@@ -77,6 +91,37 @@ export function useProfessionalAction(reload:()=>void) {
   if(guard.current)return false;guard.current=true;setBusy(true);setNotice("");
   try {await action();setNotice(success);reload();return true;}
   catch(cause){setNotice(cause instanceof Error?cause.message:String(cause));return false;}
+  finally{guard.current=false;setBusy(false);}
+ }
+ return {run,busy,notice,setNotice};
+}
+
+/** Privileged actions bind the resource's verified identity to the initiating screen.
+ * A later refresh may replace the object, but never authorize a different session.
+ * check() must be called immediately before opening an external capability URL.
+ */
+export function useScopedProfessionalAction(reload:()=>void,origin:MessageScope|null){
+ const guard=useRef(false),generation=useRef(0),focused=useRef(false),current=useRef(origin);
+ current.current=origin;
+ const [busy,setBusy]=useState(false),[notice,setNotice]=useState("");
+ useFocusEffect(useCallback(()=>{
+  focused.current=true;generation.current++;
+  return()=>{focused.current=false;generation.current++;setNotice("");};
+ },[]));
+ useEffect(()=>{
+  const subscription=supabase?.auth.onAuthStateChange(()=>{generation.current++;setNotice("");});
+  return()=>subscription?.data.subscription.unsubscribe();
+ },[]);
+ async function run(task:(scope:MessageScope,check:()=>Promise<void>)=>Promise<unknown>,success:string){
+  if(!origin||!focused.current||guard.current||!sameScope(origin,current.current))return false;
+  const revision=generation.current;
+  const live=()=>focused.current&&generation.current===revision&&sameScope(origin,current.current);
+  const check=async()=>{await assertMessageScope(origin);if(!live())throw Error("La sesión cambió.");};
+  guard.current=true;setBusy(true);setNotice("");
+  try{
+   const scope=await captureMessageScope(origin);await check();
+   await task(scope,check);await check();setNotice(success);reload();return true;
+  }catch(cause){if(live())setNotice(cause instanceof Error?cause.message:String(cause));return false;}
   finally{guard.current=false;setBusy(false);}
  }
  return {run,busy,notice,setNotice};

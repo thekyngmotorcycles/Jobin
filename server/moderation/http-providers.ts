@@ -5,7 +5,7 @@ class HttpProvider {
  readonly base:string;private readonly key:string;private readonly request:Fetcher;
  constructor(base:string,key:string,request:Fetcher=fetch){secureUrl(base);this.base=base;this.key=key;this.request=request;}
  async call(path:string,body?:unknown):Promise<unknown>{
-  const response=await this.request(this.base.replace(/\/$/,"")+path,{method:body===undefined?"GET":"POST",headers:{"Authorization":"Bearer "+this.key,"Content-Type":"application/json"},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(30000)});
+  const response=await this.request(this.base.replace(/\/$/,"")+path,{method:body===undefined?"GET":"POST",headers:{"Authorization":"Bearer "+this.key,"Content-Type":"application/json"},body:body===undefined?undefined:JSON.stringify(body),redirect:"error",cache:"no-store",signal:AbortSignal.timeout(30000)});
   if(!response.ok)throw new Error("Provider request failed ("+response.status+")");
   if(response.status===204)return {};
   return response.json();
@@ -33,7 +33,14 @@ export class HttpVideoProvider extends HttpProvider implements VideoProvider {
  }
  async renewLiveLease(assetId:string,expiresAt:string){await this.call("/live/lease",{assetId,expiresAt});}
  async stopLive(assetId:string){await this.call("/live/stop",{assetId});}
- async reviewUrl(assetId:string,expiresIn:number){const r=record(await this.call("/media/review-url",{assetId,expiresIn}));return secureUrl(r.url);}
+ async reviewUrl(assetId:string,expiresIn:number){
+  if(!Number.isInteger(expiresIn)||expiresIn<1||expiresIn>120)throw Error("Invalid private review lifetime");
+  const started=Date.now();
+  const r=record(await this.call("/media/review-url",{assetId,expiresIn}));
+  const expiresAt=typeof r.expiresAt==="string"?Date.parse(r.expiresAt):NaN;
+  if(r.assetId!==assetId||!Number.isFinite(expiresAt)||expiresAt<=Date.now()||expiresAt>started+expiresIn*1000)throw Error("Provider did not confirm a bounded review grant");
+  return secureUrl(r.url);
+ }
  async publishVideo(assetId:string){await this.call("/video/publish",{assetId});}
  async disableVideo(assetId:string){await this.call("/video/disable",{assetId});}
 }

@@ -1,11 +1,12 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
-import {useCallback,useState} from "react";
+import {useCallback,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {BottomSheet} from "../components/social-ui";
 import {JShopButton,JShopCategories,JShopEmpty,JShopIconButton,JShopItemCard,JShopTitle} from "../components/JShopUI";
-import {readJShopDrafts,jshopAccountId} from "../lib/jshop-local";
+import {readJShopDrafts} from "../lib/jshop-local";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../lib/message-session";
 import {readJShopLocation,saveJShopLocation} from "../lib/jshop-location";
 import type {JShopPlace} from "../lib/jshop-location-core";
 import {loadJShopListings,loadJShopListingsNear,loadJShopFavoriteIds,setJShopFavorite} from "../lib/jshop-api";
@@ -29,43 +30,43 @@ export default function JShop(){
  const [favorites,setFavorites]=useState<string[]>([]);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
+ const scopeRef=useRef<MessageScope|null>(null),revision=useRef(0),favoriteBusy=useRef(false);
  useFocusEffect(useCallback(()=>{
-  let current=true;setLoading(true);
-  void(async()=>{
-   try{
-    let userId="guest";let savedDrafts:JShopDraft[]=[];let savedFavorites:string[]=[];
-    try{
-     userId=await jshopAccountId();
-     [savedDrafts,savedFavorites]=await Promise.all([readJShopDrafts(userId),loadJShopFavoriteIds(userId)]);
-    }catch{/* Public catalogue remains available without personal data. */}
-    const selectedPlace=await readJShopLocation(userId);
-    const listed=selectedPlace?await loadJShopListingsNear(selectedPlace):await loadJShopListings();
-    if(current){
-     setRemoteListings(listed);setOwnerId(userId==="guest"?"":userId);setSearchArea(selectedPlace);
-     setDrafts(savedDrafts);setFavorites(savedFavorites);setError("");
-     setActiveFilters(previous=>({...previous,location:""}));
-     setPending(previous=>({...previous,location:""}));
-    }
-   }catch(e){if(current){setError(e instanceof Error?e.message:"No se pudo cargar JShop.");setRemoteListings([]);}}
-   finally{if(current)setLoading(false);}
-  })();
-  return()=>{current=false;};
+  const generation=++revision.current;scopeRef.current=null;setLoading(true);setDrafts([]);setFavorites([]);setSearchArea(null);setOwnerId("");setRemoteListings([]);
+  void(async()=>{try{
+   const scope=await captureMessageScope(),userId=scope.owner;
+   const [savedDrafts,savedFavorites,selectedPlace]=await Promise.all([readJShopDrafts(userId,scope),loadJShopFavoriteIds(userId,scope),readJShopLocation(userId,scope)]);
+   await assertMessageScope(scope);if(revision.current!==generation)return;
+   const listed=selectedPlace?await loadJShopListingsNear(selectedPlace,scope):await loadJShopListings(scope);
+   await assertMessageScope(scope);if(revision.current!==generation)return;
+   scopeRef.current=scope;setRemoteListings(listed);setOwnerId(userId);setSearchArea(selectedPlace);setDrafts(savedDrafts);setFavorites(savedFavorites);setError("");
+   setActiveFilters(previous=>({...previous,location:""}));setPending(previous=>({...previous,location:""}));
+  }catch(e){if(revision.current===generation){setError(e instanceof Error?e.message:"No se pudo cargar JShop.");setRemoteListings([]);}}
+  finally{if(revision.current===generation)setLoading(false);}})();
+  return()=>{revision.current++;scopeRef.current=null;setDrafts([]);setFavorites([]);setSearchArea(null);setOwnerId("");setRemoteListings([]);};
  },[]));
  const listings=filterJShopListings(remoteListings,{...activeFilters,category,query});
  async function clearSearchArea(){
+  const scope=scopeRef.current;if(!scope||scope.owner!==ownerId)return;
+  const generation=++revision.current,valid=()=>scopeRef.current===scope&&revision.current===generation;
   setLoading(true);setError("");
   try{
-   await saveJShopLocation(ownerId||"guest",null);
-   const fullCatalogue=await loadJShopListings();
-   setRemoteListings(fullCatalogue);setSearchArea(null);
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo restaurar el catálogo completo.");}
-  finally{setLoading(false);}
+   await saveJShopLocation(ownerId,null,scope);
+   await assertMessageScope(scope);if(!valid())return;
+   const fullCatalogue=await loadJShopListings(scope);await assertMessageScope(scope);
+   if(valid()){setRemoteListings(fullCatalogue);setSearchArea(null);}
+  }catch(e){if(valid())setError(e instanceof Error?e.message:"No se pudo restaurar el catálogo completo.");}
+  finally{if(valid())setLoading(false);}
  }
  async function toggleFavorite(id:string){
-  if(!ownerId){setError("Inicia sesión para guardar artículos.");return;}
-  const saved=favorites.includes(id);
-  try{await setJShopFavorite(ownerId,id,!saved);setFavorites(current=>saved?current.filter(x=>x!==id):[...current,id]);setError("");}
-  catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar el favorito.");}
+  const scope=scopeRef.current,generation=revision.current;if(!scope||scope.owner!==ownerId||favoriteBusy.current)return;
+  const valid=()=>scopeRef.current===scope&&revision.current===generation,saved=favorites.includes(id);
+  favoriteBusy.current=true;
+  try{await captureMessageScope(scope);if(!valid())return;
+   await setJShopFavorite(ownerId,id,!saved,scope);await assertMessageScope(scope);
+   if(valid()){setFavorites(current=>saved?current.filter(x=>x!==id):[...current,id]);setError("");}
+  }catch(e){if(valid())setError(e instanceof Error?e.message:"No se pudo actualizar el favorito.");}
+  finally{favoriteBusy.current=false;}
  }
  const filterCount=Number(activeFilters.condition!=="Todas")+Number(!!searchArea)+Number(!!activeFilters.minPrice.trim())+Number(!!activeFilters.maxPrice.trim())+Number(activeFilters.order!=="recent");
  const openFilters=()=>{setPending({...activeFilters});setFiltersOpen(true);};

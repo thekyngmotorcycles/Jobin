@@ -2,6 +2,11 @@ name: Build Jobin Android APK (manual)
 
 on:
   workflow_dispatch:
+    inputs:
+      approved_commit:
+        description: 'Exact development commit SHA explicitly approved for Android compilation'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -12,15 +17,16 @@ concurrency:
 
 jobs:
   build-android:
+    if: github.ref == 'refs/heads/development' && inputs.approved_commit == github.sha
     name: Build preview APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: preview
     steps:
-      - name: Checkout development
+      - name: Checkout exact approved commit
         uses: actions/checkout@v4
         with:
-          ref: development
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Setup Node.js

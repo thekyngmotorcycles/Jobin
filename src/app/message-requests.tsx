@@ -1,11 +1,12 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useFocusEffect} from "expo-router";
-import {useCallback,useState} from "react";
+import {useCallback,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Modal,Pressable,ScrollView,Text,View} from "react-native";
 import {SafeAreaView,useSafeAreaInsets} from "react-native-safe-area-context";
 import {AccountAvatar} from "../components/AccountAvatar";
 import {blockMessageUser,decideMessageRequest,loadIncomingRequests,loadMessagePrivacy,reportMessageUser,saveMessagePrivacy,
  type MessagePrivacy,type MessageRequest} from "../lib/message-requests";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
@@ -15,6 +16,7 @@ import {JOBEEN_CONTROL} from "../theme/control-metrics";
 type Filter="Solicitudes"|"Spam";
 export default function MessageRequests(){
  const {theme}=useTheme(),t=jobeenTokens(theme),modal=jobeenModalTokens(theme);const insets=useSafeAreaInsets();
+ const scopeRef=useRef<MessageScope|null>(null),revision=useRef(0);
  const [filter,setFilter]=useState<Filter>("Solicitudes");
  const [rows,setRows]=useState<MessageRequest[]>([]);
  const [privacy,setPrivacy]=useState<MessagePrivacy>({requestsFrom:"all",filterSpam:true});
@@ -23,51 +25,60 @@ export default function MessageRequests(){
  const [busy,setBusy]=useState("");const [saving,setSaving]=useState(false);
  const [loading,setLoading]=useState(true);const [error,setError]=useState("");
  const reload=useCallback(async()=>{
-  setLoading(true);
+  const generation=++revision.current;scopeRef.current=null;setLoading(true);setRows([]);setSettingsOpen(false);
   try{
-   const [inbox,preferences]=await Promise.all([loadIncomingRequests(),loadMessagePrivacy()]);
-   setRows(inbox);setPrivacy(preferences);setError("");
-  }catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar las solicitudes.");}
-  finally{setLoading(false);}
+   const scope=await captureMessageScope();
+   const [inbox,preferences]=await Promise.all([loadIncomingRequests(scope),loadMessagePrivacy(scope)]);
+   await assertMessageScope(scope);
+   if(revision.current===generation){scopeRef.current=scope;setRows(inbox);setPrivacy(preferences);setError("");}
+  }catch(e){if(revision.current===generation)setError(e instanceof Error?e.message:"No se pudieron cargar las solicitudes.");}
+  finally{if(revision.current===generation)setLoading(false);}
  },[]);
- useFocusEffect(useCallback(()=>{void reload();},[reload]));
+ useFocusEffect(useCallback(()=>{void reload();return()=>{revision.current++;scopeRef.current=null;};},[reload]));
  async function accept(request:MessageRequest){
+  const scope=scopeRef.current;if(!scope||request.recipientId!==scope.owner)return;
   setBusy(request.id);setError("");
   try{
-   await decideMessageRequest(request.id,"accepted");
+   await decideMessageRequest(request.id,"accepted",scope);
+   if(scopeRef.current!==scope)return;
    setRows(items=>items.filter(x=>x.id!==request.id));
    router.push({pathname:"/message",params:{user:request.senderId,name:request.senderName}});
   }catch(e){setError(e instanceof Error?e.message:"No se pudo aceptar la solicitud.");}
   finally{setBusy("");}
  }
  async function dismiss(request:MessageRequest){
+  const scope=scopeRef.current;if(!scope||request.recipientId!==scope.owner)return;
   setBusy(request.id);setError("");
-  try{await decideMessageRequest(request.id,"declined");setRows(items=>items.filter(x=>x.id!==request.id));}
+  try{await decideMessageRequest(request.id,"declined",scope);if(scopeRef.current!==scope)return;setRows(items=>items.filter(x=>x.id!==request.id));}
   catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar la solicitud.");}
   finally{setBusy("");}
  }
  async function classify(request:MessageRequest){
+  const scope=scopeRef.current;if(!scope||request.recipientId!==scope.owner)return;
   setBusy(request.id);setError("");
-  try{await decideMessageRequest(request.id,"spam");await reload();}
+  try{await decideMessageRequest(request.id,"spam",scope);if(scopeRef.current===scope)await reload();}
   catch(e){setError(e instanceof Error?e.message:"No se pudo mover a Spam.");}
   finally{setBusy("");}
  }
  async function block(request:MessageRequest){
+  const scope=scopeRef.current;if(!scope||request.recipientId!==scope.owner)return;
   setBusy(request.id);setError("");
   try{
-   await blockMessageUser(request.senderId);
-   if(request.status==="pending"||request.status==="spam")await decideMessageRequest(request.id,"declined");
+   await blockMessageUser(request.senderId,scope);
+   if(request.status==="pending"||request.status==="spam")await decideMessageRequest(request.id,"declined",scope);
    setRows(items=>items.filter(x=>x.id!==request.id));
   }catch(e){setError(e instanceof Error?e.message:"No se pudo bloquear al usuario.");}
   finally{setBusy("");}
  }
  function report(request:MessageRequest){
+  const scope=scopeRef.current;if(!scope||request.recipientId!==scope.owner)return;
   Alert.alert("Reportar mensaje","Selecciona el motivo. Revisaremos el reporte antes de tomar medidas sobre la cuenta.",[
    {text:"Cancelar",style:"cancel"},
    ...([{label:"Spam",reason:"spam"},{label:"Estafa",reason:"estafa"},{label:"Acoso",reason:"acoso"}] as const).map(item=>({
     text:item.label,onPress:()=>{void(async()=>{
+     if(scopeRef.current!==scope)return;
      setBusy(request.id);setError("");
-     try{await reportMessageUser(request.senderId,item.reason);await decideMessageRequest(request.id,"reported");setRows(all=>all.filter(x=>x.id!==request.id));}
+     try{await reportMessageUser(request.senderId,item.reason,scope);await decideMessageRequest(request.id,"reported",scope);if(scopeRef.current!==scope)return;setRows(all=>all.filter(x=>x.id!==request.id));}
      catch(e){setError(e instanceof Error?e.message:"No se pudo reportar.");}
      finally{setBusy("");}
     })();}
@@ -75,9 +86,9 @@ export default function MessageRequests(){
   ]);
  }
  async function updatePrivacy(next:MessagePrivacy){
-  if(saving)return;
+  const scope=scopeRef.current;if(!scope||saving)return;
   setSaving(true);setPrivacyError("");
-  try{await saveMessagePrivacy(next);setPrivacy(next);}
+  try{await saveMessagePrivacy(next,scope);if(scopeRef.current===scope)setPrivacy(next);}
   catch(e){setPrivacyError(e instanceof Error?e.message:"No se pudo actualizar la privacidad.");}
   finally{setSaving(false);}
  }

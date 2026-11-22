@@ -30,7 +30,7 @@ test("Native Back returns to the existing tabs and never dispatches a cross-stac
  assert.ok(tabs.includes('{name:"index",title:"Casa"'));
  assert.ok(!tabs.includes('<Tabs.Screen name="inicio"'));
  assert.ok(editor.includes('finishHome(publishedId)'));
- assert.ok(home.includes('takePublishedPostForHome()'));
+ assert.ok(home.includes('takePublishedPostForHome(scope)'));
  assert.ok(home.includes('featuredPostId={newlyPublished||(published??"")}'));
 });
 

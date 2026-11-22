@@ -24,9 +24,9 @@ test("Follow and Connect are separate actions on public JCards",()=>{
  assert.ok(publicProfile.includes("toggleFollow()"));
  assert.ok(publicProfile.includes("async function connect()"));
  assert.ok(publicProfile.includes('contactLabel=!contact?"Conectar"'));
- assert.ok(publicProfile.includes("inviteContact(user)"));
- assert.ok(publicProfile.includes("replyContactRequest(contact.id,true)"));
- assert.ok(publicProfile.includes("removeContactRequest(contact.id)"));
+ assert.ok(publicProfile.includes("inviteContact(user,scope)"));
+ assert.ok(publicProfile.includes("replyContactRequest(contact.id,true,scope)"));
+ assert.ok(publicProfile.includes("removeContactRequest(contact.id,scope)"));
  assert.ok(contacts.includes('from("jobeen_contact_requests"'));
  assert.ok(contacts.includes('rpc("jobeen_contact_count"'));
 });
@@ -37,7 +37,7 @@ test("Compact profile counts show Followers + Contacts with the third Following 
  assert.ok(counter.includes('["followers","following","contacts"]'));
  assert.ok(counter.includes('title="Mi red"'));
  assert.ok(counter.includes('contactCount(userId)'));
- assert.ok(counter.includes("myContacts()"));
+ assert.ok(counter.includes("myContacts(scope)"));
  assert.ok(counter.includes("replyContactRequest"));
  assert.ok(counter.includes("removeContactRequest"));
  assert.ok(counter.includes("fontSize:14"));
@@ -46,7 +46,7 @@ test("Incoming contacts are actionable and count toward notification badge",()=>
  const screen=source("src/app/notifications.tsx");
  const lib=source("src/lib/activity-notifications.ts");
  const sql=source("supabase/migrations/20261119020421_jobeen_professional_contacts.sql");
- assert.ok(screen.includes("replyContactRequest(id,approve)"));
+ assert.ok(screen.includes("replyContactRequest(id,approve,scope)"));
  assert.ok(screen.includes('n.kind==="contact_request"'));
  assert.ok(screen.includes("pendingWithoutNotice"));
  assert.ok(lib.includes("pendingUncountedContacts"));
@@ -58,7 +58,9 @@ test("Incoming contacts are actionable and count toward notification badge",()=>
 test("JCard uses a one-time ghost reveal, no permanent button, and retains real gestures",()=>{
  const card=source("src/components/JobinCard.tsx");
  const flip=source("src/components/BusinessCard3D.tsx");
- assert.ok(card.includes("jobeen.jcard.flip.ghost.v2."));
+ assert.ok(card.includes('const key="jobeen.jcard.flip.ghost.v3."+scope.owner'));
+ assert.ok(!card.includes('const key="jobeen.jcard.flip.ghost.v2."+ownerId'));
+ assert.ok(card.includes("await assertMessageScope(scope);if(!active||value)return;"));
  assert.ok(card.includes("AsyncStorage.getItem(key)"));
  assert.ok(card.includes('AsyncStorage.setItem(key,"1")'));
  assert.ok(card.includes("ghostPreview={hintVisible}"));
@@ -75,4 +77,19 @@ test("JCard uses a one-time ghost reveal, no permanent button, and retains real 
  assert.ok(flip.includes("CardFlipInteractionContext.Provider"));
  assert.ok(flip.includes("cancelAnimation(previewAngle)"));
  assert.ok(!flip.includes("onSideChange(\"business\")"));
+});
+
+test("Contact actions and notifications use the originating session across awaits",()=>{
+ const api=source("src/lib/professional-contacts.ts");
+ const profile=source("src/components/ProfileCommunityActions.tsx");
+ const network=source("src/components/ProfileFollowCounts.tsx");
+ const notices=source("src/app/notifications.tsx");
+ assert.ok(api.includes("captureMessageScope(expectedScope)"));
+ assert.ok(api.includes("await assertMessageScope(scope)"));
+ assert.ok(api.includes("r.requester_id===mine||r.recipient_id===mine"));
+ assert.ok(profile.includes("scopeRef.current===scope"));
+ assert.ok(network.includes("contactAction(person,undefined,scope)"));
+ assert.ok(network.includes("listRevision.current===generation"));
+ assert.ok(notices.includes("revision.current!==generation"));
+ assert.ok(notices.includes("markActivityNotificationsRead(notices,scope)"));
 });

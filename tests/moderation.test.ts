@@ -37,3 +37,14 @@ test("legal draft explicitly lists all 114 professional trades and all sectors",
  assert.ok(!professionNames.includes("influencer")&&!professionNames.includes("streamer")&&!professionNames.includes("cannabis"));
  assert.match(TERMS_DRAFT_CLAUSES[0].title,/BORRADOR.*REVISIÓN LEGAL/);
 });
+
+test("provider review grants require matching artifact and bounded expiry",async()=>{
+ const asset="test-only-asset";
+ const provider=(value:unknown)=>new HttpVideoProvider("https://provider.example.test","test-only",async(_url,init)=>{assert.equal(init?.redirect,"error");assert.equal(init?.cache,"no-store");return Response.json(value);});
+ await assert.rejects(()=>provider({url:"https://review.example.test/file"}).reviewUrl(asset,120),/bounded review grant/);
+ await assert.rejects(()=>provider({assetId:"other",expiresAt:new Date(Date.now()+30000).toISOString(),url:"https://review.example.test/file"}).reviewUrl(asset,120),/bounded review grant/);
+ await assert.rejects(()=>provider({assetId:asset,expiresAt:new Date(Date.now()+180000).toISOString(),url:"https://review.example.test/file"}).reviewUrl(asset,120),/bounded review grant/);
+ await assert.rejects(()=>provider({assetId:asset,expiresAt:new Date(Date.now()-1000).toISOString(),url:"https://review.example.test/file"}).reviewUrl(asset,120),/bounded review grant/);
+ assert.equal(await provider({assetId:asset,expiresAt:new Date(Date.now()+30000).toISOString(),url:"https://review.example.test/file"}).reviewUrl(asset,120),"https://review.example.test/file");
+ await assert.rejects(()=>provider({}).reviewUrl(asset,121),/lifetime/);
+});

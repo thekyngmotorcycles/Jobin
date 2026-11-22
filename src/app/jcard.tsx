@@ -13,8 +13,9 @@ import {jobeenTokens} from "../theme/jobeen";
 import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../components/ProfileSharedSections";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfilePublicPosts} from "../components/ProfileOwnedPosts";
-import {router,Stack} from "expo-router";
+import {router,Stack,useFocusEffect} from "expo-router";
 import { approvedCV,cvRequests,requestCV } from "../lib/cv-access";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
 import { requireSupabase } from "../lib/supabase";
 import {identityVerified} from "../lib/identity-status";
 import { useLocalSearchParams } from "expo-router";
@@ -27,7 +28,6 @@ import {readPublicBusinessCard} from "../lib/jcard-cloud";
 import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import {isSavedJCard,removeSavedJCard,saveVisibleJCard,type SavedJCardSide} from "../lib/saved-jcards";
 import type {BusinessCardData} from "../lib/jcard";
-import { useProfessionalData } from "../state/useProfessionalData";
 export default function PublicJCard(){
  const {user,card}=useLocalSearchParams<{user?:string;card?:string}>();
  const {colors,s}=useUi();
@@ -38,17 +38,35 @@ export default function PublicJCard(){
  const [viewer,setViewer]=useState("");
  const [profileMenuOpen,setProfileMenuOpen]=useState(false);
  const [activeCardSide,setActiveCardSide]=useState<SavedJCardSide>(card==="business"?"business":"personal");
- const [cardVisibility,setCardVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
- const [cardVisibilityReady,setCardVisibilityReady]=useState(false);
+ const publicRevision=useRef(0);
+ const [publicSnapshot,setPublicSnapshot]=useState<{target:string;scope:MessageScope;data:Awaited<ReturnType<typeof loadPublicCard>>;visibility:Awaited<ReturnType<typeof readJCardVisibility>>;business:BusinessCardData|null}|null>(null);
+ const [publicLoading,setPublicLoading]=useState(true),[publicError,setPublicError]=useState(""),[publicRetry,setPublicRetry]=useState(0);
+ const snapshot=publicSnapshot?.target===user?publicSnapshot:null;
+ const cardVisibility=snapshot?.visibility??{...DEFAULT_JCARD_VISIBILITY,personal_enabled:false,business_enabled:false};
+ const cardVisibilityReady=!!snapshot;
+ const publicBusiness=cardVisibility.business_enabled?snapshot?.business??null:null;
  const [cardSaved,setCardSaved]=useState(false);
  const [savingCard,setSavingCard]=useState(false);
- const sideIsPublic=activeCardSide==="personal"?cardVisibility.personal_enabled:cardVisibility.business_enabled;
+ const sideIsPublic=activeCardSide==="personal"?cardVisibility.personal_enabled:cardVisibility.business_enabled&&!!publicBusiness;
  useEffect(()=>setActiveCardSide(card==="business"?"business":"personal"),[card,user]);
- useEffect(()=>{if(!user)return;let live=true;setCardVisibilityReady(false);
-  void readJCardVisibility(user).then(v=>{if(live){setCardVisibility(v);setCardVisibilityReady(true);}}).catch(()=>{if(live)setCardVisibilityReady(false);});
-  return()=>{live=false;};},[user]);
-  const [publicBusiness,setPublicBusiness]=useState<BusinessCardData|null>(null);
-  useEffect(()=>{if(!user)return;let active=true;setPublicBusiness(null);void readPublicBusinessCard(user).then(v=>{if(active)setPublicBusiness(v);}).catch(()=>{if(active)setPublicBusiness(null);});return()=>{active=false;};},[user]);
+ useFocusEffect(useCallback(()=>{
+  const generation=++publicRevision.current;
+  setPublicSnapshot(null);setPublicLoading(true);setPublicError("");setProfileMenuOpen(false);
+  void(async()=>{
+   try{
+    if(!user||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user))throw Error("Enlace de JCard inválido.");
+    const scope=await captureMessageScope();
+    const [data,visibility,business]=await Promise.all([loadPublicCard(user,scope),readJCardVisibility(user,scope),readPublicBusinessCard(user,scope)]);
+    await assertMessageScope(scope);
+    if(publicRevision.current!==generation)return;
+    if(data.id!==user||(!visibility.personal_enabled&&(!visibility.business_enabled||!business)))throw Error("El perfil no está disponible.");
+    setPublicSnapshot({target:user,scope,data,visibility,business});
+   }catch(e){if(publicRevision.current===generation){setPublicSnapshot(null);setPublicError(e instanceof Error?e.message:"El perfil no está disponible.");}}
+   finally{if(publicRevision.current===generation)setPublicLoading(false);}
+  })();
+  return()=>{publicRevision.current++;setPublicSnapshot(null);};
+ },[user,publicRetry]));
+ const resource={data:snapshot?.data??null,loading:publicLoading,error:publicError,reload:()=>setPublicRetry(v=>v+1)};
  const [section,setSection]=useState<ProfileSection>("grid");
  const profileScroll=useRef<ScrollView|null>(null);
  const profileScrollY=useRef(new Animated.Value(0)).current;
@@ -76,34 +94,78 @@ export default function PublicJCard(){
  const [followerCount,setFollowerCount]=useState<number|null>(null);
  useEffect(()=>{if(!user)return;let live=true;void requireSupabase().from("profile_follows" as never).select("*",{count:"exact",head:true}).eq("followed_id",user).then(({count})=>{if(live)setFollowerCount(count??0);});return()=>{live=false;};},[user]);
  useEffect(()=>{if(user&&viewer&&user===viewer)router.replace({pathname:"/(tabs)/profile",params:card==="business"?{card:"business"}:{}});},[user,viewer,card]);
+ const cvScope=useRef<MessageScope|null>(null),cvRevision=useRef(0),cvTarget=useRef("");
  const [cvStatus,setCvStatus]=useState("");
  const [cvRows,setCvRows]=useState<{company:string;role:string;from_year:number;to_year:number|null}[]>([]);
  const [cvMessage,setCvMessage]=useState("");
  const [cvOpen,setCvOpen]=useState(false);
- useEffect(()=>{let active=true;void requireSupabase().auth.getUser().then(({data})=>{if(active)setViewer(data.user?.id??"");});return()=>{active=false;};},[]);
- useEffect(()=>{if(!user||!viewer||user===viewer)return;let active=true;void cvRequests().then(rows=>{if(active)setCvStatus(rows.find(r=>r.owner_id===user&&r.requester_id===viewer)?.status??"");}).catch(()=>{});return()=>{active=false;};},[user,viewer]);
- async function openCV(){if(!user)return;setCvOpen(true);if(user===viewer||cvStatus==="approved"){try{setCvRows(await approvedCV(user));}catch(e){setCvMessage(e instanceof Error?e.message:"No se pudo consultar el historial.");}}}
- useEffect(()=>{
-  if(!user||!viewer||viewer===user||!cardVisibilityReady||!sideIsPublic){setCardSaved(false);return;}
-  let live=true;setCardSaved(false);
-  void isSavedJCard(user,activeCardSide,viewer).then(saved=>{if(live)setCardSaved(saved);}).catch(()=>{if(live)setCardSaved(false);});
-  return()=>{live=false;};
- },[user,viewer,activeCardSide,cardVisibilityReady,sideIsPublic]);
- const toggleSaved=async()=>{
-  if(!user)return;
-  if(!viewer){Alert.alert("Mis JCards","Inicia sesión para guardar tarjetas.");return;}
-  if(!cardVisibilityReady||!sideIsPublic){Alert.alert("JCard no disponible","Su propietario ya no tiene esta tarjeta visible.");return;}
-  if(savingCard)return;
-  setSavingCard(true);
-  try{if(cardSaved)await removeSavedJCard(user,activeCardSide,viewer);else await saveVisibleJCard(user,activeCardSide,viewer);
-   setCardSaved(!cardSaved);
-  }catch(e){Alert.alert("Mis JCards",e instanceof Error?e.message:"No se pudo actualizar tu colección.");}
-  finally{setSavingCard(false);}
- };
- const resource=useProfessionalData(useCallback(()=>{
-  if(!user||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user))return Promise.reject(new Error("Enlace de JCard inválido."));
-  return loadPublicCard(user);
+ useFocusEffect(useCallback(()=>{
+  const generation=++cvRevision.current;
+  cvTarget.current=user??"";cvScope.current=null;setViewer("");setCvStatus("");setCvRows([]);setCvMessage("");setCvOpen(false);
+  void(async()=>{try{
+   const scope=await captureMessageScope();
+   const requests=user&&user!==scope.owner?await cvRequests(scope):[];
+   await assertMessageScope(scope);
+   if(cvRevision.current!==generation)return;
+   cvScope.current=scope;setViewer(scope.owner);
+   setCvStatus(requests.find(r=>r.owner_id===user&&r.requester_id===scope.owner)?.status??"");
+  }catch{if(cvRevision.current===generation){setViewer("");setCvRows([]);}}})();
+  return()=>{cvRevision.current++;cvScope.current=null;cvTarget.current="";setCvRows([]);setCvOpen(false);};
  },[user]));
+ async function openCV(){
+  const scope=cvScope.current,generation=++cvRevision.current;
+  if(!scope||!user||cvTarget.current!==user||scope.owner!==viewer)return;
+  setCvRows([]);setCvMessage("");setCvOpen(!cvOpen);
+  if(cvOpen)return;
+  try{
+   const status=user===scope.owner?"approved":(await cvRequests(scope)).find(r=>r.owner_id===user&&r.requester_id===scope.owner)?.status??"";
+   if(cvRevision.current!==generation||cvScope.current!==scope)return;
+   setCvStatus(status);
+   if(status!=="approved")return;
+   const rows=await approvedCV(user,scope);
+   if(cvRevision.current===generation&&cvScope.current===scope)setCvRows(rows);
+  }catch(e){if(cvRevision.current===generation){setCvStatus("");setCvRows([]);setCvMessage(e instanceof Error?e.message:"No se pudo consultar el historial.");}}
+ }
+ async function sendCVRequest(){
+  const scope=cvScope.current,generation=cvRevision.current;
+  if(!scope||!user||cvTarget.current!==user||scope.owner!==viewer||cvStatus==="pending")return;
+  try{await requestCV(user,scope);if(cvRevision.current===generation&&cvScope.current===scope){setCvStatus("pending");setCvMessage("Solicitud enviada.");}}
+  catch(e){if(cvRevision.current===generation)setCvMessage(String(e));}
+ }
+ const savedScope=useRef<{scope:MessageScope;target:string;side:SavedJCardSide;generation:number}|null>(null),savedRevision=useRef(0),saveGuard=useRef(false);
+ const [savedReady,setSavedReady]=useState(false);
+ useFocusEffect(useCallback(()=>{
+  const generation=++savedRevision.current;
+  savedScope.current=null;setSavedReady(false);setCardSaved(false);setProfileMenuOpen(false);
+  if(!user||!viewer||viewer===user||!cardVisibilityReady||!sideIsPublic)return;
+  const origin=cvScope.current;
+  if(!origin||origin.owner!==viewer||cvTarget.current!==user)return;
+  void(async()=>{
+   try{
+    const scope=await captureMessageScope(origin);
+    const saved=await isSavedJCard(user,activeCardSide,viewer,scope);
+    await assertMessageScope(scope);
+    if(savedRevision.current!==generation||cvScope.current!==origin)return;
+    savedScope.current={scope,target:user,side:activeCardSide,generation};setCardSaved(saved);setSavedReady(true);
+   }catch{if(savedRevision.current===generation){setSavedReady(false);setCardSaved(false);}}
+  })();
+  return()=>{savedRevision.current++;savedScope.current=null;setSavedReady(false);setCardSaved(false);};
+ },[user,viewer,activeCardSide,cardVisibilityReady,sideIsPublic]));
+ const toggleSaved=async()=>{
+  const origin=savedScope.current;
+  if(!origin||!savedReady||!user||origin.target!==user||origin.side!==activeCardSide||origin.scope.owner!==viewer||!cardVisibilityReady||!sideIsPublic||saveGuard.current)return;
+  const valid=()=>savedScope.current===origin&&savedRevision.current===origin.generation;
+  saveGuard.current=true;setSavingCard(true);
+  try{
+   await captureMessageScope(origin.scope);
+   if(!valid())return;
+   if(cardSaved)await removeSavedJCard(user,activeCardSide,viewer,origin.scope);
+   else await saveVisibleJCard(user,activeCardSide,viewer,origin.scope);
+   const saved=await isSavedJCard(user,activeCardSide,viewer,origin.scope);
+   if(valid())setCardSaved(saved);
+  }catch(e){if(valid()){savedScope.current=null;setSavedReady(false);setCardSaved(false);Alert.alert("Mis JCards",e instanceof Error?e.message:"No se pudo actualizar tu colección.");}}
+  finally{saveGuard.current=false;setSavingCard(false);}
+ };
  return <>
   <Stack.Screen options={{headerShown:false}}/>
   <SafeAreaView edges={["top","left","right"]} style={[s.screen,{backgroundColor:jt.bg}]}>
@@ -150,9 +212,9 @@ export default function PublicJCard(){
     })}>
    <Animated.View style={{gap:14,paddingHorizontal:20,paddingBottom:20,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
     {resource.data?<ProfileIdentityHeader
-     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"} onActiveSideChange={setActiveCardSide}/>}
+     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"} onActiveSideChange={setActiveCardSide} publicVisibility={cardVisibility} publicScope={snapshot?.scope}/>}
      actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
-      onToggleSaved={cardVisibilityReady&&sideIsPublic?()=>void toggleSaved():undefined}
+      onToggleSaved={savedReady&&cardVisibilityReady&&sideIsPublic?()=>void toggleSaved():undefined}
       savedJCard={cardSaved} savingJCard={savingCard} visibleCardSide={activeCardSide}/>}
      trust={<ProfessionalTrustMark worker={resource.data.id}/>}
      profileUserId={resource.data.id}
@@ -168,10 +230,10 @@ export default function PublicJCard(){
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,minHeight:48,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
        <Text style={{fontWeight:"700",color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text>
       </Pressable>
-      {cvOpen&&<View style={{gap:8,padding:12}}>
+      {cvOpen&&cvTarget.current===user&&<View style={{gap:8,padding:12}}>
        {user!==viewer&&cvStatus!=="approved"?<>
         <Text style={{color:colors.ink}}>El currículum es privado. El propietario debe autorizar tu solicitud.</Text>
-        <Pressable disabled={cvStatus==="pending"} accessibilityRole="button" onPress={()=>void requestCV(user!).then(()=>{setCvStatus("pending");setCvMessage("Solicitud enviada.");}).catch(e=>setCvMessage(String(e)))}
+        <Pressable disabled={cvStatus==="pending"} accessibilityRole="button" onPress={()=>void sendCVRequest()}
          style={{minHeight:48,justifyContent:"center"}}>
          <Text style={{fontWeight:"700",color:colors.ink}}>{cvStatus==="pending"?"Solicitud pendiente":"Solicitar CV"}</Text>
         </Pressable>

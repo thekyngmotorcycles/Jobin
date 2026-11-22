@@ -36,6 +36,7 @@ insert into public.jcard_employment_history(owner_id,client_id,company,role,from
 insert into public.employment_access_requests(owner_id,requester_id,status) values
  ('a1111111-1111-4111-8111-111111111111','b2222222-2222-4222-8222-222222222222','approved');
 \ir ../supabase/security-review/employment-privacy.sql
+\ir ../supabase/security-review/employment-private-contact.sql
 create function pg_temp.cv_assert(ok boolean,label text) returns void language plpgsql as $assert$
 begin if not coalesce(ok,false) then raise exception 'CV PRIVACY TEST: %',label; end if; end
 $assert$;
@@ -168,4 +169,61 @@ select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222'
 select pg_temp.cv_assert((select count(*)=1 from public.read_approved_employment('a1111111-1111-4111-8111-111111111111')),'A can approve B and restore access after a new request');
 select set_config('request.jwt.claim.sub','',true);
 select pg_temp.cv_assert(not exists(select 1 from public.read_approved_employment('a1111111-1111-4111-8111-111111111111')),'no identity denied');
+reset role;
+select pg_temp.cv_assert(not has_table_privilege('anon','public.jobeen_employment_private_contact','SELECT'),'anonymous private contact denied');
+select pg_temp.cv_assert(not has_function_privilege('anon','public.jobeen_save_private_employment(uuid,text,text,text,text[],integer,integer,integer,integer,text,text)','EXECUTE'),'anonymous save denied');
+select pg_temp.cv_assert(not has_table_privilege('authenticated','public.jobeen_employment_private_contact','TRUNCATE'),'no truncate');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+select public.jobeen_save_private_employment(auth.uid(),'a-own','Company A','Role A','{}',2020,1,null,12,'synthetic A address','synthetic A contact');
+select pg_temp.cv_assert((select contact='synthetic A contact' from public.jobeen_employment_private_contact where client_id='a-own'),'A reads own details');
+do $assert$
+begin
+ begin
+  perform public.jobeen_save_private_employment(auth.uid(),'atomic-failure','Should rollback','Role','{}',2020,1,null,12,repeat('x',501),'fixture');
+  raise exception 'oversize address accepted';
+ exception when check_violation then null;
+ end;
+end
+$assert$;
+select pg_temp.cv_assert(not exists(select 1 from public.jcard_employment_history where client_id='atomic-failure'),'failed contact write rolls back history');
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.cv_assert(not exists(select 1 from public.jobeen_employment_private_contact),'approved reader cannot see private details');
+select pg_temp.cv_assert((select count(*)=1 from public.read_approved_employment('a1111111-1111-4111-8111-111111111111')),'approved reader still sees limited CV');
+select pg_temp.cv_assert(not (select to_jsonb(cv) ?| array['address','contact'] from public.read_approved_employment('a1111111-1111-4111-8111-111111111111') cv),'CV omits private fields');
+do $assert$
+begin
+ begin
+  insert into public.jobeen_employment_private_contact(owner_id,client_id,address)
+  values('a1111111-1111-4111-8111-111111111111','a-own','foreign');
+  raise exception 'foreign contact insertion succeeded';
+ exception when insufficient_privilege then null;
+ end;
+end
+$assert$;
+do $assert$
+begin
+ begin
+  perform public.jobeen_save_private_employment('a1111111-1111-4111-8111-111111111111','a-own','Foreign','Role','{}',2021,1,null,12,'','');
+  raise exception 'mismatched expected owner accepted';
+ exception when insufficient_privilege then null;
+ end;
+end
+$assert$;
+select public.jobeen_save_private_employment(auth.uid(),'a-own','Company B','Role B','{}',2021,1,null,12,'B address','B contact');
+select pg_temp.cv_assert((select contact='B contact' from public.jobeen_employment_private_contact where client_id='a-own'),'same client_id scoped to B');
+select set_config('request.jwt.claim.sub','c3333333-3333-4333-8333-333333333333',true);
+select pg_temp.cv_assert(not exists(select 1 from public.jobeen_employment_private_contact),'C cannot see A or B contacts');
+select set_config('request.jwt.claim.sub','',true);
+do $assert$
+begin
+ begin
+  perform public.jobeen_save_private_employment(auth.uid(),'unknown','Company','Role','{}',2020,1,null,12,'','');
+  raise exception 'missing identity accepted';
+ exception when insufficient_privilege then null;
+ end;
+end
+$assert$;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+select pg_temp.cv_assert((select contact='synthetic A contact' from public.jobeen_employment_private_contact where client_id='a-own'),'A contact unchanged by B');
 rollback;

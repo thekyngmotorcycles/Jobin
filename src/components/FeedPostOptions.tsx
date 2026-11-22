@@ -1,5 +1,6 @@
-import {useEffect,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {ActivityIndicator,Text,View} from "react-native";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../lib/message-session";
 import {getSavedPostIds,hidePostFromHome,setSavedPost} from "../lib/feed-preferences";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenModalTokens} from "../theme/modals";
@@ -7,52 +8,55 @@ import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {BottomSheet} from "./social-ui";
 import {SettingsMenuRow} from "./SettingsMenuRow";
 
-export function FeedPostOptions({visible,onClose,postId,viewerId,onHidden,onShareLink,onSaveChanged}:{
- visible:boolean;onClose:()=>void;postId:string;viewerId:string;onHidden:()=>void;onShareLink:()=>Promise<void>;onSaveChanged?:(saved:boolean)=>void;
+export function FeedPostOptions({visible,onClose,postId,viewerId,originScope,onHidden,onShareLink,onSaveChanged}:{
+ visible:boolean;onClose:()=>void;postId:string;viewerId:string;originScope?:MessageScope|null;onHidden:()=>void;onShareLink:()=>Promise<void>;onSaveChanged?:(saved:boolean)=>void;
 }){
  const {theme}=useTheme();const modal=jobeenModalTokens(theme);
  const [saved,setSaved]=useState(false);
  const [busy,setBusy]=useState(false);
  const [actionError,setActionError]=useState("");
  const [whyExpanded,setWhyExpanded]=useState(false);
+ const activeScope=useRef<MessageScope|null>(null),[ready,setReady]=useState(false),busyRef=useRef(false);
  useEffect(()=>{
-  let active=true;
-  if(visible)void getSavedPostIds(viewerId).then(ids=>{if(active)setSaved(ids.includes(postId));}).catch(()=>{});
-  return()=>{active=false;};
- },[visible,viewerId,postId]);
- const close=()=>{if(!busy){setWhyExpanded(false);setActionError("");onClose();}};
+  let active=true;activeScope.current=null;setReady(false);setSaved(false);setWhyExpanded(false);setActionError("");
+  if(visible)void(async()=>{try{
+   const scope=await captureMessageScope(originScope??undefined);
+   if(scope.owner!==viewerId)return;
+   const ids=await getSavedPostIds(viewerId,scope);await assertMessageScope(scope);
+   if(active){activeScope.current=scope;setSaved(ids.includes(postId));setReady(true);}
+  }catch{if(active)setReady(false);}})();
+  return()=>{active=false;activeScope.current=null;setReady(false);};
+ },[visible,viewerId,postId,originScope]);
+ const close=()=>{if(!busyRef.current){setWhyExpanded(false);setActionError("");onClose();}};
  function fail(e:unknown){setActionError(e instanceof Error?e.message:"No se pudo completar la acción.");}
+ async function perform(action:(scope:MessageScope)=>Promise<void>){
+  const scope=activeScope.current;if(!scope||busyRef.current)return;
+  busyRef.current=true;setBusy(true);setActionError("");
+  try{await captureMessageScope(scope);if(activeScope.current!==scope)return;await action(scope);}
+  catch(e){if(activeScope.current===scope)fail(e);}
+  finally{busyRef.current=false;setBusy(false);}
+ }
  async function toggleSaved(){
-  if(busy)return;
-  setBusy(true);setActionError("");
-  try{await setSavedPost(viewerId,postId,!saved);onSaveChanged?.(!saved);setSaved(v=>!v);onClose();}
-  catch(e){fail(e);}
-  finally{setBusy(false);}
+  await perform(async scope=>{await setSavedPost(viewerId,postId,!saved,scope);await assertMessageScope(scope);
+   if(activeScope.current===scope){onSaveChanged?.(!saved);setSaved(v=>!v);onClose();}});
  }
  async function hide(){
-  if(busy)return;
-  setBusy(true);setActionError("");
-  try{await hidePostFromHome(viewerId,postId);onHidden();onClose();}
-  catch(e){fail(e);}
-  finally{setBusy(false);}
+  await perform(async scope=>{await hidePostFromHome(viewerId,postId,scope);await assertMessageScope(scope);
+   if(activeScope.current===scope){onHidden();onClose();}});
  }
  async function shareLink(){
-  if(busy)return;
-  setBusy(true);setActionError("");
-  try{await onShareLink();onClose();}
-  catch(e){fail(e);}
-  finally{setBusy(false);}
+  await perform(async scope=>{if(activeScope.current===scope){await onShareLink();if(activeScope.current===scope)onClose();}});
  }
  return <BottomSheet visible={visible} onClose={close} title="Opciones de publicación">
   <View style={{gap:8,paddingVertical:8}}>
    <SettingsMenuRow variant="action" icon={saved?"bookmark":"bookmark-outline"}
-    title={saved?"Quitar de guardados":"Guardar publicación"} disabled={busy} onPress={()=>void toggleSaved()}/>
+    title={saved?"Quitar de guardados":"Guardar publicación"} disabled={busy||!ready} onPress={()=>void toggleSaved()}/>
    <SettingsMenuRow variant="action" icon="share-social-outline"
-    title="Compartir enlace" disabled={busy} onPress={()=>void shareLink()}/>
+    title="Compartir enlace" disabled={busy||!ready} onPress={()=>void shareLink()}/>
    <SettingsMenuRow variant="action" icon="remove-circle-outline"
-    title="Ocultar publicación" disabled={busy} onPress={()=>void hide()}/>
+    title="Ocultar publicación" disabled={busy||!ready} onPress={()=>void hide()}/>
    <SettingsMenuRow variant="action" icon="information-circle-outline"
-    title="¿Por qué veo esta publicación?" disabled={busy} onPress={()=>setWhyExpanded(v=>!v)}/>
+    title="¿Por qué veo esta publicación?" disabled={busy||!ready} onPress={()=>setWhyExpanded(v=>!v)}/>
    {whyExpanded&&<View style={{backgroundColor:modal.inner,borderColor:modal.border,borderWidth:1,
     borderRadius:modal.radius.control,padding:12}}>
     <Text style={{color:modal.muted,fontSize:JOBEEN_TYPE.secondary,lineHeight:JOBEEN_LINE_HEIGHT.secondary}}>

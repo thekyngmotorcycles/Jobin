@@ -1,3 +1,54 @@
+# JOBEEN — Protocolo permanente de ingeniería de software
+
+**Orden aprobada por el propietario, 2026-11-22. Obligatoria para ChatGPT, Codex y cualquier desarrollador o agente.** Se mantiene en cada rama y en futuras integraciones; no depende de un chat ni requiere repetir instrucciones. Preservar todas las normas previas de seguridad, producto, diseño y autorización. Ante conflicto, prevalecen la privacidad, las restricciones explícitas del propietario y el control de despliegues; este protocolo reemplaza cualquier traspaso antiguo que ordene repetir auditorías o preguntar qué continuar cuando el pendiente es inequívoco.
+
+## 1. Continuidad y fuente de verdad
+- Antes de modificar código, leer AGENTS.md y `docs/DEVELOPMENT_STATUS.md` de la rama activa; comprobar su HEAD, PR y resultado de CI correspondiente. Recuperar solo el contexto necesario para la siguiente tarea; no rehacer el inventario general.
+- Usar DEVELOPMENT_STATUS.md como único registro operativo del estado, identificadores, objetivo, alcance, prioridad, dependencias, archivos, evidencia (SHA/pruebas), aceptación y siguiente acción. Los demás documentos son referencias técnicas/históricas, no backlogs paralelos. No usar la memoria del chat como fuente de verdad.
+- Si se cambia de chat o agente, leer este protocolo y continuar desde la primera tarea ejecutable de mayor prioridad. Si el registro es antiguo, reconciliar únicamente el delta de commits/CI. No reiniciar el proyecto.
+- Si otro agente está editando una rama o tarea, evitar cambios concurrentes conflictivos; comprobar HEAD antes de escribir y no forzar refs.
+
+## 2. Estados y cierre verificable
+Estados exclusivos: PENDIENTE, EN DESARROLLO, IMPLEMENTADO, PENDIENTE DE INTEGRACIÓN, PENDIENTE DE VALIDACIÓN, COMPLETADO, BLOQUEADO.
+- Definir alcance, dependencia y criterios de aceptación antes de escribir código. COMPLETADO significa integrado dentro del alcance definido, pruebas pertinentes aprobadas y evidencia reproducible, sin regresiones conocidas ni bloqueo de ese alcance. No confundir CI con despliegue o validación física.
+- Separar entregables de código/test sintético de integración real y pruebas de dispositivo. Cerrar el alcance ya verificado y registrar únicamente la dependencia restante con ID propio. No ampliar indefinidamente el significado de una tarea.
+- Un piloto, adaptador o módulo sin consumidor es PENDIENTE DE INTEGRACIÓN; no funcionalidad completa. Si requiere infraestructura, decisión o APK no autorizada, registrar bloqueo y avanzar a otra tarea independiente.
+- Actualizar este registro en el mismo commit coherente de cada bloque siempre que sea posible (puede indicar CI pendiente; comprobar el resultado real al reanudar). No inventar evidencia ni porcentajes.
+
+## 3. No duplicación ni auditorías infinitas
+- Prohibido repetir auditorías, investigaciones, implementaciones o comprobaciones manuales que ya cumplen su aceptación. Reabrir solo por regresión, prueba fallida, hallazgo nuevo con evidencia, cambio relevante de dependencia o requisito autorizado. Registrar causa, evidencia y alcance afectado antes de reabrir. No rehacer áreas no afectadas.
+- Las suites automáticas de regresión continúan normalmente. Ejecutar pruebas existentes no equivale a repetir una auditoría.
+- Priorizar integrar y terminar componentes ya desarrollados; reutilizar servicios y contratos. No crear candidatos, capas paralelas, nuevos documentos, dependencias o refactorizaciones sin beneficio y destino de integración concretos.
+- Aplicar DRY, KISS, YAGNI, SOLID cuando aporte valor, separación de responsabilidades, tipado estricto, manejo consistente de errores y compatibilidad. Evitar sobreingeniería; no usar estos principios como excusa para omitir controles requeridos.
+
+## 4. Seguridad proporcional y alcance finito
+- P0 crítico, P1 alto, P2 moderado, P3 preventivo. Resolver P0/P1 y todo criterio obligatorio de privacidad/aislamiento antes de publicar. Planificar P2 por impacto; P3 no bloqueante se registra para después. Un riesgo no demostrado se distingue de un hallazgo confirmado; valorar impacto y probabilidad sin desestimar vulnerabilidades razonablemente sustentadas.
+- No bajar protección, omitir revocación o aprobar excepciones inseguras por eficiencia. Preservar datos históricos, prohibido migrar, borrar o reasignar titularidad por inferencia.
+- La etapa vigente se cierra al cumplir la lista finita de bloqueos de publicación de DEVELOPMENT_STATUS.md, con pruebas reales exigidas. Cualquier nuevo bloqueo debe tener evidencia, prioridad y aceptación; no añadir tareas preventivas para prolongar la etapa. Si un flujo no puede integrarse de forma segura, mantenerlo deshabilitado y solicitar decisión de alcance al propietario cuando sea imprescindible.
+- Una vez cerrados los bloqueos obligatorios, retomar el roadmap de producto y diseño aprobado, sin perder cambios.
+
+## 5. Implementación, calidad y recursos
+- Entregar cambios pequeños y coherentes por objetivo, agrupando archivos en commits atómicos. Ejecutar pruebas pertinentes y verificar CI del SHA previo antes de avanzar a una tarea dependiente. Corregir causas raíz, no silenciar, saltar ni debilitar cobertura de pruebas por conveniencia. Distinguir pruebas unitarias, integración, servidor, export JS, compilación y dispositivo.
+- Optimizar consultas, tokens, tiempo, minutos de CI, uso de servicios y almacenamiento. Evitar consultas redundantes y reportes repetitivos. Consolidar dependencias nativas confirmadas en una APK cuando sea viable, sin agregar SDK especulativos.
+- No afirmar ejecución, integración, publicación ni validación sin haberla comprobado. Mantener rollback seguro y no perder funcionalidades o diseño aprobado. No registrar credenciales ni datos privados.
+
+## 6. Control de cambios y autorización
+- Mantener main estable. Durante el incidente y la etapa de seguridad, NO fusionar ni enviar cambios a development, main, OTA o Supabase alojado sin autorización explícita. Las ramas de trabajo y CI sin compilación están permitidas. La regla previa de arreglos pequeños en development no anula esta restricción vigente.
+- Nunca iniciar APK/EAS Build, instalación o workflow que compile sin autorización expresa para el alcance y commit. Tampoco desplegar, comprar servicios, eliminar datos o ejecutar migraciones destructivas sin aprobación correspondiente.
+- Mantener estas reglas y el registro al integrar ramas; nunca descartarlos durante conflictos de merge. Conservar roadmap aprobado en la rama documental y reconciliar mediante promoción autorizada.
+
+## 7. Órdenes e informes
+- **Continúa / Continua:** leer registro, verificar último CI, resolver fallo o ejecutar siguiente tarea de mayor prioridad desbloqueada. No pedir que el propietario repita el contexto. No reabrir trabajo cerrado.
+- **Fix:** inspeccionar el fallo actual, corregir causa raíz con mínimo alcance, conservar controles y verificar nuevamente.
+- Informe breve: cambio real, rama/SHA, estado comprobado de pruebas, siguiente ID y acción, bloqueo que exige decisión. Diferenciar implementado, integrado, validado y publicado. No presentar una auditoría repetida ni crear más trabajo para aparentar avance.
+- Para cambios visuales aplicar DESIGN_RULES.md y el proceso de aprobación existente. Proteger el tiempo del propietario y solicitar decisiones solo cuando sean esenciales.
+
+**La medida del progreso son entregables integrados, verificados y cerrados, no el número de commits, auditorías o archivos.**
+
+---
+
+## Normas de seguridad y producto previamente aprobadas (vigentes)
+
 ## Seguridad y aislamiento de cuentas — regla permanente no negociable
 ### Arquitectura aprobada: opción 2, aislamiento reforzado
 - **Compilación APK (orden expresa del propietario):** antes de crear cualquier APK nuevo, informar qué cambio nativo lo requiere y solicitar aprobación. No iniciar EAS Build, GitHub workflows de compilación Android ni instalar un APK nuevo sin autorización expresa. Los cambios de código y verificaciones sin compilación pueden continuar.

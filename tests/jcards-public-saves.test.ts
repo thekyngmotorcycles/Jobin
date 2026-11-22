@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 const src=(path:string)=>readFileSync(path,"utf8");
 const sql=src("supabase/migrations/20261120191635_jobeen_saved_jcards.sql");
 const api=src("src/lib/saved-jcards.ts");
+const candidate=src("supabase/security-review/saved-jcard-visibility.sql");
 const gallery=src("src/components/SavedJCardsGallery.tsx");
 const visitor=src("src/app/jcard.tsx");
 const card=src("src/components/JobinCard.tsx");
@@ -17,7 +18,7 @@ test("Anyone signed in can bookmark a displayed public face, without owner appro
  assert.ok(api.includes('if(!business?.name?.trim())'));
  assert.ok(!sql.includes("owner_approved"));
  assert.ok(api.includes(".insert({target_id:targetId,card_side:side"));
- assert.ok(visitor.includes("saveVisibleJCard(user,activeCardSide,viewer)"));
+ assert.ok(visitor.includes("saveVisibleJCard(user,activeCardSide,viewer,origin.scope)"));
  assert.ok(actions.includes("Guardar JCard empresarial"));
 });
 test("Bookmarks contain references, not cached phone numbers or emails",()=>{
@@ -25,9 +26,14 @@ test("Bookmarks contain references, not cached phone numbers or emails",()=>{
  assert.ok(!ddl.includes("phone"));
  assert.ok(!ddl.includes("email"));
  assert.ok(!ddl.includes("name"));
- assert.ok(api.includes('jcard_visibility'));
- assert.ok(api.includes('business_enabled&&!!business?.name.trim()'));
- assert.ok(api.includes('title:!available?"JCard no disponible"'));
+ assert.ok(api.includes('rpc("jobeen_saved_jcard_previews"'));
+ assert.ok(candidate.includes("not private.is_blocked(p_target,(select auth.uid()))"));
+ assert.ok(candidate.includes("then v.personal_enabled else v.business_enabled"));
+ assert.ok(candidate.includes("length(btrim(b.name))>0"));
+ assert.ok(candidate.includes("as restrictive for insert"));
+ assert.ok(api.includes('title:!item.available?"JCard no disponible"'));
+ assert.ok(!api.includes('from("profiles")'));
+ assert.ok(!api.includes('from("jcard_visibility")'));
  assert.ok(api.includes('targetId:item.target_id,side:item.card_side'));
  assert.ok(!api.includes('select("*")'));
 });
@@ -42,7 +48,7 @@ test("Saved collection is readable and editable only by the user who saved it",(
 });
 test("Gallery supports search, favorite and remove, and loads fresh on focus",()=>{
  assert.ok(gallery.includes("useFocusEffect"));
- assert.ok(gallery.includes("listSavedJCards(owner)"));
+ assert.ok(gallery.includes("listSavedJCards(owner,scope)"));
  assert.ok(gallery.includes("Buscar en mis JCards"));
  assert.ok(gallery.includes('label:"Favoritas"'));
  assert.ok(gallery.includes("setSavedJCardFavorite"));
@@ -62,8 +68,10 @@ test("Saved business JCards show their real category glyph, not a generic buildi
  assert.ok(!gallery.includes('item.side==="business"?"business-outline"'),"Do not regress to generic business glyph");
 });
 test("Owner visibility still controls what can be saved; the accordion remains unchanged",()=>{
- assert.ok(visitor.includes("readJCardVisibility(user)"));
+ assert.ok(visitor.includes("readJCardVisibility(user,scope)"));
  assert.ok(visitor.includes('onActiveSideChange={setActiveCardSide}'));
+ assert.ok(visitor.includes("publicRevision.current!==generation"));
+ assert.ok(visitor.includes("publicVisibility={cardVisibility} publicScope={snapshot?.scope}"));
  assert.ok(actions.includes("onToggleSaved?"));
  assert.ok(card.includes("onActiveSideChange?.("));
  for(const page of [visitor,own]){

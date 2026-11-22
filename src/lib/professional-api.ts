@@ -1,4 +1,5 @@
 import { requireSupabase } from "./supabase";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "./message-session";
 import type { Database, Json } from "./database.types";
 import type { ProfessionalCatalog, ProfessionalWorkspace, RealCard, CredentialRequest, EducationOption, OrganizationData, CareerResult } from "./professional-types";
 
@@ -13,9 +14,11 @@ type Phase2Rpc=Extract<keyof Functions,
  "jobin_decide_credential"|"jobin_verify_training"|"jobin_define_rank"|"jobin_grant_rank"|"jobin_set_representative"|"jobin_set_scope_active"|
  "jobin_contact_career"|"jobin_respond_career">;
 
-export async function professionalMutation<N extends Phase2Rpc>(name:N,args:Functions[N]["Args"]) {
+export async function professionalMutation<N extends Phase2Rpc>(name:N,args:Functions[N]["Args"],expectedScope?:MessageScope) {
+ const scope=await captureMessageScope(expectedScope);
  const {data,error}=await requireSupabase().rpc(name,args);
  if(error)throw new Error(error.message);
+ await assertMessageScope(scope);
  return data;
 }
 function decode<T>(data:Json|null,error:{message:string}|null):T {
@@ -23,48 +26,60 @@ function decode<T>(data:Json|null,error:{message:string}|null):T {
  if(data===null)throw new Error("No se encontró el perfil.");
  return data as unknown as T;
 }
-export async function replacePrimaryProfession(oldProfession:string,newProfession:string,training:"graduado"|"in_academy"|"practica",institution:string|null):Promise<void> {
+export async function replacePrimaryProfession(oldProfession:string,newProfession:string,training:"graduado"|"in_academy"|"practica",institution:string|null,expectedScope?:MessageScope):Promise<void> {
+ const scope=await captureMessageScope(expectedScope);
  const {error}=await requireSupabase().rpc("jobin_replace_unverified_profession",{
   old_profession:oldProfession,new_profession:newProfession,training,institution
  });
  if(error)throw new Error(error.message);
+ await assertMessageScope(scope);
 }
-export async function replaceSecondaryProfession(oldProfession:string,newProfession:string,training:"graduado"|"in_academy"|"practica",institution:string|null):Promise<void> {
+export async function replaceSecondaryProfession(oldProfession:string,newProfession:string,training:"graduado"|"in_academy"|"practica",institution:string|null,expectedScope?:MessageScope):Promise<void> {
+ const scope=await captureMessageScope(expectedScope);
  const {error}=await requireSupabase().rpc("jobin_replace_unverified_secondary_profession",{
   old_profession:oldProfession,new_profession:newProfession,training,institution
  });
  if(error)throw new Error(error.message);
+ await assertMessageScope(scope);
 }
 export async function loadCatalog():Promise<ProfessionalCatalog> {
  const {data,error}=await requireSupabase().rpc("jobin_professional_catalog");
  const catalog=decode<ProfessionalCatalog>(data,error);
  return {...catalog,professions:catalog.professions.map(p=>({...p,label:professionDisplayName(p.code,p.label)}))};
 }
-export async function loadWorkspace():Promise<ProfessionalWorkspace|null> {
+export async function loadWorkspace(expectedScope?:MessageScope):Promise<ProfessionalWorkspace|null> {
  const client=requireSupabase();const {data:{session}}=await client.auth.getSession();
- if(!session)return null;
- const {data:{user},error:authError}=await client.auth.getUser();
- if(authError)throw new Error(authError.message);
- if(!user)return null;
+ if(!session&&!expectedScope)return null;
+ const scope=await captureMessageScope(expectedScope);
+ const user={id:scope.owner};
+ if(session?.user.id!==user.id)throw Error("La sesión cambió.");
  const {data,error}=await client.rpc("jobin_professional_workspace");
  const result=decode<ProfessionalWorkspace>(data,error);
  if(!result.card)throw new Error("El perfil no está disponible.");
- if(result.card.id!==user.id||(await client.auth.getSession()).data.session?.user.id!==user.id)throw new Error("La sesión cambió. Vuelve a cargar el perfil.");
+ if(result.card.id!==user.id)throw new Error("La sesión cambió. Vuelve a cargar el perfil.");
+ await assertMessageScope(scope);
  const professions=result.professions.map(p=>({...p,label:professionDisplayName(p.profession_code,p.label)}));
  const primary=professions.find(p=>p.primary_profession);
  return {...result,professions,card:primary?{...result.card,role:primary.label}:result.card};
 }
-export async function loadPublicCard(id:string):Promise<RealCard> {
+export async function loadPublicCard(id:string,expectedScope?:MessageScope):Promise<RealCard> {
+ const scope=await captureMessageScope(expectedScope);
  const {data,error}=await requireSupabase().rpc("jobin_jcard_data",{target:id});
- return decode<RealCard>(data,error);
+ const result=decode<RealCard>(data,error);
+ await assertMessageScope(scope);
+ if(result.id!==id)throw Error("El perfil no está disponible.");
+ return result;
 }
 export async function loadOrganization(id?:string):Promise<OrganizationData> {
  const {data,error}=await requireSupabase().rpc("jobin_organization_data",id?{target:id}:{});
  return decode<OrganizationData>(data,error);
 }
-export async function loadQueue(status:"pending"|"approved"|"rejected"="pending"):Promise<CredentialRequest[]> {
+export async function loadQueue(status:"pending"|"approved"|"rejected"="pending",expectedScope?:MessageScope):Promise<CredentialRequest[]> {
+ const scope=await captureMessageScope(expectedScope);
  const {data,error}=await requireSupabase().rpc("jobin_credential_queue",{status_filter:status});
- return decode<CredentialRequest[]>(data,error);
+ const rows=decode<CredentialRequest[]>(data,error);
+ await assertMessageScope(scope);
+ return rows.filter(r=>r.status===status);
 }
 export async function loadEducation(profession:string):Promise<EducationOption[]> {
  const {data,error}=await requireSupabase().rpc("jobin_education_options",{profession});
@@ -74,9 +89,8 @@ export async function searchCareers(profession:string,city:string,mode:"students
  const {data,error}=await requireSupabase().rpc("jobin_career_search",{profession,city,mode});
  return decode<CareerResult[]>(data,error);
 }
-export async function uploadCredential(file:{uri:string;name:string;mimeType?:string|null;size?:number},profession:string) {
- const client=requireSupabase();const {data:{user},error}=await client.auth.getUser();
- if(error||!user)throw new Error("Inicia sesión para enviar un certificado.");
+export async function uploadCredential(file:{uri:string;name:string;mimeType?:string|null;size?:number},profession:string,expectedScope:MessageScope) {
+ const client=requireSupabase(),scope=await captureMessageScope(expectedScope),user={id:scope.owner};
  if(file.size && file.size>10485760)throw new Error("El documento no puede superar 10 MB.");
  const mime=file.mimeType||"application/pdf";
  const extension=mime==="image/jpeg"?"jpg":mime==="image/png"?"png":"pdf";
@@ -85,14 +99,19 @@ export async function uploadCredential(file:{uri:string;name:string;mimeType?:st
  const response=await fetch(file.uri);
  if(!response.ok)throw new Error("No se pudo leer el documento seleccionado.");
  const bytes=await response.arrayBuffer();
+ if(bytes.byteLength>10485760)throw Error("El documento no puede superar 10 MB.");
+ await assertMessageScope(scope);
  const uploaded=await client.storage.from("professional-certificates").upload(path,bytes,{contentType:mime,upsert:false,cacheControl:"0"});
  if(uploaded.error)throw new Error(uploaded.error.message);
- try { await professionalMutation("jobin_submit_credential",{profession,path}); }
- catch(cause) { throw new Error("El archivo se subió, pero la solicitud no se registró: "+(cause instanceof Error?cause.message:String(cause))+". Ruta para reintentar: "+path); }
+ await assertMessageScope(scope);
+ try { await professionalMutation("jobin_submit_credential",{profession,path},scope); }
+ catch { throw new Error("No se pudo confirmar el registro del documento. Actualiza tus solicitudes antes de reintentar."); }
 }
-export async function credentialPreview(path:string):Promise<string> {
+export async function credentialPreview(path:string,expectedScope:MessageScope):Promise<string> {
+ const scope=await captureMessageScope(expectedScope);
  const {data,error}=await requireSupabase().storage.from("professional-certificates").createSignedUrl(path,120);
- if(error)throw new Error(error.message);
+ if(error)throw Error("No se pudo abrir el documento privado.");
+ await assertMessageScope(scope);
  return data.signedUrl;
 }
 
@@ -103,9 +122,11 @@ export async function loadSpecialtyCatalog():Promise<Record<string,string[]>> {
  return (data??{}) as Record<string,string[]>;
 }
 /** Only the signed-in owner can change their declared specialties. */
-export async function saveProfessionSpecialties(profession:string,specialties:string[]):Promise<void> {
+export async function saveProfessionSpecialties(profession:string,specialties:string[],expectedScope?:MessageScope):Promise<void> {
+ const scope=await captureMessageScope(expectedScope);
  const {error}=await requireSupabase().rpc("jobin_set_profession_specialties" as never,{p_profession:profession,p_specialties:specialties} as never);
  if(error)throw new Error(error.message);
+ await assertMessageScope(scope);
 }
 
 export interface ProfessionalSearchResult {
@@ -116,26 +137,32 @@ export interface ProfessionalSearchResult {
 }
 /** Server ranks relevance first and verified professional evidence second.
  * Personal profiles never receive fabricated star ratings. */
-export async function findProfessionals(query:string,city:string,profession:string,specialty:string):Promise<ProfessionalSearchResult[]> {
+export async function findProfessionals(query:string,city:string,profession:string,specialty:string,expectedScope?:MessageScope):Promise<ProfessionalSearchResult[]> {
+ const scope=await captureMessageScope(expectedScope);
  const {data,error}=await requireSupabase().rpc("jobin_find_professionals" as never,{
   p_query:query.trim(),p_city:city.trim(),p_profession:profession,p_specialty:specialty,p_limit:50
  } as never);
  if(error)throw new Error(error.message);
+ await assertMessageScope(scope);
  return (data??[]) as ProfessionalSearchResult[];
 }
 
 /** People are personal accounts with no profession declared; they are not professionals. */
 export interface PersonSearchResult {id:string;name:string;handle:string;city:string|null;region:string|null}
-export async function findPeople(query:string,city:string):Promise<PersonSearchResult[]>{
+export async function findPeople(query:string,city:string,expectedScope?:MessageScope):Promise<PersonSearchResult[]>{
+ const scope=await captureMessageScope(expectedScope);
  const {data,error}=await requireSupabase().rpc("jobeen_find_people" as never,{p_query:query.trim(),p_city:city.trim(),p_limit:50} as never);
  if(error)throw new Error(error.message);
+ await assertMessageScope(scope);
  return (data??[]) as PersonSearchResult[];
 }
 
 /** Unified search for every registered, active account, regardless of profession. */
 export interface AllAccountSearchResult {id:string;name:string;handle:string;city:string|null;region:string|null;account_type:"person"|"professional"|"company";profession:string}
-export async function findAllAccounts(query:string,city:string):Promise<AllAccountSearchResult[]>{
+export async function findAllAccounts(query:string,city:string,expectedScope?:MessageScope):Promise<AllAccountSearchResult[]>{
+ const scope=await captureMessageScope(expectedScope);
  const {data,error}=await requireSupabase().rpc("jobeen_find_all_accounts" as never,{p_query:query.trim(),p_city:city.trim(),p_limit:50} as never);
  if(error)throw new Error(error.message);
+ await assertMessageScope(scope);
  return (data??[]) as AllAccountSearchResult[];
 }

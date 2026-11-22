@@ -24,9 +24,10 @@ test("Every edit is saved automatically and an app background event flushes the 
  assert.ok(editor.includes('if(status!=="active")void persistSnapshot(draftSnapshotRef.current)'));
  assert.ok(editor.includes('const timer=setTimeout(()=>{'));
  assert.ok(editor.includes('usePreventRemove(hasWork&&!editingDone'));
- assert.ok(drafts.includes("AsyncStorage.setItem"));
+ assert.ok(drafts.includes('privateMetadataStorage.write("post-drafts",scope,'));
+ assert.ok(!drafts.includes("AsyncStorage.setItem"));
  assert.ok(drafts.includes("jobeen.post.drafts.v1."));
- assert.ok(editor.includes("readPostDrafts(uid)"));
+ assert.ok(editor.includes("readPostDrafts(uid,scope)"));
  assert.ok(!editor.includes("if(saved[0])applyDraft(saved[0])"));
 });
 test("Back and cancel ask to save or discard; discard deletes the draft and both return Home",()=>{
@@ -34,7 +35,7 @@ test("Back and cancel ask to save or discard; discard deletes the draft and both
  assert.ok(editor.includes('setExitOpen(true)'));
  assert.ok(sheets.includes('¿Guardar tu publicación?'));
  for(const label of ["Guardar borrador","Descartar cambios","Continuar editando"])assert.ok(sheets.includes(label));
- assert.ok(editor.includes('await deletePostDraft(author,draftSnapshotRef.current.id)'));
+ assert.ok(editor.includes('await deletePostDraft(author,draftSnapshotRef.current.id,scope)'));
  assert.ok(editor.includes("finishHome(\"\")"));
  assert.ok(editor.includes('usePreventRemove(hasWork&&!editingDone'));
  assert.ok(editor.includes('navigation.canGoBack()'));
@@ -55,7 +56,7 @@ test("Private draft image backups are saved and published without making origina
  assert.ok(migration.includes("'jobeen-post-draft-photos',false"));
  assert.ok(migration.includes('Jobeen draft photo owner insert'));
  assert.ok(migration.includes('Jobeen draft photo owner select'));
- assert.ok(editor.includes('uploadPhoto(author,photo.uri,DRAFT_PHOTO_BUCKET)'));
+ assert.ok(editor.includes('uploadPhoto(author,photo.uri,DRAFT_PHOTO_BUCKET,scope)'));
  assert.ok(drafts.includes('createSignedUrls(paths,DRAFT_PREVIEW_TTL_SECONDS)'));
  assert.ok(drafts.includes('photos:draft.photos.map(toStoredDraftPhoto)'));
  assert.ok(feed.includes('bucket===POSTS_BUCKET?{}:{cacheControl:"0"}'));
@@ -81,11 +82,11 @@ test("A successful publish navigates to Home without waiting on draft Storage cl
  const submitted=editor.slice(editor.indexOf("async function submit()"),editor.indexOf("const eligible="));
  const navigation=editor.slice(editor.indexOf("useEffect(()=>{\n  if(!editingDone"),editor.indexOf("// Only intercept removal"));
  assert.ok(submitted.includes("const publishedId=await publishHomePost({"));
- assert.ok(submitted.includes("await deletePostDraft(author,draftSnapshotRef.current.id,false)"));
+ assert.ok(submitted.includes("await deletePostDraft(author,draftSnapshotRef.current.id,scope,false)"));
  assert.ok(submitted.includes("finishHome(publishedId)"));
- assert.ok(submitted.includes("if(draftPaths.length)void requireSupabase().storage.from(DRAFT_PHOTO_BUCKET).remove(draftPaths).catch(()=>{});"));
- assert.ok(submitted.indexOf("finishHome(publishedId)")<submitted.indexOf(".remove(draftPaths)"));
- assert.ok(!submitted.includes("await deletePostDraft(author,draftSnapshotRef.current.id).catch"));
+ assert.ok(!submitted.includes(".remove(draftPaths)"));
+ assert.ok(submitted.includes("void draftPaths;"));
+ assert.ok(!submitted.includes("await deletePostDraft(author,draftSnapshotRef.current.id,scope).catch"));
  assert.ok(navigation.includes("const timer=setTimeout(()=>{"));
  assert.ok(navigation.includes("navigation.goBack()"));
  assert.ok(navigation.includes('router.replace("/(tabs)/index")'));

@@ -43,7 +43,8 @@ test("Notice tones are semantic; normal windows keep a neutral surface",()=>{
  const profile=src("src/components/ProfileCommunityActions.tsx");
  assert.ok(profile.includes('<JobeenNoticeDialog visible={confirm!==null}'));
  assert.ok(profile.includes('tone="danger"'));
- assert.ok(profile.includes("removeContactRequest(contact.id)"));
+ assert.ok(profile.includes("removeContactRequest(contact.id,scope)"));
+ assert.ok(profile.includes("scope.owner!==viewer"),"Destructive actions remain tied to the originating account");
  assert.ok(profile.includes('db.from("blocks")'));
  assert.ok(!profile.includes("Alert.alert("));
 });
