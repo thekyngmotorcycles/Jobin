@@ -37,7 +37,7 @@ export default function MyJShop(){
   void(async()=>{
    try{
     const scope=await captureMessageScope(),owner=scope.owner;
-    const [rows,online]=await Promise.all([readJShopDrafts(owner,scope),loadMyJShopListings(owner)]);
+    const [rows,online]=await Promise.all([readJShopDrafts(owner,scope),loadMyJShopListings(owner,scope)]);
     await assertMessageScope(scope);
     if(live){setDrafts(rows);setPublished(online);setError("");}
    }catch(e){if(live){setDrafts([]);setPublished([]);setError(e instanceof Error?e.message:"No se pudieron cargar los anuncios.");}}
