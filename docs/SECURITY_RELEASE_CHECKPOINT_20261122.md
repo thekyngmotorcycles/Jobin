@@ -24,3 +24,8 @@ Base comprobada: 0bb8e3a, CI 44993441000 aprobada. Candidato PR #70 apilado sobr
 5. Presentar al propietario SHA, entorno, alcance y pruebas; pedir autorización expresa ANTES de iniciar compilación. Superar matriz Jelly 2 y API real aislada antes de promover. No mezclar el roadmap visual con el corte de seguridad sin revisión.
 
 Los controles de SHA evitan disparadores accidentales y binds incorrectos; no sustituyen permisos de GitHub ni un entorno protegido con revisores. Ningún build o OTA se ha iniciado por este cambio.
+
+## Control de navegación
+- 7b0a7d0 aprobó CI 44994507867, incluido autolinking Android sin compilación.
+- AuthGate comprueba getUser antes de habilitar el navegador privado, y conserva remount por sesión. Stack.Protected separa comprobación, login/alta/recuperación, onboarding y rutas autenticadas; también se protegen todas las rutas antes registradas automáticamente. No depender de una redirección tardía para impedir montar una pantalla privada. Pruebas de cobertura del árbol de rutas y fase.
+- Pendiente prueba real de transición, Google PKCE, recuperación SMS, alta y cierre offline en Android; comprobar que acciones anteriores no naveguen o escriban en cuenta nueva. La política de navegación no sustituye RLS. CI pendiente.

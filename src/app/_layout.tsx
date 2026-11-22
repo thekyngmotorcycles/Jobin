@@ -1,7 +1,7 @@
 import "react-native-gesture-handler";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import { NoticeProvider } from "../state/NoticeProvider";
-import { AuthGate } from "../components/AuthGate";
+import { AuthGate,useAuthNavigationPhase } from "../components/AuthGate";
 import { SafetyAccountGate } from "../components/SafetyAccountGate";
 import { JobinWordmark } from "../components/JobinWordmark";
 import { Stack,usePathname } from "expo-router";
@@ -29,9 +29,14 @@ function IconFontGate({children}:{children:ReactNode}){
 function Navigation() {
  const {theme,colors}=useTheme();const jt=jobeenTokens(theme);const shellBackground=theme==="light"?jt.bg:colors.paper;
  const pathname=usePathname();const {reset}=useScrollNavigation();
+ const phase=useAuthNavigationPhase();
  useEffect(()=>reset(),[pathname,reset]);
  const isBrowserPage=pathname==="/jcard"||pathname==="/search"||pathname==="/notifications"||pathname.startsWith("/post/")||pathname.startsWith("/work-media/")||pathname.startsWith("/jshop/item/")||pathname==="/jshop/favorites";
  return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:shellBackground},headerTintColor:colors.ink,headerTitleStyle:{fontSize:JOBEEN_TYPE.navigationTitle,fontWeight:"600"},contentStyle:{backgroundColor:shellBackground}}}>
+ <Stack.Protected guard={phase==="checking"}>
+ <Stack.Screen name="security-loading" options={{headerShown:false}}/>
+ </Stack.Protected>
+ <Stack.Protected guard={phase==="signed-in"}>
  <Stack.Screen name="(tabs)" options={{headerShown:false}}/>
  <Stack.Screen name="map-presence" options={{title:"Mi zona profesional"}}/>
  <Stack.Screen name="post/create" options={{title:"Nueva publicación"}}/>
@@ -61,10 +66,6 @@ function Navigation() {
  <Stack.Screen name="settings/tipo-cuenta" options={{title:"Tipo de cuenta"}}/>
  <Stack.Screen name="settings/cierre-cuenta" options={{title:"Administrar cuenta"}}/>
  <Stack.Screen name="menu/[section]" options={{title:"Configuración y privacidad"}}/>
- <Stack.Screen name="account" options={{title:"Sign up",headerShown:false}}/>
- <Stack.Screen name="choose-username" options={{title:"Nombre de usuario",headerShown:false}}/>
- <Stack.Screen name="login" options={{title:"Log in",headerShown:false}}/>
- <Stack.Screen name="recover-account" options={{title:"Recuperar cuenta",headerShown:false}}/>
  <Stack.Screen name="change-password" options={{title:"Nueva contraseña"}}/>
  <Stack.Screen name="verify-phone" options={{title:"Verificar teléfono"}}/>
  <Stack.Screen name="verify-identity" options={{title:"Verificación de identidad"}}/>
@@ -86,7 +87,22 @@ function Navigation() {
  <Stack.Screen name="live" options={{title:"Live",presentation:"modal"}}/>
  <Stack.Screen name="services" options={{title:"Servicios"}}/>
  <Stack.Screen name="communities" options={{title:"Comunidades"}}/>
- </Stack>{isBrowserPage&&<PersistentBottomTabs/>}</>;
+ <Stack.Screen name="creator/[id]"/>
+ <Stack.Screen name="demo-profile"/>
+ <Stack.Screen name="employer-links"/>
+ <Stack.Screen name="my-network"/>
+ <Stack.Screen name="report-profile"/>
+ <Stack.Screen name="reviews"/>
+ </Stack.Protected>
+ <Stack.Protected guard={phase==="onboarding"}>
+ <Stack.Screen name="choose-username" options={{title:"Nombre de usuario",headerShown:false}}/>
+ </Stack.Protected>
+ <Stack.Protected guard={phase==="signed-out"}>
+ <Stack.Screen name="login" options={{title:"Log in",headerShown:false}}/>
+ <Stack.Screen name="account" options={{title:"Sign up",headerShown:false}}/>
+ <Stack.Screen name="recover-account" options={{title:"Recuperar cuenta",headerShown:false}}/>
+ </Stack.Protected>
+ </Stack>{phase==="signed-in"&&isBrowserPage&&<PersistentBottomTabs/>}</>;
 }
 export default function RootLayout() {
  return <GestureHandlerRootView style={{flex:1}}><SafeAreaProvider><ThemeProvider><IconFontGate><AuthGate><AppProvider><SocialProvider><NoticeProvider><SafetyAccountGate><ScrollNavigationProvider><Navigation/></ScrollNavigationProvider></SafetyAccountGate></NoticeProvider></SocialProvider></AppProvider></AuthGate></IconFontGate></ThemeProvider></SafeAreaProvider></GestureHandlerRootView>;

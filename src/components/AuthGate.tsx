@@ -1,14 +1,14 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Fragment, useEffect, useState, type ReactNode } from "react";
+import { createContext, Fragment, useContext, useEffect, useState, type ReactNode } from "react";
 import * as Linking from "expo-linking";
-import { ActivityIndicator, AppState, View } from "react-native";
-import { router, usePathname } from "expo-router";
+import { AppState } from "react-native";
+import {classifyAuthNavigation,type AuthNavigationPhase} from "../lib/auth-navigation-phase";
 import { supabase } from "../lib/supabase";
 import { sessionMarkerKey,sessionLifetimeState } from "../lib/session-lifetime";
 
 const LEGACY_KEY = "jobin:session-start";
-const AUTH_ROUTES = ["/login", "/account"];
-const USERNAME_ROUTE="/choose-username";
+const AuthNavigationContext=createContext<AuthNavigationPhase>("checking");
+export function useAuthNavigationPhase(){return useContext(AuthNavigationContext);}
 let usernameCompleted: (()=>void)|null=null;
 export function completeUsernameOnboarding(){usernameCompleted?.();}
 
@@ -33,11 +33,8 @@ export async function endJobinSession(expectedOwner?:string,expectedToken?:strin
  await AsyncStorage.removeItem(LEGACY_KEY);
 }
 export function AuthGate({ children }: { children: ReactNode }) {
- const pathname = usePathname();
  const [ready, setReady] = useState(false);
  const [sessionScope,setSessionScope]=useState<string|null>(null);
- const signedIn=sessionScope!==null;
- const signedOutRoute=AUTH_ROUTES.includes(pathname)||pathname==="/recover-account";
  const [handlingOAuth, setHandlingOAuth] = useState(true);
  const [needsUsername,setNeedsUsername]=useState(false);
  useEffect(() => {
@@ -71,6 +68,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
     }
     const owner=session.user.id;
     const key=sessionMarkerKey(owner,session.access_token);
+    const verified=await supabase.auth.getUser();
+    if(!valid())return;
+    if(verified.error||verified.data.user?.id!==owner){setSessionScope(null);return;}
     const lifetime=sessionLifetimeState(await AsyncStorage.getItem(key));
     if(!valid())return;
     if(lifetime==="expired"){
@@ -137,13 +137,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   });
   return () => { active = false;usernameCompleted=null; subscription?.data.subscription.unsubscribe(); appSubscription.remove(); linkSubscription.remove(); };
  }, []);
- useEffect(() => {
-  if (!ready || handlingOAuth) return;
-  if (!signedIn && !signedOutRoute) router.replace("/login");
-  if(signedIn && needsUsername && pathname!==USERNAME_ROUTE)router.replace(USERNAME_ROUTE);
-  if(signedIn && !needsUsername && (AUTH_ROUTES.includes(pathname)||pathname===USERNAME_ROUTE))router.replace("/videos");
-
- }, [ready, signedIn, signedOutRoute, pathname, handlingOAuth,needsUsername]);
- if (!ready || handlingOAuth) return <View style={{ flex: 1, justifyContent: "center" }}><ActivityIndicator /></View>;
- return <Fragment key={sessionScope??"signed-out"}>{children}</Fragment>;
+ // Protected routes are absent from the navigator until authorized.
+ const phase=classifyAuthNavigation(ready,handlingOAuth,sessionScope,needsUsername);
+ return <AuthNavigationContext.Provider value={phase}><Fragment key={sessionScope??"signed-out"}>{children}</Fragment></AuthNavigationContext.Provider>;
 }
