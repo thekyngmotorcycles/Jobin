@@ -215,6 +215,9 @@ select pg_temp.safety_assert(public.jobin_moderation_review_artifact(current_set
 select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000004',true);
 select pg_temp.safety_assert(public.jobin_work_studio_link('30000000-0000-4000-8000-000000000099') is null,'moderator role does not grant studio access');
 select pg_temp.safety_assert(public.jobin_moderation_review_artifact('30000000-0000-4000-8000-000000000099') is null,'moderator cannot browse unrelated private rooms');
+select pg_temp.safety_assert(not exists(select id from public.work_media where creator_id<>'30000000-0000-4000-8000-000000000004'),'moderator cannot bypass case projection through raw work media');
+select pg_temp.safety_assert(not exists(select id from public.safety_incidents where user_id<>'30000000-0000-4000-8000-000000000004'),'moderator cannot enumerate other users raw incidents');
+select pg_temp.safety_assert(not exists(select id from public.safety_appeals where user_id<>'30000000-0000-4000-8000-000000000004'),'moderator cannot enumerate other users raw appeals');
 select pg_temp.safety_assert(public.jobin_moderation_review_artifact(current_setting('test.review_pending')::uuid)->>'assetId' is not null,'independent moderator can review a held case');
 select pg_temp.safety_assert(exists(select 1 from jsonb_array_elements(public.jobin_safety_review_queue()->'held') m where m->>'id'=current_setting('test.review_pending') and not m?'provider_asset_id'),'queue exposes no provider asset identifiers');
 select pg_temp.safety_assert(exists(select 1 from storage.objects where bucket_id='employer-report-evidence' and name like '%/approved-worker.png'),'open report evidence is accessible to independent moderator');
