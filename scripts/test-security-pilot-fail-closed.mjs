@@ -27,6 +27,7 @@ function configureWith(values) {
 try {
   // Without an explicit pilot request, the current application's identity stays unchanged.
   assert.equal(configureWith({}), base);
+  assert.throws(() => configureWith({ EXPO_PUBLIC_JOBEEN_SECURITY_PILOT: "1" }), /both build and client flags/);
   assert.throws(() => configureWith({
     JOBEEN_SECURITY_PILOT: "1",
     EXPO_PUBLIC_SUPABASE_URL: isolated,

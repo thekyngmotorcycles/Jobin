@@ -17,6 +17,9 @@ test("Security pilot requires distinct backend, native identity, and disables OT
  const keys=["JOBEEN_SECURITY_PILOT","EXPO_PUBLIC_JOBEEN_SECURITY_PILOT","EXPO_PUBLIC_SUPABASE_URL","EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY"] as const;
  const original=keys.map(k=>process.env[k]);
  try{
+  delete process.env.JOBEEN_SECURITY_PILOT;
+  process.env.EXPO_PUBLIC_JOBEEN_SECURITY_PILOT="1";
+  assert.throws(()=>dynamic({config:base}),/both build and client flags/);
   process.env.JOBEEN_SECURITY_PILOT="1";
   delete process.env.EXPO_PUBLIC_JOBEEN_SECURITY_PILOT;
   assert.throws(()=>dynamic({config:base}),/flag missing/);
