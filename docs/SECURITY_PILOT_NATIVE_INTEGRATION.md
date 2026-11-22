@@ -1,6 +1,6 @@
 # Consolidación de archivos privados para la APK piloto
 
-La rama `integration/security-pilot-native-20261122` parte de SEC-05 `87f6c042244990aae1a83ed7fcef6efd4b7cff92`. Incorpora SEC-02 `aa037097336c1cc2320726c761eacf940b97c7c6` y SEC-03 `9693d2ccfef5be7c8e45f456282eb3963645803f` mediante cherry-picks con referencia a los commits de origen. Los archivos reservados coinciden con la base SEC-05.
+La rama `integration/security-pilot-native-20261122` parte de SEC-05 `87f6c042244990aae1a83ed7fcef6efd4b7cff92`. Incorpora SEC-02 `aa037097336c1cc2320726c761eacf940b97c7c6` y SEC-03 `9693d2ccfef5be7c8e45f456282eb3963645803f` mediante cherry-picks con referencia a los commits de origen. La integración incorpora intacto el avance SEC-05 `23bc3f621f4bdd9b9b83873add6878a9c28cd339`, que fija también en tiempo de ejecución el origen Supabase piloto. Los archivos reservados coinciden con ese commit de SEC-05.
 
 ## Resolución
 
