@@ -49,7 +49,7 @@ test("Changing authenticated identity remounts state providers and rejects previ
 test("Private device collections require the current authenticated UUID, not just a cache key",()=>{
  const guard=src("src/lib/account-scope.ts");
  assert.ok(guard.includes("data.session?.user.id!==owner"));
- for(const [file,owner] of [["post-drafts.ts","owner"],["jshop-local.ts","ownerId"],["feed-preferences.ts","owner"]]){
+ for(const [file,owner] of [["feed-preferences.ts","owner"]]){
   const s=src("src/lib/"+file);
   assert.ok(s.includes("await assertAccountOwner("+owner+")"),file);
   assert.ok(s.includes("import {assertAccountOwner}"),file);
@@ -110,8 +110,8 @@ test("Draft photo links are scoped to the initiating account and session",()=>{
  assert.ok(restore.includes('paths.some(path=>!path.startsWith(owner+"/"))'));
  assert.ok(restore.indexOf("await assertAccountOwner(owner,session)")>restore.indexOf("createSignedUrls"));
  assert.ok(editor.includes("refreshDraftPhotoPreviews(d.photos)"));
- assert.ok(editor.includes("restorePostDraftPhotoUrls(selectedPhotos,author)"));
- assert.ok(editor.includes("restorePostDraftPhotoUrls(draft.photos,author)"));
+ assert.ok(editor.includes("restorePostDraftPhotoUrls(selectedPhotos,author,scope)"));
+ assert.ok(editor.includes("restorePostDraftPhotoUrls(draft.photos,author,scope)"));
  assert.ok(editor.includes("item.id===photo.id&&item.backupPath===photo.backupPath"));
  assert.ok(editor.includes("item.id===draft.id&&item.updatedAt===draft.updatedAt"));
 });
@@ -136,4 +136,17 @@ test("JShop location stores are bound to the originating session and do not pers
  assert.ok(buyer.includes("await assertAccountOwner(owner,scope.session)"));
  assert.ok(seller.includes("await captureMessageScope(expectedScope)"));
  assert.ok(seller.includes("entries.delete(editor)"));
+});
+
+test("Private draft writes and reads retain exact session and refuse to overwrite ambiguous data",()=>{
+ const posts=src("src/lib/post-drafts.ts"),shop=src("src/lib/jshop-local.ts"),editor=src("src/app/post/create.tsx"),api=src("src/lib/social-content.ts");
+ assert.ok(posts.includes("await assertAccountOwner(owner,scope.session)"));
+ assert.ok(shop.includes("await assertAccountOwner(ownerId,scope.session)"));
+ assert.ok(posts.includes("serializePrivateWrite(key(owner)"));
+ assert.ok(shop.includes("serializePrivateWrite(draftsKey(ownerId)"));
+ assert.ok(shop.includes("item.ownerId!==ownerId"));
+ assert.ok(editor.includes("liveScope(scope)"));
+ assert.ok(editor.includes("savePostDraft(author,value,scope)"));
+ assert.ok(editor.includes("uploadPhoto(author,photo.uri,DRAFT_PHOTO_BUCKET,scope)"));
+ assert.ok(api.includes("if(!insertStarted&&uploaded.length)"));
 });
