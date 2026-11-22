@@ -4,7 +4,7 @@ import {useEffect,useRef,useState} from "react";
 import {ActivityIndicator,KeyboardAvoidingView,Platform,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {JShopLocationMap} from "../../components/JShopLocationMap";
-import {jshopAccountId} from "../../lib/jshop-local";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../../lib/message-session";
 import {confirmJShopPlace,findJShopPlaces,placeAtMapCenter} from "../../lib/jshop-geocode";
 import {mapboxConfigured} from "../../lib/mapbox-config";
 import {readDefaultSaleLocation,readPendingArticleLocation,writeDefaultSaleLocation,writePendingArticleLocation,type SaleLocation} from "../../lib/jshop-selling-location";
@@ -30,15 +30,16 @@ export default function SaleLocationPicker(){
  const [searching,setSearching]=useState(false);
  const [typing,setTyping]=useState(false);
  const [error,setError]=useState("");
- const sequence=useRef(0);
+ const sequence=useRef(0),revision=useRef(0),scopeRef=useRef<MessageScope|null>(null),saving=useRef(false);
 
  useEffect(()=>{let active=true;void(async()=>{
+  const generation=++revision.current;scopeRef.current=null;setLoading(true);setOwner("");setChosen(null);setCenter({lat:0,lon:0});setZoom(2);setMoved(false);setQuery("");setResults([]);setTyping(false);setSearching(false);
   try{
-   const id=await jshopAccountId();
-   const fallback=await readDefaultSaleLocation(id);
-   const prior=article?await readPendingArticleLocation(id,session!):null;
-   if(!active)return;
-   setOwner(id);
+   const scope=await captureMessageScope(),id=scope.owner;
+   const fallback=await readDefaultSaleLocation(id,scope);
+   const prior=article?await readPendingArticleLocation(id,session!,scope):null;
+   await assertMessageScope(scope);if(!active||revision.current!==generation)return;
+   scopeRef.current=scope;setOwner(id);
    const place=prior??fallback;
    if(place){
     setChosen(place);setCenter({lat:place.lat,lon:place.lon});setZoom(place.zoom||11);
@@ -46,50 +47,60 @@ export default function SaleLocationPicker(){
    }
   }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudo cargar la ubicación de venta.");}
   finally{if(active)setLoading(false);}
- })();return()=>{active=false;};},[article,session]);
+ })();return()=>{active=false;revision.current++;sequence.current++;scopeRef.current=null;setChosen(null);setResults([]);setQuery("");};},[article,session]);
 
  useEffect(()=>{
-  if(!mapboxConfigured||!typing||query.trim().length<3){setResults([]);setSearching(false);return;}
+  const scope=scopeRef.current;
+  if(!scope||!mapboxConfigured||!typing||query.trim().length<3){setResults([]);setSearching(false);return;}
   const n=++sequence.current;let alive=true;
-  const timer=setTimeout(()=>{setSearching(true);void findJShopPlaces(query).then(data=>{
-   if(alive&&n===sequence.current)setResults(data.slice(0,5));
-  }).catch(e=>{if(alive&&n===sequence.current)setError(e instanceof Error?e.message:"No se pudo buscar.");}).finally(()=>{if(alive&&n===sequence.current)setSearching(false);});},700);
+  const timer=setTimeout(()=>{setSearching(true);void (async()=>{await captureMessageScope(scope);if(!alive||scopeRef.current!==scope||n!==sequence.current)return [];const data=await findJShopPlaces(query);await assertMessageScope(scope);return data;})().then(data=>{
+   if(alive&&scopeRef.current===scope&&n===sequence.current)setResults(data.slice(0,5));
+  }).catch(e=>{if(alive&&scopeRef.current===scope&&n===sequence.current)setError(e instanceof Error?e.message:"No se pudo buscar.");}).finally(()=>{if(alive&&scopeRef.current===scope&&n===sequence.current)setSearching(false);});},700);
   return()=>{alive=false;clearTimeout(timer);};
  },[query,typing]);
 
  async function searchOnSubmit(){
-  if(searching||!query.trim())return;
+  const scope=scopeRef.current;if(!scope||searching||saving.current||!query.trim())return;
+  const n=++sequence.current,valid=()=>scopeRef.current===scope&&sequence.current===n;
   setSearching(true);setError("");
   try{
-   const found=await findJShopPlaces(query);
+   await captureMessageScope(scope);if(!valid())return;const found=await findJShopPlaces(query);await assertMessageScope(scope);if(!valid())return;
    if(found.length===1)choose(found[0]);
    else if(found.length===0)setError("No se encontró la ubicación. Prueba ciudad y país.");
    else setResults(found);
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo buscar esa ciudad.");}
-  finally{setSearching(false);}
+  }catch(e){if(valid())setError(e instanceof Error?e.message:"No se pudo buscar esa ciudad.");}
+  finally{if(valid())setSearching(false);}
  }
  function choose(place:SaleLocation){
+  if(!scopeRef.current||saving.current)return;sequence.current++;
   setChosen(place);setMoved(false);setTyping(false);setSearching(false);setCenter({lat:place.lat,lon:place.lon});
   setZoom(Math.max(7,Math.min(15,place.zoom||11)));
   setQuery(place.label);setResults([]);setError("");
  }
  function move(point:MapPoint){
+  if(!scopeRef.current||saving.current)return;
   if(Math.abs(point.lat-center.lat)<0.00001&&Math.abs(point.lon-center.lon)<0.00001)return;
-  setCenter(point);setChosen(null);setMoved(true);setTyping(false);setSearching(false);
+  sequence.current++;setCenter(point);setChosen(null);setMoved(true);setTyping(false);setSearching(false);
   setQuery("");setResults([]);setError("");
  }
  async function save(){
-  if(!owner||busy||(!chosen&&!moved))return;
-  setBusy(true);setError("");
+  const scope=scopeRef.current,generation=revision.current;
+  if(!scope||scope.owner!==owner||saving.current||typing||(!chosen&&!moved))return;
+  const valid=()=>scopeRef.current===scope&&revision.current===generation;
+  saving.current=true;setBusy(true);setError("");sequence.current++;setResults([]);
   try{
-   const point=chosen??(mapboxConfigured?{city:"",label:"",lat:center.lat,lon:center.lon,zoom}:await placeAtMapCenter(center.lat,center.lon));
-   const verified=await confirmJShopPlace({...point,lat:center.lat,lon:center.lon,zoom});
-   const selected:SaleLocation={city:verified.city,label:verified.label,lat:center.lat,lon:center.lon,zoom};
-   if(article)await writePendingArticleLocation(owner,session!,selected);
-   else await writeDefaultSaleLocation(owner,selected);
-   router.back();
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo guardar la ubicación de venta.");}
-  finally{setBusy(false);}
+   await captureMessageScope(scope);if(!valid())return;
+   const lat=Number(center.lat.toFixed(2)),lon=Number(center.lon.toFixed(2));
+   const point=chosen??(mapboxConfigured?{city:"",label:"",lat,lon,zoom}:await placeAtMapCenter(lat,lon));
+   await assertMessageScope(scope);if(!valid())return;
+   const verified=await confirmJShopPlace({...point,lat,lon,zoom});
+   await assertMessageScope(scope);if(!valid())return;
+   const selected:SaleLocation={city:verified.city,label:verified.city,lat,lon,zoom};
+   if(article)await writePendingArticleLocation(owner,session!,selected,scope);
+   else await writeDefaultSaleLocation(owner,selected,scope);
+   await assertMessageScope(scope);if(valid())router.back();
+  }catch(e){if(valid())setError(e instanceof Error?e.message:"No se pudo guardar la ubicación de venta.");}
+  finally{saving.current=false;setBusy(false);}
  }
  const ready=!!chosen||moved;
  return <>
@@ -115,7 +126,7 @@ export default function SaleLocationPicker(){
       <Ionicons name="search-outline" size={20} color={t.ink2}/>
       <TextInput accessibilityLabel="Buscar ciudad de venta" value={query}
        placeholder="Buscar ciudad o zona" placeholderTextColor={t.ink2} autoCorrect={false}
-       onChangeText={v=>{sequence.current++;setSearching(false);setTyping(true);setQuery(v);setChosen(null);setMoved(false);setResults([]);setError("");}}
+       editable={!busy&&!loading} onChangeText={v=>{sequence.current++;setSearching(false);setTyping(true);setQuery(v);setChosen(null);setMoved(false);setResults([]);setError("");}}
        returnKeyType="search" onSubmitEditing={()=>{if(!mapboxConfigured)void searchOnSubmit();}}
        style={{flex:1,minWidth:0,color:t.ink,fontSize:14,minHeight:46}}/>
       {searching?<ActivityIndicator size="small" color={t.ink2}/>:!mapboxConfigured&&<Pressable accessibilityRole="button" accessibilityLabel="Buscar ciudad" onPress={()=>void searchOnSubmit()} style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}><Ionicons name="arrow-forward" size={20} color={t.ink}/></Pressable>}
@@ -123,7 +134,7 @@ export default function SaleLocationPicker(){
     </View>
     <View style={{flex:1,minHeight:0,paddingHorizontal:14}}>
      <JShopLocationMap center={center} zoom={zoom} radiusMiles={5} showRadius={false}
-      fluid minimal onCenter={move} onZoom={setZoom}/>
+      fluid minimal onCenter={move} onZoom={value=>{if(!saving.current)setZoom(value);}}/>
      {typing&&results.length>0&&<View style={{position:"absolute",top:0,left:14,right:14,zIndex:10,
       maxHeight:230,backgroundColor:t.surface,borderRadius:16,borderWidth:1,borderColor:t.line,overflow:"hidden"}}>
       <ScrollView keyboardShouldPersistTaps="always" nestedScrollEnabled>
