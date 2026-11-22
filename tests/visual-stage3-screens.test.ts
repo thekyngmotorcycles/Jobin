@@ -30,8 +30,11 @@ test("Settings list and side menu reuse one proportional row and section typogra
 test("Account sign-out errors remain visible in the confirmation dialog",()=>{
  const settings=src("src/app/settings/cuenta.tsx");
  assert.ok(settings.includes('description={exitError||"¿Quieres salir de tu cuenta de Jobeen?"}'),"Errors must appear above the scrim");
- assert.ok(settings.includes('onCancel={()=>{setExitError("");setExitOpen(false);}}'),"Dismissing clears the previous failure");
- assert.ok(settings.includes('onPress={()=>{setExitError("");setExitOpen(true);}}'),"Reopening starts with a clean notice");
+ assert.ok(settings.includes('onCancel={()=>{exitScope.current=null;setExitError("");setExitOpen(false);}}'),"Dismissing clears the failure and its captured session");
+ assert.ok(settings.includes('onPress={()=>void requestExit()}'),"Reopening must verify the active session");
+ assert.ok(settings.includes('exitScope.current=await captureMessageScope()'),"The confirmation must bind the session that opened it");
+ assert.ok(settings.includes('if(exitGuard.current||!scope)return'),"A missing or in-progress scope cannot sign out");
+ assert.ok(settings.includes('await endJobinSession(scope)'),"Sign-out acts only on the captured session");
  assert.ok(!settings.includes('!!exitError&&<Text'),"Do not render the failure behind the dialog");
 });
 test("Personal and business JCard editors use compact accessible accordion sections",()=>{
