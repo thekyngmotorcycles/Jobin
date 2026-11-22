@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {privateMetadataStorage} from "./private-metadata-storage";
 import {assertAccountOwner} from "./account-scope";
 import {captureMessageScope,type MessageScope} from "./message-session";
 import {serializePrivateWrite} from "./private-write-queue";
@@ -13,7 +13,7 @@ async function confirm(ownerId:string,scope:MessageScope){
 }
 export async function readJShopDrafts(ownerId:string,scope:MessageScope):Promise<JShopDraft[]>{
  await confirm(ownerId,scope);
- const raw=await AsyncStorage.getItem(draftsKey(ownerId));
+ const raw=await privateMetadataStorage.read("jshop-drafts",scope);
  await confirm(ownerId,scope);
  if(!raw)return [];
  const parsed:unknown=JSON.parse(raw);
@@ -28,7 +28,7 @@ export async function saveJShopDraft(ownerId:string,draft:JShopDraft,scope:Messa
   await confirm(ownerId,scope);
   const drafts=await readJShopDrafts(ownerId,scope);
   await confirm(ownerId,scope);
-  await AsyncStorage.setItem(draftsKey(ownerId),JSON.stringify([draft,...drafts.filter(x=>x.id!==draft.id)]));
+  await privateMetadataStorage.write("jshop-drafts",scope,JSON.stringify([draft,...drafts.filter(x=>x.id!==draft.id)]));
   await confirm(ownerId,scope);
  });
 }
@@ -37,13 +37,13 @@ export async function deleteJShopDraft(ownerId:string,id:string,scope:MessageSco
  await serializePrivateWrite(draftsKey(ownerId),async()=>{
   const drafts=await readJShopDrafts(ownerId,scope);
   await confirm(ownerId,scope);
-  await AsyncStorage.setItem(draftsKey(ownerId),JSON.stringify(drafts.filter(x=>x.id!==id)));
+  await privateMetadataStorage.write("jshop-drafts",scope,JSON.stringify(drafts.filter(x=>x.id!==id)));
   await confirm(ownerId,scope);
  });
 }
 export async function readJShopFavorites(ownerId:string,expectedScope?:MessageScope):Promise<string[]>{
  const scope=await captureMessageScope(expectedScope);await confirm(ownerId,scope);
- const raw=await AsyncStorage.getItem(favoritesKey(ownerId));
+ const raw=await privateMetadataStorage.read("jshop-favorites",scope);
  await confirm(ownerId,scope);
  if(!raw)return [];
  const ids:unknown=JSON.parse(raw);
@@ -55,7 +55,7 @@ export async function toggleJShopFavorite(ownerId:string,id:string,expectedScope
  return serializePrivateWrite(favoritesKey(ownerId),async()=>{
   const ids=await readJShopFavorites(ownerId,scope),has=ids.includes(id);
   await confirm(ownerId,scope);
-  await AsyncStorage.setItem(favoritesKey(ownerId),JSON.stringify(has?ids.filter(key=>key!==id):[id,...ids]));
+  await privateMetadataStorage.write("jshop-favorites",scope,JSON.stringify(has?ids.filter(key=>key!==id):[id,...ids]));
   await confirm(ownerId,scope);return !has;
  });
 }

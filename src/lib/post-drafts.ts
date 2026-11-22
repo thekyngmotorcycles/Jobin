@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {privateMetadataStorage} from "./private-metadata-storage";
 import {assertAccountOwner} from "./account-scope";
 import {type MessageScope} from "./message-session";
 import {serializePrivateWrite} from "./private-write-queue";
@@ -33,7 +33,7 @@ async function confirm(owner:string,scope:MessageScope){
 }
 export async function readPostDrafts(owner:string,scope:MessageScope):Promise<PostDraft[]>{
  await confirm(owner,scope);
- const raw=await AsyncStorage.getItem(key(owner));
+ const raw=await privateMetadataStorage.read("post-drafts",scope);
  await confirm(owner,scope);
  if(!raw)return [];
  const data:unknown=JSON.parse(raw);
@@ -56,7 +56,7 @@ export async function savePostDraft(owner:string,draft:PostDraft,scope:MessageSc
   if(draft.photos.some(p=>p.backupPath&&!p.backupPath.startsWith(owner+"/")))throw Error("La fotografía pertenece a otra cuenta.");
   const next=[{...draft,photos:draft.photos.map(toStoredDraftPhoto),updatedAt:Date.now()},...previous.filter(x=>x.id!==draft.id)];
   await confirm(owner,scope);
-  await AsyncStorage.setItem(key(owner),JSON.stringify(next));
+  await privateMetadataStorage.write("post-drafts",scope,JSON.stringify(next));
   await confirm(owner,scope);
  });
 }
@@ -67,7 +67,7 @@ export async function deletePostDraft(owner:string,id:string,scope:MessageScope,
   const previous=await readPostDrafts(owner,scope);
   const found=previous.find(x=>x.id===id),remaining=previous.filter(x=>x.id!==id);
   await confirm(owner,scope);
-  await AsyncStorage.setItem(key(owner),JSON.stringify(remaining));
+  await privateMetadataStorage.write("post-drafts",scope,JSON.stringify(remaining));
   await confirm(owner,scope);
   if(removePhotos&&found){
    // Do not remove shared references or delete after the original session changes.

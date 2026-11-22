@@ -24,7 +24,8 @@ test("Every edit is saved automatically and an app background event flushes the 
  assert.ok(editor.includes('if(status!=="active")void persistSnapshot(draftSnapshotRef.current)'));
  assert.ok(editor.includes('const timer=setTimeout(()=>{'));
  assert.ok(editor.includes('usePreventRemove(hasWork&&!editingDone'));
- assert.ok(drafts.includes("AsyncStorage.setItem"));
+ assert.ok(drafts.includes('privateMetadataStorage.write("post-drafts",scope,'));
+ assert.ok(!drafts.includes("AsyncStorage.setItem"));
  assert.ok(drafts.includes("jobeen.post.drafts.v1."));
  assert.ok(editor.includes("readPostDrafts(uid,scope)"));
  assert.ok(!editor.includes("if(saved[0])applyDraft(saved[0])"));
