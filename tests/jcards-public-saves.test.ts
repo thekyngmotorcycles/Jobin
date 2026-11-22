@@ -68,8 +68,10 @@ test("Saved business JCards show their real category glyph, not a generic buildi
  assert.ok(!gallery.includes('item.side==="business"?"business-outline"'),"Do not regress to generic business glyph");
 });
 test("Owner visibility still controls what can be saved; the accordion remains unchanged",()=>{
- assert.ok(visitor.includes("readJCardVisibility(user)"));
+ assert.ok(visitor.includes("readJCardVisibility(user,scope)"));
  assert.ok(visitor.includes('onActiveSideChange={setActiveCardSide}'));
+ assert.ok(visitor.includes("publicRevision.current!==generation"));
+ assert.ok(visitor.includes("publicVisibility={cardVisibility} publicScope={snapshot?.scope}"));
  assert.ok(actions.includes("onToggleSaved?"));
  assert.ok(card.includes("onActiveSideChange?.("));
  for(const page of [visitor,own]){
