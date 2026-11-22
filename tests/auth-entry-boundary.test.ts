@@ -5,6 +5,8 @@ import {createAuthEntryBoundary,parseGoogleCallback} from "../src/lib/auth-entry
 test("Only the configured empty-host URI and a single valid code is accepted",()=>{
  assert.equal(parseGoogleCallback("jobin://?code=abc-123"),"abc-123");
  assert.equal(parseGoogleCallback("jobin:///?code=abc"),"abc");
+ assert.equal(parseGoogleCallback("jobeen-security-pilot://?code=abc","jobeen-security-pilot"),"abc");
+ assert.equal(parseGoogleCallback("jobin://?code=abc","jobeen-security-pilot"),null);
  for(const url of ["jobin://profile?code=abc","jobin://?code=a&code=b","jobin://?code=a#x","https://x/?code=a","jobin://?code=%0A","jobin://?code=%ZZ"])assert.equal(parseGoogleCallback(url),null);
 });
 test("Unsolicited, duplicate and expired callbacks cannot exchange",async()=>{

@@ -1,4 +1,4 @@
-import {createAuthEntryBoundary} from "./auth-entry-boundary";
+import {createAuthEntryBoundary,authRedirectScheme} from "./auth-entry-boundary";
 import {requireSupabase} from "./supabase";
 const boundary=createAuthEntryBoundary();
 async function signedOut(){
@@ -11,7 +11,7 @@ export function runSignedOutAuth<T>(action:()=>Promise<T>){
 export function startGoogleAuth(open:(url:string)=>Promise<unknown>){
  return boundary.google(async ready=>{
   await signedOut();
-  const {data,error}=await requireSupabase().auth.signInWithOAuth({provider:"google",options:{redirectTo:"jobin://",skipBrowserRedirect:true}});
+  const {data,error}=await requireSupabase().auth.signInWithOAuth({provider:"google",options:{redirectTo:authRedirectScheme+"://",skipBrowserRedirect:true}});
   if(error||!data.url)throw Error("No se pudo iniciar el acceso con Google.");
   const link=new URL(data.url);
   if(link.protocol!=="https:"||link.username||link.password)throw Error("Acceso con Google inválido.");

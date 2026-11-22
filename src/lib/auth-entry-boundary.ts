@@ -4,10 +4,15 @@
  * server remain responsible for cryptographic verification.
  */
 const TTL=5*60*1000;
-export function parseGoogleCallback(url:string|null):string|null{
+export const authRedirectScheme=process.env.EXPO_PUBLIC_JOBEEN_SECURITY_PILOT==="1"?"jobeen-security-pilot":"jobin";
+export function parseGoogleCallback(url:string|null,scheme=authRedirectScheme):string|null{
  if(!url||url.length>4096)return null;
  // Exact configured empty-host redirect, no arbitrary app path or fragment.
- const match=/^jobin:\/\/\/?\?code=([A-Za-z0-9_%.-]{1,2048})$/.exec(url);
+ if(scheme!=="jobin"&&scheme!=="jobeen-security-pilot")return null;
+ const prefix=scheme+"://";
+ if(!url.startsWith(prefix))return null;
+ const query=url.slice(prefix.length);
+ const match=/^\/?\?code=([A-Za-z0-9_%.-]{1,2048})$/.exec(query);
  if(!match)return null;
  try{
   const code=decodeURIComponent(match[1]);
