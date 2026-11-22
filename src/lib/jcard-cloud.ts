@@ -47,16 +47,18 @@ export async function checkBusinessHandleAvailable(handle:string,expectedScope?:
 }
 
 /** The public JCard RPC returns the personal face; this loads the business face separately. */
-export async function readPublicBusinessCard(ownerId:string):Promise<BusinessCardData|null>{
- const db=requireSupabase();
+export async function readPublicBusinessCard(ownerId:string,expectedScope?:MessageScope):Promise<BusinessCardData|null>{
+ const db=requireSupabase(),scope=await captureMessageScope(expectedScope);
  const {data,error}=await db.from("jobeen_public_business_cards" as never)
   .select("name,business_handle,opened,closed,services,location,category,email,email_secondary,phone,phone_secondary,phone_label,phone_secondary_label,banner_url,avatar_url")
   .eq("owner_id",ownerId).maybeSingle();
  if(error)throw error;
+ await assertMessageScope(scope);
  if(!data)return null;
  type B={name:string;business_handle:string|null;opened:string;closed:string;services:string[];location:string;category:string|null;email:string|null;email_secondary:string|null;phone:string|null;phone_secondary:string|null;phone_label:string|null;phone_secondary_label:string|null;banner_url:string|null;avatar_url:string|null};
  const b=data as unknown as B;
  const {rating,count}=await readBusinessRating(ownerId).catch(()=>({rating:null,count:0}));
+ await assertMessageScope(scope);
  return {name:b.name,businessHandle:b.business_handle,opened:b.opened,closed:b.closed,
   services:b.services??[],location:b.location??"",category:b.category,
   email:b.email,emailSecondary:b.email_secondary,phone:b.phone,phoneSecondary:b.phone_secondary,
