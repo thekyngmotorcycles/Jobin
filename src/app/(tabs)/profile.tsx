@@ -190,7 +190,6 @@ export default function Profile() {
   useEffect(()=>{setHistoryState(null);setAddOpen(false);setEditingId(null);setCvShareOpen(false);setBusinessOpen(false);setBusinessRating({rating:null,count:0});setBusinessExcellence({});setEmployerLink(null);setVerifiedIdentity(false);setIncomingCV([]);},[ownerId]);
 
  useFocusEffect(useCallback(()=>{
-  if(consumePersonalPhotoChange())void workspace.reload();
   const owner=workspace.data?.card.id,generation=++businessRevision.current;
   let active=true;
   const valid=()=>active&&businessRevision.current===generation;
@@ -201,6 +200,7 @@ export default function Profile() {
    try{
     scope={owner,session:await assertAccountOwner(owner)};
     if(!valid())return;
+    if(consumePersonalPhotoChange(scope))void workspace.reload();
     const cached=await readScopedBusinessCard(owner,scope);
     if(!valid())return;
     if(cached){setBusiness(cached);setBusinessOwner(owner);}
