@@ -41,14 +41,17 @@ export async function currentSocialUser():Promise<string>{
  if(error||!data.user)throw new Error("Inicia sesión para crear contenido.");
  return data.user.id;
 }
-export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,postIds?:string[],offset=0):Promise<FeedPost[]>{
- const db=requireSupabase();
+export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,postIds?:string[],offset=0,expectedScope?:MessageScope):Promise<FeedPost[]>{
+ const scope=await captureMessageScope(expectedScope),db=requireSupabase();
+ if(viewerId&&viewerId!==scope.owner)throw Error("La cuenta cambió.");
+ viewerId=scope.owner;
  const query=db.from("jobeen_feed_posts" as never)
   .select("id,author_id,body,kind,photo_paths,photo_bucket,photo_alt_texts,mentioned_profile_ids,business_mentions,work_media_id,created_at")
   .is("removed_at",null).order("created_at",{ascending:false}).range(offset,offset+(postId?0:79));
  const {data,error}=await (postId?query.eq("id",postId):postIds?.length?query.in("id",postIds):authorId?query.eq("author_id",authorId):query);
  if(error)throw error;
  const rows=(data??[]) as unknown as FeedRow[];
+ await assertMessageScope(scope);
  const authors=await namesFor([...rows.map(r=>r.author_id),...rows.flatMap(r=>r.mentioned_profile_ids??[])]);
  const ids=rows.map(row=>row.id);
  type CountRow={post_id:string;likes:number|string;comments:number|string;shares:number|string};
@@ -65,10 +68,12 @@ export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,
   .flatMap(row=>row.photo_paths??[]))];
  const signedUrls=new Map<string,string>();
  if(privatePaths.length){
+  await assertMessageScope(scope);
   const {data:links,error:linkError}=await db.storage.from(PRIVATE_POSTS_BUCKET).createSignedUrls(privatePaths,300);
   if(linkError)throw linkError;
   for(const link of links??[])if(link.signedUrl&&link.path)signedUrls.set(link.path,link.signedUrl);
  }
+ await assertMessageScope(scope);
  return rows.map(row=>{
   const count=counts.get(row.id);
   return {
@@ -87,17 +92,20 @@ export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,
  });
 }
 /** Load the owner's complete feed history in pages so profiles are not limited to 80 posts. */
-export async function loadAllProfilePosts(viewerId:string,authorId:string):Promise<FeedPost[]>{
+export async function loadAllProfilePosts(viewerId:string,authorId:string,expectedScope?:MessageScope):Promise<FeedPost[]>{
+ const scope=await captureMessageScope(expectedScope);
+ if(viewerId&&viewerId!==scope.owner)throw Error("La cuenta cambió.");
  const all:FeedPost[]=[];
  for(let offset=0;;offset+=80){
-  const batch=await loadHomePosts(viewerId,authorId,undefined,undefined,offset);
+  const batch=await loadHomePosts(viewerId,authorId,undefined,undefined,offset,scope);
   all.push(...batch);
   if(batch.length<80)break;
  }
+ await assertMessageScope(scope);
  return all;
 }
-export async function loadActiveStories():Promise<SocialStory[]>{
- const db=requireSupabase();const now=new Date().toISOString();
+export async function loadActiveStories(expectedScope?:MessageScope):Promise<SocialStory[]>{
+ const scope=await captureMessageScope(expectedScope),db=requireSupabase();const now=new Date().toISOString();
  const {data,error}=await db.from("jobeen_stories" as never)
   .select("id,author_id,kind,body,photo_path,work_media_id,created_at,expires_at")
   .gt("expires_at",now).order("created_at",{ascending:false}).limit(70);
@@ -105,10 +113,12 @@ export async function loadActiveStories():Promise<SocialStory[]>{
  const rows=(data??[]) as unknown as StoryRow[];
  const authors=await namesFor(rows.map(r=>r.author_id));
  const photos=await Promise.all(rows.map(async row=>{
-  if(!row.photo_path)return null;
+  if(!row.photo_path||!row.photo_path.startsWith(row.author_id+"/"))return null;
+  await assertMessageScope(scope);
   const {data:link,error:linkError}=await db.storage.from(STORIES_BUCKET).createSignedUrl(row.photo_path,120);
   return linkError?null:link.signedUrl;
  }));
+ await assertMessageScope(scope);
  return rows.map((row,index)=>({
   id:row.id,authorId:row.author_id,authorName:authors.get(row.author_id)?.name??"Profesional",
   authorHandle:authors.get(row.author_id)?.handle??"",kind:row.kind,body:row.body,
@@ -181,54 +191,57 @@ export async function publishHomePost(payload:{body:string;photos:string[];kind:
   throw e;
  }
 }
-export async function publishStory(payload:{body:string;kind:StoryKind;photoUri?:string;mediaId?:string|null}):Promise<void>{
- const db=requireSupabase(),owner=await currentSocialUser();
+export async function publishStory(payload:{body:string;kind:StoryKind;photoUri?:string;mediaId?:string|null},expectedScope?:MessageScope):Promise<void>{
+ const scope=await captureMessageScope(expectedScope),db=requireSupabase(),owner=scope.owner;
  if(payload.kind==="text"&&!payload.body.trim())throw Error("Escribe algo para tu historia.");
  if(payload.kind==="photo"&&!payload.photoUri)throw Error("Selecciona una foto.");
  if(payload.kind==="video"&&!payload.mediaId)throw Error("Selecciona un video aprobado.");
- let path:string|null=null;
+ let path:string|null=null,insertStarted=false;
  try{
-  if(payload.kind==="photo")path=await uploadPhoto(owner,payload.photoUri!,STORIES_BUCKET);
+  if(payload.kind==="photo")path=await uploadPhoto(owner,payload.photoUri!,STORIES_BUCKET,scope);
+  await assertMessageScope(scope);insertStarted=true;
   const {error}=await db.from("jobeen_stories" as never).insert({
    author_id:owner,kind:payload.kind,body:payload.body.trim().slice(0,280),
    photo_path:path,work_media_id:payload.mediaId??null
   } as never);
   if(error)throw error;
+  await assertMessageScope(scope);
  }catch(e){
-  if(path)await db.storage.from(STORIES_BUCKET).remove([path]).catch(()=>{});
+  if(path&&!insertStarted){try{await captureMessageScope(scope);await db.storage.from(STORIES_BUCKET).remove([path]);}catch{/* retain for recovery */}}
   throw e;
  }
 }
-export async function deleteStory(id:string){
- const db=requireSupabase(),owner=await currentSocialUser();
+export async function deleteStory(id:string,expectedScope?:MessageScope){
+ const scope=await captureMessageScope(expectedScope),db=requireSupabase(),owner=scope.owner;
  const {data,error}=await db.from("jobeen_stories" as never).delete().eq("id",id).eq("author_id",owner).select("photo_path");
  if(error)throw error;
- const paths=((data??[]) as unknown as {photo_path:string|null}[]).map(x=>x.photo_path).filter((p):p is string=>!!p);
- if(paths.length)await db.storage.from(STORIES_BUCKET).remove(paths).catch(()=>{});
+ await assertMessageScope(scope);
+ if(!(data??[]).length)throw Error("La historia no está disponible.");
+ // Expired/unreferenced files are reconciled separately; another story may reference them.
 }
-export async function deleteHomePost(id:string){
- const db=requireSupabase(),owner=await currentSocialUser();
+export async function deleteHomePost(id:string,expectedScope?:MessageScope){
+ const scope=await captureMessageScope(expectedScope),db=requireSupabase(),owner=scope.owner;
  const {data,error}=await db.from("jobeen_feed_posts" as never).update({removed_at:new Date().toISOString()} as never)
  .eq("id",id).eq("author_id",owner).select("photo_paths,photo_bucket").maybeSingle();
  if(error)throw error;
  if(!data)throw Error("No se pudo eliminar la publicación.");
- const stored=data as unknown as {photo_paths:string[];photo_bucket:string};
- const paths=stored.photo_paths??[];
- if(paths.length)await db.storage.from(stored.photo_bucket===PRIVATE_POSTS_BUCKET?PRIVATE_POSTS_BUCKET:POSTS_BUCKET).remove(paths).catch(()=>{});
+ await assertMessageScope(scope);
+ // Preserve potentially shared objects for server-side reference reconciliation.
 }
 
 export type HomePostComment={
  id:string;postId:string;authorId:string;authorName:string;authorHandle:string;body:string;createdAt:string;
 };
 type CommentRow={id:string;post_id:string;author_id:string;body:string;created_at:string};
-export async function loadHomePostComments(postId:string):Promise<HomePostComment[]>{
- const db=requireSupabase();
+export async function loadHomePostComments(postId:string,expectedScope?:MessageScope):Promise<HomePostComment[]>{
+ const scope=await captureMessageScope(expectedScope),db=requireSupabase();
  const {data,error}=await db.from("jobeen_feed_comments" as never)
   .select("id,post_id,author_id,body,created_at")
   .eq("post_id",postId).order("created_at",{ascending:true}).limit(100);
  if(error)throw error;
  const rows=(data??[]) as unknown as CommentRow[];
  const authors=await namesFor(rows.map(r=>r.author_id));
+ await assertMessageScope(scope);
  return rows.map(row=>({
   id:row.id,postId:row.post_id,authorId:row.author_id,
   authorName:authors.get(row.author_id)?.name??"Profesional",
@@ -236,22 +249,23 @@ export async function loadHomePostComments(postId:string):Promise<HomePostCommen
   body:row.body,createdAt:row.created_at
  }));
 }
-export async function addHomePostComment(postId:string,body:string):Promise<HomePostComment>{
+export async function addHomePostComment(postId:string,body:string,expectedScope?:MessageScope):Promise<HomePostComment>{
  const trimmed=body.trim().slice(0,500);
  if(!trimmed)throw Error("Escribe un comentario.");
- const db=requireSupabase(),author=await currentSocialUser();
+ const scope=await captureMessageScope(expectedScope),db=requireSupabase(),author=scope.owner;
  const {data,error}=await db.from("jobeen_feed_comments" as never)
   .insert({post_id:postId,author_id:author,body:trimmed} as never)
   .select("id,post_id,author_id,body,created_at").single();
  if(error)throw error;
  const row=data as unknown as CommentRow;
  const authorInfo=(await namesFor([author])).get(author);
+ await assertMessageScope(scope);
  return {id:row.id,postId:row.post_id,authorId:author,
   authorName:authorInfo?.name??"Profesional",authorHandle:authorInfo?.handle??"",
   body:row.body,createdAt:row.created_at};
 }
-export async function setHomePostLike(postId:string,liked:boolean):Promise<void>{
- const db=requireSupabase(),viewer=await currentSocialUser();
+export async function setHomePostLike(postId:string,liked:boolean,expectedScope?:MessageScope):Promise<void>{
+ const scope=await captureMessageScope(expectedScope),db=requireSupabase(),viewer=scope.owner;
  if(liked){
   const {error}=await db.from("jobeen_feed_likes" as never)
    .insert({post_id:postId,profile_id:viewer} as never);
@@ -261,10 +275,12 @@ export async function setHomePostLike(postId:string,liked:boolean):Promise<void>
    .delete().eq("post_id",postId).eq("profile_id",viewer);
   if(error)throw error;
  }
+ await assertMessageScope(scope);
 }
-export async function recordHomePostShare(postId:string):Promise<void>{
- const db=requireSupabase(),viewer=await currentSocialUser();
+export async function recordHomePostShare(postId:string,expectedScope?:MessageScope):Promise<void>{
+ const scope=await captureMessageScope(expectedScope),db=requireSupabase(),viewer=scope.owner;
  const {error}=await db.from("jobeen_feed_shares" as never)
   .insert({post_id:postId,profile_id:viewer} as never);
  if(error)throw error;
+ await assertMessageScope(scope);
 }
