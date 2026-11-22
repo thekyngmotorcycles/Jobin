@@ -40,7 +40,12 @@ test("Media drafts and private playback preserve the initiating account and avoi
   assert.ok(editor.includes("useCaching:false"));
   assert.ok(editor.includes("localVideo("));
  }
- assert.ok(api.includes('return safetyMutation("jobin_submit_work_video",{...input,path},scope)'));
+ const transfer=readFileSync("src/lib/private-work-video.ts","utf8");
+ assert.doesNotMatch(api,/uploadWorkVideo|jobin_submit_work_video|arrayBuffer\(/);
+ assert.match(video,/createWorkVideoUpload\(asset,input,scope\)/);
+ assert.match(transfer,/createPrivateVideoTransfer\(source,scope,channel.transport,assertMessageScope,channel.allocate\)/);
+ assert.match(api,/uploadSecuredFile\(scope,"report-evidence",file,"employer-report-evidence"\)/);
+ assert.match(flash,/No se enviará como un video normal/);
  assert.ok(api.includes('if(media.some(row=>row.creator_id!==scope.owner))'));
  assert.ok(room.includes("await loadMedia(id,origin)"));
  assert.ok(room.includes("useCaching:false"));
