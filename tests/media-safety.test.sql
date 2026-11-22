@@ -197,4 +197,35 @@ select pg_temp.safety_assert(public.jobin_work_media(current_setting('test.revie
 select pg_temp.safety_assert(public.jobin_work_media(current_setting('test.review_pending')::uuid)->>'playbackUrl' is null,'owner cannot obtain unapproved playback through detail');
 select set_config('request.jwt.claim.sub','',true);
 select pg_temp.safety_assert(public.jobin_work_media(current_setting('test.review_video')::uuid) is null,'missing identity cannot obtain playback');
+reset role;
+select set_config('request.jwt.claim.sub','',true);
+\ir ../supabase/security-review/studio-review-privacy.sql
+insert into private.media_publisher_access(media_id,publisher_url)
+values('30000000-0000-4000-8000-000000000099','https://example.test/private-studio');
+insert into storage.objects(bucket_id,name) values('employer-report-evidence','30000000-0000-4000-8000-000000000003/unsubmitted.png');
+update public.work_media set status='held' where id=current_setting('test.review_pending')::uuid;
+select pg_temp.safety_assert(not has_function_privilege('anon','public.jobin_work_studio_link(uuid)','EXECUTE'),'anonymous studio denied');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000006',true);
+select pg_temp.safety_assert(exists(select 1 from jsonb_array_elements(public.jobin_my_work_media()) m where m->>'id'='30000000-0000-4000-8000-000000000099' and m->>'studioReady'='true' and m->>'publisherUrl' is null),'owner list never returns publisher secret');
+select pg_temp.safety_assert(public.jobin_work_studio_link('30000000-0000-4000-8000-000000000099')='https://example.test/private-studio','eligible creator can explicitly request studio link');
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000005',true);
+select pg_temp.safety_assert(public.jobin_work_studio_link('30000000-0000-4000-8000-000000000099') is null,'other account cannot obtain studio link');
+select pg_temp.safety_assert(public.jobin_moderation_review_artifact(current_setting('test.review_pending')::uuid) is null,'ordinary viewer cannot request private review artifact');
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000004',true);
+select pg_temp.safety_assert(public.jobin_work_studio_link('30000000-0000-4000-8000-000000000099') is null,'moderator role does not grant studio access');
+select pg_temp.safety_assert(public.jobin_moderation_review_artifact('30000000-0000-4000-8000-000000000099') is null,'moderator cannot browse unrelated private rooms');
+select pg_temp.safety_assert(public.jobin_moderation_review_artifact(current_setting('test.review_pending')::uuid)->>'assetId' is not null,'independent moderator can review a held case');
+select pg_temp.safety_assert(exists(select 1 from jsonb_array_elements(public.jobin_safety_review_queue()->'held') m where m->>'id'=current_setting('test.review_pending') and not m?'provider_asset_id'),'queue exposes no provider asset identifiers');
+select pg_temp.safety_assert(exists(select 1 from storage.objects where bucket_id='employer-report-evidence' and name like '%/approved-worker.png'),'open report evidence is accessible to independent moderator');
+select pg_temp.safety_assert(not exists(select 1 from storage.objects where bucket_id='employer-report-evidence' and name like '%/unsubmitted.png'),'moderator cannot browse unsubmitted evidence');
+reset role;
+select set_config('request.jwt.claim.sub','',true);
+update public.work_media set status='ended' where id='30000000-0000-4000-8000-000000000099';
+update public.work_media set status='moderating' where id=current_setting('test.review_pending')::uuid;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000006',true);
+select pg_temp.safety_assert(public.jobin_work_studio_link('30000000-0000-4000-8000-000000000099') is null,'ended studio cannot issue another link');
+select set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000004',true);
+select pg_temp.safety_assert(public.jobin_moderation_review_artifact(current_setting('test.review_pending')::uuid) is null,'closed held review cannot issue another link');
 rollback;
