@@ -3004,6 +3004,7 @@ export type Database = {
       }
       jobin_moderation_target: { Args: { job: string }; Returns: Json }
       jobin_my_work_media: { Args: never; Returns: Json }
+      jobin_work_studio_link: { Args: { media: string }; Returns: string | null }
       jobin_organization_data: { Args: { target?: string }; Returns: Json }
       jobin_professional_catalog: { Args: never; Returns: Json }
       jobin_professional_workspace: { Args: never; Returns: Json }
