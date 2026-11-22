@@ -49,7 +49,7 @@ test("Changing authenticated identity remounts state providers and rejects previ
 test("Private device collections require the current authenticated UUID, not just a cache key",()=>{
  const guard=src("src/lib/account-scope.ts");
  assert.ok(guard.includes("data.session?.user.id!==owner"));
- for(const [file,owner] of [["post-drafts.ts","owner"],["jshop-local.ts","ownerId"],["feed-preferences.ts","owner"],["jshop-location.ts","owner"],["jshop-selling-location.ts","owner"]]){
+ for(const [file,owner] of [["post-drafts.ts","owner"],["jshop-local.ts","ownerId"],["feed-preferences.ts","owner"]]){
   const s=src("src/lib/"+file);
   assert.ok(s.includes("await assertAccountOwner("+owner+")"),file);
   assert.ok(s.includes("import {assertAccountOwner}"),file);
@@ -128,4 +128,12 @@ test("Search results, profile navigation and recent terms are bound to originati
  assert.ok(search.includes("findAllAccounts(term,city||currentIntent.city,scope)"));
  assert.ok(search.includes("respectJCardVisibility"));
  assert.ok(api.includes("await assertMessageScope(scope)"));
+});
+
+test("JShop location stores are bound to the originating session and do not persist plaintext coordinates",()=>{
+ const buyer=src("src/lib/jshop-location.ts"),seller=src("src/lib/jshop-selling-location.ts");
+ for(const s of [buyer,seller]){assert.ok(!s.includes("AsyncStorage"));assert.ok(s.includes("scope.owner!==owner"));assert.ok(s.includes("memory")||s.includes("pending"));}
+ assert.ok(buyer.includes("await assertAccountOwner(owner,scope.session)"));
+ assert.ok(seller.includes("await captureMessageScope(expectedScope)"));
+ assert.ok(seller.includes("entries.delete(editor)"));
 });
