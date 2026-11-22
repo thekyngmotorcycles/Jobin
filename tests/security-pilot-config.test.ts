@@ -46,4 +46,6 @@ test("Client pilot mode cannot fall back to the live backend",()=>{
  assert.ok(source.includes("const url=pilot?(pilotValid?candidateUrl"));
  assert.ok(source.includes("const key=pilot?(pilotValid?candidateKey"));
  assert.ok(source.includes("u.hostname!==new URL(backendConfig.url).hostname"));
+ assert.ok(source.includes('u.hostname==="mkvzkvkmrribcaecvphq.supabase.co"'));
+ assert.ok(readFileSync("app.config.js","utf8").includes('parsed.hostname!=="mkvzkvkmrribcaecvphq.supabase.co"'));
 });

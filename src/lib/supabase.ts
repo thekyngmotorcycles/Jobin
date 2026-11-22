@@ -14,7 +14,8 @@ if(pilot){
   const u=new URL(candidateUrl??"");
   pilotValid=u.protocol==="https:"&&!u.port&&!u.username&&!u.password&&
    /^[a-z0-9]{20}\.supabase\.co$/.test(u.hostname)&&
-   u.hostname!==new URL(backendConfig.url).hostname&&u.pathname==="/"&&!u.search&&!u.hash&&
+   u.hostname!==new URL(backendConfig.url).hostname&&
+   u.hostname==="mkvzkvkmrribcaecvphq.supabase.co"&&u.pathname==="/"&&!u.search&&!u.hash&&
    !!candidateKey?.startsWith("sb_publishable_")&&candidateKey.length>=24;
  }catch{/* No valid isolated backend: deny all data access. */}
 }
