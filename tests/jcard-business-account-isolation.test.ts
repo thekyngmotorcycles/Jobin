@@ -20,7 +20,8 @@ test("Business caches are account-scoped and legacy shared data is never importe
  assert.ok(!editor.includes('AsyncStorage.setItem("jobin.business.card.v1")'));
  assert.ok(profile.includes("readScopedBusinessCard(owner)"));
  assert.ok(profile.includes("writeScopedBusinessCard(owner,current)"));
- assert.ok(editor.includes("writeScopedBusinessCard(editorOwner,clean)"));
+ assert.ok(!editor.includes("writeScopedBusinessCard("));
+ assert.ok(!editor.includes("readScopedBusinessCard("));
  assert.ok(!avatar.includes('AsyncStorage.getItem("jobin.business.card.v1")'));
  assert.ok(!avatar.includes('AsyncStorage.setItem("jobin.business.card.v1")'));
  assert.ok(avatar.includes("await writeCloudBusiness(updated,owner)"));
@@ -31,8 +32,11 @@ test("Missing business cloud records cannot trigger uploads from previous accoun
  assert.ok(profile.includes("const current={...EMPTY_BUSINESS_CARD,...(row??{})}"));
  assert.ok(profile.includes("(await cloudOwner())!==owner"));
  assert.ok(profile.includes("businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD"));
- assert.ok(editor.includes("if(!editorOwner||(await appearanceOwner())!==editorOwner)"));
- assert.ok(editor.includes("await writeCloudBusiness(clean,editorOwner)"));
+ assert.ok(editor.includes("captureMessageScope(originRef.current??undefined)"));
+ assert.ok(editor.includes("await assertMessageScope(origin)"));
+ assert.ok(editor.includes("originRef.current!==origin"));
+ assert.ok(editor.includes("savingRef.current||!editorScope||loading||!activeRef.current"));
+ assert.ok(editor.includes("await writeCloudBusiness(clean,editorOwner,origin)"));
  assert.ok(cloud.includes("if(expectedOwner&&expectedOwner!==owner)throw new Error"));
 });
 test("Business category is selected from a searchable catalog, never free-text",()=>{
