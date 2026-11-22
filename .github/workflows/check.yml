@@ -28,6 +28,8 @@ jobs:
         run: |
           npx expo config --type public --json > "$RUNNER_TEMP/jobeen-pilot-expo-config.json"
           node scripts/check-security-pilot-config.mjs "$RUNNER_TEMP/jobeen-pilot-expo-config.json"
+      - name: Verify security pilot fails closed (no build)
+        run: node scripts/test-security-pilot-fail-closed.mjs
       - name: Verify Android native autolinking (no build)
         run: |
           npx --no-install expo-modules-autolinking resolve --platform android --json > "$RUNNER_TEMP/jobeen-autolinking.json"
