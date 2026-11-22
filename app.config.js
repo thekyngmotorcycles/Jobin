@@ -16,13 +16,20 @@ module.exports=({config})=>{
     parsed.pathname!=="/"||parsed.search||parsed.hash||
     !key?.startsWith("sb_publishable_")||key.length<24)
   throw Error("Refusing a security pilot without an isolated Supabase origin and publishable key.");
+ const pilotExpoProjectId=process.env.JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID;
+ const originalExpoProjectId=config.extra?.eas?.projectId??"a6befb1a-dc03-45a8-a18c-294643e99434";
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pilotExpoProjectId??"")||
+    pilotExpoProjectId===originalExpoProjectId||
+    pilotExpoProjectId==="a6befb1a-dc03-45a8-a18c-294643e99434")
+  throw Error("Security pilot requires a separate Expo EAS project ID.");
  return {
   ...config,
+  slug:"jobeen-security-pilot",
   name:"Jobeen Security Pilot",
   scheme:"jobeen-security-pilot",
   android:{...config.android,package:"com.thekyngmotorcycles.jobin.securitypilot"},
   ios:{...config.ios,bundleIdentifier:"com.thekyngmotorcycles.jobin.securitypilot"},
   updates:{enabled:false},
-  extra:{...config.extra,securityPilot:true}
+  extra:{...config.extra,eas:{...config.extra?.eas,projectId:pilotExpoProjectId},securityPilot:true}
  };
 };

@@ -14,7 +14,7 @@ test("Default app identity, update endpoint and data source remain unchanged",()
  }finally{if(saved===undefined)delete process.env.JOBEEN_SECURITY_PILOT;else process.env.JOBEEN_SECURITY_PILOT=saved;}
 });
 test("Security pilot requires distinct backend, native identity, and disables OTA",()=>{
- const keys=["JOBEEN_SECURITY_PILOT","EXPO_PUBLIC_JOBEEN_SECURITY_PILOT","EXPO_PUBLIC_SUPABASE_URL","EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY"] as const;
+ const keys=["JOBEEN_SECURITY_PILOT","EXPO_PUBLIC_JOBEEN_SECURITY_PILOT","EXPO_PUBLIC_SUPABASE_URL","EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY","JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID"] as const;
  const original=keys.map(k=>process.env[k]);
  try{
   delete process.env.JOBEEN_SECURITY_PILOT;
@@ -32,8 +32,17 @@ test("Security pilot requires distinct backend, native identity, and disables OT
   process.env.EXPO_PUBLIC_SUPABASE_URL="https://abcdefghijklmnopqrst.supabase.co";
   assert.throws(()=>dynamic({config:base}),/isolated Supabase/);
   process.env.EXPO_PUBLIC_SUPABASE_URL="https://mkvzkvkmrribcaecvphq.supabase.co";
+  delete process.env.JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID;
+  assert.throws(()=>dynamic({config:base}),/separate Expo EAS project ID/);
+  process.env.JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID=base.extra.eas.projectId;
+  assert.throws(()=>dynamic({config:base}),/separate Expo EAS project ID/);
+  const pilotExpoId="11111111-2222-4333-8444-555555555555";
+  process.env.JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID=pilotExpoId;
   const variant=dynamic({config:base});
   assert.equal(variant.android.package,"com.thekyngmotorcycles.jobin.securitypilot");
+  assert.equal(variant.slug,"jobeen-security-pilot");
+  assert.equal(variant.extra.eas.projectId,pilotExpoId);
+  assert.equal(eas.build["security-pilot"].environment,"preview");
   assert.equal(variant.ios.bundleIdentifier,"com.thekyngmotorcycles.jobin.securitypilot");
   assert.equal(variant.scheme,"jobeen-security-pilot");
   assert.equal(variant.updates.enabled,false);

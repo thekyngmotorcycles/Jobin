@@ -38,10 +38,11 @@
         "buildType": "apk"
       },
       "channel": "security-pilot",
-      "environment": "security-pilot",
+      "environment": "preview",
       "env": {
         "JOBEEN_SECURITY_PILOT": "1",
-        "EXPO_PUBLIC_JOBEEN_SECURITY_PILOT": "1"
+        "EXPO_PUBLIC_JOBEEN_SECURITY_PILOT": "1",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://mkvzkvkmrribcaecvphq.supabase.co"
       }
     }
   },
