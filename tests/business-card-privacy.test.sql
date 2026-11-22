@@ -173,4 +173,30 @@ select set_config('request.jwt.claim.sub','d4444444-4444-4444-8444-444444444444'
 select pg_temp.privacy_assert(public.jcard_public_contact('a1111111-1111-4111-8111-111111111111')->>'email' is null,'revoked email consent takes effect');
 select set_config('request.jwt.claim.sub','',true);
 select pg_temp.privacy_assert(public.jobin_jcard_data('a1111111-1111-4111-8111-111111111111') is null,'missing identity direct card denied');
+reset role;
+-- CI baseline lacks hosted ranking RPC; equivalent authorization/limit fixture.
+create or replace function public.jobin_find_professionals(p_query text default '',p_city text default '',p_profession text default '',p_specialty text default '',p_limit integer default 30)
+returns jsonb language sql stable security definer set search_path='' as $rank_fixture$
+ select coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) from (
+  select p.id,p.display_name as name from public.profiles p where p.deactivated_at is null
+  AND NOT private.is_blocked(p.id,auth.uid())
+  order by p.display_name,p.id limit p_limit
+ ) x
+$rank_fixture$;
+\ir ../supabase/security-review/account-search-privacy.sql
+select pg_temp.privacy_assert(not has_function_privilege('anon','public.jobeen_find_people(text,text,integer)','EXECUTE'),'anonymous people search denied');
+select pg_temp.privacy_assert(not has_function_privilege('anon','public.jobin_find_professionals(text,text,text,text,integer)','EXECUTE'),'anonymous ranked search denied');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+update public.jcard_visibility set personal_enabled=false where owner_id=auth.uid();
+select set_config('request.jwt.claim.sub','d4444444-4444-4444-8444-444444444444',true);
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_people('Privacy A','',50)),'hidden person not searchable by personal name');
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_all_accounts('Privacy A','',50)),'unified search cannot match hidden personal identity');
+select pg_temp.privacy_assert((select name='Public HVAC' and city is null and region is null and account_type='company' from public.jobeen_find_all_accounts('Public HVAC','',50)),'business-only account is discoverable without private identity');
+select pg_temp.privacy_assert(not exists(select 1 from jsonb_array_elements(public.jobin_find_professionals('', '', '', '', 100)) x where x->>'id'='a1111111-1111-4111-8111-111111111111'),'ranked search excludes hidden personal data');
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_all_accounts('Public HVAC','',50)),'block overrides public business discovery');
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_people('Privacy C','',50)),'block overrides people search');
+select set_config('request.jwt.claim.sub','',true);
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_all_accounts('','',50)),'no identity no discovery');
 rollback;
