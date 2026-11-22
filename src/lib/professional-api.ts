@@ -26,29 +26,33 @@ function decode<T>(data:Json|null,error:{message:string}|null):T {
  if(data===null)throw new Error("No se encontró el perfil.");
  return data as unknown as T;
 }
-export async function replacePrimaryProfession(oldProfession:string,newProfession:string,training:"graduado"|"in_academy"|"practica",institution:string|null):Promise<void> {
+export async function replacePrimaryProfession(oldProfession:string,newProfession:string,training:"graduado"|"in_academy"|"practica",institution:string|null,expectedScope?:MessageScope):Promise<void> {
+ const scope=await captureMessageScope(expectedScope);
  const {error}=await requireSupabase().rpc("jobin_replace_unverified_profession",{
   old_profession:oldProfession,new_profession:newProfession,training,institution
  });
  if(error)throw new Error(error.message);
+ await assertMessageScope(scope);
 }
-export async function replaceSecondaryProfession(oldProfession:string,newProfession:string,training:"graduado"|"in_academy"|"practica",institution:string|null):Promise<void> {
+export async function replaceSecondaryProfession(oldProfession:string,newProfession:string,training:"graduado"|"in_academy"|"practica",institution:string|null,expectedScope?:MessageScope):Promise<void> {
+ const scope=await captureMessageScope(expectedScope);
  const {error}=await requireSupabase().rpc("jobin_replace_unverified_secondary_profession",{
   old_profession:oldProfession,new_profession:newProfession,training,institution
  });
  if(error)throw new Error(error.message);
+ await assertMessageScope(scope);
 }
 export async function loadCatalog():Promise<ProfessionalCatalog> {
  const {data,error}=await requireSupabase().rpc("jobin_professional_catalog");
  const catalog=decode<ProfessionalCatalog>(data,error);
  return {...catalog,professions:catalog.professions.map(p=>({...p,label:professionDisplayName(p.code,p.label)}))};
 }
-export async function loadWorkspace():Promise<ProfessionalWorkspace|null> {
+export async function loadWorkspace(expectedScope?:MessageScope):Promise<ProfessionalWorkspace|null> {
  const client=requireSupabase();const {data:{session}}=await client.auth.getSession();
- if(!session)return null;
- const scope=await captureMessageScope();
+ if(!session&&!expectedScope)return null;
+ const scope=await captureMessageScope(expectedScope);
  const user={id:scope.owner};
- if(session.user.id!==user.id)throw Error("La sesión cambió.");
+ if(session?.user.id!==user.id)throw Error("La sesión cambió.");
  const {data,error}=await client.rpc("jobin_professional_workspace");
  const result=decode<ProfessionalWorkspace>(data,error);
  if(!result.card)throw new Error("El perfil no está disponible.");
@@ -114,9 +118,11 @@ export async function loadSpecialtyCatalog():Promise<Record<string,string[]>> {
  return (data??{}) as Record<string,string[]>;
 }
 /** Only the signed-in owner can change their declared specialties. */
-export async function saveProfessionSpecialties(profession:string,specialties:string[]):Promise<void> {
+export async function saveProfessionSpecialties(profession:string,specialties:string[],expectedScope?:MessageScope):Promise<void> {
+ const scope=await captureMessageScope(expectedScope);
  const {error}=await requireSupabase().rpc("jobin_set_profession_specialties" as never,{p_profession:profession,p_specialties:specialties} as never);
  if(error)throw new Error(error.message);
+ await assertMessageScope(scope);
 }
 
 export interface ProfessionalSearchResult {
