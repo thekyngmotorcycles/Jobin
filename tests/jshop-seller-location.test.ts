@@ -14,15 +14,15 @@ test("JShop buyer search center and seller default are separate",()=>{
  assert.ok(mine.includes('router.push("/jshop/settings")'));
  assert.ok(settings.includes('pathname:"/jshop/sale-location"'));
  assert.ok(settings.includes("Mi ubicación de venta"));
- assert.ok(publish.includes('readDefaultSaleLocation(owner)'));
+ assert.ok(publish.includes('readDefaultSaleLocation(owner,scope)'));
  assert.ok(!saleApi.includes('jobeen.jshop.location.v1.'));
  assert.ok(saleApi.includes('jshop_seller_locations'));
 });
 test("Seller can save default once and override a particular draft without altering their default",()=>{
  const picker=read("src/app/jshop/sale-location.tsx");
  const publish=read("src/app/jshop/publish.tsx");
- assert.ok(picker.includes('writeDefaultSaleLocation(owner,selected)'));
- assert.ok(picker.includes('writePendingArticleLocation(owner,session!,selected)'));
+ assert.ok(picker.includes('writeDefaultSaleLocation(owner,selected,scope)'));
+ assert.ok(picker.includes('writePendingArticleLocation(owner,session!,selected,scope)'));
  assert.ok(picker.includes('showRadius={false}'));
  assert.ok(picker.includes('confirmJShopPlace'));
  assert.ok(publish.includes('selectedLocation=articlePlace??defaultPlace'));
@@ -40,7 +40,7 @@ test("Each published listing snapshots its coordinates and does not move when se
  assert.ok(sql.includes('Configura tu ubicación de venta antes de publicar artículos.'));
  assert.ok(sql.includes('(new.location,new.location_lat,new.location_lon) is distinct from'));
  assert.ok(api.includes('location_lat:locationPoint.lat,location_lon:locationPoint.lon'));
- assert.ok(api.includes('readDefaultSaleLocation(ownerId)'));
+ assert.ok(api.includes('readDefaultSaleLocation(ownerId,scope)'));
  assert.ok(!api.includes('findJShopPlaces(draft.location)'));
  assert.ok(model.includes('locationLat?:number|null;locationLon?:number|null;'));
 });
