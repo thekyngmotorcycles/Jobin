@@ -1,13 +1,13 @@
-import {useEffect,useRef,useState} from "react";
+import {useCallback,useEffect,useRef,useState} from "react";
 import {ActivityIndicator,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
-import {router,useLocalSearchParams} from "expo-router";
+import {router,useLocalSearchParams,useFocusEffect} from "expo-router";
 import {Avatar,IconButton} from "../components/social-ui";
 import {Ionicons} from "@expo/vector-icons";
 import {readRecentSearches,rememberRecentSearch,clearRecentSearches} from "../lib/search-history";
 import {suggestionsForQuery} from "../lib/search-history-core";
 import {PublicProfileAvatar} from "../components/PublicProfileAvatar";
-import {requireSupabase} from "../lib/supabase";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
 import {useUi} from "../components/ui";
 import {visiblePosts} from "../lib/feed";
 import {browseStreams} from "../lib/streams";
@@ -33,22 +33,37 @@ export default function Search(){
  const [city,setCity]=useState("");
  const [specialty,setSpecialty]=useState("");
  const [kind,setKind]=useState<SearchKind>(mode==="live"?"Streams":mode==="flash"?"Flashes":"Todo");
+ const scopeRef=useRef<MessageScope|null>(null),focusRevision=useRef(0),searchRevision=useRef(0),historyRevision=useRef(0);
  const [historyOwner,setHistoryOwner]=useState("");
  const [recent,setRecent]=useState<string[]>([]);
  const [showRecent,setShowRecent]=useState(false);
  useEffect(()=>{setKind(mode==="live"?"Streams":mode==="flash"?"Flashes":"Todo");},[mode]);
- useEffect(()=>{let active=true;void(async()=>{
-  try{const {data:{user}}=await requireSupabase().auth.getUser();
-   const id=user?.id??"";const entries=await readRecentSearches(id);
-   if(active){setHistoryOwner(id);setRecent(entries);}
-  }catch{if(active){setHistoryOwner("");setRecent([]);}}
- })();return()=>{active=false;};},[]);
  const [results,setResults]=useState<ProfessionalSearchResult[]>([]);
  const [people,setPeople]=useState<PersonSearchResult[]>([]);
  const [allAccounts,setAllAccounts]=useState<AllAccountSearchResult[]>([]);
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState("");
  const [searched,setSearched]=useState(false);
+ function invalidateResults(){
+  searchRevision.current++;setResults([]);setPeople([]);setAllAccounts([]);setSearched(false);setLoading(false);setError("");
+ }
+ useFocusEffect(useCallback(()=>{
+  const generation=++focusRevision.current;
+  scopeRef.current=null;historyRevision.current++;setHistoryOwner("");setRecent([]);setShowRecent(false);invalidateResults();
+  void(async()=>{try{
+   const scope=await captureMessageScope();
+   const entries=await readRecentSearches(scope.owner,scope);
+   await assertMessageScope(scope);
+   if(focusRevision.current===generation){scopeRef.current=scope;setHistoryOwner(scope.owner);setRecent(entries);}
+  }catch{if(focusRevision.current===generation)setRecent([]);}})();
+  return()=>{focusRevision.current++;searchRevision.current++;historyRevision.current++;scopeRef.current=null;setRecent([]);setHistoryOwner("");setResults([]);setPeople([]);setAllAccounts([]);};
+ },[]));
+ useEffect(()=>{invalidateResults();},[mode,view]);
+ async function clearHistory(){
+  const scope=scopeRef.current,generation=++historyRevision.current;
+  if(!scope||scope.owner!==historyOwner)return;
+  try{await clearRecentSearches(scope.owner,scope);if(scopeRef.current===scope&&historyRevision.current===generation)setRecent([]);}catch{}
+ }
  const intent=interpretJobinSearch(query,["Miami","Miami Beach","Orlando","Fort Lauderdale","New York","Los Angeles","Chicago","Houston","Dallas","Tampa","Buenos Aires","Ciudad de México","Lima","Bogotá","Medellín","Santiago","Madrid","Barcelona"],catalog.data,specialtyCatalog.data??undefined);
  const words=intent.terms;
  const posts=visiblePosts("Para ti",[],query);
@@ -64,26 +79,38 @@ export default function Search(){
  }
  useEffect(()=>{const frame=requestAnimationFrame(()=>centerFilter(kind,false));return()=>cancelAnimationFrame(frame);},[kind]);
  async function openProfile(id:string){
-  try{const {data:{user}}=await requireSupabase().auth.getUser();if(user?.id===id){router.push("/(tabs)/profile");return;}}catch{}
-  router.push({pathname:"/jcard",params:{user:id}});
+  const scope=scopeRef.current,generation=searchRevision.current;
+  if(!scope)return;
+  try{
+   await captureMessageScope(scope);
+   if(scopeRef.current!==scope||searchRevision.current!==generation)return;
+   if(scope.owner===id){router.push("/(tabs)/profile");return;}
+   router.push({pathname:"/jcard",params:{user:id}});
+  }catch{if(scopeRef.current===scope)invalidateResults();}
  }
  async function runSearch(nextQuery=query){
   const term=nextQuery.trim();
   const mediaMode=effectiveKind==="Flashes"||effectiveKind==="Streams";
   if(!term&&!city.trim()&&!specialty.trim()&&!mediaMode&&effectiveKind!=="Personas"&&effectiveKind!=="Todo"){setError("Escribe qué profesional buscas o indica una ciudad.");return;}
-  setQuery(nextQuery);setShowRecent(false);setError("");setSearched(true);
-  if(term&&historyOwner){
-   void rememberRecentSearch(historyOwner,term).then(setRecent).catch(()=>{});
-  }
-  if(mediaMode)return;
-  const currentIntent=nextQuery===query?intent:interpretJobinSearch(nextQuery,["Miami","Miami Beach","Orlando","Fort Lauderdale","New York","Los Angeles","Chicago","Houston","Dallas","Tampa","Buenos Aires","Ciudad de México","Lima","Bogotá","Medellín","Santiago","Madrid","Barcelona"],catalog.data,specialtyCatalog.data??undefined);
-  setLoading(true);
+  const scope=scopeRef.current,generation=++searchRevision.current;
+  const valid=()=>!!scope&&scopeRef.current===scope&&searchRevision.current===generation;
+  setQuery(nextQuery);setShowRecent(false);setError("");setSearched(true);setResults([]);setPeople([]);setAllAccounts([]);
+  if(!scope){setError("Vuelve a abrir la búsqueda para confirmar tu sesión.");return;}
+  setLoading(!mediaMode);
   try{
-   if(effectiveKind==="Todo"){setAllAccounts(await findAllAccounts(term,city||currentIntent.city));setResults([]);setPeople([]);}
-   else if(effectiveKind==="Personas"){setPeople(await findPeople(term,city||currentIntent.city));setResults([]);setAllAccounts([]);}
-   else{setResults(await findProfessionals(term,city||currentIntent.city,currentIntent.professionCode,specialty||currentIntent.specialty));setPeople([]);setAllAccounts([]);}
-  }catch(e){setResults([]);setPeople([]);setAllAccounts([]);setError(e instanceof Error?e.message:"No se pudo buscar profesionales.");}
-  finally{setLoading(false);}
+   await captureMessageScope(scope);if(!valid())return;
+   if(term&&historyOwner===scope.owner){
+    const revision=++historyRevision.current;
+    const entries=await rememberRecentSearch(scope.owner,term,scope);
+    if(scopeRef.current===scope&&historyRevision.current===revision)setRecent(entries);
+   }
+   if(!valid()||mediaMode)return;
+   const currentIntent=nextQuery===query?intent:interpretJobinSearch(nextQuery,["Miami","Miami Beach","Orlando","Fort Lauderdale","New York","Los Angeles","Chicago","Houston","Dallas","Tampa","Buenos Aires","Ciudad de México","Lima","Bogotá","Medellín","Santiago","Madrid","Barcelona"],catalog.data,specialtyCatalog.data??undefined);
+   if(effectiveKind==="Todo"){const rows=await findAllAccounts(term,city||currentIntent.city,scope);if(valid())setAllAccounts(rows);}
+   else if(effectiveKind==="Personas"){const rows=await findPeople(term,city||currentIntent.city,scope);if(valid())setPeople(rows);}
+   else{const rows=await findProfessionals(term,city||currentIntent.city,currentIntent.professionCode,specialty||currentIntent.specialty,scope);if(valid())setResults(rows);}
+  }catch(e){if(valid()){setResults([]);setPeople([]);setAllAccounts([]);setError(e instanceof Error?e.message:"No se pudo buscar profesionales.");}}
+  finally{if(valid())setLoading(false);}
  }
  if(viewMode==="map")return <SafeAreaView style={s.screen}>
    <ProfessionalMapExplorer initialQuery={query} onList={next=>{
@@ -94,8 +121,8 @@ export default function Search(){
   return <SafeAreaView style={s.screen}>
   <View style={{flexDirection:"row",alignItems:"center",padding:12,gap:6}}>
    <IconButton icon="arrow-back" label="Volver" onPress={()=>router.canGoBack()?router.back():router.replace("/")}/>
-   <TextInput accessibilityLabel="Buscar en Jobeen" placeholder={effectiveKind==="Flashes"?"Buscar Flashes":effectiveKind==="Streams"?"Buscar Lives":"Buscar personas, negocios o profesiones"} placeholderTextColor={colors.muted} value={query} onFocus={()=>setShowRecent(true)} onChangeText={value=>{setQuery(value);setShowRecent(true);setSearched(false);setResults([]);setPeople([]);setAllAccounts([]);}} onSubmitEditing={()=>void runSearch()} returnKeyType="search" style={{flex:1,minWidth:0,minHeight:46,borderRadius:24,backgroundColor:colors.accent,paddingHorizontal:18,color:colors.ink}}/>
-   {!!query&&<IconButton icon="close" label="Borrar búsqueda" onPress={()=>{setQuery("");setShowRecent(true);setResults([]);setPeople([]);setAllAccounts([]);setSearched(false);}}/>}
+   <TextInput accessibilityLabel="Buscar en Jobeen" placeholder={effectiveKind==="Flashes"?"Buscar Flashes":effectiveKind==="Streams"?"Buscar Lives":"Buscar personas, negocios o profesiones"} placeholderTextColor={colors.muted} value={query} onFocus={()=>setShowRecent(true)} onChangeText={value=>{setQuery(value);setShowRecent(true);invalidateResults();}} onSubmitEditing={()=>void runSearch()} returnKeyType="search" style={{flex:1,minWidth:0,minHeight:46,borderRadius:24,backgroundColor:colors.accent,paddingHorizontal:18,color:colors.ink}}/>
+   {!!query&&<IconButton icon="close" label="Borrar búsqueda" onPress={()=>{setQuery("");setShowRecent(true);invalidateResults();}}/>}
   </View>
   <View style={{flexDirection:"row",gap:8,paddingHorizontal:16,paddingBottom:9}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Ver resultados en lista" accessibilityState={{selected:true}}
@@ -103,7 +130,7 @@ export default function Search(){
     <Ionicons name="list-outline" size={19} color={colors.paper}/>
     <Text style={{fontWeight:"800",color:colors.paper}}>Lista</Text>
    </Pressable>
-   <Pressable accessibilityRole="button" accessibilityLabel="Ver empresas y profesionales en el mapa" onPress={()=>setViewMode("map")}
+   <Pressable accessibilityRole="button" accessibilityLabel="Ver empresas y profesionales en el mapa" onPress={()=>{invalidateResults();setViewMode("map");}}
     style={{flex:1,minHeight:42,backgroundColor:colors.accent,borderRadius:15,alignItems:"center",justifyContent:"center",flexDirection:"row",gap:7}}>
     <Ionicons name="map-outline" size={19} color={colors.ink}/>
     <Text style={{fontWeight:"700",color:colors.ink}}>Mapa</Text>
@@ -112,7 +139,7 @@ export default function Search(){
   {showRecent&&recent.length>0&&<View style={{marginHorizontal:16,marginBottom:8,padding:8,borderWidth:1,borderColor:colors.line,borderRadius:17,backgroundColor:colors.paper,gap:1}}>
    <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:10,paddingVertical:4}}>
     <Text style={{fontSize:12,fontWeight:"700",color:colors.muted}}>Búsquedas recientes</Text>
-    <Pressable accessibilityRole="button" accessibilityLabel="Borrar búsquedas recientes" onPress={()=>{void clearRecentSearches(historyOwner).then(()=>setRecent([])).catch(()=>{});}} style={{minHeight:36,justifyContent:"center",paddingHorizontal:8}}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Borrar búsquedas recientes" onPress={()=>void clearHistory()} style={{minHeight:36,justifyContent:"center",paddingHorizontal:8}}>
      <Text style={{fontSize:12,color:colors.muted}}>Borrar historial</Text>
     </Pressable>
    </View>
@@ -132,7 +159,7 @@ export default function Search(){
     accessibilityRole="button" accessibilityState={{selected:kind===option}}
     onLayout={event=>{filterPositions.current[option]={x:event.nativeEvent.layout.x,width:event.nativeEvent.layout.width};}}
     onPress={()=>{
-     setKind(option);setShowRecent(false);setResults([]);setPeople([]);setAllAccounts([]);setSearched(false);setError("");
+     setKind(option);setShowRecent(false);invalidateResults();
      centerFilter(option,true);
     }}
     style={{height:48,minHeight:48,flexShrink:0,alignItems:"center",justifyContent:"center",paddingHorizontal:17,
@@ -146,8 +173,8 @@ export default function Search(){
    {(effectiveKind==="Todo"||effectiveKind==="Profesionales"||effectiveKind==="Empresas"||effectiveKind==="Personas")?<>
     <Text style={s.h3}>{effectiveKind==="Todo"?"Busca en todas las cuentas de Jobeen":effectiveKind==="Personas"?"Encuentra personas por nombre, usuario o ciudad":effectiveKind==="Empresas"?"Encuentra empresas por sector, servicio y ciudad":"Encuentra profesionales por profesión, especialidad y ciudad"}</Text>
     <Text style={s.muted}>{effectiveKind==="Todo"?"Busca personas, profesionales y negocios por nombre, usuario, profesión o ciudad.":effectiveKind==="Personas"?"Usuarios que no han agregado ninguna profesión a su JCard. Pueden ver videos, streams y buscar profesionales.":"Describe lo que necesitas: «Técnico de aire acondicionado especializado en VRF en Miami»."}</Text>
-    <TextInput accessibilityLabel="Ciudad" value={city} onChangeText={setCity} placeholder="Ciudad (opcional si la escribiste arriba)" placeholderTextColor={colors.muted} style={{minHeight:48,paddingHorizontal:14,borderWidth:1,borderColor:colors.line,borderRadius:12,color:colors.ink}}/>
-    {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&<TextInput accessibilityLabel="Especialidad" value={specialty} onChangeText={setSpecialty} placeholder="Especialidad (opcional, ej. VRF)" placeholderTextColor={colors.muted} style={{minHeight:48,paddingHorizontal:14,borderWidth:1,borderColor:colors.line,borderRadius:12,color:colors.ink}}/>}
+    <TextInput accessibilityLabel="Ciudad" value={city} onChangeText={value=>{setCity(value);invalidateResults();}} placeholder="Ciudad (opcional si la escribiste arriba)" placeholderTextColor={colors.muted} style={{minHeight:48,paddingHorizontal:14,borderWidth:1,borderColor:colors.line,borderRadius:12,color:colors.ink}}/>
+    {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&<TextInput accessibilityLabel="Especialidad" value={specialty} onChangeText={value=>{setSpecialty(value);invalidateResults();}} placeholder="Especialidad (opcional, ej. VRF)" placeholderTextColor={colors.muted} style={{minHeight:48,paddingHorizontal:14,borderWidth:1,borderColor:colors.line,borderRadius:12,color:colors.ink}}/>}
     <Pressable accessibilityRole="button" onPress={()=>void runSearch()} disabled={loading} style={{padding:15,borderRadius:14,backgroundColor:colors.ink,alignItems:"center"}}>
      <Text style={{color:colors.paper,fontWeight:"700"}}>{loading?"Buscando…":effectiveKind==="Todo"?"Buscar en todo":effectiveKind==="Personas"?"Buscar personas":effectiveKind==="Empresas"?"Buscar empresas":"Buscar profesionales"}</Text>
     </Pressable>
@@ -156,15 +183,15 @@ export default function Search(){
     {!!error&&<Text style={{color:colors.ink}}>{error}</Text>}
     {searched&&!loading&&!error&&<Text style={s.muted}>{effectiveKind==="Todo"?allAccounts.length:effectiveKind==="Personas"?people.length:displayedResults.length} resultados encontrados</Text>}
     {effectiveKind==="Todo"&&allAccounts.map(account=><Pressable key={account.id} accessibilityRole="button" accessibilityLabel={"Ver perfil de "+account.name} onPress={()=>void openProfile(account.id)} style={{flexDirection:"row",alignItems:"center",paddingVertical:12,gap:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
-      <PublicProfileAvatar userId={account.id} name={account.name} size={54}/>
+      <PublicProfileAvatar userId={account.id} name={account.name} size={54} respectJCardVisibility/>
       <View style={{flex:1,gap:3}}><Text style={{color:colors.ink,fontSize:16,fontWeight:"700"}} numberOfLines={1}>{account.name}</Text><Text style={s.muted} numberOfLines={1}>@{account.handle||"usuario"} · {account.account_type==="company"?"Empresa":account.account_type==="professional"?"Profesional":"Persona"}</Text>{!!account.profession&&<Text style={s.muted} numberOfLines={1}>{account.profession}</Text>}</View>
       <Text style={{fontSize:22,color:colors.muted}}>›</Text>
     </Pressable>)}
     {effectiveKind==="Personas"&&people.map(person=><Pressable key={person.id} accessibilityRole="button" accessibilityLabel={"Ver perfil de "+person.name} onPress={()=>void openProfile(person.id)} style={{flexDirection:"row",alignItems:"center",paddingVertical:12,gap:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
-      <PublicProfileAvatar userId={person.id} name={person.name} size={54}/><View style={{flex:1,gap:3}}><Text style={{color:colors.ink,fontSize:16,fontWeight:"700"}} numberOfLines={1}>{person.name}</Text><Text style={s.muted} numberOfLines={1}>@{person.handle||"usuario"} · Persona</Text></View><Text style={{fontSize:22,color:colors.muted}}>›</Text>
+      <PublicProfileAvatar userId={person.id} name={person.name} size={54} respectJCardVisibility/><View style={{flex:1,gap:3}}><Text style={{color:colors.ink,fontSize:16,fontWeight:"700"}} numberOfLines={1}>{person.name}</Text><Text style={s.muted} numberOfLines={1}>@{person.handle||"usuario"} · Persona</Text></View><Text style={{fontSize:22,color:colors.muted}}>›</Text>
     </Pressable>)}
     {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&displayedResults.map(person=><Pressable key={person.id+":"+person.profession_code} accessibilityRole="button" accessibilityLabel={"Ver perfil de "+person.name} onPress={()=>void openProfile(person.id)} style={{flexDirection:"row",alignItems:"center",paddingVertical:12,gap:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
-      <PublicProfileAvatar userId={person.id} name={person.name} size={54}/><View style={{flex:1,gap:3}}><Text style={{color:colors.ink,fontSize:16,fontWeight:"700"}} numberOfLines={1}>{person.name}</Text><Text style={s.muted} numberOfLines={1}>@{person.handle||"usuario"}</Text><Text style={s.muted} numberOfLines={1}>{person.profession}</Text></View><Text style={{fontSize:22,color:colors.muted}}>›</Text>
+      <PublicProfileAvatar userId={person.id} name={person.name} size={54} respectJCardVisibility/><View style={{flex:1,gap:3}}><Text style={{color:colors.ink,fontSize:16,fontWeight:"700"}} numberOfLines={1}>{person.name}</Text><Text style={s.muted} numberOfLines={1}>@{person.handle||"usuario"}</Text><Text style={s.muted} numberOfLines={1}>{person.profession}</Text></View><Text style={{fontSize:22,color:colors.muted}}>›</Text>
     </Pressable>)}
     {searched&&!loading&&!error&&(effectiveKind==="Todo"?allAccounts.length===0:effectiveKind==="Personas"?people.length===0:displayedResults.length===0)&&<Text style={s.text}>No encontramos perfiles que coincidan. Prueba otra ciudad o una especialidad más amplia.</Text>}
    </>:effectiveKind==="Flashes"?<>
