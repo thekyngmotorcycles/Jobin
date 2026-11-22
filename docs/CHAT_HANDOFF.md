@@ -1,3 +1,9 @@
+# Jobeen — Continuidad obligatoria (2026-11-22)
+
+**Para ChatGPT y Codex:** leer primero [AGENTS.md](../AGENTS.md) y [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md) de la rama activa `fix/message-jshop-authorization-20261121` (PR #70, hasta su promoción autorizada). Este último es el único backlog operativo; comprobar HEAD y CI y continuar desde el siguiente ID. No repetir auditorías concluidas ni pedir al propietario que repita instrucciones. Las órdenes Continua y Fix están definidas en AGENTS.md. No modificar development, main, OTA, Supabase alojado ni compilar APK sin autorización durante esta etapa. El contenido siguiente es contexto histórico; si contradice el estado central o la política vigente, prevalece AGENTS.md y DEVELOPMENT_STATUS.md.
+
+---
+
 # Jobin — Traspaso entre chats
 
 Actualizado: 2026-11-01. Este documento describe el contexto conocido al momento de crearlo; verificar siempre el estado actual del repositorio, GitHub Actions y Supabase.
