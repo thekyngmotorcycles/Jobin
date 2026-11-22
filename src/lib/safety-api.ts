@@ -7,7 +7,7 @@ export interface SafetyStatus {
  contentCount:number;employerCount:number;permanent:boolean;accountBlocked:boolean;mediaBlocked:boolean;
  contentUntil:string|null;employerUntil:string|null;reason:string|null;moderator:boolean;providersReady:boolean;incidents:SafetyIncident[];appeals:SafetyAppeal[];
 }
-export interface WorkMedia {id:string;title:string;kind:"live"|"video";status:string;publisherUrl:string|null;creator_id:string;employer_id:string|null}
+export interface WorkMedia {id:string;title:string;kind:"live"|"video";status:string;publisherUrl:string|null;studioReady?:boolean;creator_id:string;employer_id:string|null}
 export interface MediaView {id:string;creatorId:string;author:string;title:string;kind:"live"|"video";status:string;employerId:string|null;playbackUrl:string|null}
 export interface PublishedMedia {id:string;title:string;kind:"live"|"video";creator_id:string}
 export interface SafetyQueue {
@@ -30,6 +30,18 @@ export async function loadMyMedia(expectedScope?:MessageScope):Promise<WorkMedia
  const scope=await captureMessageScope(expectedScope),client=requireSupabase();
  const {data,error}=await client.rpc("jobin_my_work_media");await assertMessageScope(scope);
  const media=decode<WorkMedia[]>(data,error);if(media.some(row=>row.creator_id!==scope.owner))throw Error("No se pudo verificar la titularidad del contenido.");return media;
+}
+function privateHttpsLink(value:unknown):string {
+ if(typeof value!=="string"||value.length>4000)throw Error("Enlace privado no disponible.");
+ const parsed=new URL(value);
+ if(parsed.protocol!=="https:"||parsed.username||parsed.password)throw Error("Enlace privado inválido.");
+ return value;
+}
+export async function loadStudioLink(media:string,expectedScope:MessageScope):Promise<string>{
+ const scope=await captureMessageScope(expectedScope);
+ const {data,error}=await requireSupabase().rpc("jobin_work_studio_link",{media});
+ await assertMessageScope(scope);if(error)throw Error(error.message);
+ return privateHttpsLink(data);
 }
 export async function loadMedia(id:string,expectedScope?:MessageScope):Promise<MediaView>{
  const scope=await captureMessageScope(expectedScope);const {data,error}=await requireSupabase().rpc("jobin_work_media",{media:id});await assertMessageScope(scope);
@@ -90,10 +102,10 @@ export async function moderationPreview(media:string,expectedScope?:MessageScope
  if(session.user.id!==scope.owner)throw Error("La sesión cambió.");
  const response=await fetch(base.replace(/\/$/,"")+"/moderation/review-url",{method:"POST",headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({media})});
  if(!response.ok)throw new Error("No se pudo autorizar la vista privada del contenido.");
- const value=await response.json();if(typeof value.url!=="string"||!value.url.startsWith("https://"))throw new Error("Enlace de revisión inválido.");await assertMessageScope(scope);return value.url;
+ const value=await response.json();if(typeof value.url!=="string"||!value.url.startsWith("https://"))throw new Error("Enlace de revisión inválido.");await assertMessageScope(scope);return privateHttpsLink(value.url);
 }
 export async function reportEvidencePreview(path:string,expectedScope?:MessageScope):Promise<string>{
  const scope=await captureMessageScope(expectedScope);
  const {data,error}=await requireSupabase().storage.from("employer-report-evidence").createSignedUrl(path,120);
- if(error)throw new Error(error.message);await assertMessageScope(scope);return data.signedUrl;
+ if(error)throw new Error(error.message);await assertMessageScope(scope);return privateHttpsLink(data.signedUrl);
 }
