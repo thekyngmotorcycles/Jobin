@@ -51,7 +51,7 @@ test("Private device collections require the current authenticated UUID, not jus
  assert.ok(guard.includes("data.session?.user.id!==owner"));
  for(const [file,owner] of [["feed-preferences.ts","owner"]]){
   const s=src("src/lib/"+file);
-  assert.ok(s.includes("await assertAccountOwner("+owner+")"),file);
+  assert.ok(s.includes("await assertAccountOwner("+owner+",scope.session)"),file);
   assert.ok(s.includes("import {assertAccountOwner}"),file);
  }
  const business=src("src/lib/business-card-cache.ts");
@@ -149,4 +149,16 @@ test("Private draft writes and reads retain exact session and refuse to overwrit
  assert.ok(editor.includes("savePostDraft(author,value,scope)"));
  assert.ok(editor.includes("uploadPhoto(author,photo.uri,DRAFT_PHOTO_BUCKET,scope)"));
  assert.ok(api.includes("if(!insertStarted&&uploaded.length)"));
+});
+
+test("Social interactions and post return are bound to originating account and session",()=>{
+ const api=src("src/lib/social-content.ts"),feed=src("src/components/HomePublishedPosts.tsx"),options=src("src/components/FeedPostOptions.tsx"),prefs=src("src/lib/feed-preferences.ts"),handoff=src("src/lib/post-return.ts"),story=src("src/app/story/create.tsx");
+ assert.ok(api.includes("await captureMessageScope(expectedScope)"));
+ assert.ok(feed.includes("setHomePostLike(post.id,!liked,scope)"));
+ assert.ok(feed.includes("addHomePostComment(post.id,draft,scope)"));
+ assert.ok(feed.includes('contentMessage={Linking.createURL("post/"+post.id)}'));
+ assert.ok(options.includes("activeScope.current===scope"));
+ assert.ok(prefs.includes('serializePrivateWrite(key(owner,"saved")'));
+ assert.ok(handoff.includes("memory.read(scope)"));
+ assert.ok(story.includes("void submit(scope)"));
 });
