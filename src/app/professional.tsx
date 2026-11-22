@@ -33,7 +33,14 @@ export default function Professional() {
  const sunflower=theme==="sunflower";
  const glassPanel=(expanded:boolean)=>sunflower&&!expanded?{backgroundColor:colors.glassPanel,borderColor:colors.glassBorder,shadowColor:colors.glassShadow,shadowOpacity:0.27,shadowRadius:16,shadowOffset:{width:0,height:7},elevation:6}:undefined;
  const workspace=useProfessionalData(loadWorkspace,true);
- useFocusEffect(useCallback(()=>{if(consumePersonalPhotoChange())void workspace.reload();},[workspace.reload]));const catalog=useProfessionalData(loadCatalog);
+ useFocusEffect(useCallback(()=>{
+  let active=true;
+  void(async()=>{try{
+   const scope=await captureMessageScope();await assertMessageScope(scope);
+   if(active&&consumePersonalPhotoChange(scope))void workspace.reload();
+  }catch{/* An unverified session must not consume the avatar event. */}})();
+  return()=>{active=false;};
+ },[workspace.reload]));const catalog=useProfessionalData(loadCatalog);
  const action=useProfessionalAction(workspace.reload);
  const navigation=useNavigation();
  const editorScopeRef=useRef<MessageScope|null>(null),activeRef=useRef(false);
