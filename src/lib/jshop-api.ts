@@ -14,13 +14,15 @@ type ListingRow={
 };
 function client(){return requireSupabase();}
 function publicImage(path:string){return client().storage.from(BUCKET).getPublicUrl(path).data.publicUrl;}
-async function hydrate(rows:ListingRow[]):Promise<JShopListing[]>{
+async function hydrate(rows:ListingRow[],scope:MessageScope):Promise<JShopListing[]>{
+ await assertMessageScope(scope);
  if(!rows.length)return [];
  const db=client();const sellers=[...new Set(rows.map(row=>row.seller_id))];
  const [profileRows,handles]=await Promise.all([
   db.from("profiles").select("id,display_name").in("id",sellers),
   db.from("jcard_profiles").select("profile_id,handle").in("profile_id",sellers)
  ]);
+ await assertMessageScope(scope);
  if(profileRows.error)throw profileRows.error;
  if(handles.error)throw handles.error;
  const profiles=new Map((profileRows.data??[]).map(row=>[row.id,row.display_name??"Vendedor"]));
@@ -29,74 +31,107 @@ async function hydrate(rows:ListingRow[]):Promise<JShopListing[]>{
   id:row.id,sellerId:row.seller_id,sellerName:profiles.get(row.seller_id)??"Vendedor",
   sellerHandle:names.get(row.seller_id)??"",title:row.title,description:row.description,
   category:row.category,condition:row.item_condition,price:Number(row.price),
-  currency:row.currency,location:row.location,locationLat:row.location_lat,locationLon:row.location_lon,photos:row.photo_paths.map(publicImage),
-  photoPaths:row.photo_paths,createdAt:Date.parse(row.created_at),updatedAt:Date.parse(row.updated_at),
+  currency:row.currency,location:row.location,locationLat:row.location_lat,locationLon:row.location_lon,photos:row.photo_paths.filter(path=>ownedPhotoPath(row.seller_id,path)).map(publicImage),
+  photoPaths:row.photo_paths.filter(path=>ownedPhotoPath(row.seller_id,path)),createdAt:Date.parse(row.created_at),updatedAt:Date.parse(row.updated_at),
   status:row.status
  }));
 }
 const selection="id,seller_id,title,description,category,item_condition,price,currency,location,location_lat,location_lon,photo_paths,status,created_at,updated_at";
-export async function loadJShopListings():Promise<JShopListing[]>{
+async function confirm(ownerId:string,expectedScope:MessageScope){
+ const scope=await captureMessageScope(expectedScope);
+ if(scope.owner!==ownerId)throw Error("La cuenta cambió.");
+ return scope;
+}
+function ownedPhotoPath(owner:string,path:string){
+ return typeof path==="string"&&path.startsWith(owner+"/")&&path.length>owner.length+1&&path.length<=260&&!path.includes("..")&&/^[a-zA-Z0-9_./-]+$/.test(path);
+}
+export async function loadJShopListings(expectedScope:MessageScope):Promise<JShopListing[]>{
+ const scope=await captureMessageScope(expectedScope);
  const {data,error}=await client().from("jshop_listings" as never).select(selection).eq("status","published").order("created_at",{ascending:false}).limit(150);
  if(error)throw error;
- return hydrate((data??[]) as unknown as ListingRow[]);
+ await assertMessageScope(scope);
+ return hydrate((data??[]) as unknown as ListingRow[],scope);
 }
 /** Query actual physical distance in Postgres under the listing RLS. */
-export async function loadJShopListingsNear(place:JShopPlace):Promise<JShopListing[]>{
- const radius=place.radiusMiles??10;
+export async function loadJShopListingsNear(place:JShopPlace,expectedScope:MessageScope):Promise<JShopListing[]>{
+ const scope=await captureMessageScope(expectedScope),radius=place.radiusMiles??10;
  const {data,error}=await client().rpc("jshop_listings_within_area" as never,
   {p_lat:place.lat,p_lon:place.lon,p_radius_miles:radius,p_limit:150} as never);
  if(error)throw error;
+ await assertMessageScope(scope);
  const rows=(data??[]) as unknown as ListingRow[];
  return hydrate(rows.filter(row=>row.location_lat!==null&&row.location_lon!==null&&
-  insideJShopRadius({lat:place.lat,lon:place.lon},{lat:row.location_lat,lon:row.location_lon},radius)));
+  insideJShopRadius({lat:place.lat,lon:place.lon},{lat:row.location_lat,lon:row.location_lon},radius)),scope);
 }
-export async function loadMyJShopListings(ownerId:string):Promise<JShopListing[]>{
+export async function loadMyJShopListings(ownerId:string,expectedScope:MessageScope):Promise<JShopListing[]>{
+ const scope=await confirm(ownerId,expectedScope);
  const {data,error}=await client().from("jshop_listings" as never).select(selection).eq("seller_id",ownerId).order("created_at",{ascending:false}).limit(150);
  if(error)throw error;
- return hydrate((data??[]) as unknown as ListingRow[]);
+ await assertMessageScope(scope);
+ const rows=(data??[]) as unknown as ListingRow[];
+ if(rows.some(row=>row.seller_id!==scope.owner))throw Error("No se pudo verificar la titularidad del anuncio.");
+ return hydrate(rows,scope);
 }
-export async function loadJShopListing(id:string):Promise<JShopListing|null>{
- if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id))return null;
+export async function loadJShopListing(id:string,expectedScope:MessageScope):Promise<JShopListing|null>{
+ const scope=await captureMessageScope(expectedScope);
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))return null;
  const {data,error}=await client().from("jshop_listings" as never).select(selection).eq("id",id).maybeSingle();
  if(error)throw error;
- return data?(await hydrate([data as unknown as ListingRow]))[0]:null;
+ await assertMessageScope(scope);
+ if(data&&(data as unknown as ListingRow).id!==id)throw Error("No se pudo verificar el anuncio.");
+ return data?(await hydrate([data as unknown as ListingRow],scope))[0]:null;
 }
-export async function loadJShopFavoriteIds(ownerId:string):Promise<string[]>{
- const {data,error}=await client().from("jshop_favorites" as never).select("listing_id").eq("user_id",ownerId).limit(500);
+export async function loadJShopFavoriteIds(ownerId:string,expectedScope:MessageScope):Promise<string[]>{
+ const scope=await confirm(ownerId,expectedScope);
+ const {data,error}=await client().from("jshop_favorites" as never).select("listing_id,user_id").eq("user_id",ownerId).limit(500);
  if(error)throw error;
- return ((data??[]) as unknown as {listing_id:string}[]).map(x=>x.listing_id);
+ await assertMessageScope(scope);
+ const rows=(data??[]) as unknown as {listing_id:string;user_id:string}[];
+ if(rows.some(row=>row.user_id!==scope.owner))throw Error("No se pudo verificar los favoritos.");
+ return rows.map(x=>x.listing_id);
 }
-export async function loadFavoriteJShopListings(ownerId:string):Promise<JShopListing[]>{
- const ids=await loadJShopFavoriteIds(ownerId);if(!ids.length)return [];
+export async function loadFavoriteJShopListings(ownerId:string,expectedScope:MessageScope):Promise<JShopListing[]>{
+ const scope=await confirm(ownerId,expectedScope),ids=await loadJShopFavoriteIds(ownerId,scope);
+ if(!ids.length)return [];
+ await assertMessageScope(scope);
  const {data,error}=await client().from("jshop_listings" as never).select(selection).in("id",ids).eq("status","published");
  if(error)throw error;
- return hydrate((data??[]) as unknown as ListingRow[]);
+ await assertMessageScope(scope);
+ return hydrate((data??[]) as unknown as ListingRow[],scope);
 }
-export async function setJShopFavorite(ownerId:string,listingId:string,saved:boolean){
- const db=client();
+export async function setJShopFavorite(ownerId:string,listingId:string,saved:boolean,expectedScope:MessageScope){
+ const scope=await confirm(ownerId,expectedScope),db=client();
  if(saved){
-  const {error}=await db.from("jshop_favorites" as never).insert({user_id:ownerId,listing_id:listingId} as never);
+  const {error}=await db.from("jshop_favorites" as never).insert({user_id:scope.owner,listing_id:listingId} as never);
   if(error&&error.code!=="23505")throw error;
  }else{
-  const {error}=await db.from("jshop_favorites" as never).delete().eq("user_id",ownerId).eq("listing_id",listingId);
+  const {error}=await db.from("jshop_favorites" as never).delete().eq("user_id",scope.owner).eq("listing_id",listingId);
   if(error)throw error;
  }
+ await assertMessageScope(scope);
 }
-export async function reportJShopListing(listingId:string,reporterId:string,reason:string,details:string){
- const {error}=await client().from("jshop_reports" as never).insert({listing_id:listingId,reporter_id:reporterId,reason,details:details.trim()} as never);
+export async function reportJShopListing(listingId:string,reporterId:string,reason:string,details:string,expectedScope:MessageScope){
+ const scope=await confirm(reporterId,expectedScope);
+ const {error}=await client().from("jshop_reports" as never).insert({listing_id:listingId,reporter_id:scope.owner,reason,details:details.trim()} as never);
  if(error)throw error;
+ await assertMessageScope(scope);
 }
-export async function setJShopListingStatus(ownerId:string,id:string,status:"published"|"paused"|"sold"){
- const {data,error}=await client().from("jshop_listings" as never).update({status} as never).eq("id",id).eq("seller_id",ownerId).select("id").maybeSingle();
+export async function setJShopListingStatus(ownerId:string,id:string,status:"published"|"paused"|"sold",expectedScope:MessageScope){
+ const scope=await confirm(ownerId,expectedScope);
+ const {data,error}=await client().from("jshop_listings" as never).update({status} as never).eq("id",id).eq("seller_id",scope.owner).select("id").maybeSingle();
  if(error)throw error;
+ await assertMessageScope(scope);
  if(!data)throw Error("No se pudo cambiar el estado de tu anuncio.");
 }
-export async function deleteJShopListing(ownerId:string,item:JShopListing){
- if(item.sellerId!==ownerId)throw Error("El anuncio pertenece a otra cuenta.");
- const {data,error}=await client().from("jshop_listings" as never).delete().eq("id",item.id).eq("seller_id",ownerId).select("id").maybeSingle();
+export async function deleteJShopListing(ownerId:string,item:JShopListing,expectedScope:MessageScope){
+ const scope=await confirm(ownerId,expectedScope);
+ if(item.sellerId!==scope.owner)throw Error("El anuncio pertenece a otra cuenta.");
+ const {data,error}=await client().from("jshop_listings" as never).delete().eq("id",item.id).eq("seller_id",scope.owner).select("id").maybeSingle();
  if(error)throw error;
+ await assertMessageScope(scope);
  if(!data)throw Error("No se pudo eliminar el anuncio.");
- if(item.photoPaths?.length)void client().storage.from(BUCKET).remove(item.photoPaths).catch(()=>{});
+ // Never delete user-supplied or cached object paths. Other listings may still
+ // reference these files; reconcile orphaned objects on the server separately.
 }
 export async function publishJShopDraft(ownerId:string,draft:JShopDraft,expectedScope:MessageScope):Promise<string>{
  const scope=await captureMessageScope(expectedScope);
