@@ -30,9 +30,9 @@ test("Business card groups contacts between heading and non-overlapping medals w
  assert.ok(business.includes('minHeight:44,paddingRight:5'));
  assert.ok(business.includes('minimumFontScale={0.84}'));
  assert.ok(business.includes('businessName?wrapBusinessCardName(businessName):"Cargando negocio…"'));
- assert.ok(home.includes('const cached=await readScopedBusinessCard(owner)'));
- const cachedIndex=home.indexOf('const cached=await readScopedBusinessCard(owner)');
- const cloudIndex=home.indexOf('const row=await readCloudBusiness(owner);');
+ assert.ok(home.includes('const cached=await readScopedBusinessCard(owner,scope)'));
+ const cachedIndex=home.indexOf('const cached=await readScopedBusinessCard(owner,scope)');
+ const cloudIndex=home.indexOf('const row=await readCloudBusiness(owner,scope);');
  assert.ok(cachedIndex>=0&&cloudIndex>cachedIndex,'Scoped cache precedes owner-validated cloud refresh');
 });
 test("Personal contact button is raised clear of language badges without resizing the card",()=>{
