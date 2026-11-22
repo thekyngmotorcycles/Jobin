@@ -143,7 +143,7 @@ create table public.jcard_contact_preferences(owner_id uuid primary key referenc
 alter table public.jcard_contact_preferences enable row level security;
 grant select,insert,update on public.jcard_contact_preferences to authenticated;
 create policy fixture_contact_preferences on public.jcard_contact_preferences for all to authenticated using(owner_id=auth.uid()) with check(owner_id=auth.uid());
-create function public.jcard_public_contact(target uuid) returns jsonb language sql security definer set search_path='' as $ select jsonb_build_object('email',u.email,'phone',u.phone) from auth.users u where u.id=target $;
+create function public.jcard_public_contact(target uuid) returns jsonb language sql security definer set search_path='' as $legacy_contact$ select jsonb_build_object('email',u.email,'phone',u.phone) from auth.users u where u.id=target $legacy_contact$;
 grant execute on function public.jcard_public_contact(uuid) to anon,authenticated;
 update auth.users set email='login-secret@example.invalid',phone='555000001' where id='a1111111-1111-4111-8111-111111111111';
 insert into public.jcard_contact_preferences(owner_id,show_email,show_phone) values('a1111111-1111-4111-8111-111111111111',true,true);
