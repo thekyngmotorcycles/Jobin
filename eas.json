@@ -38,7 +38,7 @@
         "buildType": "apk"
       },
       "channel": "security-pilot",
-      "environment": "development",
+      "environment": "security-pilot",
       "env": {
         "JOBEEN_SECURITY_PILOT": "1",
         "EXPO_PUBLIC_JOBEEN_SECURITY_PILOT": "1"
