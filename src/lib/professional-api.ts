@@ -137,26 +137,32 @@ export interface ProfessionalSearchResult {
 }
 /** Server ranks relevance first and verified professional evidence second.
  * Personal profiles never receive fabricated star ratings. */
-export async function findProfessionals(query:string,city:string,profession:string,specialty:string):Promise<ProfessionalSearchResult[]> {
+export async function findProfessionals(query:string,city:string,profession:string,specialty:string,expectedScope?:MessageScope):Promise<ProfessionalSearchResult[]> {
+ const scope=await captureMessageScope(expectedScope);
  const {data,error}=await requireSupabase().rpc("jobin_find_professionals" as never,{
   p_query:query.trim(),p_city:city.trim(),p_profession:profession,p_specialty:specialty,p_limit:50
  } as never);
  if(error)throw new Error(error.message);
+ await assertMessageScope(scope);
  return (data??[]) as ProfessionalSearchResult[];
 }
 
 /** People are personal accounts with no profession declared; they are not professionals. */
 export interface PersonSearchResult {id:string;name:string;handle:string;city:string|null;region:string|null}
-export async function findPeople(query:string,city:string):Promise<PersonSearchResult[]>{
+export async function findPeople(query:string,city:string,expectedScope?:MessageScope):Promise<PersonSearchResult[]>{
+ const scope=await captureMessageScope(expectedScope);
  const {data,error}=await requireSupabase().rpc("jobeen_find_people" as never,{p_query:query.trim(),p_city:city.trim(),p_limit:50} as never);
  if(error)throw new Error(error.message);
+ await assertMessageScope(scope);
  return (data??[]) as PersonSearchResult[];
 }
 
 /** Unified search for every registered, active account, regardless of profession. */
 export interface AllAccountSearchResult {id:string;name:string;handle:string;city:string|null;region:string|null;account_type:"person"|"professional"|"company";profession:string}
-export async function findAllAccounts(query:string,city:string):Promise<AllAccountSearchResult[]>{
+export async function findAllAccounts(query:string,city:string,expectedScope?:MessageScope):Promise<AllAccountSearchResult[]>{
+ const scope=await captureMessageScope(expectedScope);
  const {data,error}=await requireSupabase().rpc("jobeen_find_all_accounts" as never,{p_query:query.trim(),p_city:city.trim(),p_limit:50} as never);
  if(error)throw new Error(error.message);
+ await assertMessageScope(scope);
  return (data??[]) as AllAccountSearchResult[];
 }
