@@ -115,6 +115,6 @@ export function createPrivateMetadataVault(backend:NativeSecretBackend,verify:Ve
   // proof and consent; this guard is not itself proof of ownership.
   restoreIfNeverInitialized(kind:PrivateMetadataKind,scope:MessageScope,value:string,revalidate:()=>Promise<void>){
    return run(kind,scope,root=>commit(root,scope,value,revalidate));
-  }}
+  }
  };
 }
