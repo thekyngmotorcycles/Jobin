@@ -1,4 +1,5 @@
-import * as ImageManipulator from "expo-image-manipulator";
+import {uploadSecuredFile} from "./private-attachment-android";
+import type {PrivateAttachment} from "./private-attachment";
 import {validBusinessMentions,type PostBusinessMention} from "./post-mentions";
 import {requireSupabase} from "./supabase";
 import {captureMessageScope,assertMessageScope,type MessageScope} from "./message-session";
@@ -125,34 +126,16 @@ export async function loadActiveStories(expectedScope?:MessageScope):Promise<Soc
   imageUrl:photos[index],mediaId:row.work_media_id,createdAt:row.created_at,expiresAt:row.expires_at
  }));
 }
-export async function uploadPhoto(owner:string,uri:string,bucket:string,expectedScope?:MessageScope){
- const scope=await captureMessageScope(expectedScope);if(scope.owner!==owner)throw Error("La cuenta cambió.");
- const normalized=await ImageManipulator.manipulateAsync(uri,[{resize:{width:1440}}],{format:ImageManipulator.SaveFormat.JPEG,compress:0.76,base64:true});
- if(!normalized.base64)throw Error("No se pudo preparar la fotografía.");
- const data=atob(normalized.base64);const bytes=new Uint8Array(data.length);
- for(let i=0;i<data.length;i++)bytes[i]=data.charCodeAt(i);
- if(bytes.byteLength>10*1024*1024)throw Error("La fotografía supera 10 MB.");
- const path=owner+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,11)+".jpg";
- // Limit browser reuse for new private files. CDN caching and authorization
- // are controlled separately. Keep the public bucket's existing defaults.
- await assertMessageScope(scope);
- const {error}=await requireSupabase().storage.from(bucket).upload(path,bytes,{
-  contentType:"image/jpeg",upsert:false,
-  ...(bucket===POSTS_BUCKET?{}:{cacheControl:"0"}),
- });
- if(error)throw error;
- await assertMessageScope(scope);
- return path;
-}
 export async function shareApprovedMedia(kind:"video"|"live",owner:string):Promise<PublishedMedia[]>{
  const entries=await loadPublishedMedia();
  return entries.filter(x=>x.creator_id===owner&&x.kind===kind);
 }
-export async function publishHomePost(payload:{body:string;photos:string[];kind:FeedPostKind;mediaId?:string|null;audience?:FeedAudience;audienceFollowers?:boolean;audienceContacts?:boolean;photoDraftPaths?:(string|null)[];photoAltTexts?:string[];mentionedProfileIds?:string[];businessMentions?:PostBusinessMention[]},expectedScope?:MessageScope):Promise<string>{
+export async function publishHomePost(payload:{body:string;kind:FeedPostKind;mediaId?:string|null;audience?:FeedAudience;audienceFollowers?:boolean;audienceContacts?:boolean;privatePhotos?:(PrivateAttachment|null)[];photoDraftPaths?:(string|null)[];photoAltTexts?:string[];mentionedProfileIds?:string[];businessMentions?:PostBusinessMention[]},expectedScope?:MessageScope):Promise<string>{
  const scope=await captureMessageScope(expectedScope),db=requireSupabase(),owner=scope.owner,uploaded:string[]=[];
  let insertStarted=false;
  if(payload.kind==="text"&&!payload.body.trim())throw Error("Escribe un mensaje para publicar.");
- if(payload.kind==="photos"&&(!payload.photos.length||payload.photos.length>5))throw Error("Añade entre 1 y 5 fotografías.");
+ const photoCount=Math.max(payload.privatePhotos?.length??0,payload.photoDraftPaths?.length??0);
+ if(payload.kind==="photos"&&(!photoCount||photoCount>5))throw Error("Añade entre 1 y 5 fotografías.");
  if((payload.kind==="video"||payload.kind==="live")&&!payload.mediaId)throw Error("Selecciona un video o Live publicado y aprobado.");
  const privatePost=payload.audience==="private";
  if(privatePost&&!payload.audienceFollowers&&!payload.audienceContacts)throw Error("Selecciona seguidores, contactos o ambos.");
@@ -160,17 +143,19 @@ export async function publishHomePost(payload:{body:string;photos:string[];kind:
   throw Error("Los videos y Lives aprobados solo pueden compartirse de forma pública.");
  const bucket=privatePost?PRIVATE_POSTS_BUCKET:POSTS_BUCKET;
  try{
-  if(payload.kind==="photos")for(let i=0;i<payload.photos.length;i++){
+  if(payload.kind==="photos")for(let i=0;i<photoCount;i++){
    await assertMessageScope(scope);
    const saved=payload.photoDraftPaths?.[i];
-   if(saved){
+   const local=payload.privatePhotos?.[i];
+   if(local){uploaded.push(await uploadSecuredFile(scope,"draft-photo",local,bucket));}
+   else if(saved){
     if(!saved.startsWith(owner+"/"))throw Error("La fotografía del borrador no pertenece a tu cuenta.");
     const path=owner+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,10)+".jpg";
     // Copy server-side to avoid unsupported Blob.arrayBuffer() in the Android runtime.
     const {error:copyError}=await db.storage.from(DRAFT_POSTS_BUCKET).copy(saved,path,{destinationBucket:bucket});
     if(copyError)throw copyError;
     uploaded.push(path);await assertMessageScope(scope);
-   }else uploaded.push(await uploadPhoto(owner,payload.photos[i],bucket,scope));
+   }else throw Error("Vuelve a seleccionar la fotografía para continuar.");
   }
   await assertMessageScope(scope);insertStarted=true;
   const {data:created,error}=await db.from("jobeen_feed_posts" as never).insert({
@@ -191,14 +176,14 @@ export async function publishHomePost(payload:{body:string;photos:string[];kind:
   throw e;
  }
 }
-export async function publishStory(payload:{body:string;kind:StoryKind;photoUri?:string;mediaId?:string|null},expectedScope?:MessageScope):Promise<void>{
+export async function publishStory(payload:{body:string;kind:StoryKind;photo?:PrivateAttachment;mediaId?:string|null},expectedScope?:MessageScope):Promise<void>{
  const scope=await captureMessageScope(expectedScope),db=requireSupabase(),owner=scope.owner;
  if(payload.kind==="text"&&!payload.body.trim())throw Error("Escribe algo para tu historia.");
- if(payload.kind==="photo"&&!payload.photoUri)throw Error("Selecciona una foto.");
+ if(payload.kind==="photo"&&!payload.photo)throw Error("Selecciona una foto.");
  if(payload.kind==="video"&&!payload.mediaId)throw Error("Selecciona un video aprobado.");
  let path:string|null=null,insertStarted=false;
  try{
-  if(payload.kind==="photo")path=await uploadPhoto(owner,payload.photoUri!,STORIES_BUCKET,scope);
+  if(payload.kind==="photo")path=await uploadSecuredFile(scope,"draft-photo",payload.photo!,STORIES_BUCKET);
   await assertMessageScope(scope);insertStarted=true;
   const {error}=await db.from("jobeen_stories" as never).insert({
    author_id:owner,kind:payload.kind,body:payload.body.trim().slice(0,280),

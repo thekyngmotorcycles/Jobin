@@ -107,11 +107,11 @@ test("Draft photo links are scoped to the initiating account and session",()=>{
  const restore=drafts.slice(drafts.indexOf("export async function restorePostDraftPhotoUrls"));
  assert.ok(scope.includes("sessionMarkerKey(owner,data.session.access_token)"));
  assert.ok(scope.includes("expectedSession&&session!==expectedSession"));
- assert.ok(restore.includes('paths.some(path=>!path.startsWith(owner+"/"))'));
- assert.ok(restore.indexOf("await assertAccountOwner(owner,session)")>restore.indexOf("createSignedUrls"));
+ assert.match(restore,/photos\.map\(photo=>checkedPhoto\(photo,owner\)\)/);
+ assert.ok(restore.lastIndexOf("await confirm(owner,scope)")>restore.indexOf("createSignedUrls"));
  assert.ok(editor.includes("refreshDraftPhotoPreviews(d.photos)"));
  assert.ok(editor.includes("restorePostDraftPhotoUrls(selectedPhotos,author,scope)"));
- assert.ok(editor.includes("restorePostDraftPhotoUrls(draft.photos,author,scope)"));
+ assert.ok(editor.includes("restorePostDraftPhotoUrls(draft.photos.slice(0,1),author,scope)"));
  assert.ok(editor.includes("item.id===photo.id&&item.backupPath===photo.backupPath"));
  assert.ok(editor.includes("item.id===draft.id&&item.updatedAt===draft.updatedAt"));
 });
@@ -147,7 +147,8 @@ test("Private draft writes and reads retain exact session and refuse to overwrit
  assert.ok(shop.includes("item.ownerId!==ownerId"));
  assert.ok(editor.includes("liveScope(scope)"));
  assert.ok(editor.includes("savePostDraft(author,value,scope)"));
- assert.ok(editor.includes("uploadPhoto(author,photo.uri,DRAFT_PHOTO_BUCKET,scope)"));
+ assert.ok(editor.includes('pickSecuredPhotos(scope,"draft-photo",'));
+ assert.ok(!editor.includes("uri:asset.uri"));
  assert.ok(api.includes("if(!insertStarted&&uploaded.length)"));
 });
 

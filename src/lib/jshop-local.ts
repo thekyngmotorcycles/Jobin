@@ -1,3 +1,4 @@
+import {parsePrivateAttachment} from "./private-attachment";
 import {privateMetadataStorage} from "./private-metadata-storage";
 import {assertAccountOwner} from "./account-scope";
 import {captureMessageScope,type MessageScope} from "./message-session";
@@ -11,7 +12,12 @@ async function confirm(ownerId:string,scope:MessageScope){
  if(!scope||scope.owner!==ownerId)throw Error("La cuenta cambió.");
  await assertAccountOwner(ownerId,scope.session);
 }
-export async function readJShopDrafts(ownerId:string,scope:MessageScope):Promise<JShopDraft[]>{
+function storedDraft(draft:JShopDraft,owner:string):JShopDraft{
+ const refs=draft.privatePhotos??[];
+ if(!Array.isArray(refs)||refs.length>5)throw Error("Fotografías del borrador no disponibles.");
+ return {...draft,photos:[],privatePhotos:refs.map(file=>parsePrivateAttachment(file,owner,"draft-photo"))};
+}
+async function readJShopDraftRecords(ownerId:string,scope:MessageScope):Promise<JShopDraft[]>{
  await confirm(ownerId,scope);
  const raw=await privateMetadataStorage.read("jshop-drafts",scope);
  await confirm(ownerId,scope);
@@ -21,21 +27,26 @@ export async function readJShopDrafts(ownerId:string,scope:MessageScope):Promise
   throw Error("Hay borradores que necesitan revisión de titularidad antes de recuperarse.");
  return (parsed as JShopDraft[]).sort((a,b)=>b.updatedAt-a.updatedAt);
 }
+export async function readJShopDrafts(ownerId:string,scope:MessageScope):Promise<JShopDraft[]>{
+ const drafts=await readJShopDraftRecords(ownerId,scope);
+ await confirm(ownerId,scope);
+ return drafts.map(item=>storedDraft(item,ownerId));
+}
 export async function saveJShopDraft(ownerId:string,draft:JShopDraft,scope:MessageScope):Promise<void>{
  if(draft.ownerId!==ownerId)throw new Error("No puedes modificar anuncios de otra cuenta.");
  await confirm(ownerId,scope);
  await serializePrivateWrite(draftsKey(ownerId),async()=>{
   await confirm(ownerId,scope);
-  const drafts=await readJShopDrafts(ownerId,scope);
+  const drafts=await readJShopDraftRecords(ownerId,scope);
   await confirm(ownerId,scope);
-  await privateMetadataStorage.write("jshop-drafts",scope,JSON.stringify([draft,...drafts.filter(x=>x.id!==draft.id)]));
+  await privateMetadataStorage.write("jshop-drafts",scope,JSON.stringify([storedDraft(draft,ownerId),...drafts.filter(x=>x.id!==draft.id)]));
   await confirm(ownerId,scope);
  });
 }
 export async function deleteJShopDraft(ownerId:string,id:string,scope:MessageScope):Promise<void>{
  await confirm(ownerId,scope);
  await serializePrivateWrite(draftsKey(ownerId),async()=>{
-  const drafts=await readJShopDrafts(ownerId,scope);
+  const drafts=await readJShopDraftRecords(ownerId,scope);
   await confirm(ownerId,scope);
   await privateMetadataStorage.write("jshop-drafts",scope,JSON.stringify(drafts.filter(x=>x.id!==id)));
   await confirm(ownerId,scope);

@@ -1,5 +1,8 @@
 package expo.modules.jobeenprivatefiles
 
+import android.net.Uri
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.system.Os
@@ -9,6 +12,7 @@ import expo.modules.kotlin.typedarray.Uint8Array
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.OutputStream
 import java.security.KeyStore
 import java.util.UUID
 import javax.crypto.Cipher
@@ -17,8 +21,8 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 /**
- * Candidate Android-only bridge, not yet connected to draft/editor screens.
- * No arbitrary paths, plaintext files, exported keys or generic delete API.
+ * Candidate Android-only bridge for the draft/editor screens.
+ * No plaintext staging, exported keys or generic delete API.
  * The JS vault checks authenticated account/session before and after calls.
  * This is not a security boundary against arbitrary code in the app process.
  */
@@ -51,6 +55,85 @@ class JobeenPrivateFilesModule : Module() {
     Function("readCiphertext") { owner: String, id: String, output: Uint8Array ->
       safe { readCiphertext(owner, id, output) }
     }
+    Function("readPicked") { value: String, output: Uint8Array, normalizePhoto: Boolean ->
+      safe { readPicked(value, output, normalizePhoto) }
+    }
+    Function("discardImagePickerCopy") { value: String ->
+      safe { pickerCopy(Uri.parse(value))?.let { check(!it.exists() || it.delete()) }; Unit }
+    }
+  }
+
+  // Expo SDK 54 generates UUID-named derivatives in cache/ImagePicker.
+  // Never follow symlinks or unlink content-provider/gallery originals.
+  private fun pickerCopy(uri: Uri): File? {
+    if (uri.scheme != "file" || !uri.authority.isNullOrEmpty() || uri.query != null || uri.fragment != null) return null
+    val context = checkNotNull(appContext.reactContext)
+    val root = File(context.cacheDir.canonicalFile, "ImagePicker")
+    val path = uri.path ?: return null
+    if (path.split('/').any { it == "." || it == ".." }) return null
+    val file = File(path)
+    val target = File(root, file.name)
+    if (root.canonicalFile != root || file.parentFile?.canonicalFile != root || file.canonicalFile != target) return null
+    return target.takeIf { it.name.matches(Regex("[0-9a-f-]{36}\\.[A-Za-z0-9]{1,8}")) && ID.matches(it.name.substringBefore('.')) }
+  }
+
+  private fun readPicked(value: String, output: Uint8Array, normalize: Boolean): Int {
+    require(output.byteLength == LIMIT)
+    val uri = Uri.parse(value)
+    val stream = when (uri.scheme) {
+      "file" -> FileInputStream(checkNotNull(pickerCopy(uri)))
+      "content" -> checkNotNull(checkNotNull(appContext.reactContext).contentResolver.openInputStream(uri))
+      else -> error("Unsupported selection")
+    }
+    val bytes = ByteArray(LIMIT)
+    try {
+      return stream.use {
+        var count = 0
+        while (count < LIMIT) {
+          val read = it.read(bytes, count, LIMIT - count)
+          if (read == -1) break
+          check(read > 0)
+          count += read
+        }
+        // Do not return partial bytes for a file larger than the pilot limit.
+        if (count == LIMIT && it.read() != -1) return@use -1
+        check(count > 0)
+        val written = if (normalize) normalizePhoto(bytes, count) else count
+        output.write(bytes, output.byteOffset, written)
+        written
+      }
+    } finally {
+      bytes.fill(0)
+    }
+  }
+
+  // The picker can copy GPS/EXIF even with exif:false. Re-encode shareable
+  // photos in memory so publication never sends those original metadata.
+  private fun normalizePhoto(bytes: ByteArray, count: Int): Int {
+    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeByteArray(bytes, 0, count, options)
+    require(options.outWidth in 1..16384 && options.outHeight in 1..16384)
+    require(options.outMimeType in setOf("image/jpeg", "image/png", "image/webp"))
+    var sample = 1
+    while (maxOf(options.outWidth, options.outHeight) > 1440 * sample) sample *= 2
+    options.inJustDecodeBounds = false
+    options.inSampleSize = sample
+    val bitmap = checkNotNull(BitmapFactory.decodeByteArray(bytes, 0, count, options))
+    var written = 0
+    val bounded = object : OutputStream() {
+      override fun write(value: Int) {
+        check(written < LIMIT)
+        bytes[written++] = value.toByte()
+      }
+      override fun write(buffer: ByteArray, offset: Int, length: Int) {
+        check(length <= LIMIT - written)
+        buffer.copyInto(bytes, written, offset, offset + length)
+        written += length
+      }
+    }
+    try { check(bitmap.compress(Bitmap.CompressFormat.JPEG, 76, bounded) && written > 0) }
+    finally { bitmap.recycle() }
+    return written
   }
 
   private fun <T> safe(block: () -> T): T {
