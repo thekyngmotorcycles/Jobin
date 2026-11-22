@@ -32,10 +32,10 @@ test("Universal chooser keeps messaging apps and native system share behind More
  assert.ok(sheet.includes("https://wa.me/?text="));
  assert.ok(sheet.includes("sms:?body="));
  assert.ok(sheet.includes("nativeSharePending.current=true"));
- assert.ok(sheet.includes('if(Platform.OS==="android"){dismiss();setTimeout(()=>void shareNative(),400);return;}'));
+ assert.ok(sheet.includes('if(Platform.OS==="android"){dismiss();timer.current=setTimeout(()=>void shareNative(),400);return;}'));
  assert.ok(sheet.includes("onDismiss={()=>{if(nativeSharePending.current)"));
- assert.ok(sheet.includes("await Share.share({message,title:shareTitle"));
- assert.ok(sheet.includes("if(result.action===Share.sharedAction)onShared?.()"));
+ assert.ok(sheet.includes("await Share.share({message:task.message,title:task.title"));
+ assert.ok(sheet.includes("if(result.action===Share.sharedAction&&await verifyDeferred(task))onShared?.()"));
 });
 
 test("QR is offered for real links, never for CV or text-only demo posts",()=>{
