@@ -1,0 +1,64 @@
+# One-time, owner-authorized publication of the Google sign-in retry fix.
+# This workflow cannot be used to publish later application changes.
+name: Approved Google login OTA (one shot)
+on:
+  push:
+    branches: [development]
+    paths:
+      - .github/workflows/approved-google-login-ota.yml
+permissions:
+  contents: read
+concurrency:
+  group: expo-development-ota-manual
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reject any unapproved app or workflow changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          APPROVED=32b4e28202bcdeb0a2d2dba3808f7c24414b1a3a
+          test "$GITHUB_REF" = "refs/heads/development"
+          git merge-base --is-ancestor "$APPROVED" HEAD
+          test "$(git rev-parse "$APPROVED:src/app/login.tsx")" = "3aa7ab3c100d78714fbb7fdf1cd62dff73c49c42"
+          git diff --name-only "$APPROVED" HEAD > "$RUNNER_TEMP/changed.txt"
+          printf '%s\n' '.github/workflows/approved-google-login-ota.yml' > "$RUNNER_TEMP/expected.txt"
+          diff -u "$RUNNER_TEMP/expected.txt" "$RUNNER_TEMP/changed.txt"
+          test "$(git show HEAD:.github/workflows/approved-google-login-ota.yml | sha256sum | cut -d' ' -f1)" = "$(sha256sum .github/workflows/approved-google-login-ota.yml | cut -d' ' -f1)"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify production project identity
+        env:
+          EXPO_PROJECT_ID: ${{ vars.EXPO_PROJECT_ID }}
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          const expo = JSON.parse(readFileSync('app.json', 'utf8')).expo;
+          const id = 'a6befb1a-dc03-45a8-a18c-294643e99434';
+          if (expo.extra?.eas?.projectId !== id || expo.updates?.url !== `https://u.expo.dev/${id}` || (process.env.EXPO_PROJECT_ID && process.env.EXPO_PROJECT_ID !== id)) throw Error('Expo project identity mismatch');
+          JS
+      - run: npm ci --no-audit --no-fund
+      - run: npx expo install --check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Publish approved JavaScript-only update
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          test -n "$EXPO_TOKEN" || { echo "::error::Missing EXPO_TOKEN"; exit 1; }
+          npx eas-cli@27.1.0 update --branch development --environment preview --platform android --message "Google login retry only - approved 32b4e282" --non-interactive --json > "$RUNNER_TEMP/expo-update.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jobeen-google-login-ota
+          path: ${{ runner.temp }}/expo-update.json
+          if-no-files-found: error
