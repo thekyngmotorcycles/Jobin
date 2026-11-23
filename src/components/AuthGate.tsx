@@ -4,10 +4,10 @@ import * as Linking from "expo-linking";
 import { AppState } from "react-native";
 import {classifyAuthNavigation,type AuthNavigationPhase} from "../lib/auth-navigation-phase";
 import { supabase } from "../lib/supabase";
-import {exchangePendingGoogle,runAuthExit} from "../lib/auth-entry";
+import {exchangePendingGoogle,runAuthExit,cancelPendingGoogle} from "../lib/auth-entry";
 import {sessionExitFence} from "../lib/session-exit-fence";
 import type {MessageScope} from "../lib/session-continuity";
-import {parseGoogleCallback} from "../lib/auth-entry-boundary";
+import {parseGoogleCallback,authRedirectScheme} from "../lib/auth-entry-boundary";
 import { sessionMarkerKey,sessionLifetimeState } from "../lib/session-lifetime";
 
 const AuthNavigationContext=createContext<AuthNavigationPhase>("checking");
@@ -109,6 +109,13 @@ export function AuthGate({ children }: { children: ReactNode }) {
    finally{if(valid())setReady(true);}
   }
   async function handleOAuthUrl(url:string|null){
+   // Reject a malformed OAuth return visibly, rather than silently retaining the pending lease.
+   if(url?.startsWith(authRedirectScheme+"://") && !parseGoogleCallback(url)){
+    cancelPendingGoogle();
+    setOAuthError("Google regresó sin un código de acceso válido. Inténtalo de nuevo.");
+    if(active){setHandlingOAuth(false);void check();}
+    return true;
+   }
    if(!parseGoogleCallback(url))return false;
    if(oauthInFlight)return true;
    oauthInFlight=true;revision++;
