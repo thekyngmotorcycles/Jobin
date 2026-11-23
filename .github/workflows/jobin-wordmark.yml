@@ -1,12 +1,8 @@
-name: Integrate Jobin wordmark
+name: Generate Jobin wordmark preview (manual, artifact only)
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: [.github/workflows/jobin-wordmark.yml]
 permissions:
-  contents: write
-  actions: write
+  contents: read
 concurrency:
   group: jobin-wordmark
   cancel-in-progress: false
@@ -17,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: development
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -90,14 +86,14 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run export
-      - name: Commit artwork and components
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets src docs/wordmark.md
-          git commit -m "Integrate retro embossed Jobin wordmark across headers and loading screen"
-          git push origin HEAD:development
-      - name: Publish development update
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run expo-development.yml --ref development -f build=false -f platform=android
+      - name: Archive generated preview only (never commit, push or publish)
+        uses: actions/upload-artifact@v4
+        with:
+          name: jobin-wordmark-generated-preview
+          path: |
+            assets/images/jobin-wordmark-*.svg
+            assets/images/jobin-wordmark-*.png
+            assets/licenses/Lobster-OFL.txt
+            src/components/JobinWordmark.tsx
+            docs/wordmark.md
+          if-no-files-found: error
