@@ -1,5 +1,5 @@
 import {useRef,useState} from "react";
-import {runSignedOutAuth,cancelPendingGoogle} from "../lib/auth-entry";
+import {runSignedOutAuth} from "../lib/auth-entry";
 import {Text,View} from "react-native";
 import {router} from "expo-router";
 import {AuthAction,AuthField,AuthShell} from "../components/AuthForms";
@@ -11,7 +11,7 @@ export default function RecoverAccount(){
  async function send(){
   if(running.current)return;running.current=true;setBusy(true);setNotice("");setSent(false);requestedPhone.current="";
   const requestedMethod=method,address=value.trim();
-  try{cancelPendingGoogle();await runSignedOutAuth(async()=>{
+  try{await runSignedOutAuth(async()=>{
    const db=requireSupabase();
    if(requestedMethod==="email"){
     const {error}=await db.auth.resetPasswordForEmail(address.toLowerCase());if(error)throw error;
@@ -26,7 +26,7 @@ export default function RecoverAccount(){
  async function verify(){
   if(running.current||method!=="phone"||!sent||requestedPhone.current!==value.trim()||!/^\d{6,10}$/.test(code.trim()))return;
   running.current=true;setBusy(true);const phone=requestedPhone.current,token=code.trim();
-  try{cancelPendingGoogle();await runSignedOutAuth(async()=>{
+  try{await runSignedOutAuth(async()=>{
    const {data,error}=await requireSupabase().auth.verifyOtp({phone,token,type:"sms"});
    if(error||!data.session)throw Error("No se pudo recuperar la sesión.");
    await startJobinSession(data.session.user.id,data.session.access_token);

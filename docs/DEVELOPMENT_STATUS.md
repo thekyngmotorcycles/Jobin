@@ -1,5 +1,11 @@
 # Jobeen — registro central de desarrollo
 
+## Acceso Google en Android (2026-11-23)
+
+**PENDIENTE DE INTEGRACIÓN.** El fallo persistió tras #87 y #88. Dos regresiones reproducidas en `0be272eb` muestran que `AuthGate` podía perder el retorno que Expo conserva al reanudar Android y volver a mostrar Login al recibir un enlace de arranque normal mientras el canje PKCE todavía tenía la entrada reservada.
+
+La corrección consume el retorno de Expo al arrancar y reanudar, distingue el callback de los enlaces de navegación y protege el canje hasta su finalización. El intento persistente se consume una sola vez y un acceso por correo invalida cualquier intento Google abandonado. Las pruebas usan el SDK fijado de Supabase con el almacén seguro simulado, verifican el desafío PKCE y comprueban que el retorno tardío no sustituye la cuenta de correo. Pendiente confirmar el retorno con Google real en Android después de la integración y una entrega autorizada.
+
 ## SEC-05 — preparación de APK aislada tras integración (2026-11-22)
 
 - **CI del PR #75:** commit `4764f1c3ad9b1f3773e4f9890cca45c6fbd1e34c`, [run 45099348044](https://github.com/thekyngmotorcycles/Jobin/actions/runs/45099348044): `validate` y `database` **success**. Se corrigió el único fallo previo de tipos TS en el fixture sin debilitar la prueba. La rama sigue abierta en borrador; no se autorizó merge ni build.

@@ -1,42 +1,62 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {createAuthEntryBoundary,authRedirectScheme} from "./auth-entry-boundary";
-import {requireSupabase} from "./supabase";
-const boundary=createAuthEntryBoundary();
-const googlePendingKey="jobeen:oauth:google-pending:v1";
-const googlePendingTTL=5*60*1000;
-async function clearGooglePending(){await AsyncStorage.removeItem(googlePendingKey);}
+import { createAuthEntryBoundary, authRedirectScheme } from "./auth-entry-boundary";
+import { requireSupabase } from "./supabase";
 
-async function signedOut(){
- const {data,error}=await requireSupabase().auth.getSession();
- if(error||data.session)throw Error("Cierra la sesión actual antes de iniciar otro acceso.");
+const googlePendingKey = "jobeen:oauth:google-pending:v1";
+const replacePendingGoogle = { replacePendingGoogle: true };
+const clearGooglePending = () => AsyncStorage.removeItem(googlePendingKey);
+const boundary = createAuthEntryBoundary(Date.now, {
+  async readDeadline() {
+    const stored = await AsyncStorage.getItem(googlePendingKey);
+    return stored === null ? NaN : Number(stored);
+  },
+  writeDeadline: deadline => AsyncStorage.setItem(googlePendingKey, String(deadline)),
+  clear: clearGooglePending,
+});
+
+async function signedOut() {
+  const { data, error } = await requireSupabase().auth.getSession();
+  if (error || data.session) throw Error("Cierra la sesión actual antes de iniciar otro acceso.");
 }
-export function runSignedOutAuth<T>(action:()=>Promise<T>){
- return boundary.exclusive(async()=>{await signedOut();return action();});
+
+export function runSignedOutAuth<T>(action: () => Promise<T>) {
+  return boundary.exclusive(async () => {
+    await clearGooglePending();
+    await signedOut();
+    return action();
+  }, replacePendingGoogle);
 }
-export function startGoogleAuth(open:(url:string)=>Promise<unknown>){
- return boundary.google(async ready=>{
-  await signedOut();
-  const {data,error}=await requireSupabase().auth.signInWithOAuth({provider:"google",options:{redirectTo:authRedirectScheme+"://",skipBrowserRedirect:true}});
-  if(error||!data.url)throw Error("No se pudo iniciar el acceso con Google.");
-  const link=new URL(data.url);
-  if(link.protocol!=="https:"||link.username||link.password)throw Error("Acceso con Google inválido.");
-  await signedOut();ready();
-  await AsyncStorage.setItem(googlePendingKey,String(Date.now()+googlePendingTTL));
-  try{await open(data.url);}catch(error){await clearGooglePending();throw error;}
- });
+
+export function startGoogleAuth(open: (url: string) => Promise<unknown>) {
+  return boundary.google(async ready => {
+    await signedOut();
+    const { data, error } = await requireSupabase().auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: authRedirectScheme + "://", skipBrowserRedirect: true },
+    });
+    if (error || !data.url) throw Error("No se pudo iniciar el acceso con Google.");
+    const link = new URL(data.url);
+    if (link.protocol !== "https:" || link.username || link.password) throw Error("Acceso con Google inválido.");
+    await signedOut();
+    await ready();
+    await open(data.url);
+  }, replacePendingGoogle);
 }
-export async function exchangePendingGoogle<T>(url:string|null,accept:(code:string)=>Promise<T>){
- const stored=await AsyncStorage.getItem(googlePendingKey);
- const deadline=stored?Number(stored):NaN;
- if(Number.isFinite(deadline)&&deadline>Date.now()&&deadline<=Date.now()+googlePendingTTL){
-  boundary.restorePendingGoogle(deadline);
- }
- try{return await boundary.exchange(url,async code=>{await signedOut();return accept(code);});}
- finally{await clearGooglePending();}
+
+export function exchangePendingGoogle(url: string | null, accept: (code: string) => Promise<void>) {
+  return boundary.completeGoogle(url, async code => {
+    if (!code) return "invalid" as const;
+    await signedOut();
+    await accept(code);
+    return "exchanged" as const;
+  });
 }
-export const cancelPendingGoogle=()=>boundary.cancelPendingGoogle();
-// Serialize logout with every entry, including completion of Google PKCE.
-export function runAuthExit<T>(action:()=>Promise<T>){
- boundary.cancelPendingGoogle();
- return boundary.exclusive(action);
+
+export function runAuthExit<T>(action: () => Promise<T>) {
+  return boundary.exclusive(async () => {
+    const result = await action();
+    // Supabase has cleared the verifier and session. Clean up any leftover intent as well.
+    await clearGooglePending().catch(() => {});
+    return result;
+  }, replacePendingGoogle);
 }
