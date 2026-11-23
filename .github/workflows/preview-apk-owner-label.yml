@@ -135,6 +135,8 @@ jobs:
               const lines=rows.flatMap(t=>{try{const o=JSON.parse(t);return typeof o.msg==='string'?[{phase:o.phase,msg:o.msg}]:[]}catch{return []}});
               const relevant=lines.filter(o=>/(?:error|failed|failure|what went wrong|could not|exception|missing|compile|gradle|cannot|kotlin|CMake|resource linking)/i.test(o.msg)).slice(-22);
               console.log('EXPO_BUILD_LOG_LINES',JSON.stringify(relevant.map(o=>({phase:o.phase,msg:redact(o.msg).slice(0,420)}))));
+              const updates=lines.filter(o=>o.phase==='CONFIGURE_EXPO_UPDATES').slice(-14);
+              console.log('EXPO_UPDATES_DETAIL',JSON.stringify(updates.map(o=>({msg:redact(o.msg).slice(-1900)}))));
             }catch{console.log('One Expo log file was unavailable; no credentials exposed');}
           }
           JS
