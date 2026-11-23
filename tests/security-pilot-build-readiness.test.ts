@@ -12,7 +12,7 @@ const valid = {
 };
 
 function check(changes: Record<string, string | undefined> = {}) {
-  const env = { ...process.env, ...valid };
+  const env: NodeJS.ProcessEnv = { ...process.env, ...valid };
   delete env.EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL;
   for (const [key, value] of Object.entries(changes)) {
     if (value === undefined) delete env[key];
