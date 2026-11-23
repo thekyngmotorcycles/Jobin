@@ -9,6 +9,14 @@ function workflow(name: string): string {
 const all = readdirSync(folder).filter(name => /\.ya?ml$/.test(name));
 const ownerGuard = /github\.actor\s*==\s*'thekyngmotorcycles'/;
 
+test("manual development OTA accepts an Android-only scope and rejects other platform inputs", () => {
+  const text = workflow("expo-development.yml");
+  assert.match(text, /platform:\n[\s\S]*?type: choice\s+options:\s+- android\s+- all\s+default: all/);
+  assert.match(text, /OTA_PLATFORM: \$\{\{ inputs\.platform \}\}/);
+  assert.match(text, /case "\$OTA_PLATFORM" in\s+android\|all\) ;;\s+\*\).+exit 1 ;;\s+esac/);
+  assert.match(text, /eas-cli@27\.1\.0 update --branch development --environment preview --platform "\$OTA_PLATFORM"/);
+});
+
 test("no EAS OTA publisher automatically runs on push and every publisher checks exact owner approval", () => {
   const publishers = all.filter(name => /\b(?:eas|eas-cli@[^\s]+)\s+update\s+--branch\b/.test(workflow(name)));
   assert.deepEqual(publishers.sort(), ["approved-google-login-ota.yml", "expo-development.yml"]);

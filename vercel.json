@@ -7,7 +7,8 @@
       "governance/security-foundation-20261122": false,
       "development": false,
       "feature/security-pilot-apk-preflight": false,
-      "fix/google-login-android-return": false
+      "fix/google-login-android-return": false,
+      "fix/development-ota-android-option": false
     }
   }
 }

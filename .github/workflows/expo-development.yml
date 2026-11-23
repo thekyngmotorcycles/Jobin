@@ -11,6 +11,14 @@ on:
         required: true
         type: boolean
         default: false
+      platform:
+        description: Platforms included in the approved OTA
+        required: true
+        type: choice
+        options:
+          - android
+          - all
+        default: all
 permissions:
   contents: read
 concurrency:
@@ -62,10 +70,15 @@ jobs:
       - name: Publish only the explicitly approved OTA (no builds, Git pushes or channel changes)
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          OTA_PLATFORM: ${{ inputs.platform }}
         run: |
           test -n "$EXPO_TOKEN" || { echo "::error::Missing EXPO_TOKEN"; exit 1; }
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA" || { echo "::error::Commit mismatch"; exit 1; }
-          npx eas-cli@27.1.0 update --branch development --environment preview --platform all --message "Jobeen approved OTA $GITHUB_SHA" --non-interactive --json > "$RUNNER_TEMP/expo-update.json"
+          case "$OTA_PLATFORM" in
+            android|all) ;;
+            *) echo "::error::Invalid OTA platform"; exit 1 ;;
+          esac
+          npx eas-cli@27.1.0 update --branch development --environment preview --platform "$OTA_PLATFORM" --message "Jobeen approved OTA $GITHUB_SHA" --non-interactive --json > "$RUNNER_TEMP/expo-update.json"
       - uses: actions/upload-artifact@v4
         with:
           name: jobeen-approved-development-ota
