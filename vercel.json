@@ -9,7 +9,8 @@
       "feature/security-pilot-apk-preflight": false,
       "fix/google-login-android-return": false,
       "fix/development-ota-android-option": false,
-      "fix/google-oauth-claim-timing": false
+      "fix/google-oauth-claim-timing": false,
+      "fix/google-pkce-empty-authority": false
     }
   }
 }

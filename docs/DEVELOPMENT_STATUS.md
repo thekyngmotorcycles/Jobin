@@ -2,6 +2,8 @@
 
 ## Acceso Google en Android (2026-11-23)
 
+**PENDIENTE DE INTEGRACIÓN.** La OTA Android con runtime `jobeen-native-20261123` publicó `b9b3c869`, pero el usuario volvió a Login. En la ventana del incidente Supabase registró seis retornos OAuth y cero canjes PKCE. GoTrue construye el callback con `net/url`, que serializa `jobin://` con el código como `jobin:?code=…`. El parser de Jobeen descartaba ese formato antes del canje. Se reprodujo el encabezado HTTP de retorno con Go y se añadieron pruebas para ese formato con el SDK de Supabase. Se conserva el esquema, el requisito de intento pendiente y PKCE. La prueba en el teléfono queda pendiente de la entrega autorizada.
+
 **PENDIENTE DE VALIDACIÓN.** EAS confirmó que la APK preview Android `7a5e4641-d586-42d3-909f-3656371d6429` del canal `development` se compiló con `jobeen-native-20261123`. La OTA `45258878012` usó fingerprint. La opción manual para esa APK selecciona el runtime en el runner y exige que coincidan la configuración nativa y el perfil de la compilación. La corrección adicional mantiene Login en espera desde que se reclama un retorno Google válido. El fallo se reprodujo localmente al retrasar la lectura de sesión. La OTA compatible y la validación en dispositivo quedan pendientes.
 
 El PR #89 se fusionó en `development` como `3e9dac8e`. La entrega autorizada para la APK actual requiere limitar la OTA a Android. La opción del workflow manual conserva la comprobación de propietario y SHA exacto.

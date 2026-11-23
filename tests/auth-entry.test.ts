@@ -202,6 +202,19 @@ test("Android recreation consumes Expo's cached callback ahead of an unrelated l
   } finally { gate.cleanup(); }
 });
 
+test("the hostless GoTrue callback completes Google Login on Android after the app is recreated", async () => {
+  const app = fixture();
+  await app.createEntry().startGoogleAuth(async () => {});
+  const gate = app.mountGate(app.createEntry(), Promise.resolve(null));
+  try {
+    await tick();
+    gate.emit("jobin:?code=gotrue-return");
+    await tick();
+    assert.deepEqual(app.exchangedCodes, ["gotrue-return"]);
+    assert.equal(gate.scope(), "google-owner");
+  } finally { gate.cleanup(); }
+});
+
 test("Login is unavailable as soon as a valid Google return reserves the entry, before Supabase responds", async () => {
   const app = fixture();
   const entry = app.createEntry();
@@ -303,7 +316,7 @@ test("Supabase SDK exchanges the stored PKCE verifier once and a later Email Log
 
   const auth = makeAuth();
   const entry = loadEntry(auth, intent);
-  assert.equal(await entry.exchangePendingGoogle("jobin://?code=google-code", async code => {
+  assert.equal(await entry.exchangePendingGoogle("jobin:?code=google-code", async code => {
     const { data, error } = await auth.exchangeCodeForSession(code);
     assert.ifError(error);
     assert.equal(data.session?.user.id, "google-owner");

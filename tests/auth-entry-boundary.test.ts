@@ -25,6 +25,22 @@ test("only a single valid code on the configured empty-host redirect can be exch
   }
 });
 
+test("GoTrue's serialized hostless redirect is accepted without widening the allowed path or query", () => {
+  for (const prefix of ["jobin:", "jobin:/", "jobin://", "jobin:///"]) {
+    assert.equal(isGoogleCallbackUrl(prefix + "?code=fixture-code"), true);
+    assert.equal(parseGoogleCallback(prefix + "?code=fixture-code"), "fixture-code");
+  }
+  assert.equal(parseGoogleCallback("jobeen-security-pilot:?code=fixture-code", "jobeen-security-pilot"), "fixture-code");
+  assert.equal(parseGoogleCallback("jobin:?code=fixture-code", "jobeen-security-pilot"), null);
+  for (const url of [
+    "jobin:", "jobin:login?code=abc", "jobin:/profile?code=abc",
+    "jobin://profile?code=abc", "jobin:////?code=abc", "jobin:?code=abc&code=def",
+    "jobin:#code=abc", "jobin:?code=abc#access_token=xyz", "https://jobin/?code=abc",
+  ]) {
+    assert.equal(parseGoogleCallback(url), null);
+  }
+});
+
 test("unsolicited, duplicate and expired returns cannot exchange", async () => {
   let now = 1000;
   let calls = 0;
