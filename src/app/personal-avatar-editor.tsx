@@ -3,7 +3,8 @@ import {useEffect,useMemo,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Animated,Dimensions,FlatList,Image,PanResponder,Pressable,StyleSheet,Text,View} from "react-native";
 import {useLocalSearchParams,useRouter} from "expo-router";
 import {EMPTY_BUSINESS_CARD,writeScopedBusinessCard} from "../lib/business-card-cache";
-import {cloudOwner,readCloudBusiness,writeCloudBusiness} from "../lib/jcard-cloud";
+import {readCloudBusiness,writeCloudBusiness} from "../lib/jcard-cloud";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
 import {uploadBusinessPhoto} from "../lib/business-media";
 import type {BusinessCardData} from "../lib/jcard";
 import {Ionicons} from "@expo/vector-icons";
@@ -34,6 +35,9 @@ export default function PersonalAvatarEditor(){
  const [permissionDenied,setPermissionDenied]=useState(false);
  const [busy,setBusy]=useState(false);
  const [saveError,setSaveError]=useState("");
+ const [editorScope,setEditorScope]=useState<MessageScope|null>(null);
+ const editorLive=useRef(false),saveGuard=useRef(false);
+ useEffect(()=>{let live=true;editorLive.current=true;void captureMessageScope().then(scope=>{if(live)setEditorScope(scope);}).catch(()=>{});return()=>{live=false;editorLive.current=false;};},[]);
  const [zoom,setZoom]=useState(1);
  const [offset,setOffset]=useState({x:0,y:0});
  const [dimensions,setDimensions]=useState({width:SIZE,height:SIZE});
@@ -100,8 +104,11 @@ export default function PersonalAvatarEditor(){
   else router.replace("/professional");
  }
  async function save(){
-  if(!selected||busy)return;setSaveError("");setBusy(true);
+  if(!selected||busy||!editorScope||saveGuard.current)return;saveGuard.current=true;setSaveError("");setBusy(true);
   try{
+   const scope=editorScope,owner=scope.owner;
+   await captureMessageScope(scope);
+   if(!editorLive.current)return;
    // The gallery asset already provides its URI and dimensions. Reading full asset
    // metadata on Android can require ACCESS_MEDIA_LOCATION for EXIF GPS data,
    // which is unnecessary for cropping and saving a profile photograph.
@@ -116,21 +123,25 @@ export default function PersonalAvatarEditor(){
    context.resize({width:512,height:512});
    const rendered=await context.renderAsync();
    const result=await rendered.saveAsync({format:ImageManipulator.SaveFormat.JPEG,compress:0.75,base64:true});
+   await assertMessageScope(scope);
+   if(!editorLive.current)return;
    if(businessAvatar){
-    const owner=await cloudOwner();
     const photo={uri:result.uri,name:"business-avatar.jpg",mimeType:"image/jpeg",size:0};
-    const uploaded=await uploadBusinessPhoto("business-profile-media",owner,photo,"avatar");
-    const current=await readCloudBusiness();
+    const uploaded=await uploadBusinessPhoto("business-profile-media",owner,photo,"avatar",scope);
+    const current=await readCloudBusiness(owner,scope);
+    if(!editorLive.current)return;
     const updated:BusinessCardData={...EMPTY_BUSINESS_CARD,...(current??{}),avatarUrl:uploaded.url};
-    await writeCloudBusiness(updated,owner);
-    await writeScopedBusinessCard(owner,updated);
-   }else await uploadPersonalJCardPhoto(result.base64??"","image/jpeg");
+    await writeCloudBusiness(updated,owner,scope);
+    await writeScopedBusinessCard(owner,updated,scope);
+   }else await uploadPersonalJCardPhoto(result.base64??"","image/jpeg",owner,scope);
+   await assertMessageScope(scope);
+   if(!editorLive.current)return;
    if(router.canGoBack())router.back();
    else router.replace("/professional");
-  }catch(e){const detail=e instanceof Error?e.message:String(e);setSaveError(detail);Alert.alert("No se pudo guardar",detail);}finally{setBusy(false);}
+  }catch(e){const detail=e instanceof Error?e.message:String(e);if(editorLive.current){setSaveError(detail);Alert.alert("No se pudo guardar",detail);}}finally{saveGuard.current=false;if(editorLive.current)setBusy(false);}
  }
  return <View style={s.root}>
-  <View style={[s.top,{paddingTop:Math.max(insets.top,16),height:64+Math.max(insets.top,16)}]}><Pressable accessibilityRole="button" accessibilityLabel="Cerrar sin guardar" hitSlop={12} disabled={busy} onPress={closeWithoutSaving} style={s.closeButton}><Ionicons name="close" size={19} color={avatarEditorColors.text}/></Pressable><Pressable disabled={!selected||busy} onPress={()=>void save()}><Text style={s.save}>{busy?"Guardando":"Guardar"}</Text></Pressable></View>
+  <View style={[s.top,{paddingTop:Math.max(insets.top,16),height:64+Math.max(insets.top,16)}]}><Pressable accessibilityRole="button" accessibilityLabel="Cerrar sin guardar" hitSlop={12} disabled={busy} onPress={closeWithoutSaving} style={s.closeButton}><Ionicons name="close" size={19} color={avatarEditorColors.text}/></Pressable><Pressable disabled={!selected||busy||!editorScope} onPress={()=>void save()}><Text style={s.save}>{busy?"Guardando":"Guardar"}</Text></Pressable></View>
   <Animated.View style={[s.previewArea,{height:previewHeight,overflow:"hidden",marginTop:0}]}>{selected?<View style={{width:SIZE,height:SIZE,borderRadius:SIZE/2,overflow:"hidden",backgroundColor:avatarEditorColors.preview}} {...pan.panHandlers}><Image source={{uri:selected.uri}} style={{width:displayWidth,height:displayHeight,position:"absolute",left:(SIZE-displayWidth)/2+dx,top:(SIZE-displayHeight)/2+dy}} resizeMode="stretch"/><View pointerEvents="none" style={StyleSheet.absoluteFill}><View style={{position:"absolute",left:"33.333%",top:0,bottom:0,width:1,backgroundColor:avatarEditorColors.guide}}/><View style={{position:"absolute",left:"66.666%",top:0,bottom:0,width:1,backgroundColor:avatarEditorColors.guide}}/><View style={{position:"absolute",top:"33.333%",left:0,right:0,height:1,backgroundColor:avatarEditorColors.guide}}/><View style={{position:"absolute",top:"66.666%",left:0,right:0,height:1,backgroundColor:avatarEditorColors.guide}}/></View></View>:<ActivityIndicator/>}</Animated.View>
   {!!saveError&&<Text accessibilityLiveRegion="polite" style={s.message}>No se pudo guardar: {saveError}</Text>}
   <View style={s.galleryHeader}>

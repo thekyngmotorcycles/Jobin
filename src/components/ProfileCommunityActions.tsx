@@ -1,12 +1,13 @@
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
-import {useCallback,useEffect,useState} from "react";
+import {useCallback,useEffect,useRef,useState} from "react";
 import {Modal,Pressable,StyleSheet,Text,View,useWindowDimensions} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import {contactState,inviteContact,replyContactRequest,removeContactRequest,type ContactRequest} from "../lib/professional-contacts";
 import {requireSupabase} from "../lib/supabase";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
 import {useUi} from "./ui";
 import {useTheme} from "../state/ThemeProvider";
 import {JobeenShareSheet} from "./JCardShareSheet";
@@ -14,21 +15,31 @@ import {JobeenNoticeDialog} from "./JobeenNoticeDialog";
 import {SettingsMenuRow} from "./SettingsMenuRow";
 export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose,onToggleSaved,savedJCard=false,savingJCard=false,visibleCardSide="personal"}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void;onToggleSaved?:()=>void;savedJCard?:boolean;savingJCard?:boolean;visibleCardSide?:"personal"|"business"}){
  const {s,colors}=useUi();const {theme}=useTheme();const modal=jobeenModalTokens(theme);const insets=useSafeAreaInsets();const {width}=useWindowDimensions();const jobeen=jobeenTokens("light");const [shareOpen,setShareOpen]=useState(false);const [confirm,setConfirm]=useState<"remove"|"block"|null>(null);const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
+ const scopeRef=useRef<MessageScope|null>(null);
  const [contact,setContact]=useState<ContactRequest|null>(null),[viewer,setViewer]=useState("");
- useFocusEffect(useCallback(()=>{let active=true;void contactState(user).then(value=>{if(active){setContact(value.request);setViewer(value.mine);}}).catch(()=>{if(active)setContact(null);});return()=>{active=false;};},[user]));
+ useFocusEffect(useCallback(()=>{
+  let active=true;scopeRef.current=null;setContact(null);setViewer("");setConfirm(null);
+  void(async()=>{try{
+   const scope=await captureMessageScope(),value=await contactState(user,scope);
+   await assertMessageScope(scope);
+   if(active){scopeRef.current=scope;setContact(value.request);setViewer(value.mine);}
+  }catch{if(active){setContact(null);setViewer("");}}})();
+  return()=>{active=false;scopeRef.current=null;};
+ },[user]));
  async function connect(){
-  if(busy)return;
+  const scope=scopeRef.current;
+  if(!scope||scope.owner!==viewer||busy)return;
   setBusy(true);setMessage("");
   try{
-   if(!contact)await inviteContact(user);
-   else if(contact.status==="pending"&&contact.recipient_id===viewer)await replyContactRequest(contact.id,true);
-   else if(contact.status==="pending"&&contact.requester_id===viewer)await removeContactRequest(contact.id);
+   if(!contact)await inviteContact(user,scope);
+   else if(contact.status==="pending"&&contact.recipient_id===viewer)await replyContactRequest(contact.id,true,scope);
+   else if(contact.status==="pending"&&contact.requester_id===viewer)await removeContactRequest(contact.id,scope);
    else if(contact.status==="accepted"){
     setBusy(false);
     setConfirm("remove");
     return;
-   }else if(contact.status==="declined"){await removeContactRequest(contact.id);await inviteContact(user);}
-   const value=await contactState(user);setContact(value.request);
+   }else if(contact.status==="declined"){await removeContactRequest(contact.id,scope);if(scopeRef.current!==scope)return;await inviteContact(user,scope);}
+   const value=await contactState(user,scope);if(scopeRef.current===scope)setContact(value.request);
   }catch(e){setMessage(e instanceof Error?e.message:"No se pudo gestionar el contacto.");}
   finally{setBusy(false);}
  }
@@ -36,11 +47,12 @@ export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClos
   contact.recipient_id===viewer?"Aceptar":"Pendiente";
  useEffect(()=>{let active=true;void(async()=>{try{const db=requireSupabase();const {data:{user:me}}=await db.auth.getUser();if(!me||me.id===user)return;const {data}=await db.from("profile_follows" as never).select("followed_id").eq("follower_id",me.id).eq("followed_id",user).maybeSingle();if(active)setFollowed(!!data);}catch{}})();return()=>{active=false;};},[user]);
  async function toggleFollow(){
+  const scope=scopeRef.current;if(!scope||scope.owner!==viewer)return;
   setBusy(true);setMessage("");
-  try{const db=requireSupabase();const {data:{user:me}}=await db.auth.getUser();if(!me)throw Error("Inicia sesión para seguir a este profesional.");
+  try{const db=requireSupabase();await captureMessageScope(scope);if(scopeRef.current!==scope)return;const me={id:scope.owner};
    if(me.id===user)throw Error("No puedes seguir tu propio perfil.");
    const request=followed?db.from("profile_follows" as never).delete().eq("follower_id",me.id).eq("followed_id",user):db.from("profile_follows" as never).insert({follower_id:me.id,followed_id:user} as never);
-   const {error}=await request;if(error)throw error;setFollowed(!followed);
+   const {error}=await request;if(error)throw error;await assertMessageScope(scope);if(scopeRef.current===scope)setFollowed(!followed);
   }catch(e){setMessage(e instanceof Error?e.message:"No se pudo actualizar.");}finally{setBusy(false);}
  }
  function block(){
@@ -48,19 +60,21 @@ export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClos
   setTimeout(()=>setConfirm("block"),350);
  }
  async function confirmRemove(){
-  if(!contact||contact.status!=="accepted"){setConfirm(null);return;}
+  const scope=scopeRef.current;
+  if(!scope||scope.owner!==viewer||!contact||contact.status!=="accepted"){setConfirm(null);return;}
   setBusy(true);
-  try{await removeContactRequest(contact.id);const value=await contactState(user);setContact(value.request);}
+  try{await removeContactRequest(contact.id,scope);const value=await contactState(user,scope);if(scopeRef.current===scope)setContact(value.request);}
   catch(e){setMessage(e instanceof Error?e.message:"No se pudo eliminar el contacto.");}
   finally{setBusy(false);setConfirm(null);}
  }
  async function confirmBlock(){
+  const scope=scopeRef.current;if(!scope||scope.owner!==viewer)return;
   setBusy(true);
   try{
-   const db=requireSupabase();const {data:{user:me}}=await db.auth.getUser();
-   if(!me||me.id===user)throw Error("No se puede bloquear este perfil.");
+   const db=requireSupabase();await captureMessageScope(scope);if(scopeRef.current!==scope)return;const me={id:scope.owner};
+   if(me.id===user)throw Error("No se puede bloquear este perfil.");
    const {error}=await db.from("blocks").insert({blocker_id:me.id,blocked_id:user});
-   if(error)throw error;setMessage("Perfil bloqueado.");
+   if(error)throw error;await assertMessageScope(scope);if(scopeRef.current===scope)setMessage("Perfil bloqueado.");
   }catch(e){setMessage(e instanceof Error?e.message:"No se pudo bloquear.");}
   finally{setBusy(false);setConfirm(null);}
  }

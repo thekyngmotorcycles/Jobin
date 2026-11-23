@@ -6,6 +6,8 @@ import { router } from "expo-router";
 import { AuthField } from "../components/AuthForms";
 import { startJobinSession } from "../components/AuthGate";
 import { requireSupabase } from "../lib/supabase";
+import {runSignedOutAuth,cancelPendingGoogle} from "../lib/auth-entry";
+import {captureMessageScope,assertMessageScope} from "../lib/message-session";
 
 const VALID_USERNAME = /^[a-z][a-z0-9_]{2,29}$/;
 export default function Account() {
@@ -26,6 +28,8 @@ export default function Account() {
   if(password!==confirmPassword){setNotice("Las contraseñas no coinciden.");return;}
   setBusy(true);
   try{
+   cancelPendingGoogle();
+   await runSignedOutAuth(async()=>{
    const client=requireSupabase();
    const {data:existing,error:lookupError}=await client.from("usernames").select("username").eq("username",handle).maybeSingle();
    if(lookupError)throw lookupError;
@@ -39,15 +43,17 @@ export default function Account() {
     if(signed.error||!signed.data.session)throw new Error("La cuenta fue registrada, pero no se pudo iniciar sesión. Intenta entrar desde Log in.");
     session=signed.data.session;
    }
+   await startJobinSession(session.user.id,session.access_token);
+   const scope=await captureMessageScope();if(scope.owner!==session.user.id)throw Error("La cuenta cambió.");
    const {error:claimError}=await client.from("usernames").insert({user_id:session.user.id,username:handle});
+   await assertMessageScope(scope);
    if(claimError && claimError.code!=="23505")throw claimError;
    if(claimError) {
     const {data:owned}=await client.from("usernames").select("username").eq("user_id",session.user.id).maybeSingle();
     if(owned?.username!==handle)throw new Error("El nombre de usuario ya está ocupado. Cambia tu usuario desde el perfil.");
    }
-   await startJobinSession();
-   setPassword("");setConfirmPassword("");
-   router.replace("/videos");
+   await assertMessageScope(scope);
+   });setPassword("");setConfirmPassword("");
   }catch(error){setNotice(error instanceof Error?error.message:"No se pudo completar el registro.");}
   finally{setBusy(false);}
  }

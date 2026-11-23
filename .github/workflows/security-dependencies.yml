@@ -1,0 +1,21 @@
+name: Security dependency watch
+on:
+  schedule:
+    - cron: "17 9 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: jobeen-security-dependency-watch
+  cancel-in-progress: true
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Alert on high/critical known vulnerabilities in production dependencies
+        run: npm audit --omit=dev --audit-level=high

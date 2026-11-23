@@ -1,34 +1,61 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState, type ReactNode } from "react";
+import { createContext, Fragment, useContext, useEffect, useState, type ReactNode } from "react";
 import * as Linking from "expo-linking";
-import { ActivityIndicator, AppState, View } from "react-native";
-import { router, usePathname } from "expo-router";
+import { AppState } from "react-native";
+import {classifyAuthNavigation,type AuthNavigationPhase} from "../lib/auth-navigation-phase";
 import { supabase } from "../lib/supabase";
+import {exchangePendingGoogle,runAuthExit} from "../lib/auth-entry";
+import {sessionExitFence} from "../lib/session-exit-fence";
+import type {MessageScope} from "../lib/session-continuity";
+import {parseGoogleCallback} from "../lib/auth-entry-boundary";
+import { sessionMarkerKey,sessionLifetimeState } from "../lib/session-lifetime";
 
-const KEY = "jobin:session-start";
-const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
-const AUTH_ROUTES = ["/login", "/account"];
-const USERNAME_ROUTE="/choose-username";
+const AuthNavigationContext=createContext<AuthNavigationPhase>("checking");
+export function useAuthNavigationPhase(){return useContext(AuthNavigationContext);}
 let usernameCompleted: (()=>void)|null=null;
 export function completeUsernameOnboarding(){usernameCompleted?.();}
 
-export async function startJobinSession() {
- await AsyncStorage.setItem(KEY, String(Date.now()));
+export async function startJobinSession(expectedOwner:string,expectedToken:string) {
+ const result=await supabase?.auth.getSession();
+ const session=result?.data.session;
+ if(result?.error||session?.user.id!==expectedOwner||sessionMarkerKey(expectedOwner,session.access_token)!==sessionMarkerKey(expectedOwner,expectedToken))throw new Error("La cuenta cambió. Vuelve a iniciar sesión.");
+ const key=sessionMarkerKey(expectedOwner,expectedToken);
+ sessionExitFence.assertOpen(key);
+ if(await AsyncStorage.getItem(key)===null){sessionExitFence.assertOpen(key);await AsyncStorage.setItem(key,String(Date.now()));}
+ sessionExitFence.assertOpen(key);
 }
-export async function endJobinSession() {
- await AsyncStorage.removeItem(KEY);
- await supabase?.auth.signOut();
+export async function endJobinSession(expected:MessageScope) {
+ if(!supabase||!expected?.owner||!expected.session)throw Error("Sesión no disponible.");
+ const db=supabase;
+ const origin={...expected};
+ await runAuthExit(async()=>{
+  const {data,error}=await db.auth.getSession();
+  const session=data.session;
+  if(error||!session||session.user.id!==origin.owner||sessionMarkerKey(origin.owner,session.access_token)!==origin.session)throw Error("La sesión cambió.");
+  await sessionExitFence.close(origin.session,async()=>{
+   // Recheck after the fence is active; do not sign out a newly selected user.
+   const current=await db.auth.getSession();
+   if(current.error||current.data.session?.user.id!==origin.owner||sessionMarkerKey(origin.owner,current.data.session.access_token)!==origin.session)throw Error("La sesión cambió.");
+   const {error:signOutError}=await db.auth.signOut({scope:"local"});
+   if(signOutError)throw signOutError;
+   // Keep a per-session tombstone instead of restarting the lifetime of a
+   // revoked session from a missing marker. Never touch ambiguous legacy data.
+   await AsyncStorage.setItem(origin.session,"revoked");
+  });
+ });
 }
 export function AuthGate({ children }: { children: ReactNode }) {
- const pathname = usePathname();
  const [ready, setReady] = useState(false);
- const [signedIn, setSignedIn] = useState(false);
+ const [sessionScope,setSessionScope]=useState<string|null>(null);
  const [handlingOAuth, setHandlingOAuth] = useState(true);
  const [needsUsername,setNeedsUsername]=useState(false);
  useEffect(() => {
   let active = true;
+  let revision=0;
+  let observedSession:string|null=null;
+  let oauthInFlight=false;
   usernameCompleted=()=>{if(active)setNeedsUsername(false);};
-  async function checkUsername(userId:string,sessionSetupIncomplete:boolean){
+  async function usernameRequired(userId:string,sessionSetupIncomplete:boolean){
    const [{data:claimed,error:usernameError},{data:profile,error:profileError},{data:jcard,error:jcardError}]=await Promise.all([
     supabase!.from("usernames").select("username").eq("user_id",userId).maybeSingle(),
     supabase!.from("profiles").select("display_name").eq("id",userId).maybeSingle(),
@@ -37,42 +64,62 @@ export function AuthGate({ children }: { children: ReactNode }) {
    if(usernameError||profileError||jcardError)throw usernameError??profileError??jcardError;
    const named=!!profile?.display_name?.trim() && profile.display_name!=="Nuevo usuario";
    const chosen=!!claimed?.username && !!jcard?.handle && claimed.username.toLowerCase()===jcard.handle.toLowerCase();
-   if(active)setNeedsUsername(sessionSetupIncomplete||!named||!chosen);
+   return sessionSetupIncomplete||!named||!chosen;
   }
   async function check() {
-   if (!supabase) { if (active) { setSignedIn(false); setReady(true); } return; }
+   if(oauthInFlight||sessionExitFence.current())return;
+   const checkedRevision=++revision;
+   const valid=()=>active&&revision===checkedRevision;
    try {
-    const { data: { session } } = await supabase.auth.getSession();
-    const started = await AsyncStorage.getItem(KEY);
-    if (!session) {
-     await AsyncStorage.removeItem(KEY);
-     if (active) setSignedIn(false);
-    } else if (started && Date.now() - Number(started) >= SEVEN_DAYS) {
-     await endJobinSession();
-     if (active) setSignedIn(false);
-    } else {
-     if (!started) await startJobinSession();
-     await checkUsername(session.user.id,session.user.user_metadata?.account_setup_completed!==true);
-     if (active) setSignedIn(true);
+    if(!supabase)return;
+    const {data:{session},error}=await supabase.auth.getSession();
+    if(error)throw error;
+    if(!session){
+     if(valid())setSessionScope(null);
+     return;
     }
-   } catch { if (active) setSignedIn(false); }
-   finally { if (active) setReady(true); }
+    const owner=session.user.id;
+    const key=sessionMarkerKey(owner,session.access_token);
+    const verified=await supabase.auth.getUser();
+    if(!valid())return;
+    if(verified.error||verified.data.user?.id!==owner){setSessionScope(null);return;}
+    const lifetime=sessionLifetimeState(await AsyncStorage.getItem(key));
+    if(!valid())return;
+    if(lifetime==="expired"){
+     setSessionScope(null);
+     await endJobinSession({owner,session:key});
+     return;
+    }
+    if(lifetime==="missing")await startJobinSession(owner,session.access_token);
+    if(!valid())return;
+    const needsSetup=await usernameRequired(owner,session.user.user_metadata?.account_setup_completed!==true);
+    const current=await supabase.auth.getSession();
+    if(!valid())return;
+    if(current.error||current.data.session?.user.id!==owner||
+       sessionMarkerKey(owner,current.data.session.access_token)!==key){
+     setSessionScope(null);
+     return;
+    }
+    setNeedsUsername(needsSetup);
+    setSessionScope(key);
+   }catch{if(valid())setSessionScope(null);}
+   finally{if(valid())setReady(true);}
   }
   async function handleOAuthUrl(url:string|null){
-   if(!url || !url.startsWith("jobin:"))return false;
-   const code = /[?&]code=([^&#]+)/.exec(url)?.[1];
-   if(!code)return false;
-   if(active)setHandlingOAuth(true);
+   if(!parseGoogleCallback(url))return false;
+   if(oauthInFlight)return true;
+   oauthInFlight=true;revision++;
    try{
-    if(!supabase)throw new Error("Supabase no está configurado");
-    const {data,error}=await supabase.auth.exchangeCodeForSession(decodeURIComponent(code));
-    if(error)throw error;
-    if(!data.session)throw new Error("El proveedor de acceso no devolvió una sesión válida");
-    await startJobinSession();
-    await checkUsername(data.session.user.id,data.session.user.user_metadata?.account_setup_completed!==true);
-    if(active)setSignedIn(true);
-   }catch(error){console.warn("Social OAuth callback failed:",error);}
-   finally{if(active){setHandlingOAuth(false);setReady(true);}}
+    await exchangePendingGoogle(url,async code=>{
+     if(!active||!supabase)throw Error("Acceso no disponible.");
+     setHandlingOAuth(true);
+     const {data,error}=await supabase.auth.exchangeCodeForSession(code);
+     if(error||!data.session)throw Error("No se pudo iniciar sesión.");
+     await startJobinSession(data.session.user.id,data.session.access_token);
+     return true;
+    });
+   }catch{/* Unsolicited or failed callbacks must not clear another signed-in session. */}
+   finally{oauthInFlight=false;if(active){setHandlingOAuth(false);void check();}}
    return true;
   }
   void Linking.getInitialURL().then(async url=>{
@@ -81,20 +128,33 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }).catch(()=>{if(active)setHandlingOAuth(false);void check();});
   const linkSubscription=Linking.addEventListener("url",event=>{void handleOAuthUrl(event.url).then(handled=>{if(!handled)void check();});});
 
-  const appSubscription = AppState.addEventListener("change", state => { if(state==="active" && !handlingOAuth) void check(); });
-  const subscription = supabase?.auth.onAuthStateChange((event) => {
-   if (event === "SIGNED_OUT") { void AsyncStorage.removeItem(KEY); if (active) setSignedIn(false); }
-   if (event === "SIGNED_IN") { if (active) setSignedIn(true); }
+  const exitSubscription=sessionExitFence.subscribe(()=>{
+   revision++;
+   if(!active)return;
+   if(sessionExitFence.current()){setSessionScope(null);setNeedsUsername(false);setReady(false);}
+   else setTimeout(()=>{if(active)void check();},0);
   });
-  return () => { active = false;usernameCompleted=null; subscription?.data.subscription.unsubscribe(); appSubscription.remove(); linkSubscription.remove(); };
+  const appSubscription = AppState.addEventListener("change", state => { if(state==="active"&&!oauthInFlight)void check(); });
+  const subscription = supabase?.auth.onAuthStateChange((event,session) => {
+   let nextSession:string|null=null;
+   try{if(session)nextSession=sessionMarkerKey(session.user.id,session.access_token);}catch{/* Invalid metadata cannot select a private account. */}
+   const changed=nextSession!==observedSession;
+   if(changed||event==="SIGNED_OUT"){
+    revision++;
+    observedSession=nextSession;
+    if(active){
+     setSessionScope(null);
+     setNeedsUsername(false);
+     setReady(nextSession===null&&!sessionExitFence.current());
+    }
+   }
+   if(nextSession&&(changed||event==="SIGNED_IN"||event==="INITIAL_SESSION"||event==="TOKEN_REFRESHED")){
+    setTimeout(()=>{if(active)void check();},0);
+   }
+  });
+  return () => { active = false;usernameCompleted=null; subscription?.data.subscription.unsubscribe(); exitSubscription(); appSubscription.remove(); linkSubscription.remove(); };
  }, []);
- useEffect(() => {
-  if (!ready || handlingOAuth) return;
-  if (!signedIn && !AUTH_ROUTES.includes(pathname)) router.replace("/login");
-  if(signedIn && needsUsername && pathname!==USERNAME_ROUTE)router.replace(USERNAME_ROUTE);
-  if(signedIn && !needsUsername && (AUTH_ROUTES.includes(pathname)||pathname===USERNAME_ROUTE))router.replace("/videos");
-
- }, [ready, signedIn, pathname, handlingOAuth,needsUsername]);
- if (!ready || handlingOAuth) return <View style={{ flex: 1, justifyContent: "center" }}><ActivityIndicator /></View>;
- return children;
+ // Protected routes are absent from the navigator until authorized.
+ const phase=classifyAuthNavigation(ready,handlingOAuth,sessionScope,needsUsername);
+ return <AuthNavigationContext.Provider value={phase}><Fragment key={sessionScope??"signed-out"}>{children}</Fragment></AuthNavigationContext.Provider>;
 }

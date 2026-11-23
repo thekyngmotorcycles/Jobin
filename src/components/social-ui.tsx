@@ -1,3 +1,4 @@
+import {userImageSource} from "../lib/media-urls";
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps,ReactNode } from "react";
 import { Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,StyleSheet,Text,View } from "react-native";
@@ -22,7 +23,7 @@ export function Avatar({uri,name,size=44,height=size,shape="circle",initials,emp
  const border=framed?Math.max(1.5,size>=48?2:1.5):0;
  const corner=shape==="circle"?size/2:Math.max(6,Math.round(size*0.18));
  return <View style={{height,width:size,borderRadius:corner,borderWidth:border,borderColor:t.yellow,padding:framed?1.5:0,backgroundColor:emphasis?colors.ink:colors.accent,overflow:"hidden",alignItems:"center",justifyContent:"center"}}>
- {uri&&!failed?<Image source={{uri}} accessibilityLabel={name} onError={()=>setFailed(true)} resizeMode="cover" style={{width:"100%",height:"100%",borderRadius:shape==="circle"?size/2:Math.max(4,corner-border-2)}}/>:<Text style={{color:emphasis?colors.inverse:colors.ink,fontSize:size*.32,fontWeight:"700"}}>{initials??name.split(/[\s-]+/).filter(Boolean).map(n=>n[0]).slice(0,2).join("")}</Text>}
+ {uri&&!failed?<Image key={uri} source={userImageSource(uri)} accessibilityLabel={name} onError={()=>setFailed(true)} resizeMode="cover" style={{width:"100%",height:"100%",borderRadius:shape==="circle"?size/2:Math.max(4,corner-border-2)}}/>:<Text style={{color:emphasis?colors.inverse:colors.ink,fontSize:size*.32,fontWeight:"700"}}>{initials??name.split(/[\s-]+/).filter(Boolean).map(n=>n[0]).slice(0,2).join("")}</Text>}
  </View>;
 }
 export function BottomSheet({visible,onClose,title,children,translucent=false}:{visible:boolean;onClose:()=>void;title:string;children:ReactNode;translucent?:boolean}){

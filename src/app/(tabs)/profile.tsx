@@ -4,11 +4,11 @@ import {JOBEEN_TYPE} from "../../theme/typography";
 import {jobeenTokens} from "../../theme/jobeen";
 import {useTheme} from "../../state/ThemeProvider";
 import {cvRequests,respondCV,revokeCV,type CVRequest} from "../../lib/cv-access";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../../lib/message-session";
 import {identityVerified} from "../../lib/identity-status";
 import {pickBusinessGalleryPhoto,uploadBusinessPhoto} from "../../lib/business-media";
-import {cloudOwner} from "../../lib/jcard-cloud";
-import {EMPTY_BUSINESS_CARD,readScopedBusinessCard,writeScopedBusinessCard} from "../../lib/business-card-cache";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {assertAccountOwner} from "../../lib/account-scope";
+import {EMPTY_BUSINESS_CARD,readScopedBusinessCard,writeScopedBusinessCard,clearBusinessCardMemory} from "../../lib/business-card-cache";
 import { employmentMonths,experienceLabel } from "../../lib/employment";
 import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness,readBusinessRating,readBusinessExcellence } from "../../lib/jcard-cloud";
 import { useTabClearance } from "../../theme/navigation";
@@ -85,38 +85,79 @@ export default function Profile() {
   const closeProfileMenu=()=>setProfileToolsOpen(false);
   const {width:screenWidth,height:screenHeight}=useWindowDimensions();
   useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
-  const [history, setHistory] = useState<EmploymentEntry[]>([]);
   const [cvShareOpen,setCvShareOpen]=useState(false);
+  const cvScope=useRef<MessageScope|null>(null),cvRevision=useRef(0);
   const [incomingCV,setIncomingCV]=useState<CVRequest[]>([]);
-  async function refreshCV(){try{const id=await cloudOwner();setIncomingCV((await cvRequests()).filter(r=>r.owner_id===id));}catch(e){setNotice(e instanceof Error?e.message:"No se pudieron cargar solicitudes.");}}
-  async function answerCV(id:string,approve:boolean){try{await respondCV(id,approve);await refreshCV();}catch(e){setNotice(String(e));}}
-  async function cancelCV(id:string){try{await revokeCV(id);await refreshCV();}catch(e){setNotice(String(e));}}
+  async function refreshCV(expected?:MessageScope){
+   const generation=++cvRevision.current;
+   cvScope.current=null;setIncomingCV([]);
+   try{
+    const scope=await captureMessageScope(expected);
+    if(scope.owner!==ownerId)throw Error("La sesión cambió.");
+    const rows=await cvRequests(scope);
+    await assertMessageScope(scope);
+    if(cvRevision.current===generation){cvScope.current=scope;setIncomingCV(rows.filter(r=>r.owner_id===scope.owner));}
+   }catch(e){if(cvRevision.current===generation)setNotice(e instanceof Error?e.message:"No se pudieron cargar solicitudes.");}
+  }
+  async function answerCV(id:string,approve:boolean){
+   const scope=cvScope.current;
+   if(!scope||scope.owner!==ownerId||!incomingCV.some(r=>r.id===id&&r.owner_id===scope.owner&&r.status==="pending"))return;
+   try{await respondCV(id,approve,scope);if(cvScope.current===scope)await refreshCV(scope);}catch(e){setNotice(String(e));}
+  }
+  async function cancelCV(id:string){
+   const scope=cvScope.current;
+   if(!scope||scope.owner!==ownerId||!incomingCV.some(r=>r.id===id&&r.owner_id===scope.owner&&r.status==="approved"))return;
+   try{await revokeCV(id,scope);if(cvScope.current===scope)await refreshCV(scope);}catch(e){setNotice(String(e));}
+  }
   function shareCV(){setCvShareOpen(true);}
-  useEffect(()=>{void refreshCV();},[]);
-  const [historyLoaded,setHistoryLoaded] = useState(false);
-  const [employerLink,setEmployerLink]=useState<{id:string;name:string;handle:string}|null>(null);
+  
+  const [employerLink,setEmployerLink]=useState<{owner:string;id:string;name:string;handle:string}|null>(null);
   const [businessRating,setBusinessRating]=useState<{rating:number|null;count:number}>({rating:null,count:0});
   const [businessExcellence,setBusinessExcellence]=useState<Pick<BusinessCardData,"excellenceVotes"|"excellenceReviewCount">>({});
-  useEffect(()=>{let active=true;AsyncStorage.getItem("jobin.professional.history.v1").then(raw=>{if(active&&raw){const parsed:unknown=JSON.parse(raw);if(Array.isArray(parsed))setHistory(parsed as EmploymentEntry[]);}}).catch(()=>{}).finally(()=>{if(active)setHistoryLoaded(true);});return()=>{active=false;};},[]);
-  useEffect(()=>{if(historyLoaded)void AsyncStorage.setItem("jobin.professional.history.v1",JSON.stringify(history)).catch(()=>setNotice("No se pudo guardar el historial en este dispositivo."));},[history,historyLoaded]);
   const [businessOpen,setBusinessOpen]=useState(false);
   const [businessCategoryOpen,setBusinessCategoryOpen]=useState(false);
   const [businessCategoryQuery,setBusinessCategoryQuery]=useState("");
   const [business,setBusiness]=useState<BusinessCardData>(EMPTY_BUSINESS_CARD);
   const [businessOwner,setBusinessOwner]=useState("");
+  const businessScope=useRef<MessageScope|null>(null),businessRevision=useRef(0);
   const [businessDraft,setBusinessDraft]=useState({name:"",opened:"",closed:"",services:"",category:"",email:"",emailSecondary:"",phone:"",phoneSecondary:"",phoneLabel:"",phoneSecondaryLabel:"",location:""});
   // Business records are loaded only for the authenticated owner below; never import an unscoped legacy card.
   
   function changePersonalPhoto(){router.push("/personal-avatar-editor");}
   const [businessImageBusy,setBusinessImageBusy]=useState(false);
-  async function replaceBusinessImage(slot:"banner"|"avatar"){if(slot==="avatar"){router.push({pathname:"/personal-avatar-editor",params:{target:"business"}});return;}if(businessImageBusy)return;setBusinessImageBusy(true);try{const photo=await pickBusinessGalleryPhoto(slot);if(!photo)return;const owner=await cloudOwner();const uploaded=await uploadBusinessPhoto("business-profile-media",owner,photo,slot);if(owner!==workspace.data?.card.id||owner!==businessOwner)throw new Error("La cuenta cambió. Abre de nuevo tu JCard.");const updated={...business,[slot==="banner"?"bannerUrl":"avatarUrl"]:uploaded.url};await writeCloudBusiness(updated,owner);await writeScopedBusinessCard(owner,updated);setBusiness(updated);}catch(e){setNotice(e instanceof Error?e.message:"No se pudo actualizar la imagen.");}finally{setBusinessImageBusy(false);}}
-  function editBusiness(){router.push("/jcard-business-edit");}
-  function saveBusiness(){Keyboard.dismiss();if(businessDraft.name.trim().length>30){setNotice("El nombre de empresa admite un máximo de 30 caracteres.");return;}if(businessDraft.email.trim()&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessDraft.email.trim())){setNotice("Revisa el correo empresarial.");return;}if(businessDraft.emailSecondary.trim()&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessDraft.emailSecondary.trim())){setNotice("Revisa el correo secundario.");return;}for(const label of [businessDraft.phoneLabel,businessDraft.phoneSecondaryLabel]){if(!validPhoneLabel(label)){setNotice("La identificación permite hasta 4 caracteres de texto o un único emoji.");return;}}if(businessDraft.services.length>100){setNotice("Los servicios admiten un máximo de 100 caracteres.");return;}if(businessDraft.category&&!["Climatización HVAC","Refrigeración"].includes(businessDraft.category)&&!professionCatalog.data?.categories.some(c=>c.code===businessDraft.category||c.label===businessDraft.category)){setNotice("Selecciona una categoría del catálogo de Jobin.");return;}const services=businessDraft.services.split(",").map(x=>x.trim()).filter(Boolean);if(services.length>3){setNotice("Máximo tres servicios.");return;}const opened=businessDraft.opened.trim(),closed=businessDraft.closed.trim(),year=new Date().getFullYear();if((opened&&(!/^\d{4}$/.test(opened)||Number(opened)>year||Number(opened)<1800))||(closed&&(!/^\d{4}$/.test(closed)||Number(closed)>year||Number(closed)<Number(opened)))){setNotice("Revisa los años de apertura y cierre.");return;}const updated={...business,...businessDraft,name:businessDraft.name.trim(),category:professionCatalog.data?.categories.find(c=>c.code===businessDraft.category||c.label===businessDraft.category)?.label??businessDraft.category,email:businessDraft.email.trim(),emailSecondary:businessDraft.emailSecondary.trim(),phone:businessDraft.phone.trim(),phoneSecondary:businessDraft.phoneSecondary.trim(),phoneLabel:businessDraft.phoneLabel.trim(),phoneSecondaryLabel:businessDraft.phoneSecondaryLabel.trim(),location:businessDraft.location.trim(),services,licenseVerified:business.licenseVerified};void(async()=>{const owner=await cloudOwner();if(owner!==workspace.data?.card.id||owner!==businessOwner)throw new Error("La cuenta cambió. Abre de nuevo tu JCard.");await writeCloudBusiness(updated,owner);await writeScopedBusinessCard(owner,updated);setBusiness(updated);setBusinessOpen(false);})().catch(e=>setNotice(e instanceof Error?e.message:"No se pudo guardar la JCard."));}
+  async function replaceBusinessImage(slot:"banner"|"avatar"){
+   const scope=businessScope.current;
+   if(!scope||scope.owner!==businessOwner||scope.owner!==workspace.data?.card.id||businessImageBusy)return;
+   if(slot==="avatar"){router.push({pathname:"/personal-avatar-editor",params:{target:"business"}});return;}
+   setBusinessImageBusy(true);
+   try{
+    await captureMessageScope(scope);
+    const photo=await pickBusinessGalleryPhoto(slot);if(!photo)return;
+    await assertMessageScope(scope);
+    if(businessScope.current!==scope)return;
+    const uploaded=await uploadBusinessPhoto("business-profile-media",scope.owner,photo,slot,scope);
+    const current=await readCloudBusiness(scope.owner,scope);
+    if(businessScope.current!==scope)return;
+    const updated={...EMPTY_BUSINESS_CARD,...(current??{}),[slot==="banner"?"bannerUrl":"avatarUrl"]:uploaded.url};
+    await writeCloudBusiness(updated,scope.owner,scope);
+    await writeScopedBusinessCard(scope.owner,updated,scope);
+    if(businessScope.current===scope)setBusiness(updated);
+   }catch(e){if(businessScope.current===scope)setNotice(e instanceof Error?e.message:"No se pudo actualizar la imagen.");}
+   finally{setBusinessImageBusy(false);}
+  }
+  function editBusiness(){clearBusinessCardMemory();router.push("/jcard-business-edit");}
+  function saveBusiness(){Keyboard.dismiss();if(businessDraft.name.trim().length>30){setNotice("El nombre de empresa admite un máximo de 30 caracteres.");return;}if(businessDraft.email.trim()&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessDraft.email.trim())){setNotice("Revisa el correo empresarial.");return;}if(businessDraft.emailSecondary.trim()&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessDraft.emailSecondary.trim())){setNotice("Revisa el correo secundario.");return;}for(const label of [businessDraft.phoneLabel,businessDraft.phoneSecondaryLabel]){if(!validPhoneLabel(label)){setNotice("La identificación permite hasta 4 caracteres de texto o un único emoji.");return;}}if(businessDraft.services.length>100){setNotice("Los servicios admiten un máximo de 100 caracteres.");return;}if(businessDraft.category&&!["Climatización HVAC","Refrigeración"].includes(businessDraft.category)&&!professionCatalog.data?.categories.some(c=>c.code===businessDraft.category||c.label===businessDraft.category)){setNotice("Selecciona una categoría del catálogo de Jobin.");return;}const services=businessDraft.services.split(",").map(x=>x.trim()).filter(Boolean);if(services.length>3){setNotice("Máximo tres servicios.");return;}const opened=businessDraft.opened.trim(),closed=businessDraft.closed.trim(),year=new Date().getFullYear();if((opened&&(!/^\d{4}$/.test(opened)||Number(opened)>year||Number(opened)<1800))||(closed&&(!/^\d{4}$/.test(closed)||Number(closed)>year||Number(closed)<Number(opened)))){setNotice("Revisa los años de apertura y cierre.");return;}const updated={...business,...businessDraft,name:businessDraft.name.trim(),category:professionCatalog.data?.categories.find(c=>c.code===businessDraft.category||c.label===businessDraft.category)?.label??businessDraft.category,email:businessDraft.email.trim(),emailSecondary:businessDraft.emailSecondary.trim(),phone:businessDraft.phone.trim(),phoneSecondary:businessDraft.phoneSecondary.trim(),phoneLabel:businessDraft.phoneLabel.trim(),phoneSecondaryLabel:businessDraft.phoneSecondaryLabel.trim(),location:businessDraft.location.trim(),services,licenseVerified:business.licenseVerified};const scope=businessScope.current;if(!scope||scope.owner!==businessOwner||scope.owner!==workspace.data?.card.id)return;void(async()=>{await captureMessageScope(scope);if(businessScope.current!==scope)return;await writeCloudBusiness(updated,scope.owner,scope);await writeScopedBusinessCard(scope.owner,updated,scope);if(businessScope.current===scope){setBusiness(updated);setBusinessOpen(false);}})().catch(e=>{if(businessScope.current===scope)setNotice(e instanceof Error?e.message:"No se pudo guardar la JCard.");});}
   const [sendOpen, setSendOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editingId,setEditingId] = useState<string|null>(null);
   const [formError,setFormError] = useState("");
+  const historyScope=useRef<MessageScope|null>(null),historyRevision=useRef(0),historyFormScope=useRef<MessageScope|null>(null),historySaving=useRef(false),historyEntryId=useRef<string|null>(null);
+  const [historyReady,setHistoryReady]=useState(false),[historyBusy,setHistoryBusy]=useState(false),[historyRetry,setHistoryRetry]=useState(0);
   function openEmployment(entry?:EmploymentEntry){
+    const scope=historyScope.current;
+    if(!historyReady||!scope||scope.owner!==ownerId||historySaving.current|| (entry&&!history.some(row=>row.id===entry.id)))return;
+    historyFormScope.current=scope;
+    historyEntryId.current=entry?.id??(Date.now()+"-"+Math.random().toString(36).slice(2));
     setEditingId(entry?.id??null);
     setDraft(entry?{company:entry.company,role:entry.role,from:String(entry.from),to:entry.to===null?"":String(entry.to),profession:(entry.professions??[]).join(", "),fromMonth:String(entry.fromMonth??1),toMonth:String(entry.toMonth??12),address:entry.address??"",contact:entry.contact??""}:{company:"",role:"",from:"",to:"",profession:"",fromMonth:"1",toMonth:"12",address:"",contact:""});
     setFormError("");setShowEmploymentProfessionPicker(false);setAddOpen(true);
@@ -124,34 +165,63 @@ export default function Profile() {
   const [draft, setDraft] = useState({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address:"", contact:"" });
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace,true);
+  const ownerId=workspace.data?.card.id;
+  const [historyState,setHistoryState]=useState<{owner:string;rows:EmploymentEntry[]}|null>(null);
+  const history=historyState&&historyState.owner===ownerId?historyState.rows:[];
+  useFocusEffect(useCallback(()=>{
+   let active=true;const generation=++historyRevision.current;
+   const valid=()=>active&&historyRevision.current===generation;
+   historyScope.current=null;historyFormScope.current=null;
+   setHistoryState(null);setHistoryReady(false);setAddOpen(false);setEditingId(null);
+   if(!ownerId)return()=>{active=false;};
+   const owner=ownerId;
+   void(async()=>{
+    try{
+     const scope=await captureMessageScope();
+     if(scope.owner!==owner||!valid())return;
+     const rows=await readCloudHistory(owner,scope);
+     await assertMessageScope(scope);
+     if(!valid())return;
+     historyScope.current=scope;setHistoryState({owner,rows});setHistoryReady(true);
+    }catch{if(valid())setNotice("No se pudo recuperar el historial privado. Vuelve a intentarlo.");}
+   })();
+   return()=>{active=false;historyRevision.current++;historyScope.current=null;historyFormScope.current=null;};
+  },[ownerId,historyRetry]));
+  useEffect(()=>{setHistoryState(null);setAddOpen(false);setEditingId(null);setCvShareOpen(false);setBusinessOpen(false);setBusinessRating({rating:null,count:0});setBusinessExcellence({});setEmployerLink(null);setVerifiedIdentity(false);setIncomingCV([]);},[ownerId]);
+
  useFocusEffect(useCallback(()=>{
-  if(consumePersonalPhotoChange())void workspace.reload();
-  const owner=workspace.data?.card.id;
+  const owner=workspace.data?.card.id,generation=++businessRevision.current;
   let active=true;
-  if(!owner){setBusinessOwner("");setBusiness(EMPTY_BUSINESS_CARD);return()=>{active=false;};}
-  // Server data is authoritative. A legacy local value is never migrated or
-  // uploaded because it might belong to a different signed-in account.
-  void (async()=>{
+  const valid=()=>active&&businessRevision.current===generation;
+  businessScope.current=null;setBusinessOwner("");setBusiness(EMPTY_BUSINESS_CARD);
+  if(!owner)return()=>{active=false;};
+  void(async()=>{
+   let scope:MessageScope|null=null;
    try{
-    if((await cloudOwner())!==owner)return;
-    // Show the scoped card immediately on return or a card flip. Refresh from
-    // Supabase afterward, instead of briefly rendering the personal fallback.
-    const cached=await readScopedBusinessCard(owner).catch(()=>null);
-    if(active&&cached){setBusiness(cached);setBusinessOwner(owner);}
-    const row=await readCloudBusiness();
-    if(!active||(await cloudOwner())!==owner)return;
+    scope={owner,session:await assertAccountOwner(owner)};
+    if(!valid())return;
+    if(consumePersonalPhotoChange(scope))void workspace.reload();
+    const cached=await readScopedBusinessCard(owner,scope);
+    if(!valid())return;
+    if(cached){setBusiness(cached);setBusinessOwner(owner);}
+    const row=await readCloudBusiness(owner,scope);
+    await assertMessageScope(scope);
+    if(!valid())return;
     const current={...EMPTY_BUSINESS_CARD,...(row??{})};
-    setBusiness(current);setBusinessOwner(owner);
-    if(row)void writeScopedBusinessCard(owner,current).catch(()=>{});
+    clearBusinessCardMemory();
+    if(row)await writeScopedBusinessCard(owner,current,scope);
+    if(!valid())return;
+    businessScope.current=scope;setBusiness(current);setBusinessOwner(owner);
    }catch{
-    const cached=await readScopedBusinessCard(owner).catch(()=>null);
-    if(active&&(await cloudOwner().catch(()=>null))===owner){
-     setBusiness(cached??EMPTY_BUSINESS_CARD);setBusinessOwner(owner);
+    if(!valid())return;
+    const cached=scope?await readScopedBusinessCard(owner,scope).catch(()=>null):null;
+    if(valid()){
+     businessScope.current=null;setBusiness(cached??EMPTY_BUSINESS_CARD);setBusinessOwner(cached?owner:"");
      setNotice("No se pudo sincronizar la JCard de negocio. Verifica tu conexión.");
     }
    }
   })();
-  return()=>{active=false;};
+  return()=>{active=false;businessScope.current=null;};
  },[workspace.reload,workspace.data?.card.id]));
   useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void identityVerified(id).then(v=>{if(live)setVerifiedIdentity(v);}).catch(()=>{if(live)setVerifiedIdentity(false);});return()=>{live=false;};},[workspace.data?.card.id]);
   const professionCatalog=useProfessionalData(loadCatalog);
@@ -159,10 +229,22 @@ export default function Profile() {
   const catalogProfessions=professionCatalog.data?.professions??[];
   const findCatalogProfession=(value:string)=>catalogProfessions.find(p=>p.code===value||p.label.toLocaleLowerCase("es")===value.trim().toLocaleLowerCase("es"));
   const selectedEmploymentProfession=findCatalogProfession(draft.role);
-  useFocusEffect(useCallback(()=>{let live=true;void getEmployerLinks().then(rows=>{if(live){const verified=rows.find(row=>row.worker_id===workspace.data?.card.id&&row.status==="approved");setEmployerLink(verified?{id:verified.company_id,name:verified.name,handle:verified.handle}:null);}}).catch(()=>{if(live)setEmployerLink(null);});return()=>{live=false;};},[workspace.data?.card.id]));
-  useEffect(()=>{let live=true;void readCloudHistory().then(async rows=>{if(!live)return;if(rows.length){const rawLocal=await AsyncStorage.getItem("jobin.professional.history.v1");const local=rawLocal?JSON.parse(rawLocal) as EmploymentEntry[]:[];setHistory(rows.map(row=>{const saved=local.find(entry=>entry.id===row.id);return {...row,address:saved?.address??row.address,contact:saved?.contact??row.contact};}));return;}const raw=await AsyncStorage.getItem("jobin.professional.history.v1");const local=raw?JSON.parse(raw) as EmploymentEntry[]:[];for(const item of local)await writeCloudHistory(item);if(live)setHistory(local);}).catch(()=>setNotice("No se pudo recuperar el historial en la nube."));return()=>{live=false;};},[]);
+  useFocusEffect(useCallback(()=>{
+   let live=true;setEmployerLink(null);
+   const owner=ownerId;if(!owner)return()=>{live=false;};
+   void(async()=>{try{
+    const scope=await captureMessageScope();
+    if(scope.owner!==owner)throw Error("La cuenta cambió.");
+    const rows=await getEmployerLinks(scope);
+    await assertMessageScope(scope);
+    const verified=rows.find(row=>row.worker_id===owner&&row.status==="approved");
+    if(live)setEmployerLink(verified?{owner,id:verified.company_id,name:verified.name,handle:verified.handle}:null);
+   }catch{if(live)setEmployerLink(null);}})();
+   return()=>{live=false;setEmployerLink(null);};
+  },[ownerId]));
   useEffect(()=>{let live=true;void readBusinessRating(workspace.data?.card.id??"").then(value=>{if(live)setBusinessRating(value);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
   useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void readBusinessExcellence(id).then(data=>{if(live)setBusinessExcellence(data);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
+  useFocusEffect(useCallback(()=>{if(ownerId)void refreshCV();return()=>{cvRevision.current++;cvScope.current=null;setIncomingCV([]);};},[ownerId]));
   const p = DEMO_PROFILE;
 
   function send(company: string) {
@@ -174,7 +256,9 @@ export default function Profile() {
     setNotice("Historial enviado a " + company + " por mensajería interna.");
   }
 
-  function add() {
+  async function add() {
+    const scope=historyFormScope.current,owner=scope?.owner;
+    if(!scope||!owner||owner!==ownerId||historyScope.current!==scope||!historyReady||historySaving.current||!historyEntryId.current)return;
     const from = Number(draft.from), to = draft.to ? Number(draft.to) : null;
     const currentYear=new Date().getFullYear();
     const fromMonth=Number(draft.fromMonth),toMonth=Number(draft.toMonth);
@@ -185,10 +269,23 @@ export default function Profile() {
       setFormError("Completa empresa, cargo y años válidos (el final no puede ser anterior al inicio).");
       return;
     }
+    if(draft.address.trim().length>500||draft.contact.trim().length>500){setFormError("Dirección y contacto admiten hasta 500 caracteres cada uno.");return;}
     Keyboard.dismiss();
-    const updated:EmploymentEntry={id:editingId??Date.now()+"",company:draft.company.trim(),role:selectedEmploymentProfession.label,professions:[selectedEmploymentProfession.code],fromMonth,toMonth,from,to,address:draft.address.trim(),contact:draft.contact.trim(),status:"pending",verifiedBy:null};
-    setHistory(items=>editingId?items.map(entry=>entry.id===editingId?updated:entry):[...items,updated]);
-    void writeCloudHistory(updated).catch(()=>setNotice("Guardado localmente, pero no se pudo sincronizar. Revisa la conexión."));
+    const updated:EmploymentEntry={id:historyEntryId.current!,company:draft.company.trim(),role:selectedEmploymentProfession.label,professions:[selectedEmploymentProfession.code],fromMonth,toMonth,from,to,address:draft.address.trim(),contact:draft.contact.trim(),status:"pending",verifiedBy:null};
+    historySaving.current=true;setHistoryBusy(true);
+    const valid=()=>historyScope.current===scope&&historyFormScope.current===scope;
+    try{
+     await captureMessageScope(scope);
+     if(!valid())return;
+     await writeCloudHistory(updated,owner,scope);
+     await assertMessageScope(scope);
+     if(!valid())return;
+     const rows=await readCloudHistory(owner,scope);
+     if(!valid())return;
+     setHistoryState({owner,rows});
+    }catch(e){if(valid())setFormError(e instanceof Error?e.message:"No se pudo guardar la experiencia.");return;}
+    finally{historySaving.current=false;setHistoryBusy(false);}
+    historyFormScope.current=null;historyEntryId.current=null;
     setDraft({ company: "", role: "", from: "", to: "", profession: "", fromMonth: "1", toMonth: "12", address: "", contact: "" });
     setAddOpen(false);setEditingId(null);setFormError("");setShowEmploymentProfessionPicker(false);
     setNotice("Experiencia guardada. Cualquier cambio requiere una nueva verificación de la empresa.");
@@ -289,7 +386,7 @@ export default function Profile() {
         <Animated.View style={{gap:16,paddingHorizontal:16,paddingBottom:20,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         <ProfileIdentityHeader
-          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink}/>
+          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink?.owner===ownerId?employerLink:null}/>
             {!!workspace.error&&isJCardConnectivityError(workspace.error)&&<View style={{marginTop:12}}>
               <JCardOfflineNotice retry={workspace.reload} cached/>
             </View>}
@@ -303,7 +400,7 @@ export default function Profile() {
           <ProfileSectionTabs section={mode} onSelect={selectSection} pinned={tabsPinned} showPrivateJCards/>
         </View>
         <View style={{gap:16,paddingHorizontal:16,paddingTop:20,paddingBottom:contentBottom,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
-        {mode==="jcards"&&<SavedJCardsGallery/>}
+        {mode==="jcards"&&ownerId&&<SavedJCardsGallery key={ownerId} owner={ownerId}/>}
         {mode==="live"&&<View style={{gap:12,padding:14,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
           <Text style={s.h3}>Transmisiones en vivo</Text>
           <Text style={s.muted}>Cuando este perfil transmita, aparecerá aquí la vista previa para entrar al directo.</Text>
@@ -315,8 +412,8 @@ export default function Profile() {
         {mode === "cv" && (
           <View style={{ gap: 14 }}>
             <Text style={s.h2}>Historial profesional</Text>
-            <Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}. Agrega cada empresa, el cargo y los años trabajados. Los datos se guardan en este dispositivo; la verificación por la empresa aún no está conectada.</Text>
-            {history.length===0&&<Text style={s.muted}>Todavía no agregaste empleos. Pulsa Agregar para comenzar.</Text>}
+            <Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}. Agrega cada empresa, el cargo y los años trabajados. El historial y los contactos privados se guardan en tu cuenta. La verificación por la empresa aún no está conectada.</Text>
+            {!historyReady?<Button secondary title="Volver a cargar historial" onPress={()=>setHistoryRetry(v=>v+1)}/>:history.length===0&&<Text style={s.muted}>Todavía no agregaste empleos. Pulsa Agregar para comenzar.</Text>}
             {history.map(entry => (
               <View key={entry.id} style={[s.panel, { flexDirection: "row", gap: 12, alignItems: "center" }]}>
                 <View style={{ flex: 1, gap: 4 }}>
@@ -330,10 +427,10 @@ export default function Profile() {
                 </View>
               </View>
             ))}
-            <View style={{gap:8}}><Button secondary title="Actualizar solicitudes de CV" onPress={()=>void refreshCV()}/>{incomingCV.map(req=><View key={req.id} style={{gap:6,padding:10,borderWidth:1,borderColor:colors.line,borderRadius:10}}><Text style={s.text}>Solicitud {req.requester_id.slice(0,8)} · {req.status}</Text>{req.status==="pending"&&<View style={s.row}><Button title="Autorizar" onPress={()=>void answerCV(req.id,true)}/><Button secondary title="Rechazar" onPress={()=>void answerCV(req.id,false)}/></View>}{req.status==="approved"&&<Button secondary title="Revocar acceso" onPress={()=>void cancelCV(req.id)}/>}</View>)}</View>
+            <View style={{gap:8}}><Button secondary title="Actualizar solicitudes de CV" onPress={()=>void refreshCV()}/>{incomingCV.filter(req=>req.owner_id===ownerId).map(req=><View key={req.id} style={{gap:6,padding:10,borderWidth:1,borderColor:colors.line,borderRadius:10}}><Text style={s.text}>Solicitud {req.requester_id.slice(0,8)} · {req.status}</Text>{req.status==="pending"&&<View style={s.row}><Button title="Autorizar" onPress={()=>void answerCV(req.id,true)}/><Button secondary title="Rechazar" onPress={()=>void answerCV(req.id,false)}/></View>}{req.status==="approved"&&<Button secondary title="Revocar acceso" onPress={()=>void cancelCV(req.id)}/>}</View>)}</View>
             <View style={s.row}>
               <Button secondary title="Compartir CV" onPress={() => void shareCV()} />
-              <Button title="Agregar" onPress={() => openEmployment()} />
+              {historyReady&&<Button title="Agregar" onPress={() => openEmployment()} />}
             </View>
           </View>
         )}
@@ -364,7 +461,7 @@ export default function Profile() {
         </View>
       </BottomSheet>
 
-      <BottomSheet visible={addOpen} onClose={() => setAddOpen(false)} title={editingId?"Editar experiencia":"Agregar experiencia"}>
+      <BottomSheet visible={addOpen&&historyReady} onClose={() => {if(!historySaving.current){historyFormScope.current=null;setAddOpen(false);}}} title={editingId?"Editar experiencia":"Agregar experiencia"}>
         <View style={{ gap: 12, paddingVertical: 16 }}>
           <View style={{gap:6}}><Text style={s.muted}>Empresa</Text>
            <TextInput accessibilityLabel="Empresa" placeholder="Empresa" placeholderTextColor={colors.muted} value={draft.company} onChangeText={v=>setDraft(d=>({...d,company:v}))} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>
@@ -396,7 +493,7 @@ export default function Profile() {
           <Text style={s.muted}>Teléfono o correo de la empresa</Text>
           <TextInput accessibilityLabel="Teléfono o correo de la empresa" placeholder="Teléfono o email de contacto" placeholderTextColor={colors.muted} value={draft.contact} onChangeText={v=>setDraft(d=>({...d,contact:v}))} autoCapitalize="none" style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>
           <Text style={s.muted}>Puedes editar estos datos cuando quieras. Al modificarlos se reinicia la verificación de la empresa.</Text>
-          <Button title="Guardar" onPress={add} />
+          <Button title={historyBusy?"Guardando…":"Guardar"} onPress={add} />
         </View>
       </BottomSheet>
       <JobeenShareSheet visible={cvShareOpen} onClose={()=>setCvShareOpen(false)} label="Currículum"

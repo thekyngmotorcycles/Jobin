@@ -24,5 +24,5 @@ test("Premium sharing follows approved screenshot density without shrinking the 
  assert.ok(sheet.includes("width:23,height:23"));
  assert.ok(sheet.includes("style={{flexShrink:1}}"),"External share options must remain scrollable");
  assert.ok(sheet.includes("onPress={()=>void sendSelected()}"));
- assert.ok(sheet.includes("await sendToShareRecipients(selected,message)"));
+ assert.ok(sheet.includes("await sendToShareRecipients(selected,message,scope)"));
 });

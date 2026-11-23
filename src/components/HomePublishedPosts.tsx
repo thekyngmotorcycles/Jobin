@@ -1,14 +1,15 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import * as Linking from "expo-linking";
-import {useCallback,useEffect,useState} from "react";
+import {useCallback,useEffect,useRef,useState} from "react";
 import {ActivityIndicator,Pressable,Text,TextInput,View} from "react-native";
 import {BottomSheet} from "./social-ui";
 import {PhotoCarousel,PostEngagementRow} from "./PostCard";
 import {PostCaption} from "./PostCaption";
 import {useUi} from "./ui";
 import {PublicProfileAvatar} from "./PublicProfileAvatar";
-import {addHomePostComment,currentSocialUser,loadHomePostComments,loadHomePosts,recordHomePostShare,setHomePostLike,type FeedPost,type HomePostComment} from "../lib/social-content";
+import {addHomePostComment,loadHomePostComments,loadHomePosts,recordHomePostShare,setHomePostLike,type FeedPost,type HomePostComment} from "../lib/social-content";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../lib/message-session";
 import {getHiddenPostIds,getSavedPostIds,setSavedPost} from "../lib/feed-preferences";
 import {requireSupabase} from "../lib/supabase";
 import type {HomeFeedFilter} from "./HomeFeedFilters";
@@ -38,49 +39,61 @@ export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;v
  useEffect(()=>{
   setLiked(post.likedByViewer);setLikes(post.likes);setCommentsCount(post.comments);setShares(post.shares);
  },[post.likedByViewer,post.likes,post.comments,post.shares]);
- useEffect(()=>{
-  if(savedByViewer!==undefined){setSaved(savedByViewer);return;}
-  let active=true;
-  if(viewer)void getSavedPostIds(viewer).then(ids=>{if(active)setSaved(ids.includes(post.id));}).catch(()=>{});
-  return()=>{active=false;};
- },[savedByViewer,viewer,post.id]);
+ const scopeRef=useRef<MessageScope|null>(null),targetRef=useRef(""),shareTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+ const identity=viewer+"/"+post.id;
+ const [ready,setReady]=useState(false);
+ const live=(scope:MessageScope)=>scopeRef.current===scope&&targetRef.current===identity;
+ useFocusEffect(useCallback(()=>{
+  let active=true;scopeRef.current=null;targetRef.current=identity;setReady(false);setSaved(savedByViewer??false);
+  setComments([]);setDraft("");setCommentsOpen(false);setOptionsOpen(false);setShareOpen(false);
+  void(async()=>{try{
+   const scope=await captureMessageScope();if(scope.owner!==viewer)return;
+   const savedIds=savedByViewer===undefined?await getSavedPostIds(viewer,scope):null;
+   await assertMessageScope(scope);
+   if(active){scopeRef.current=scope;setReady(true);if(savedIds)setSaved(savedIds.includes(post.id));}
+  }catch{if(active)setReady(false);}})();
+  return()=>{active=false;scopeRef.current=null;targetRef.current="";setReady(false);setComments([]);setDraft("");setCommentsOpen(false);setOptionsOpen(false);setShareOpen(false);if(shareTimer.current)clearTimeout(shareTimer.current);};
+ },[identity,savedByViewer,viewer,post.id]));
  async function toggleSaved(){
-  if(saving)return;
+  const scope=scopeRef.current;if(!scope||saving||!live(scope))return;
   setSaving(true);setError("");
-  try{await setSavedPost(viewer,post.id,!saved);setSaved(v=>!v);}
-  catch(e){setError(e instanceof Error?e.message:"No se pudo guardar la publicación.");}
-  finally{setSaving(false);}
+  try{await setSavedPost(viewer,post.id,!saved,scope);if(live(scope))setSaved(v=>!v);}
+  catch(e){if(live(scope))setError(e instanceof Error?e.message:"No se pudo guardar la publicación.");}
+  finally{if(live(scope))setSaving(false);}
  }
  async function toggleLike(){
-  if(pending)return;setPending(true);setError("");
-  try{await setHomePostLike(post.id,!liked);setLiked(!liked);setLikes(count=>Math.max(0,count+(liked?-1:1)));}
-  catch(e){setError(e instanceof Error?e.message:"No se pudo registrar Me gusta.");}
-  finally{setPending(false);}
+  const scope=scopeRef.current;if(!scope||pending||!live(scope))return;setPending(true);setError("");
+  try{await setHomePostLike(post.id,!liked,scope);if(live(scope)){setLiked(!liked);setLikes(count=>Math.max(0,count+(liked?-1:1)));}}
+  catch(e){if(live(scope))setError(e instanceof Error?e.message:"No se pudo registrar Me gusta.");}
+  finally{if(live(scope))setPending(false);}
  }
- function share(){setError("");setShareOpen(true);}
+ function share(){if(!scopeRef.current)return;setError("");setShareOpen(true);}
  async function sharePostLink(){
-  // Allow the publication options sheet to fully close before presenting the universal share panel.
+  const scope=scopeRef.current;if(!scope||!live(scope))return;
   setOptionsOpen(false);
-  setTimeout(()=>setShareOpen(true),350);
+  if(shareTimer.current)clearTimeout(shareTimer.current);
+  shareTimer.current=setTimeout(()=>{void captureMessageScope(scope).then(()=>{if(live(scope))setShareOpen(true);}).catch(()=>{});},350);
  }
  async function confirmNativeShare(){
-  try{await recordHomePostShare(post.id);setShares(n=>n+1);}
-  catch(e){setError(e instanceof Error?e.message:"No se pudo registrar el compartido.");}
+  const scope=scopeRef.current;if(!scope||!live(scope))return;
+  try{await recordHomePostShare(post.id,scope);if(live(scope))setShares(n=>n+1);}
+  catch(e){if(live(scope))setError(e instanceof Error?e.message:"No se pudo registrar el compartido.");}
  }
  async function openComments(){
-  setCommentsOpen(true);setCommentsLoading(true);setError("");
-  try{setComments(await loadHomePostComments(post.id));}
-  catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar los comentarios.");}
-  finally{setCommentsLoading(false);}
+  const scope=scopeRef.current;if(!scope||!live(scope))return;
+  setComments([]);setCommentsOpen(true);setCommentsLoading(true);setError("");
+  try{const loaded=await loadHomePostComments(post.id,scope);if(live(scope))setComments(loaded);}
+  catch(e){if(live(scope))setError(e instanceof Error?e.message:"No se pudieron cargar los comentarios.");}
+  finally{if(live(scope))setCommentsLoading(false);}
  }
  async function sendComment(){
-  if(!draft.trim()||sending)return;
+  const scope=scopeRef.current;if(!scope||!live(scope)||!draft.trim()||sending)return;
   setSending(true);setError("");
   try{
-   const next=await addHomePostComment(post.id,draft);
-   setComments(items=>[...items,next]);setCommentsCount(n=>n+1);setDraft("");
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo enviar el comentario.");}
-  finally{setSending(false);}
+   const next=await addHomePostComment(post.id,draft,scope);
+   if(live(scope)){setComments(items=>[...items,next]);setCommentsCount(n=>n+1);setDraft("");}
+  }catch(e){if(live(scope))setError(e instanceof Error?e.message:"No se pudo enviar el comentario.");}
+  finally{if(live(scope))setSending(false);}
  }
  const profile=()=>router.push({pathname:"/jcard",params:{user:post.authorId}});
  const authorRow=<View style={{flexDirection:"row",alignItems:"center",gap:10,paddingHorizontal:16}}>
@@ -92,7 +105,7 @@ export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;v
    {!!post.authorHandle&&<Text numberOfLines={1} style={s.muted}>{"@"+post.authorHandle}</Text>}
   </Pressable>
   <Pressable accessibilityRole="button" accessibilityLabel="Opciones de publicación"
-   accessibilityState={{expanded:optionsOpen}} onPress={()=>setOptionsOpen(true)}
+   accessibilityState={{expanded:optionsOpen}} onPress={()=>{if(ready)setOptionsOpen(true);}}
    style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
    <Ionicons name="ellipsis-horizontal" size={20} color={colors.ink}/>
   </Pressable>
@@ -108,13 +121,13 @@ export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;v
   </Pressable>}
   <PostCaption text={post.body} mentions={post.mentions}/>
   <PostEngagementRow likes={likes} comments={commentsCount} shares={shares} liked={liked}
-   likeDisabled={pending} onLike={()=>void toggleLike()} onComments={()=>void openComments()} onShare={()=>void share()}
-   saved={saved} onSave={()=>void toggleSaved()} saveDisabled={saving}/>
+   likeDisabled={pending||!ready} onLike={()=>void toggleLike()} onComments={()=>void openComments()} onShare={()=>void share()}
+   saved={saved} onSave={()=>void toggleSaved()} saveDisabled={saving||!ready}/>
   {!!error&&!commentsOpen&&<Text accessibilityLiveRegion="polite" style={{paddingHorizontal:16,color:t.ink2,fontSize:12}}>{error}</Text>}
-  <FeedPostOptions visible={optionsOpen} onClose={()=>setOptionsOpen(false)} viewerId={viewer} postId={post.id} onHidden={()=>onHide(post.id)} onShareLink={sharePostLink} onSaveChanged={setSaved}/>
+  <FeedPostOptions visible={optionsOpen} onClose={()=>setOptionsOpen(false)} viewerId={viewer} postId={post.id} originScope={scopeRef.current} onHidden={()=>onHide(post.id)} onShareLink={sharePostLink} onSaveChanged={setSaved}/>
   <JobeenShareSheet visible={shareOpen} onClose={()=>setShareOpen(false)} theme={theme} label={post.authorName}
    link={Linking.createURL("post/"+post.id)} contentTitle="Compartir publicación"
-   contentMessage={post.authorName+": "+post.body+(post.kind==="video"?" · Video profesional en Jobeen":"")+"\n"+Linking.createURL("post/"+post.id)}
+   contentMessage={Linking.createURL("post/"+post.id)}
    onShared={()=>void confirmNativeShare()} onError={setError}/>
   <BottomSheet visible={commentsOpen} onClose={()=>setCommentsOpen(false)} title={"Comentarios · "+formatCount(commentsCount)}>
    <View style={{gap:14,paddingVertical:10}}>
@@ -151,22 +164,24 @@ export function HomePublishedPosts({filter="all",featuredPostId=""}:{filter?:Hom
  const [businessIds,setBusinessIds]=useState<string[]>([]);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
+ const revision=useRef(0);
  const reload=useCallback(()=>{
-  let active=true;setLoading(true);
+  const generation=++revision.current;let active=true;setLoading(true);setPosts([]);setViewer("");setSavedIds([]);setFollowedIds([]);setBusinessIds([]);
   void(async()=>{
    try{
-    const user=await currentSocialUser().catch(()=>"");
-    const [loaded,hidden,savedPosts]=await Promise.all([loadHomePosts(user),getHiddenPostIds(user),getSavedPostIds(user)]);
+    const scope=await captureMessageScope(),user=scope.owner;
+    const [loaded,hidden,savedPosts]=await Promise.all([loadHomePosts(user,undefined,undefined,undefined,0,scope),getHiddenPostIds(user,scope),getSavedPostIds(user,scope)]);
     const authorIds=[...new Set(loaded.map(post=>post.authorId))];
     const db=requireSupabase();
     const [follows,businesses,businessCards]=await Promise.all([
      user?db.from("profile_follows" as never).select("followed_id").eq("follower_id",user):Promise.resolve({data:[],error:null}),
      authorIds.length?db.from("profiles").select("id").in("id",authorIds).eq("account_type","company"):Promise.resolve({data:[],error:null}),
-     authorIds.length?db.from("jcard_business_details" as never).select("owner_id").in("owner_id",authorIds):Promise.resolve({data:[],error:null})
+     authorIds.length?db.from("jobeen_public_business_cards" as never).select("owner_id").in("owner_id",authorIds):Promise.resolve({data:[],error:null})
     ]);
     if(follows.error)throw follows.error;
     if(businesses.error)throw businesses.error;
-    if(active){
+    await assertMessageScope(scope);
+    if(active&&revision.current===generation){
      setPosts(loaded.filter(post=>!hidden.includes(post.id)));
      setSavedIds(savedPosts);
      setViewer(user);
@@ -177,10 +192,10 @@ export function HomePublishedPosts({filter="all",featuredPostId=""}:{filter?:Hom
      ])]);
      setError("");
     }
-   }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudieron cargar las publicaciones.");}
-   finally{if(active)setLoading(false);}
+   }catch(e){if(active&&revision.current===generation)setError(e instanceof Error?e.message:"No se pudieron cargar las publicaciones.");}
+   finally{if(active&&revision.current===generation)setLoading(false);}
   })();
-  return()=>{active=false;};
+  return()=>{active=false;revision.current++;setPosts([]);setViewer("");setSavedIds([]);setFollowedIds([]);setBusinessIds([]);};
  },[]);
  useFocusEffect(reload);
  const visible=posts.filter(post=>filter==="all"||(filter==="following"?followedIds.includes(post.authorId):businessIds.includes(post.authorId)))

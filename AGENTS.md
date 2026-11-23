@@ -1,3 +1,87 @@
+# JOBEEN — Protocolo permanente de ingeniería de software
+
+**Orden aprobada por el propietario, 2026-11-22. Obligatoria para ChatGPT, Codex y cualquier desarrollador o agente.** Se mantiene en cada rama y en futuras integraciones; no depende de un chat ni requiere repetir instrucciones. Preservar todas las normas previas de seguridad, producto, diseño y autorización. Ante conflicto, prevalecen la privacidad, las restricciones explícitas del propietario y el control de despliegues; este protocolo reemplaza cualquier traspaso antiguo que ordene repetir auditorías o preguntar qué continuar cuando el pendiente es inequívoco.
+
+## 1. Continuidad y fuente de verdad
+- Antes de modificar código, leer AGENTS.md y `docs/DEVELOPMENT_STATUS.md` de la rama activa; comprobar su HEAD, PR y resultado de CI correspondiente. Recuperar solo el contexto necesario para la siguiente tarea; no rehacer el inventario general.
+- Usar DEVELOPMENT_STATUS.md como único registro operativo del estado, identificadores, objetivo, alcance, prioridad, dependencias, archivos, evidencia (SHA/pruebas), aceptación y siguiente acción. Los demás documentos son referencias técnicas/históricas, no backlogs paralelos. No usar la memoria del chat como fuente de verdad.
+- Si se cambia de chat o agente, leer este protocolo y continuar desde la primera tarea ejecutable de mayor prioridad. Si el registro es antiguo, reconciliar únicamente el delta de commits/CI. No reiniciar el proyecto.
+- Si otro agente está editando una rama o tarea, evitar cambios concurrentes conflictivos; comprobar HEAD antes de escribir y no forzar refs.
+
+## 2. Estados y cierre verificable
+Estados exclusivos: PENDIENTE, EN DESARROLLO, IMPLEMENTADO, PENDIENTE DE INTEGRACIÓN, PENDIENTE DE VALIDACIÓN, COMPLETADO, BLOQUEADO.
+- Definir alcance, dependencia y criterios de aceptación antes de escribir código. COMPLETADO significa integrado dentro del alcance definido, pruebas pertinentes aprobadas y evidencia reproducible, sin regresiones conocidas ni bloqueo de ese alcance. No confundir CI con despliegue o validación física.
+- Separar entregables de código/test sintético de integración real y pruebas de dispositivo. Cerrar el alcance ya verificado y registrar únicamente la dependencia restante con ID propio. No ampliar indefinidamente el significado de una tarea.
+- Un piloto, adaptador o módulo sin consumidor es PENDIENTE DE INTEGRACIÓN; no funcionalidad completa. Si requiere infraestructura, decisión o APK no autorizada, registrar bloqueo y avanzar a otra tarea independiente.
+- Actualizar este registro en el mismo commit coherente de cada bloque siempre que sea posible (puede indicar CI pendiente; comprobar el resultado real al reanudar). No inventar evidencia ni porcentajes.
+
+## 3. No duplicación ni auditorías infinitas
+- Prohibido repetir auditorías, investigaciones, implementaciones o comprobaciones manuales que ya cumplen su aceptación. Reabrir solo por regresión, prueba fallida, hallazgo nuevo con evidencia, cambio relevante de dependencia o requisito autorizado. Registrar causa, evidencia y alcance afectado antes de reabrir. No rehacer áreas no afectadas.
+- Las suites automáticas de regresión continúan normalmente. Ejecutar pruebas existentes no equivale a repetir una auditoría.
+- Priorizar integrar y terminar componentes ya desarrollados; reutilizar servicios y contratos. No crear candidatos, capas paralelas, nuevos documentos, dependencias o refactorizaciones sin beneficio y destino de integración concretos.
+- Aplicar DRY, KISS, YAGNI, SOLID cuando aporte valor, separación de responsabilidades, tipado estricto, manejo consistente de errores y compatibilidad. Evitar sobreingeniería; no usar estos principios como excusa para omitir controles requeridos.
+
+## 4. Seguridad proporcional y alcance finito
+- P0 crítico, P1 alto, P2 moderado, P3 preventivo. Resolver P0/P1 y todo criterio obligatorio de privacidad/aislamiento antes de publicar. Planificar P2 por impacto; P3 no bloqueante se registra para después. Un riesgo no demostrado se distingue de un hallazgo confirmado; valorar impacto y probabilidad sin desestimar vulnerabilidades razonablemente sustentadas.
+- No bajar protección, omitir revocación o aprobar excepciones inseguras por eficiencia. Preservar datos históricos, prohibido migrar, borrar o reasignar titularidad por inferencia.
+- La etapa vigente se cierra al cumplir la lista finita de bloqueos de publicación de DEVELOPMENT_STATUS.md, con pruebas reales exigidas. Cualquier nuevo bloqueo debe tener evidencia, prioridad y aceptación; no añadir tareas preventivas para prolongar la etapa. Si un flujo no puede integrarse de forma segura, mantenerlo deshabilitado y solicitar decisión de alcance al propietario cuando sea imprescindible.
+- Una vez cerrados los bloqueos obligatorios, retomar el roadmap de producto y diseño aprobado, sin perder cambios.
+
+## 5. Implementación, calidad y recursos
+- Entregar cambios pequeños y coherentes por objetivo, agrupando archivos en commits atómicos. Ejecutar pruebas pertinentes y verificar CI del SHA previo antes de avanzar a una tarea dependiente. Corregir causas raíz, no silenciar, saltar ni debilitar cobertura de pruebas por conveniencia. Distinguir pruebas unitarias, integración, servidor, export JS, compilación y dispositivo.
+- Optimizar consultas, tokens, tiempo, minutos de CI, uso de servicios y almacenamiento. Evitar consultas redundantes y reportes repetitivos. Consolidar dependencias nativas confirmadas en una APK cuando sea viable, sin agregar SDK especulativos.
+- No afirmar ejecución, integración, publicación ni validación sin haberla comprobado. Mantener rollback seguro y no perder funcionalidades o diseño aprobado. No registrar credenciales ni datos privados.
+
+## 6. Control de cambios y autorización
+- Mantener main estable. Durante el incidente y la etapa de seguridad, NO fusionar ni enviar cambios a development, main, OTA o Supabase alojado sin autorización explícita. Las ramas de trabajo y CI sin compilación están permitidas. La regla previa de arreglos pequeños en development no anula esta restricción vigente.
+- Nunca iniciar APK/EAS Build, instalación o workflow que compile sin autorización expresa para el alcance y commit. Tampoco desplegar, comprar servicios, eliminar datos o ejecutar migraciones destructivas sin aprobación correspondiente.
+- Mantener estas reglas y el registro al integrar ramas; nunca descartarlos durante conflictos de merge. Conservar roadmap aprobado en la rama documental y reconciliar mediante promoción autorizada.
+
+## 7. Órdenes e informes
+- **Continúa / Continua:** leer registro, verificar último CI, resolver fallo o ejecutar siguiente tarea de mayor prioridad desbloqueada. No pedir que el propietario repita el contexto. No reabrir trabajo cerrado.
+- **Fix:** inspeccionar el fallo actual, corregir causa raíz con mínimo alcance, conservar controles y verificar nuevamente.
+- Informe breve: cambio real, rama/SHA, estado comprobado de pruebas, siguiente ID y acción, bloqueo que exige decisión. Diferenciar implementado, integrado, validado y publicado. No presentar una auditoría repetida ni crear más trabajo para aparentar avance.
+- Para cambios visuales aplicar DESIGN_RULES.md y el proceso de aprobación existente. Proteger el tiempo del propietario y solicitar decisiones solo cuando sean esenciales.
+
+## 8. Arquitectura de ramas y defensa continua (mandato del propietario, 2026-11-22)
+
+- **Troncales:** `main` = versión aprobada y recuperable; `development` = integración estable para cambios aceptados. No desarrollar directamente en ninguna. Trabajar en ramas temporales `feature/<área>-<objetivo>`, `fix/<área>-<objetivo>`, `security/<control>-<objetivo>`, `test/<suite>-<objetivo>`, `governance/<objetivo>`, `docs/<objetivo>` o `integration/<hito>`. Usar `release/<versión>` solo cuando exista candidato de publicación y `hotfix/<incidente>` para urgencias. No crear ramas permanentes vacías por módulo.
+- **Árbol de promoción:** tarea -> PR con CI -> `development` o rama de integración aprobada -> `release/*` -> `main`, siempre con aprobación explícita para integraciones y publicaciones mientras dure la etapa de seguridad. Para pilotos apilados, documentar claramente el PR base. Borrar ramas temporales solo después de integrar y comprobar su respaldo; preservar las de trabajos abiertos.
+- **Responsabilidades:** un dueño activo por área/archivo, un objetivo y evidencia por PR. ChatGPT coordina las dependencias y Codex implementa cuando aporta valor real; si hay bloqueo de configuración, detener la programación. Consultar el estado de otro agente antes de cambiar archivos compartidos.
+- **Autoprotección verificable:** todo PR ejecuta las pruebas existentes de aplicación y de base de datos; el gate `scripts/check-security-change-coverage.mjs` rechaza cambios en rutas sensibles sin una prueba de regresión modificada. Es una barrera incremental, **no certifica** que los tests estén bien escritos ni sustituye revisión humana, pruebas alojadas o pruebas físicas. No reducir tests para pasar CI.
+- **Monitoreo acotado:** Dependabot propone cambios de dependencias en PRs, nunca los fusiona automáticamente; un control periódico identifica vulnerabilidades conocidas del lockfile cuando la automatización esté integrada en la rama predeterminada. Hallazgo nuevo -> registrar componente, severidad, reproducción mínima y PR de corrección. Reprobar el área afectada y las regresiones relacionadas; **no reiniciar una auditoría completa** sin evidencia de fallo sistémico.
+- **Capas no automatizadas:** protección operativa del tráfico, límites por IP/cuenta, alertas de abuso, registros centralizados, respuesta a incidentes, recuperación, revocación de sesiones, seguridad de infraestructura y pruebas externas deben definirse antes de escala pública según riesgo. Ningún script de CI inspecciona automáticamente todo el tráfico real o corrige vulnerabilidades por sí mismo.
+- **Sesiones:** que un JWT continúe válido después de `signOut` hasta su vencimiento puede ser comportamiento del proveedor; no declararlo revocado de inmediato. Operaciones sensibles requieren autorización vigente del lado del servidor y verificación de sesión/reautenticación conforme al contrato. Una observación de SEC-06 no se cierra ni se ignora solo porque `auth` devuelva código 0.
+- **Evidencia y cadencia:** reutilizar pruebas automáticas en cada PR; auditoría manual focalizada solo por cambio relevante, alerta confirmada o incidente. El backlog y las excepciones con caducidad/aprobación quedan únicamente en `docs/DEVELOPMENT_STATUS.md`. El modelo técnico está en `docs/ENGINEERING_BRANCHES_SECURITY.md` como referencia, no backlog paralelo.
+- **Publicación y workflows:** prohibido que `push`, PR, cron, eventos de otro workflow o un bot publiquen OTA, inicien APK o empujen cambios a `main`/`development`. Solo un workflow de OTA manual, con identidad del propietario, confirmación expresa y SHA exacto del HEAD seleccionado; los dos workflows Android requieren iguales controles de propietario y SHA. Los workflows antiguos de publicación deben quedar inertes; el generador de wordmark solo puede producir artifacts para revisión. Mantener un test CI que inspeccione rutas de publicación y falle si alguien restablece disparadores automáticos. **Estas restricciones en una rama no desactivan workflows antiguos existentes en otras ramas**: antes de promocionar/comenzar cambios en ramas heredadas comprobar sus triggers.
+- **Protección GitHub:** configurar Rulesets de `main`/`development` para exigir PR, bloqueos de force-push/borrado y checks `validate`/`database` según el plan GitHub. Estas reglas en archivos NO activan por sí solas los ajustes del repositorio; verificar manualmente la protección efectiva. Nunca afirmar que está activada sin comprobarlo.
+
+**La medida del progreso son entregables integrados, verificados y cerrados, no el número de commits, auditorías o archivos.**
+
+---
+
+## Normas de seguridad y producto previamente aprobadas (vigentes)
+
+## Seguridad y aislamiento de cuentas — regla permanente no negociable
+### Arquitectura aprobada: opción 2, aislamiento reforzado
+- **Compilación APK (orden expresa del propietario):** antes de crear cualquier APK nuevo, informar qué cambio nativo lo requiere y solicitar aprobación. No iniciar EAS Build, GitHub workflows de compilación Android ni instalar un APK nuevo sin autorización expresa. Los cambios de código y verificaciones sin compilación pueden continuar.
+- Una sola identidad autenticada activa por instancia/dispositivo, sin selector multicuenta persistente ni unión automática de perfiles. No limitar arbitrariamente las sesiones legítimas en otros dispositivos.
+- Separar el estado de todos los proveedores, navegación, cachés, borradores y eventos por UUID; cerrar la sesión anterior y desechar respuestas asíncronas antiguas. Verificar identidad antes y después de operaciones que esperen red o disco.
+- Credenciales, tokens de sesión y persistencia privada sensible: almacén seguro nativo (KeyStore/Keychain), cifrado autenticado con claves protegidas y migración sin importar datos de propietarios desconocidos. No sustituir cifrado por claves de AsyncStorage con sufijo UUID. Si el APK actual no incluye el módulo nativo, exigir compilación y pruebas de un APK nuevo. No declarar este requisito implementado hasta verificarlo.
+- Exigir reautenticación reciente para acciones críticas (cambio de contraseña/correo, eliminación de cuenta, pagos y retiros futuros, exportación privada). No depender solamente de una confirmación visual; validar la sesión en servidor. Comprobar la API directa tanto con sesiones recientes como antiguas y verificar que se rechacen códigos inválidos, caducados o reutilizados cuando el flujo los exige. No imponer MFA a sesiones ordinarias sin proceso de recuperación.
+- Estado de incidente actual: suspender cambios de UX, preservar la versión estable y contener regresiones. Auditoría de registros existentes y pruebas reales A→B→A, offline y API directa son bloqueo de publicación. Nunca borrar ni asignar copias a una cuenta por inferencia; confirmar propiedad y estrategia de recuperación. Registrar el cumplimiento por fases en docs/ACCOUNT_ISOLATION.md.
+
+- Cada cuenta constituye un espacio privado independiente, identificado por el UUID autenticado de Supabase, nunca por correo, dispositivo, nombre o última cuenta utilizada. Ningún dato privado de A puede aparecer, copiarse, escribirse, sincronizarse o restaurarse en B.
+- Denegar por defecto. Solo permitir lectura/escritura de datos propios o acceso explícitamente autorizado por una función social (publicaciones públicas, JCards con campos visibles, participantes de conversación, etc.). Aplicar autorización en servidor, no solo UI: RLS, grants mínimos, RPC y Storage; comprobar auth.uid() para propiedad y permisos, incluidas inserciones y actualizaciones. No exponer claves service_role al cliente.
+- Toda caché, borrador, archivo temporal, preferencia personal, cola offline y suscripción debe pertenecer a un UUID verificable. Prohibidas claves globales con información de usuarios. Nunca importar ni subir automáticamente datos heredados sin propietario demostrado. Preservar datos ambiguos para investigar y recuperar con autorización, sin reasignarlos ni borrarlos por suposición.
+- Ante cambio de identidad o cierre de sesión: invalidar solicitudes y suscripciones anteriores, limpiar estado visual y memoria, impedir que respuestas tardías rellenen la nueva sesión, reiniciar pantallas privadas y verificar identidad antes de leer/escribir/sincronizar. No mostrar datos privados durante transiciones.
+- Revisar todas las superficies: JCards personales/empresariales/guardadas, CV, mensajes, contactos, seguidores, borradores, publicaciones, Flashes, directos, JShop, búsqueda, notificaciones, fotos, certificados, ajustes y futuros pagos/regalos.
+- Minimizar persistencia de información privada, proteger credenciales y tokens mediante almacenamiento seguro del sistema y cifrar persistencia sensible conforme a OWASP MASVS. Nunca registrar secretos ni PII innecesaria en logs. Mantener los enlaces firmados de archivos privados fuera de la persistencia del cliente y de logs. Si se requiere revocación por solicitud, verificar permisos y sesión vigentes en servidor y comprobar que los endpoints originales y las cachés respetan ese control.
+- Pruebas obligatorias A→B→A, cierre y reapertura, offline, solicitudes concurrentes/retardadas, sesión expirada y acceso directo a API/Storage. A y B no deben leer/escribir datos privados ajenos; comprobar también que el contenido deliberadamente compartido siga funcionando.
+- Ante sospecha de contaminación: priorizar contención antes de UX, inspección de solo lectura, preservar evidencia, identificar registros afectados y propietario real; no borrar datos ni migrar registros entre cuentas sin evidencia y aprobación específica. No publicar una corrección como verificada hasta superar pruebas. main/producción requieren autorización.
+- Conservar las restricciones de privacidad en las reversiones. Si un cliente anterior depende de un permiso inseguro, mantenerlo revocado y suspender el flujo afectado.
+- Referencias: https://mas.owasp.org/MASVS/ y https://supabase.com/docs/guides/database/postgres/row-level-security . La selección de arquitectura adicional (sesión única reforzada o multicuenta) requiere aprobación del propietario.
+
 # Jobin — Reglas permanentes de trabajo (AGENTS.md)
 
 Este archivo es la fuente de referencia para asistentes y desarrolladores que continúen el proyecto Jobin, incluso desde otro chat.
@@ -18,13 +102,18 @@ Este archivo es la fuente de referencia para asistentes y desarrolladores que co
 - **No desperdiciar el espacio principal:** un creador en vivo debe poder emitir/gestionar el directo sin obstáculos ni menús invasivos; su audiencia debe descubrir y entrar a transmisiones con pocas acciones. Las funciones laborales complementan el contenido, no compiten con él en jerarquía.
 - **Para decisiones futuras de UX y priorización:** elegir primero lo que mejore transmisión, audiencia, interacción, creación móvil y seguridad del creador. Revisar `docs/JOBEEN_PRODUCT_VISION.md` antes de proponer o implementar cambios mayores.
 
+## Protocolo obligatorio de diseño UI/UX
+- Leer `DESIGN_RULES.md` antes de cualquier tarea de diseño, junto con las reglas visuales siguientes. Consultar Mobbin, presentar 2 o 3 propuestas y esperar aprobación explícita antes de implementar UI/UX. Las correcciones técnicas y de seguridad ya autorizadas pueden continuar sin aprobación por archivo, sin rediseños. Mantener el bloqueo de UX durante la auditoría de privacidad.
+
 ## Sistema visual minimalista (aprobado; NO sustituye los tokens existentes)
 - **Mismo sistema para Configuración Home, menú de tres puntos del perfil propio y menú de tres puntos del perfil visitante:** misma familia de superficie, tipografía, radios, espacios y filas; permitir diferencias funcionales de contenido y formato (drawer para navegación, menú compacto de acciones para visitante).
-- Una fila de menú puede tener **ícono semántico ÚNICO + título + descripción breve opcional + chevron únicamente cuando navega**. No poblar la interfaz de iconos por decoración. Acciones destructivas se distinguen de forma discreta (icono/tono), sin usar color de énfasis en todo el menú. Preservar interacción, rutas y seguridad.
+- Una fila de menú puede tener **título único y breve + ícono semántico solo si aporta valor + chevron únicamente cuando navega**. Sin subtítulos ni descripciones rutinarias; las excepciones necesarias deben justificarse y aprobarse según `DESIGN_RULES.md`. No poblar la interfaz de iconos por decoración. Acciones destructivas se distinguen de forma discreta (icono/tono), sin usar color de énfasis en todo el menú. Preservar interacción, rutas y seguridad.
 - **La tira de CINCO pestañas de las secciones del perfil** (Todo, JCards, Videos, En vivo, Acerca de) será **solo texto**, sin iconos; debe ocupar menos altura/ancho y conservar cinco opciones, orden, selección, scroll y legibilidad en teléfonos chicos y grandes. No confundir con la **barra GLOBAL inferior de cinco iconos** Casa/JShop/Videos/Mensajes/Perfil, cuya iconografía aprobada SE CONSERVA.
 - Mantener íntegros los colores, gradientes, tipografías semánticas, JCards y elementos de identidad ya aprobados; no adoptar colores, tamaños de letra, iconos de marca ni diseño exacto de X/Twitter u otras referencias.
 - **Mobbin y X sirven solo como referencias de distribución, densidad y limpieza visual**, no como plantilla para copiar. Preservar el estilo y lenguaje de Jobeen, incluidas sus reglas responsive y de accesibilidad.
 - Implementar cambios visuales **por fases con pruebas automatizadas y revisión en Android** antes de fijar nuevos tokens definitivos. Mantener `main` y producción intactos sin aprobación específica.
+
+- **Minimalismo funcional contemporáneo obligatorio:** contrastar cada propuesta e implementación UI/UX con patrones actuales de apps líderes mediante Mobbin (p. ej., LinkedIn y X para configuraciones), sin copiar identidad. Priorizar etiquetas claras, jerarquía, agrupación y eliminación de contenido redundante en todas las pantallas. Conservar avisos necesarios, accesibilidad y áreas táctiles de 48dp. Aplicar las excepciones y el proceso de aprobación de `DESIGN_RULES.md`.
 
 ## Norma visual de iconografía Jobeen (permanente; aprobada por el propietario)
 - La personalidad visual de Jobeen es **abeja y panal**: integrar celdas hexagonales suavizadas cuando tengan sentido semántico, sin convertir todos los controles en hexágonos.
@@ -76,4 +165,4 @@ Este archivo es la fuente de referencia para asistentes y desarrolladores que co
 1. Leer este archivo y el repositorio, en especial el último commit de `development`, workflows de GitHub Actions, migraciones y estado Supabase.
 2. No asumir que la última modificación se publicó; comprobar Actions/Expo.
 3. Consultar `docs/CHAT_HANDOFF.md` para contexto funcional, tareas pendientes y prompt de continuidad.
-4. Preguntar al usuario qué tarea continuar; nunca fusionar `main` por iniciativa propia.
+4. Recuperar la tarea activa desde el traspaso, ramas, PR y verificaciones; continuar sin pedir contexto repetido cuando sea inequívoco. Consultar `DESIGN_RULES.md` antes de tareas UI/UX. Preguntar solo si falta una decisión imprescindible o autorización; nunca fusionar `main` por iniciativa propia.

@@ -67,6 +67,9 @@ export async function startSafetyWorker(env:NodeJS.ProcessEnv=process.env){
   }
  }
  const server=createServer(async(req,res)=>{
+  res.setHeader("Cache-Control","no-store");
+  res.setHeader("Referrer-Policy","no-referrer");
+  res.setHeader("X-Content-Type-Options","nosniff");
   const origin=req.headers.origin;
   if(origin){if(!(env.SAFETY_WEB_ORIGINS??"").split(",").map(v=>v.trim()).includes(origin)){res.writeHead(403);res.end();return;}
    res.setHeader("Access-Control-Allow-Origin",origin);res.setHeader("Vary","Origin");res.setHeader("Access-Control-Allow-Headers","Authorization,Content-Type");res.setHeader("Access-Control-Allow-Methods","GET,POST,OPTIONS");
@@ -80,14 +83,19 @@ export async function startSafetyWorker(env:NodeJS.ProcessEnv=process.env){
    if(req.url==="/moderation/review-url"){
     const authorization=req.headers.authorization;if(!authorization?.startsWith("Bearer ")||!video)throw new Error("Moderator service unavailable");
     const body=record(JSON.parse(Buffer.concat(chunks).toString("utf8")));
-    const artifact=record(await backend.reviewerArtifact(requiredText(body.media,"media ID",36),authorization.slice(7)));
-    const url=await video.reviewUrl(requiredText(artifact.assetId,"asset ID"),120);
+    const media=requiredText(body.media,"media ID",36),jwt=authorization.slice(7);
+    if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(media))throw Error("Invalid media ID");
+    const artifact=record(await backend.reviewerArtifact(media,jwt));
+    const asset=requiredText(artifact.assetId,"asset ID");
+    const url=await video.reviewUrl(asset,120);
+    const confirmed=record(await backend.reviewerArtifact(media,jwt));
+    if(confirmed.assetId!==asset||confirmed.kind!==artifact.kind)throw Error("Review authorization changed");
     res.writeHead(200,{"Content-Type":"application/json","Cache-Control":"no-store"});res.end(JSON.stringify({url}));return;
    }
    const timestamp=req.headers["x-jobin-timestamp"];const signature=req.headers["x-jobin-signature"];
    const parsed=verifyWebhook(Buffer.concat(chunks),typeof timestamp==="string"?timestamp:undefined,typeof signature==="string"?signature:undefined,env.MODERATION_WEBHOOK_SECRET??"");
    await result(parsed);res.writeHead(204);res.end();
-  }catch{res.writeHead(400);res.end("Webhook rejected; do not treat this response as approval.");}
+  }catch{res.writeHead(400);res.end("Request rejected; do not treat this response as approval.");}
  });
  const port=Number(env.SAFETY_WORKER_PORT??3001);
  if(!Number.isInteger(port)||port<1||port>65535)throw new Error("Invalid worker port");
@@ -104,7 +112,7 @@ export async function startSafetyWorker(env:NodeJS.ProcessEnv=process.env){
    await Promise.all(payload.map(async raw=>{
     const j=raw as Job;
     try{await processJob(j);}
-    catch(cause){await backend.rpc("jobin_moderation_job_failed",{job:j.id,token:j.lease_token,reason:cause instanceof Error?cause.message:"Provider failure"}).catch(()=>{});}
+    catch(cause){await backend.rpc("jobin_moderation_job_failed",{job:j.id,token:j.lease_token,reason:"Provider or safety backend operation failed"}).catch(()=>{});}
    }));
   }catch{ /* Connectivity failure does not publish or renew any live lease. */ }
   await pause(1000);

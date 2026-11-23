@@ -1,4 +1,8 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {assertAccountOwner} from "./account-scope";
+import {supabase} from "./supabase";
+import {sessionMarkerKey} from "./session-lifetime";
+import {createBusinessSessionMemory} from "./business-session-memory";
+import type {MessageScope} from "./message-session";
 import type {BusinessCardData} from "./jcard";
 
 export const EMPTY_BUSINESS_CARD:BusinessCardData={
@@ -6,25 +10,24 @@ export const EMPTY_BUSINESS_CARD:BusinessCardData={
  location:"",email:"",emailSecondary:"",phone:"",phoneSecondary:"",
  phoneLabel:"",phoneSecondaryLabel:"",licenseVerified:false,rating:null,reviewCount:0
 };
-const OWNER_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function businessCardCacheKey(owner:string){
- if(!OWNER_ID.test(owner))throw new Error("La sesión de empresa no es válida.");
- return "jobeen.business.card.v2."+owner;
+const memory=createBusinessSessionMemory<BusinessCardData>();
+let observed:string|null=null;
+supabase?.auth.onAuthStateChange((event,session)=>{
+ let next:string|null=null;
+ try{if(session)next=sessionMarkerKey(session.user.id,session.access_token);}catch{/* fail closed */}
+ if(next!==observed||event==="SIGNED_OUT")memory.clear();
+ observed=next;
+});
+/** Leave jobin.business.card.v1 and jobeen.business.card.v2.* untouched on disk.
+ * Neither legacy snapshot is eligible for automatic restoration or upload. */
+export function clearBusinessCardMemory(){memory.clear();}
+export async function readScopedBusinessCard(owner:string,scope:MessageScope):Promise<BusinessCardData|null>{
+ if(scope.owner!==owner)throw Error("La cuenta cambió.");
+ await assertAccountOwner(owner,scope.session);
+ return memory.read(scope);
 }
-/** Never read the legacy global key jobin.business.card.v1.
- * Its contents cannot be attributed reliably to any account and must never
- * be silently uploaded as a different person's business JCard. */
-export async function readScopedBusinessCard(owner:string):Promise<BusinessCardData|null>{
- const raw=await AsyncStorage.getItem(businessCardCacheKey(owner));
- if(!raw)return null;
- try{
-  const data:unknown=JSON.parse(raw);
-  if(!data||typeof data!=="object")return null;
-  const card=data as Partial<BusinessCardData>;
-  if(typeof card.name!=="string"||!Array.isArray(card.services))return null;
-  return {...EMPTY_BUSINESS_CARD,...card};
- }catch{return null;}
-}
-export async function writeScopedBusinessCard(owner:string,card:BusinessCardData){
- await AsyncStorage.setItem(businessCardCacheKey(owner),JSON.stringify(card));
+export async function writeScopedBusinessCard(owner:string,card:BusinessCardData,scope:MessageScope){
+ if(scope.owner!==owner)throw Error("La cuenta cambió.");
+ await assertAccountOwner(owner,scope.session);
+ memory.write(scope,card);
 }

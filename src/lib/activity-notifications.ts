@@ -1,24 +1,23 @@
 import {requireSupabase} from "./supabase";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "./message-session";
 
 export type ActivityNotice={
  id:string;kind:string;payload:Record<string,unknown>;readAt:string|null;createdAt:string;
  actorName:string;actorId:string|null;
 };
-type RawNotice={id:string;kind:string;payload:Record<string,unknown>|null;read_at:string|null;created_at:string};
+type RawNotice={recipient_id:string;id:string;kind:string;payload:Record<string,unknown>|null;read_at:string|null;created_at:string};
 function value(payload:Record<string,unknown>,field:string):string{
  const item=payload[field];
  return typeof item==="string"?item:"";
 }
-export async function loadActivityNotifications(limit=100):Promise<ActivityNotice[]>{
- const db=requireSupabase();
- const {data:{user},error:authError}=await db.auth.getUser();
- if(authError)throw authError;
- if(!user)return [];
+export async function loadActivityNotifications(limit=100,expectedScope?:MessageScope):Promise<ActivityNotice[]>{
+ const db=requireSupabase(),scope=await captureMessageScope(expectedScope),user={id:scope.owner};
  const {data,error}=await db.from("notifications" as never)
-  .select("id,kind,payload,read_at,created_at").eq("recipient_id",user.id)
+  .select("recipient_id,id,kind,payload,read_at,created_at").eq("recipient_id",user.id)
   .order("created_at",{ascending:false}).limit(limit);
  if(error)throw error;
- const rows=(data??[]) as unknown as RawNotice[];
+ await assertMessageScope(scope);
+ const rows=((data??[]) as unknown as RawNotice[]).filter(r=>r.recipient_id===scope.owner);
  const actorIds=[...new Set(rows.map(n=>value(n.payload??{},"actor_id")).filter(Boolean))];
  const names=new Map<string,string>();
  if(actorIds.length){
@@ -27,18 +26,19 @@ export async function loadActivityNotifications(limit=100):Promise<ActivityNotic
   if(profilesError)throw profilesError;
   for(const profile of profiles??[])names.set(profile.id,profile.display_name||"Usuario de Jobeen");
  }
+ await assertMessageScope(scope);
  return rows.map(row=>{
   const actorId=value(row.payload??{},"actor_id");
   return {id:row.id,kind:row.kind,payload:row.payload??{},readAt:row.read_at,createdAt:row.created_at,
    actorId:actorId||null,actorName:names.get(actorId)??"Usuario de Jobeen"};
  });
 }
-export async function countUnreadActivityNotifications():Promise<number>{
- const db=requireSupabase();const {data:{user}}=await db.auth.getUser();
- if(!user)return 0;
+export async function countUnreadActivityNotifications(expectedScope?:MessageScope):Promise<number>{
+ const db=requireSupabase(),scope=await captureMessageScope(expectedScope),user={id:scope.owner};
  const {count,error}=await db.from("notifications" as never)
   .select("id",{head:true,count:"exact"}).eq("recipient_id",user.id).is("read_at",null);
  if(error)throw error;
+ await assertMessageScope(scope);
  return count??0;
 }
 /**
@@ -46,11 +46,8 @@ export async function countUnreadActivityNotifications():Promise<number>{
  * notification was already opened. Do not double-count requests that still
  * have an unread activity notification.
  */
-export async function countPendingProfileAlerts():Promise<number>{
- const db=requireSupabase();
- const {data:{user},error:authError}=await db.auth.getUser();
- if(authError)throw authError;
- if(!user)return 0;
+export async function countPendingProfileAlerts(expectedScope?:MessageScope):Promise<number>{
+ const db=requireSupabase(),scope=await captureMessageScope(expectedScope),user={id:scope.owner};
  const [unread,pending,unreadCv,pendingContacts,unreadContacts]=await Promise.all([
   db.from("notifications" as never)
    .select("id",{head:true,count:"exact"}).eq("recipient_id",user.id).is("read_at",null),
@@ -76,17 +73,18 @@ export async function countPendingProfileAlerts():Promise<number>{
   .map(n=>n.payload?.request_id).filter((id):id is string=>typeof id==="string"));
  const pendingUncountedContacts=((pendingContacts.data??[]) as unknown as {id:string}[])
   .filter(request=>!alreadyCountedContacts.has(request.id)).length;
+ await assertMessageScope(scope);
  return (unread.count??0)+pendingUncounted+pendingUncountedContacts;
 }
-export async function markActivityNotificationsRead(ids?:string[]):Promise<void>{
- const db=requireSupabase();const {data:{user}}=await db.auth.getUser();
- if(!user)return;
+export async function markActivityNotificationsRead(ids?:string[],expectedScope?:MessageScope):Promise<void>{
+ const db=requireSupabase(),scope=await captureMessageScope(expectedScope),user={id:scope.owner};
  if(ids&&ids.length===0)return;
  let query=db.from("notifications" as never).update({read_at:new Date().toISOString()} as never)
   .eq("recipient_id",user.id).is("read_at",null);
  if(ids)query=query.in("id",ids);
  const {error}=await query;
  if(error)throw error;
+ await assertMessageScope(scope);
 }
 export function noticeDescription(notice:ActivityNotice):{title:string;detail:string;category:"activity"|"requests"|"system"}{
  const {kind,actorName,payload}=notice;

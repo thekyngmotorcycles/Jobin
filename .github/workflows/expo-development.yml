@@ -1,113 +1,73 @@
-name: Expo development preview
+name: Expo development OTA (manual approval only)
 on:
-  push:
-    branches: [development]
   workflow_dispatch:
     inputs:
-      build:
-        description: Also create a new development build
+      approved_commit:
+        description: Exact development HEAD SHA explicitly approved by the owner for this OTA
+        required: true
+        type: string
+      confirm_ota:
+        description: I explicitly approve publishing this OTA to the existing development update branch
+        required: true
         type: boolean
-        default: true
-      platform:
-        description: Android device, iOS simulator, or both
-        type: choice
-        options: [android, ios, all]
-        default: android
+        default: false
 permissions:
-  contents: write
+  contents: read
 concurrency:
-  group: expo-development
-  cancel-in-progress: true
+  group: expo-development-ota-manual
+  cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/development'
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.actor == 'thekyngmotorcycles' &&
+      github.ref == 'refs/heads/development' &&
+      inputs.confirm_ota == true &&
+      inputs.approved_commit == github.sha
     runs-on: ubuntu-latest
-    timeout-minutes: 90
-    env:
-      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      EXPO_PROJECT_ID: ${{ vars.EXPO_PROJECT_ID }}
-      EXPO_OWNER: ${{ vars.EXPO_OWNER }}
+    timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout exact approved commit without write credentials
+        uses: actions/checkout@v4
         with:
-          ref: development
+          ref: ${{ github.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Check Expo authentication
+          cache: npm
+      - name: Validate live project identity; never use isolated pilot for an OTA
+        env:
+          EXPO_PROJECT_ID: ${{ vars.EXPO_PROJECT_ID }}
         run: |
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "::error::Missing EXPO_TOKEN repository secret."
-            exit 1
-          fi
-      - run: npm install --no-audit --no-fund
-      - run: npm install --global eas-cli@27.1.0
-      - name: Link or create the Expo project
-        run: npm run expo:configure
-      - name: Validate EAS project identity before publishing or building
-        run: |
-          node - <<'JS'
-          const config=require("./app.json").expo;
-          const id=config.extra?.eas?.projectId;
-          const url=config.updates?.url;
-          if (!id || url !== `https://u.expo.dev/${id}`) {
-            console.error("Expo project ID and updates URL do not match.");
-            process.exit(1);
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const expo = JSON.parse(readFileSync('app.json', 'utf8')).expo;
+          const liveId = 'a6befb1a-dc03-45a8-a18c-294643e99434';
+          if (expo.extra?.eas?.projectId !== liveId ||
+              expo.updates?.url !== `https://u.expo.dev/${liveId}` ||
+              (process.env.EXPO_PROJECT_ID && process.env.EXPO_PROJECT_ID !== liveId)) {
+            throw new Error('Expo project/updates URL mismatch; OTA refused.');
           }
-          if (process.env.EXPO_PROJECT_ID && process.env.EXPO_PROJECT_ID !== id) {
-            console.error("EXPO_PROJECT_ID differs from the repository project ID. Refusing to publish an incompatible OTA update.");
-            process.exit(1);
+          if (process.env.JOBEEN_SECURITY_PILOT === '1' ||
+              process.env.EXPO_PUBLIC_JOBEEN_SECURITY_PILOT === '1') {
+            throw new Error('Security-pilot runtime must never publish OTA.');
           }
-          console.log(`Validated Expo project ${id}; update URL ${url}`);
           JS
-      - name: Save real Expo project configuration and dependency lock
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app.json package-lock.json
-          if ! git diff --cached --quiet; then
-            git commit -m "Link Expo development project and lock dependencies"
-            git push origin HEAD:development
-          fi
+      - run: npm ci --no-audit --no-fund
       - run: npx expo install --check
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
-      - name: Publish update to EAS development branch
-        run: eas update --branch development --environment preview --platform all --message "Jobin development ${{ github.sha }}" --non-interactive --json > expo-update.json
-      - name: Route development channel to development branch
-        run: |
-          if ! eas channel:view development --json --non-interactive; then
-            eas channel:create development --non-interactive
-          fi
-          eas channel:edit development --branch development --non-interactive
-      - name: Verify Mapbox public token for preview APK
-        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[expo-preview]')
-        run: |
-          eas env:exec preview "node -e 'const token=process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN||\"\";
-          if(!token.startsWith(\"pk.\") || token.length<26){
-            console.error(\"::error::Mapbox public token is missing or invalid in Expo preview environment. Check the exact variable name and Preview selection.\");
-            process.exit(1);
-          }
-          console.log(\"Mapbox public token is present in Expo preview environment.\");'" --non-interactive
-      - name: Build standalone Android preview APK (without development client)
-        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[expo-preview]')
-        run: eas build --profile preview --platform android --non-interactive --wait --json > expo-build.json
-      - name: Build Android development app
-        if: (github.event_name == 'workflow_dispatch' && inputs.build) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[expo-build]'))
+      - name: Publish only the explicitly approved OTA (no builds, Git pushes or channel changes)
         env:
-          BUILD_PLATFORM: ${{ inputs.platform || 'android' }}
-        run: eas build --profile development --platform "$BUILD_PLATFORM" --non-interactive --wait --json > expo-build.json
-      - name: Save Expo results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: expo-development-results
-          path: |
-            expo-update.json
-            expo-build.json
-          if-no-files-found: ignore
-      - name: Preview instructions
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          echo "Development update published. Download the build from Expo Builds and open the update using the development client." >> "$GITHUB_STEP_SUMMARY"
-          echo "Android builds install on devices. iOS builds use the simulator profile; iPhone distribution needs Apple provisioning." >> "$GITHUB_STEP_SUMMARY"
+          test -n "$EXPO_TOKEN" || { echo "::error::Missing EXPO_TOKEN"; exit 1; }
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA" || { echo "::error::Commit mismatch"; exit 1; }
+          npx eas-cli@27.1.0 update --branch development --environment preview --platform all --message "Jobeen approved OTA $GITHUB_SHA" --non-interactive --json > "$RUNNER_TEMP/expo-update.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jobeen-approved-development-ota
+          path: ${{ runner.temp }}/expo-update.json
+          if-no-files-found: error

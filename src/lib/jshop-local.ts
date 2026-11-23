@@ -1,42 +1,72 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import {requireSupabase} from "./supabase";
+import {parsePrivateAttachment} from "./private-attachment";
+import {privateMetadataStorage} from "./private-metadata-storage";
+import {assertAccountOwner} from "./account-scope";
+import {captureMessageScope,type MessageScope} from "./message-session";
+import {serializePrivateWrite} from "./private-write-queue";
 import type {JShopDraft} from "./jshop-model";
 
 const draftsKey=(id:string)=>"jobeen.jshop.drafts.v1."+id;
 const favoritesKey=(id:string)=>"jobeen.jshop.favorites.v1."+id;
-/** All drafts and favorites are local and separated by authenticated account. */
-export async function jshopAccountId():Promise<string>{
- const {data,error}=await requireSupabase().auth.getUser();
- if(error||!data.user)throw new Error("Inicia sesión para utilizar Mi JShop.");
- return data.user.id;
+export async function jshopAccountId():Promise<string>{return (await captureMessageScope()).owner;}
+async function confirm(ownerId:string,scope:MessageScope){
+ if(!scope||scope.owner!==ownerId)throw Error("La cuenta cambió.");
+ await assertAccountOwner(ownerId,scope.session);
 }
-export async function readJShopDrafts(ownerId:string):Promise<JShopDraft[]>{
- const raw=await AsyncStorage.getItem(draftsKey(ownerId));
+function storedDraft(draft:JShopDraft,owner:string):JShopDraft{
+ const refs=draft.privatePhotos??[];
+ if(!Array.isArray(refs)||refs.length>5)throw Error("Fotografías del borrador no disponibles.");
+ return {...draft,photos:[],privatePhotos:refs.map(file=>parsePrivateAttachment(file,owner,"draft-photo"))};
+}
+async function readJShopDraftRecords(ownerId:string,scope:MessageScope):Promise<JShopDraft[]>{
+ await confirm(ownerId,scope);
+ const raw=await privateMetadataStorage.read("jshop-drafts",scope);
+ await confirm(ownerId,scope);
  if(!raw)return [];
- try{
-  const parsed:unknown=JSON.parse(raw);
-  if(!Array.isArray(parsed))return [];
-  return parsed.filter((item):item is JShopDraft=>!!item&&typeof item==="object"&&item.ownerId===ownerId&&typeof item.id==="string"&&typeof item.title==="string"&&Array.isArray(item.photos))
-   .sort((a,b)=>b.updatedAt-a.updatedAt);
- }catch{return [];}
+ const parsed:unknown=JSON.parse(raw);
+ if(!Array.isArray(parsed)||parsed.some(item=>!item||typeof item!=="object"||item.ownerId!==ownerId||typeof item.id!=="string"||typeof item.title!=="string"||!Array.isArray(item.photos)))
+  throw Error("Hay borradores que necesitan revisión de titularidad antes de recuperarse.");
+ return (parsed as JShopDraft[]).sort((a,b)=>b.updatedAt-a.updatedAt);
 }
-export async function saveJShopDraft(ownerId:string,draft:JShopDraft):Promise<void>{
+export async function readJShopDrafts(ownerId:string,scope:MessageScope):Promise<JShopDraft[]>{
+ const drafts=await readJShopDraftRecords(ownerId,scope);
+ await confirm(ownerId,scope);
+ return drafts.map(item=>storedDraft(item,ownerId));
+}
+export async function saveJShopDraft(ownerId:string,draft:JShopDraft,scope:MessageScope):Promise<void>{
  if(draft.ownerId!==ownerId)throw new Error("No puedes modificar anuncios de otra cuenta.");
- const drafts=await readJShopDrafts(ownerId);
- await AsyncStorage.setItem(draftsKey(ownerId),JSON.stringify([draft,...drafts.filter(x=>x.id!==draft.id)]));
+ await confirm(ownerId,scope);
+ await serializePrivateWrite(draftsKey(ownerId),async()=>{
+  await confirm(ownerId,scope);
+  const drafts=await readJShopDraftRecords(ownerId,scope);
+  await confirm(ownerId,scope);
+  await privateMetadataStorage.write("jshop-drafts",scope,JSON.stringify([storedDraft(draft,ownerId),...drafts.filter(x=>x.id!==draft.id)]));
+  await confirm(ownerId,scope);
+ });
 }
-export async function deleteJShopDraft(ownerId:string,id:string):Promise<void>{
- const drafts=await readJShopDrafts(ownerId);
- await AsyncStorage.setItem(draftsKey(ownerId),JSON.stringify(drafts.filter(x=>x.id!==id)));
+export async function deleteJShopDraft(ownerId:string,id:string,scope:MessageScope):Promise<void>{
+ await confirm(ownerId,scope);
+ await serializePrivateWrite(draftsKey(ownerId),async()=>{
+  const drafts=await readJShopDraftRecords(ownerId,scope);
+  await confirm(ownerId,scope);
+  await privateMetadataStorage.write("jshop-drafts",scope,JSON.stringify(drafts.filter(x=>x.id!==id)));
+  await confirm(ownerId,scope);
+ });
 }
-export async function readJShopFavorites(ownerId:string):Promise<string[]>{
- const raw=await AsyncStorage.getItem(favoritesKey(ownerId));
+export async function readJShopFavorites(ownerId:string,expectedScope?:MessageScope):Promise<string[]>{
+ const scope=await captureMessageScope(expectedScope);await confirm(ownerId,scope);
+ const raw=await privateMetadataStorage.read("jshop-favorites",scope);
+ await confirm(ownerId,scope);
  if(!raw)return [];
- try{const ids:unknown=JSON.parse(raw);return Array.isArray(ids)?ids.filter((id):id is string=>typeof id==="string"):[];}catch{return [];}
+ const ids:unknown=JSON.parse(raw);
+ if(!Array.isArray(ids)||ids.some(id=>typeof id!=="string"))throw Error("Los favoritos requieren revisión.");
+ return ids;
 }
-export async function toggleJShopFavorite(ownerId:string,id:string):Promise<boolean>{
- const ids=await readJShopFavorites(ownerId);
- const has=ids.includes(id);
- await AsyncStorage.setItem(favoritesKey(ownerId),JSON.stringify(has?ids.filter(key=>key!==id):[id,...ids]));
- return !has;
+export async function toggleJShopFavorite(ownerId:string,id:string,expectedScope?:MessageScope):Promise<boolean>{
+ const scope=await captureMessageScope(expectedScope);await confirm(ownerId,scope);
+ return serializePrivateWrite(favoritesKey(ownerId),async()=>{
+  const ids=await readJShopFavorites(ownerId,scope),has=ids.includes(id);
+  await confirm(ownerId,scope);
+  await privateMetadataStorage.write("jshop-favorites",scope,JSON.stringify(has?ids.filter(key=>key!==id):[id,...ids]));
+  await confirm(ownerId,scope);return !has;
+ });
 }

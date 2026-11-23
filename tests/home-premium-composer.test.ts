@@ -49,8 +49,8 @@ test("Single haptic tick on deliberate presses; cloud preference and rollback re
  assert.ok(src.includes("Haptics.selectionAsync().catch(()=>{})"));
  assert.ok(src.includes("lastToggleAt.current<DISCLOSURE_MS"));
  assert.ok(src.includes("if(!owner||saving"));
- assert.ok(src.includes("saveQuickComposerPreference(owner,next)"));
- assert.ok(src.includes("loadQuickComposerPreference(id)"));
+ assert.ok(src.includes("saveQuickComposerPreference(owner,next,scope)"));
+ assert.ok(src.includes("loadQuickComposerPreference(id,scope)"));
  assert.ok(src.includes("reveal.value=enabled?1:0"));
  assert.ok(src.includes("setComposerVisible(!next)"));
  assert.ok(!src.includes("setTimeout("));

@@ -30,7 +30,7 @@ test("Native Back returns to the existing tabs and never dispatches a cross-stac
  assert.ok(tabs.includes('{name:"index",title:"Casa"'));
  assert.ok(!tabs.includes('<Tabs.Screen name="inicio"'));
  assert.ok(editor.includes('finishHome(publishedId)'));
- assert.ok(home.includes('takePublishedPostForHome()'));
+ assert.ok(home.includes('takePublishedPostForHome(scope)'));
  assert.ok(home.includes('featuredPostId={newlyPublished||(published??"")}'));
 });
 
@@ -58,7 +58,7 @@ test("Existing drafts are retained; no automatic dropping once capacity is reach
  assert.ok(!store.includes(".slice(0,30)"));
  assert.ok(store.includes("previous.length>=MAX_POST_DRAFTS"));
  assert.ok(store.includes('Elimina uno de los anteriores para guardar otro.'));
- assert.ok(store.includes("const next=[{...draft,updatedAt:Date.now()},...previous.filter(x=>x.id!==draft.id)]"));
+ assert.ok(store.includes("const next=[{...draft,photos:draft.photos.map(photo=>checkedPhoto(photo,owner)),updatedAt:Date.now()},...previous.filter(x=>x.id!==draft.id)]"));
 });
 
 test("Preview has a floating feed-style card with real author info and photos above description",()=>{

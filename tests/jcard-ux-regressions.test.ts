@@ -30,8 +30,10 @@ test("Business card groups contacts between heading and non-overlapping medals w
  assert.ok(business.includes('minHeight:44,paddingRight:5'));
  assert.ok(business.includes('minimumFontScale={0.84}'));
  assert.ok(business.includes('businessName?wrapBusinessCardName(businessName):"Cargando negocio…"'));
- assert.ok(home.includes('const cached=await readScopedBusinessCard(owner)'));
- assert.ok(home.indexOf('const cached=await readScopedBusinessCard(owner)')<home.indexOf('const row=await readCloudBusiness();'));
+ assert.ok(home.includes('const cached=await readScopedBusinessCard(owner,scope)'));
+ const cachedIndex=home.indexOf('const cached=await readScopedBusinessCard(owner,scope)');
+ const cloudIndex=home.indexOf('const row=await readCloudBusiness(owner,scope);');
+ assert.ok(cachedIndex>=0&&cloudIndex>cachedIndex,'Scoped cache precedes owner-validated cloud refresh');
 });
 test("Personal contact button is raised clear of language badges without resizing the card",()=>{
  assert.ok(business.includes('marginBottom:theme==="light"?12:0,transform:[{translateY:theme==="light"?-6:0}]'));
@@ -91,10 +93,10 @@ test("More options invokes Android native share chooser after closing custom she
  const sheet=src("src/components/JCardShareSheet.tsx");
  assert.ok(sheet.includes('{id:"more",label:"Más opciones"'));
  assert.ok(sheet.includes('nativeSharePending.current=true'));
- assert.ok(sheet.includes('if(Platform.OS==="android"){dismiss();setTimeout(()=>void shareNative(),400);return;}'));
+ assert.ok(sheet.includes('if(Platform.OS==="android"){dismiss();timer.current=setTimeout(()=>void shareNative(),400);return;}'));
  assert.ok(sheet.includes('onDismiss={()=>{if(nativeSharePending.current)'));
- assert.ok(sheet.includes('Share.share({message,title:shareTitle+" · "+label})'));
- assert.ok(sheet.includes('if(result.action===Share.sharedAction)onShared?.()'));
+ assert.ok(sheet.includes('Share.share({message:task.message,title:task.title})'));
+ assert.ok(sheet.includes('if(result.action===Share.sharedAction&&await verifyDeferred(task))onShared?.()'));
  assert.ok(!sheet.includes("Para ver los contactos sugeridos y todas las apps instaladas"));
  assert.ok(sheet.indexOf('{id:"qr",label:"Mi QR"')<sheet.indexOf('{id:"whatsapp",label:"WhatsApp"'));
 });

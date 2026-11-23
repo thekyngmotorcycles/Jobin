@@ -38,7 +38,7 @@ test("Nearby map searches are bounded and do not query Mapbox on each pan",()=>{
  assert.ok(explorer.includes("Buscar en esta zona"));
  assert.ok(explorer.includes("findJShopPlaces(city.trim())"));
  assert.ok(explorer.includes("Location.requestForegroundPermissionsAsync()"));
- assert.ok(explorer.includes("discoverMapProfiles(center,radius,activeQuery,kind)"));
+ assert.ok(explorer.includes("discoverMapProfiles(center,radius,activeQuery,kind,scope)"));
  assert.ok(explorer.includes('router.push("/map-presence")'));
  assert.ok(api.includes('rpc("jobeen_find_profiles_on_map"'));
  assert.ok(native.includes("clusterRadius"));
@@ -68,8 +68,28 @@ test("Existing dual JCards can appear as companies without converting account ty
  assert.ok(presence.includes("allowedKinds"));
  assert.ok(presence.includes('from("jcard_business_details"'));
  assert.ok(settings.includes("allowedKinds.map"));
- assert.ok(feed.includes('from("jcard_business_details"'));
+ assert.ok(feed.includes('from("jobeen_public_business_cards"'));
  assert.ok(sql.includes("to_regclass('public.jcard_business_details')"));
  assert.ok(sql.includes("coalesce(nullif(btrim(b.name)"));
  assert.ok(sql.includes("security invoker"));
+});
+
+test("Map discovery and publication use the original session and enforce visibility on the server",()=>{
+ const explorer=source("src/components/ProfessionalMapExplorer.tsx"),settings=source("src/app/map-presence.tsx"),api=source("src/lib/map-discovery.ts");
+ const candidate=source("supabase/security-review/map-presence-privacy.sql");
+ assert.ok(!explorer.includes("readJShopLocation"));
+ assert.equal((explorer.match(/Location\.getCurrentPositionAsync/g)??[]).length,1);
+ assert.ok(explorer.includes("async function centerOnPhone()"));
+ assert.ok(explorer.includes("Number(location.coords.latitude.toFixed(2))"));
+ assert.ok(explorer.includes("scopeRef.current===scope&&areaRevision.current===revision"));
+ assert.ok(explorer.includes("number===requestRef.current&&scopeRef.current===scope"));
+ assert.ok(api.includes("p_lat:Number(center.lat.toFixed(2))"));
+ assert.ok(api.includes("await captureMessageScope(expectedScope)"));
+ assert.ok(api.includes("if(mapped&&mapped.owner_id!==scope.owner)"));
+ assert.ok(settings.includes("setMapPresenceVisible(!presence.is_visible,scope)"));
+ assert.ok(settings.includes("await assertMessageScope(scope);if(!valid())return;"));
+ assert.ok(candidate.includes("as restrictive for all to authenticated"));
+ assert.ok(candidate.includes("not private.is_blocked(subject,(select auth.uid()))"));
+ assert.ok(candidate.includes("m.is_visible=true and jobeen_private.map_face_eligible(m.owner_id,m.kind)"));
+ assert.ok(candidate.includes("v.distance_km<=p_radius_km"));
 });

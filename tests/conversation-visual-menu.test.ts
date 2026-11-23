@@ -18,12 +18,13 @@ test("Conversation overflow uses one Jobeen modal family, not legacy native aler
 });
 test("Spam, reporting and blocking keep all approved behavior and safe failures",()=>{
  const chat=read("src/app/message.tsx");
- assert.ok(chat.includes("await markJShopSpam(conversation,!jshopSpam)"),"JShop spam toggle remains");
- assert.ok(chat.includes("await reportMessageUser(user,reason)"),"Reports still save in backend");
+ assert.ok(chat.includes("await markJShopSpam(conversation,!jshopSpam,scope)"),"JShop spam toggle remains");
+ assert.ok(chat.includes("await reportMessageUser(user,reason,scope)"),"Reports still save in backend");
  for(const reason of ['"spam"','"estafa"','"acoso"'])
   assert.ok(chat.includes(reason),"The three report reasons remain");
- assert.ok(chat.includes("await markJShopSpam(conversation,true)"),"Reporting a JShop chat also flags spam");
- assert.ok(chat.includes("await blockMessageUser(user)"),"Blocking remains effective");
+ assert.ok(chat.includes("await markJShopSpam(conversation,true,scope)"),"Reporting a JShop chat also flags spam");
+ assert.ok(chat.includes("await blockMessageUser(user,scope)"),"Blocking remains effective");
+ assert.ok(chat.includes("const scope=scopeRef.current"),"Actions remain bound to the original session");
  assert.ok(chat.includes("router.back()"),"Successful block leaves the conversation");
  assert.ok(chat.includes('description={blockError||"No podrá enviarte más mensajes."}'),"Blocking errors stay visible in confirmation");
  assert.ok(chat.includes("setMenuError("),"Failure messages are visible inside menu");

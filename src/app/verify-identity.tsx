@@ -1,9 +1,12 @@
-import {useEffect,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {router} from "expo-router";
 import {ActivityIndicator,Alert,Image,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import {useUi} from "../components/ui";
+import {pickSecuredPhotos,previewSecuredPhoto,uploadSecuredFile,watchAttachmentScope} from "../lib/private-attachment-android";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../lib/message-session";
+import type {PendingEvidence} from "../lib/private-attachment";
 import {requireSupabase} from "../lib/supabase";
 
 type DocumentType="passport"|"national_id"|"driver_license"|"residence_permit";
@@ -14,12 +17,7 @@ const TYPES:{value:DocumentType;label:string;needsBack:boolean}[]=[
  {value:"residence_permit",label:"Permiso de residencia",needsBack:true}
 ];
 const COUNTRIES=[["US","Estados Unidos"],["AR","Argentina"],["PE","Perú"],["MX","México"],["CO","Colombia"],["CL","Chile"],["ES","España"],["BR","Brasil"]];
-type Picked={uri:string;base64:string};
-function bytes(base64:string):Uint8Array{
- const binary=globalThis.atob(base64);const out=new Uint8Array(binary.length);
- for(let i=0;i<binary.length;i++)out[i]=binary.charCodeAt(i);
- return out;
-}
+type Picked=PendingEvidence&{preview:string};
 export default function VerifyIdentity(){
  const {s,colors}=useUi();
  const [country,setCountry]=useState("US");
@@ -33,6 +31,11 @@ export default function VerifyIdentity(){
  const [reviewReason,setReviewReason]=useState<string|null>(null);
  const [consent,setConsent]=useState(false);
  const [isReviewer,setIsReviewer]=useState(false);
+ const origin=useRef<MessageScope|null>(null),picking=useRef(false);
+ useEffect(()=>{
+  const off=watchAttachmentScope(()=>origin.current,()=>{origin.current=null;setFront(null);setBack(null);setLegalName("");setExpiresOn("");setConsent(false);});
+  return()=>{origin.current=null;off();};
+ },[]);
  const needsBack=TYPES.find(x=>x.value===docType)?.needsBack??true;
  useEffect(()=>{let live=true;(async()=>{
   const {data:{user}}=await requireSupabase().auth.getUser();if(!user)return;
@@ -42,38 +45,42 @@ export default function VerifyIdentity(){
   if(live)setIsReviewer(canReview===true);
  })().catch(()=>{});return()=>{live=false;};},[]);
  async function pick(side:"front"|"back"){
-  const permission=await ImagePicker.requestCameraPermissionsAsync();
-  if(!permission.granted){Alert.alert("Permiso necesario","Habilitá la cámara para fotografiar el documento.");return;}
-  const result=await ImagePicker.launchCameraAsync({mediaTypes:["images"],allowsEditing:false,quality:0.7,base64:true});
-  if(result.canceled)return;
-  const asset=result.assets[0];if(!asset?.base64)return Alert.alert("Error","No se pudo leer la fotografía.");
-  if(asset.base64.length>12_000_000)return Alert.alert("Archivo demasiado grande","Intentá tomar otra fotografía.");
-  (side==="front"?setFront:setBack)({uri:asset.uri,base64:asset.base64});
+  if(picking.current||busy)return;
+  picking.current=true;
+  try{
+   const scope=await captureMessageScope(origin.current??undefined);
+   origin.current=scope;
+   const permission=await ImagePicker.requestCameraPermissionsAsync();
+   await assertMessageScope(scope);
+   if(!permission.granted){Alert.alert("Permiso necesario","Habilitá la cámara para fotografiar el documento.");return;}
+   const [file]=await pickSecuredPhotos(scope,"report-evidence",{allowsEditing:false,quality:0.7},true);
+   if(!file)return;
+   if(file.mime!=="image/jpeg")throw Error("La foto del documento debe estar en JPEG.");
+   const preview=await previewSecuredPhoto(scope,"report-evidence",file);
+   if(origin.current===scope)(side==="front"?setFront:setBack)({...file,preview,name:"Documento privado",session:scope.session});
+  }catch(e){Alert.alert("No se pudo leer la fotografía",e instanceof Error?e.message:"Intenta nuevamente.");}
+  finally{picking.current=false;}
  }
  async function submit(){
-  if(busy)return;
+  if(busy||picking.current)return;
   if(!consent){Alert.alert("Consentimiento requerido","Confirma que el documento es tuyo y que autorizás su almacenamiento privado y revisión manual.");return;}
   if(expiresOn.trim()&&!/^\\d{4}-\\d{2}-\\d{2}$/.test(expiresOn.trim())){Alert.alert("Fecha incorrecta","Usa el formato AAAA-MM-DD.");return;}
   if(legalName.trim().length<3||!front||(needsBack&&!back)){Alert.alert("Datos incompletos","Ingresa el nombre legal y fotografiá las caras requeridas del documento.");return;}
-  setBusy(true);const uploaded:string[]=[];
+  setBusy(true);
   try{
-   const db=requireSupabase();const {data:{user},error:authError}=await db.auth.getUser();
-   if(authError||!user)throw Error("Iniciá sesión para continuar.");
+   if(!origin.current)throw Error("Selecciona los documentos en esta sesión.");
+   const scope=await captureMessageScope(origin.current),db=requireSupabase(),user={id:scope.owner};
    const {data:existing,error:checkError}=await (db as any).from("identity_verification_requests").select("id").eq("user_id",user.id).eq("status","pending").limit(1);
    if(checkError)throw checkError;
    if(existing?.length)throw Error("Ya tienes una solicitud pendiente de revisión.");
-   const prefix=user.id+"/"+Date.now()+"-"+Math.random().toString(36).slice(2);
-   async function upload(image:Picked,side:string){
-    const path=prefix+"-"+side+".jpg";
-    const {error}=await db.storage.from("identity-documents").upload(path,bytes(image.base64) as any,{contentType:"image/jpeg",upsert:false});
-    if(error)throw error;uploaded.push(path);return path;
-   }
-   const frontPath=await upload(front,"front");
-   const backPath=needsBack&&back?await upload(back,"back"):null;
+   const frontPath=await uploadSecuredFile(scope,"report-evidence",front,"identity-documents");
+   const backPath=needsBack&&back?await uploadSecuredFile(scope,"report-evidence",back,"identity-documents"):null;
+   await assertMessageScope(scope);
    const {error}=await (db as any).from("identity_verification_requests").insert({user_id:user.id,country_code:country,document_type:docType,legal_name:legalName.trim(),document_expires_on:expiresOn.trim()||null,front_path:frontPath,back_path:backPath});
    if(error)throw error;
+   await assertMessageScope(scope);
    setFront(null);setBack(null);setStatus("pending");setReviewReason(null);setConsent(false);Alert.alert("Solicitud enviada","Tu documento se almacenó de forma privada. La insignia J no se activará hasta que se complete la revisión.");
-  }catch(e){if(uploaded.length)await requireSupabase().storage.from("identity-documents").remove(uploaded).catch(()=>{});Alert.alert("No se pudo enviar",e instanceof Error?e.message:"Intentá nuevamente.");}
+  }catch(e){Alert.alert("No se pudo enviar",e instanceof Error?e.message:"Intentá nuevamente.");}
   finally{setBusy(false);}
  }
  return <SafeAreaView edges={["bottom"]} style={s.screen}><ScrollView contentContainerStyle={{padding:20,gap:16,paddingBottom:60}}>
@@ -95,7 +102,7 @@ export default function VerifyIdentity(){
    <Text style={s.h3}>Fotografías del documento</Text>
    {(["front",...(needsBack?["back"]:[])] as ("front"|"back")[]).map(side=><Pressable key={side} onPress={()=>void pick(side)} style={{borderWidth:1,borderColor:colors.line,borderRadius:12,padding:15,alignItems:"center",gap:10}}>
     <Text style={s.text}>{side==="front"?"Fotografiar frente":"Fotografiar reverso"}</Text>
-    {(side==="front"?front:back)&&<Image source={{uri:(side==="front"?front:back)!.uri}} style={{width:190,height:115,borderRadius:8}} resizeMode="contain"/>}
+    {(side==="front"?front:back)&&<Image source={{uri:(side==="front"?front:back)!.preview}} style={{width:190,height:115,borderRadius:8}} resizeMode="contain"/>}
    </Pressable>)}
    <Text style={s.muted}>Usa un documento propio, vigente y legible. No se utiliza reconocimiento facial automático. No envíes documentos de terceros.</Text>
    <Pressable accessibilityRole="checkbox" accessibilityState={{checked:consent}} onPress={()=>setConsent(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8}}><Text style={s.text}>{consent?"☑":"☐"} Confirmo que el documento es mío y autorizo su almacenamiento privado y revisión manual.</Text></Pressable>

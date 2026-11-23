@@ -1,15 +1,18 @@
+import {userImageSource} from "../../lib/media-urls";
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useLocalSearchParams,useNavigation} from "expo-router";
 import {markPublishedPostForHome} from "../../lib/post-return";
 import {usePreventRemove} from "@react-navigation/native";
-import * as ImagePicker from "expo-image-picker";
 import {useEffect,useRef,useState} from "react";
 import {ActivityIndicator,AppState,Image,Keyboard,Modal,Pressable,ScrollView,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {PublicProfileAvatar} from "../../components/PublicProfileAvatar";
-import {currentSocialUser,publishHomePost,shareApprovedMedia,uploadPhoto,type FeedPostKind,type FeedAudience} from "../../lib/social-content";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../../lib/message-session";
+import {publishHomePost,shareApprovedMedia,type FeedPostKind,type FeedAudience} from "../../lib/social-content";
 import {PostComposerSheets} from "../../components/PostComposerSheets";
-import {DRAFT_PHOTO_BUCKET,emptyPostDraft,hasDraftContent,readPostDrafts,savePostDraft,deletePostDraft,restorePostDraftPhotoUrls,type PostDraft,type PostDraftPhoto} from "../../lib/post-drafts";
+import {pickSecuredPhotos,previewSecuredPhoto,watchAttachmentScope} from "../../lib/private-attachment-android";
+import {draftPhotoDisplayUri} from "../../lib/post-draft-photo";
+import {emptyPostDraft,hasDraftContent,readPostDrafts,savePostDraft,deletePostDraft,restorePostDraftPhotoUrls,type PostDraft,type PostDraftPhoto} from "../../lib/post-drafts";
 import {searchPostMentions,type PostMention,type PostBusinessMention} from "../../lib/post-mentions";
 import {requireSupabase} from "../../lib/supabase";
 import type {PublishedMedia} from "../../lib/safety-api";
@@ -65,8 +68,11 @@ export default function PostCreate(){
  const [businessMentions,setBusinessMentions]=useState<PostBusinessMention[]>([]);
  const draftSnapshotRef=useRef<PostDraft>(emptyPostDraft());
  const savingChainRef=useRef<Promise<void>>(Promise.resolve());
- const pendingUploadsRef=useRef<Promise<void>[]>([]);
+ const picking=useRef(false);
  const autosaveEnabledRef=useRef(true);
+ const scopeRef=useRef<MessageScope|null>(null),submitting=useRef(false);
+ const liveScope=(scope:MessageScope)=>scopeRef.current===scope;
+ function editorScope(){const scope=scopeRef.current;if(!scope||scope.owner!==author)throw Error("La sesión del editor cambió.");return scope;}
 
  const snapshot:PostDraft={
   id:draftId,updatedAt:Date.now(),body,kind,photos,mediaId,audience,
@@ -75,12 +81,13 @@ export default function PostCreate(){
  draftSnapshotRef.current=snapshot;
  const hasWork=hasDraftContent(snapshot);
  function persistSnapshot(value:PostDraft){
-  if(!author||!hydrated||!autosaveEnabledRef.current||!hasDraftContent(value))return savingChainRef.current;
+  const scope=scopeRef.current;
+  if(!scope||scope.owner!==author||!hydrated||!autosaveEnabledRef.current||!hasDraftContent(value))return savingChainRef.current;
   savingChainRef.current=savingChainRef.current.catch(()=>{}).then(async()=>{
-   if(autosaveEnabledRef.current){
-    await savePostDraft(author,value);
-    const saved=await readPostDrafts(author);
-    setDraftCount(count=>count===saved.length?count:saved.length);
+   if(autosaveEnabledRef.current&&liveScope(scope)){
+    await savePostDraft(author,value,scope);
+    const saved=await readPostDrafts(author,scope);
+    if(liveScope(scope))setDraftCount(count=>count===saved.length?count:saved.length);
    }
   });
   return savingChainRef.current;
@@ -90,33 +97,45 @@ export default function PostCreate(){
   setPhotos(d.photos);setMediaId(d.mediaId);setAudience(d.audience);
   setAudienceFollowers(d.audienceFollowers);setAudienceContacts(d.audienceContacts);
   setConsent(d.consent);setMentionedProfileIds(d.mentionedProfileIds??[]);setBusinessMentions(d.businessMentions??[]);
-  void restorePostDraftPhotoUrls(d.photos).then(setPhotos).catch(()=>{
-   setError("Algunas fotos necesitan conexión o volver a seleccionarse.");
+  refreshDraftPhotoPreviews(d.photos);
+ }
+ function refreshDraftPhotoPreviews(selectedPhotos:PostDraftPhoto[]){
+  const scope=scopeRef.current;if(!scope||!selectedPhotos.some(photo=>photo.backupPath||photo.attachment))return;
+  void restorePostDraftPhotoUrls(selectedPhotos,author,scope).then(restored=>{if(liveScope(scope))setPhotos(current=>current.map(photo=>{
+   const refreshed=restored.find(item=>item.id===photo.id&&item.backupPath===photo.backupPath&&item.attachment?.ref.id===photo.attachment?.ref.id);
+   return refreshed?{...photo,previewUri:refreshed.previewUri}:photo;
+  }));}).catch(()=>{
+   if(liveScope(scope))setError("Algunas fotos necesitan conexión o volver a seleccionarse.");
   });
  }
+ useEffect(()=>watchAttachmentScope(()=>scopeRef.current,()=>{
+  scopeRef.current=null;autosaveEnabledRef.current=false;
+  setPhotos([]);setDrafts([]);setBody("");setAuthor("");setDraftCount(0);setHydrated(false);
+ }),[]);
  useEffect(()=>{let active=true;void(async()=>{
   try{
-   const uid=await currentSocialUser();
+   const scope=await captureMessageScope(),uid=scope.owner;
    if(!active)return;
-   setAuthor(uid);
-   const saved=await readPostDrafts(uid);
-   if(!active)return;
-   setDrafts(saved);
+   scopeRef.current=scope;
+   const saved=await readPostDrafts(uid,scope);
+   await assertMessageScope(scope);
+   if(!active||!liveScope(scope))return;
+   setAuthor(uid);setDrafts(saved);
    setDraftCount(saved.length);
    // New publication always starts empty; drafts are opened explicitly from Borradores.
    void Promise.all([
     requireSupabase().from("profiles").select("display_name").eq("id",uid).maybeSingle(),
     requireSupabase().from("jcard_profiles").select("handle").eq("profile_id",uid).maybeSingle()
-   ]).then(([person,card])=>{
-    if(!active)return;
+   ]).then(async([person,card])=>{
+    await assertMessageScope(scope);if(!active||!liveScope(scope))return;
     if(person.data?.display_name)setAuthorName(person.data.display_name);
     if(card.data?.handle)setAuthorHandle(card.data.handle.replace(/^@/,""));
    }).catch(()=>{});
    const approved=await Promise.all([shareApprovedMedia("video",uid),shareApprovedMedia("live",uid)]);
-   if(active)setMedia([...approved[0],...approved[1]]);
+   await assertMessageScope(scope);if(active&&liveScope(scope))setMedia([...approved[0],...approved[1]]);
   }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudo cargar la cuenta.");}
-  finally{if(active){setHydrated(true);setLoading(false);}}
- })();return()=>{active=false;};},[]);
+  finally{if(active){setHydrated(!!scopeRef.current);setLoading(false);}}
+ })();return()=>{active=false;scopeRef.current=null;autosaveEnabledRef.current=false;};},[]);
  useEffect(()=>{
   if(!hydrated||!author||!hasWork||!autosaveEnabledRef.current)return;
   const timer=setTimeout(()=>{
@@ -150,10 +169,12 @@ export default function PostCreate(){
   // release the unsaved-draft guard and Android to dismiss native Modal windows
   // before popping only this screen. InteractionManager can wait indefinitely
   // while an animated interaction remains active, leaving a blank gray view.
-  if(destination)markPublishedPostForHome(destination);
+  const scope=scopeRef.current;if(!scope)return;
   const timer=setTimeout(()=>{
+   void captureMessageScope(scope).then(()=>{if(!liveScope(scope))return;
+   if(destination)markPublishedPostForHome(destination,scope);
    if(navigation.canGoBack())navigation.goBack();
-   else router.replace("/(tabs)/index");
+   else router.replace("/(tabs)/index");}).catch(()=>{});
   },350);
   return()=>clearTimeout(timer);
  },[editingDone,destination,navigation]);
@@ -180,43 +201,53 @@ export default function PostCreate(){
   }
  }
  async function saveDraftNow(){
-  await Promise.allSettled(pendingUploadsRef.current);
+  const scope=editorScope();
+  await assertMessageScope(scope);if(!liveScope(scope))throw Error("El editor cambió.");
   await persistSnapshot(draftSnapshotRef.current);
-  const saved=await readPostDrafts(author);setDrafts(saved);setDraftCount(saved.length);
+  const saved=await readPostDrafts(author,scope);await assertMessageScope(scope);if(!liveScope(scope))throw Error("El editor cambió.");setDrafts(saved);setDraftCount(saved.length);
  }
  async function saveAndExit(){
-  try{await saveDraftNow();finishHome("");}
+  try{const scope=editorScope();await saveDraftNow();if(liveScope(scope))finishHome("");}
   catch(e){setError(e instanceof Error?e.message:"No se pudo guardar el borrador.");setExitOpen(false);}
  }
  async function discardAndExit(){
   try{
-   autosaveEnabledRef.current=false;
-   await savingChainRef.current.catch(()=>{});
-   await deletePostDraft(author,draftSnapshotRef.current.id);
-   finishHome("");
+   const scope=editorScope();autosaveEnabledRef.current=false;
+   await savingChainRef.current.catch(()=>{});await assertMessageScope(scope);if(!liveScope(scope))return;
+   await deletePostDraft(author,draftSnapshotRef.current.id,scope);
+   if(liveScope(scope))finishHome("");
   }catch(e){autosaveEnabledRef.current=true;setError(e instanceof Error?e.message:"No se pudo descartar el borrador.");setExitOpen(false);}
  }
  async function openDrafts(){
-  try{
+  try{const scope=editorScope();
    if(hasDraftContent(draftSnapshotRef.current)){
     await saveDraftNow().catch(e=>setError(e instanceof Error?e.message:"No se pudo guardar el borrador actual."));
    }
-   const saved=await readPostDrafts(author);
+   const saved=await readPostDrafts(author,scope);if(!liveScope(scope))return;
    setDrafts(saved);setDraftCount(saved.length);setDraftsOpen(true);
-   // Private draft photos may have temporary local URIs; refresh covers without
-   // delaying opening the gallery or exposing any private bucket publicly.
-   void Promise.all(saved.map(async draft=>{
-    try{return {...draft,photos:await restorePostDraftPhotoUrls(draft.photos)};}
-    catch{return draft;}
-   })).then(setDrafts).catch(()=>{});
+   // Restore one cover at a time. Full photos are read only when editing the draft.
+   void(async()=>{
+    const refreshed:PostDraft[]=[];
+    for(const draft of saved){
+     if(!liveScope(scope))return;
+     try{refreshed.push({...draft,photos:[...(await restorePostDraftPhotoUrls(draft.photos.slice(0,1),author,scope)),...draft.photos.slice(1)]});}
+     catch{refreshed.push(draft);}
+    }
+    if(liveScope(scope))setDrafts(current=>current.map(draft=>{
+     const match=refreshed.find(item=>item.id===draft.id&&item.updatedAt===draft.updatedAt);
+     return match??draft;
+    }));
+   })().catch(()=>{});
   }catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar los borradores.");}
  }
  async function deleteDraft(d:PostDraft){
   // A queued background save must not recreate a draft the user explicitly deletes.
+  const scope=scopeRef.current;if(!scope||scope.owner!==author||!drafts.some(item=>item.id===d.id))return;
   autosaveEnabledRef.current=false;
   try{
    await savingChainRef.current.catch(()=>{});
-   await deletePostDraft(author,d.id);
+   await assertMessageScope(scope);if(!liveScope(scope))return;
+   await deletePostDraft(author,d.id,scope);if(!liveScope(scope))return;
    if(d.id===draftSnapshotRef.current.id){
     const empty=emptyPostDraft();
     draftSnapshotRef.current=empty;
@@ -224,10 +255,10 @@ export default function PostCreate(){
     setAudience("public");setAudienceFollowers(true);setAudienceContacts(false);
     setConsent(false);setMentionedProfileIds([]);setBusinessMentions([]);
    }
-   const saved=await readPostDrafts(author);
+   const saved=await readPostDrafts(author,scope);if(!liveScope(scope))return;
    setDrafts(saved);setDraftCount(saved.length);
   }catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar el borrador.");}
-  finally{autosaveEnabledRef.current=true;}
+  finally{if(liveScope(scope))autosaveEnabledRef.current=true;}
  }
  function chooseMention(person:PostMention){
   const token="@"+(person.handle.replace(/^@/,"")||(person.kind==="business"?person.name.trim():person.name.trim().replace(/\s+/g,"")));
@@ -242,23 +273,23 @@ export default function PostCreate(){
   setMentionQuery("");setMentionResults([]);
  }
  async function choosePhotos(){
-  if(photos.length>=5)return;
+  const scope=scopeRef.current,originalDraft=draftSnapshotRef.current.id;
+  if(!scope||scope.owner!==author||submitting.current||picking.current||photos.length>=5)return;
+  picking.current=true;
   try{
-   const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:["images"],allowsMultipleSelection:true,selectionLimit:Math.max(1,5-photos.length),quality:0.8});
-   if(!result.canceled){
-    const fresh:PostDraftPhoto[]=result.assets.map(asset=>({
-     id:Date.now().toString(36)+"-"+Math.random().toString(36).slice(2),
-     uri:asset.uri,altText:""
-    }));
-    setPhotos(current=>[...current,...fresh].slice(0,5));setError("");
-    const tasks=fresh.map(photo=>uploadPhoto(author,photo.uri,DRAFT_PHOTO_BUCKET).then(path=>{
-     setPhotos(current=>current.map(p=>p.id===photo.id?{...p,backupPath:path}:p));
-    }).catch(()=>{
-     setError("El texto se guardará automáticamente. Algunas fotos no tienen respaldo y podrían requerir volver a seleccionarse.");
-    }));
-    pendingUploadsRef.current=tasks.map(task=>task.then(()=>{}));
+   await captureMessageScope(scope);if(!liveScope(scope))return;
+   const files=await pickSecuredPhotos(scope,"draft-photo",{allowsMultipleSelection:true,selectionLimit:5-photos.length,quality:0.8});
+   const fresh:PostDraftPhoto[]=[];
+   for(const attachment of files){
+    const previewUri=await previewSecuredPhoto(scope,"draft-photo",attachment);
+    fresh.push({id:attachment.ref.id,attachment,altText:"",previewUri});
    }
-  }catch(e){setError(e instanceof Error?e.message:"No se pudieron seleccionar fotos.");}
+   await assertMessageScope(scope);
+   if(liveScope(scope)&&draftSnapshotRef.current.id===originalDraft){
+    setPhotos(current=>[...current,...fresh].slice(0,5));setError("");
+   }
+  }catch(e){if(liveScope(scope))setError(e instanceof Error?e.message:"No se pudieron seleccionar fotos.");}
+  finally{picking.current=false;}
  }
  function switchKind(next:FeedPostKind){
   // The text field is always present; tapping the selected media type again returns to text only.
@@ -282,34 +313,37 @@ export default function PostCreate(){
   else openAt(windowWidth-120,100,100,36);
  }
  async function submit(){
-  if(busy)return;
+  const scope=scopeRef.current;if(!scope||scope.owner!==author||submitting.current||picking.current)return;
   if(!consent){setError("Confirma que la publicación cumple las normas de contenido profesional.");return;}
   if(audience==="private"&&!audienceFollowers&&!audienceContacts){setError("Selecciona seguidores, contactos o ambos.");return;}
-  setBusy(true);setError("");
+  submitting.current=true;setBusy(true);setError("");
   try{
-   await Promise.allSettled(pendingUploadsRef.current);
+   await captureMessageScope(scope);if(!liveScope(scope))return;
+   await assertMessageScope(scope);if(!liveScope(scope))return;
    await persistSnapshot(draftSnapshotRef.current);
    const selected=draftSnapshotRef.current.photos;
    const publishedId=await publishHomePost({
-    body,kind,photos:kind==="photos"?selected.map(p=>p.uri):[],
+    body,kind,
+    privatePhotos:kind==="photos"?selected.map(p=>p.attachment??null):[],
     photoDraftPaths:kind==="photos"?selected.map(p=>p.backupPath??null):[],
     photoAltTexts:kind==="photos"?selected.map(p=>p.altText):[],
     mentionedProfileIds,businessMentions,
     mediaId:(kind==="video"||kind==="live")?mediaId:null,
     audience,audienceFollowers:audience==="private"&&audienceFollowers,
     audienceContacts:audience==="private"&&audienceContacts
-   });
+   },scope);await assertMessageScope(scope);if(!liveScope(scope))return;
    // The post now exists. Do not keep the editor busy while remote draft
    // photos are deleted: a slow Storage request must never block navigation.
    autosaveEnabledRef.current=false;
    await savingChainRef.current.catch(()=>{});
-   await deletePostDraft(author,draftSnapshotRef.current.id,false).catch(()=>{});
+   await deletePostDraft(author,draftSnapshotRef.current.id,scope,false).catch(()=>{});await assertMessageScope(scope);if(!liveScope(scope))return;
    finishHome(publishedId);
    const draftPaths=[...new Set(selected.map(photo=>photo.backupPath)
     .filter((path):path is string=>!!path&&path.startsWith(author+"/")))];
-   if(draftPaths.length)void requireSupabase().storage.from(DRAFT_PHOTO_BUCKET).remove(draftPaths).catch(()=>{});
+   // Retain possibly shared backup references for owner-only reconciliation.
+   void draftPaths;
   }catch(e){setError(e instanceof Error?e.message:"No se pudo publicar.");}
-  finally{setBusy(false);}
+  finally{submitting.current=false;if(liveScope(scope))setBusy(false);}
  }
  const eligible=(kind==="text"?!!body.trim():kind==="photos"?photos.length>0:!!mediaId)&&(audience==="public"||audienceFollowers||audienceContacts);
  return <>
@@ -398,7 +432,7 @@ export default function PostCreate(){
       accessibilityLabel="Fotografías seleccionadas, deslizar horizontalmente"
       contentContainerStyle={{flexDirection:"row",gap:9,paddingVertical:2}}>
       {photos.map((photo,i)=><View key={photo.id} style={{width:104,height:104,borderRadius:13,overflow:"hidden"}}>
-       <Image source={{uri:photo.uri}} accessibilityLabel={photo.altText||"Foto "+(i+1)} style={{width:104,height:104}} resizeMode="cover"/>
+       <Image source={userImageSource(draftPhotoDisplayUri(photo))} accessibilityLabel={photo.altText||"Foto "+(i+1)} style={{width:104,height:104}} resizeMode="cover"/>
        <Pressable accessibilityRole="button" accessibilityLabel={"Quitar foto "+(i+1)}
         onPress={()=>setPhotos(current=>current.filter((_,j)=>j!==i))}
         style={{position:"absolute",top:4,right:4,width:34,height:34,alignItems:"center",
@@ -453,7 +487,7 @@ export default function PostCreate(){
        <Text style={{fontSize:11,fontWeight:"800",color:t.ink}}>{draftCount}</Text>
       </View>}
      </Pressable>
-     <Pressable accessibilityRole="button" accessibilityLabel="Vista previa" onPress={()=>setPreviewOpen(true)}
+     <Pressable accessibilityRole="button" accessibilityLabel="Vista previa" onPress={()=>{refreshDraftPhotoPreviews(photos);setPreviewOpen(true);}}
       style={{minHeight:49,flex:1,flexDirection:"row",alignItems:"center",justifyContent:"center",
        gap:7,borderRadius:15,borderWidth:1,borderColor:t.silver,backgroundColor:t.surface,paddingHorizontal:8}}>
       <Ionicons name="eye-outline" size={19} color={t.ink}/>

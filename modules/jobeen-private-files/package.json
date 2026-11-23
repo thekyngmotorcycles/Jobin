@@ -1,0 +1,6 @@
+{
+  "name": "jobeen-private-files",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Android candidate: app-private encrypted files protected by Android Keystore"
+}

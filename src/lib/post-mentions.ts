@@ -13,7 +13,7 @@ export async function searchPostMentions(search:string):Promise<PostMention[]>{
  const [named,personalHandles,businesses]=await Promise.all([
   db.from("profiles").select("id,display_name,account_type").ilike("display_name","%"+query+"%").is("deactivated_at",null).limit(15),
   db.from("jcard_profiles").select("profile_id,handle").ilike("handle","%"+query+"%").limit(15),
-  db.from("jcard_business_details" as never).select("owner_id,name,business_handle,category")
+  db.from("jobeen_public_business_cards" as never).select("owner_id,name,business_handle,category")
    .or("name.ilike.%"+query+"%,business_handle.ilike.%"+query+"%").limit(15)
  ]);
  if(named.error)throw named.error;

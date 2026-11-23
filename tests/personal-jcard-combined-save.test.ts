@@ -14,9 +14,9 @@ test("Personal JCard accordion sections have working save actions",()=>{
  assert.ok(editor.includes('title={action.busy?"Guardando…":"Guardar cambios"}'));
  assert.ok(editor.includes("const saveSections=(targets:SaveTarget[])=>{"));
  assert.ok(editor.includes('professionalMutation("jobin_save_jcard"'));
- assert.ok(editor.includes("savePersonalContactDetails(personalContacts)"));
- assert.ok(editor.includes("saveContactPreferences({show_email:showEmail,show_phone:showPhone})"));
- assert.ok(editor.includes("saveJCardVisibility(visibility)"));
+ assert.ok(editor.includes("savePersonalContactDetails(personalContacts,owner,origin)"));
+ assert.ok(editor.includes("saveContactPreferences({show_email:showEmail,show_phone:showPhone},owner,origin)"));
+ assert.ok(editor.includes("saveJCardVisibility(visibility,owner,origin)"));
 });
 
 test("Header Save appears when editable personal data changes and saves all dirty sections",()=>{

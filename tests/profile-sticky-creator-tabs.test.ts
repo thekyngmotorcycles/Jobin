@@ -46,7 +46,7 @@ test("Both own and public profile have separate scrolling hero, sticky tabs and 
  assert.ok(ui.includes("stickyHeaderIndices={stickyHeaderIndices}"));
 });
 test("Creator Home uses real published work without inventing live viewers",()=>{
- assert.ok(owner.includes('mode==="jcards"&&<SavedJCardsGallery/>'));
+ assert.ok(owner.includes('mode==="jcards"&&ownerId&&<SavedJCardsGallery key={ownerId} owner={ownerId}/>'));
  assert.ok(visitor.includes('section==="grid"'));
  assert.ok(owner.includes('ProfileOwnedPosts filter="all"'));
  assert.ok(visitor.includes('ProfilePublicPosts userId={resource.data.id} filter={section==="grid"?"all"'));
@@ -62,7 +62,9 @@ test("Existing contact controls, JCard editor, and professional history remain r
  assert.ok(owner.includes('mode === "cv"'));
  assert.ok(owner.includes('ProfileOwnedPosts filter="live"'));
  assert.ok(visitor.includes("<ProfileCommunityActions"));
- assert.ok(visitor.includes('requestCV(user!)'));
+ assert.ok(visitor.includes('onPress={()=>void sendCVRequest()}'),"CV request remains reachable from the visitor profile");
+ assert.ok(visitor.includes('await requestCV(user,scope)'),"CV request retains the originating authenticated session");
+ assert.ok(visitor.includes('cvTarget.current!==user||scope.owner!==viewer'),"Reject requests from a superseded profile or account");
  assert.ok(visitor.includes('section==="cv"'));
  assert.ok(visitor.includes('section==="live"'));
 });

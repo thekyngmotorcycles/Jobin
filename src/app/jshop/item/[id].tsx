@@ -1,21 +1,24 @@
+import {previewSecuredPhoto,watchAttachmentScope} from "../../../lib/private-attachment-android";
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useFocusEffect,useLocalSearchParams} from "expo-router";
 import * as Linking from "expo-linking";
-import {useCallback,useState} from "react";
+import {useCallback,useEffect,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Image,Pressable,Text,View} from "react-native";
 import {JShopButton,JShopEmpty,JShopIconButton,JShopPage,JShopPhoto,JShopTitle} from "../../../components/JShopUI";
 import {PublicProfileAvatar} from "../../../components/PublicProfileAvatar";
 import {JobeenShareSheet} from "../../../components/JCardShareSheet";
-import {deleteJShopDraft,jshopAccountId,readJShopDrafts} from "../../../lib/jshop-local";
+import {deleteJShopDraft,readJShopDrafts} from "../../../lib/jshop-local";
 import {deleteJShopListing,loadJShopFavoriteIds,loadJShopListing,setJShopFavorite,setJShopListingStatus} from "../../../lib/jshop-api";
 import {formatJShopPrice,type JShopDraft,type JShopListing} from "../../../lib/jshop-model";
 import {startJShopConversation} from "../../../lib/jshop-messaging";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../../../lib/message-session";
 import {useTheme} from "../../../state/ThemeProvider";
 import {jobeenTokens} from "../../../theme/jobeen";
 
 export default function JShopItemDetail(){
  const {id}=useLocalSearchParams<{id:string}>();
  const {theme}=useTheme();const t=jobeenTokens(theme);
+ const scopeRef=useRef<MessageScope|null>(null);
  const [viewer,setViewer]=useState("");
  const [item,setItem]=useState<JShopListing|JShopDraft|null>(null);
  const [saved,setSaved]=useState(false);
@@ -24,58 +27,85 @@ export default function JShopItemDetail(){
  const [error,setError]=useState("");
  const [shareOpen,setShareOpen]=useState(false);
  const [busy,setBusy]=useState(false);
+ useEffect(()=>watchAttachmentScope(()=>scopeRef.current,()=>{
+  scopeRef.current=null;setItem(null);setViewer("");setShareOpen(false);
+ }),[]);
  useFocusEffect(useCallback(()=>{
-  let live=true;setLoading(true);
+  let live=true;scopeRef.current=null;setLoading(true);setBusy(false);setItem(null);setViewer("");setSaved(false);setShareOpen(false);
   void(async()=>{
    try{
-    const user=await jshopAccountId();
-    let found:JShopListing|JShopDraft|null=await loadJShopListing(id);
-    if(!found){const drafts=await readJShopDrafts(user);found=drafts.find(row=>row.id===id)??null;}
-    const favorites=found&&!("ownerId" in found)?await loadJShopFavoriteIds(user):[];
-    if(live){setViewer(user);setItem(found);setSaved(favorites.includes(id));setSelectedPhoto(0);setError("");}
+    const scope=await captureMessageScope();
+    if(!live)return;
+    scopeRef.current=scope;
+    const user=scope.owner;
+    const drafts=await readJShopDrafts(user,scope).catch(async()=>{
+     await assertMessageScope(scope);return [];
+    });
+    let found:JShopListing|JShopDraft|null=drafts.find(row=>row.id===id)??null;
+    if(found&&"ownerId" in found){
+     const photos:string[]=[];
+     for(const file of found.privatePhotos??[]){
+      try{photos.push(await previewSecuredPhoto(scope,"draft-photo",file));}catch{await assertMessageScope(scope);}
+     }
+     found={...found,photos};
+    }else found=await loadJShopListing(id,scope);
+    const favorites=found&&!("ownerId" in found)?await loadJShopFavoriteIds(user,scope):[];
+    await assertMessageScope(scope);
+    if(live&&scopeRef.current===scope){setViewer(user);setItem(found);setSaved(favorites.includes(id));setSelectedPhoto(0);setError("");}
    }catch(e){if(live){setItem(null);setError(e instanceof Error?e.message:"No se pudo abrir el artículo.");}}
    finally{if(live)setLoading(false);}
   })();
-  return()=>{live=false;};
+  return()=>{live=false;scopeRef.current=null;setItem(null);setViewer("");setSaved(false);setShareOpen(false);};
  },[id]));
  const listing=item&&!('ownerId' in item)?item:null;
  const draft=item&&'ownerId' in item?item:null;
  const owner=!!listing&&viewer===listing.sellerId;
+ const operation=useRef(false);
  async function changeStatus(status:"published"|"paused"|"sold"){
-  if(!listing||!owner||busy)return;
-  setBusy(true);
-  try{await setJShopListingStatus(viewer,listing.id,status);setItem({...listing,status});setError("");}
-  catch(e){setError(e instanceof Error?e.message:"No se pudo cambiar el estado.");}
-  finally{setBusy(false);}
+  const scope=scopeRef.current;
+  if(!scope||scope.owner!==viewer||!listing||!owner||operation.current)return;
+  operation.current=true;setBusy(true);
+  try{await setJShopListingStatus(viewer,listing.id,status,scope);await assertMessageScope(scope);
+   if(scopeRef.current===scope){setItem({...listing,status});setError("");}}
+  catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo cambiar el estado.");}
+  finally{operation.current=false;if(scopeRef.current===scope)setBusy(false);}
  }
  async function toggleFavorite(){
-  if(!listing||owner||busy)return;
-  setBusy(true);
-  try{await setJShopFavorite(viewer,listing.id,!saved);setSaved(!saved);setError("");}
-  catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar el favorito.");}
-  finally{setBusy(false);}
+  const scope=scopeRef.current;
+  if(!scope||scope.owner!==viewer||!listing||owner||operation.current)return;
+  operation.current=true;setBusy(true);
+  try{await setJShopFavorite(viewer,listing.id,!saved,scope);await assertMessageScope(scope);
+   if(scopeRef.current===scope){setSaved(!saved);setError("");}}
+  catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo actualizar el favorito.");}
+  finally{operation.current=false;if(scopeRef.current===scope)setBusy(false);}
  }
- async function deleteItem(){
-  if(!item||busy)return;setBusy(true);
+ async function deleteItem(origin:MessageScope,targetId:string){
+  if(scopeRef.current!==origin||origin.owner!==viewer||!item||item.id!==targetId||operation.current)return;operation.current=true;setBusy(true);
   try{
-   if(draft)await deleteJShopDraft(viewer,draft.id);
-   else if(listing&&owner)await deleteJShopListing(viewer,listing);
+   await captureMessageScope(origin);if(scopeRef.current!==origin)return;
+   if(draft)await deleteJShopDraft(viewer,draft.id,origin);
+   else if(listing&&owner)await deleteJShopListing(viewer,listing,origin);
    else throw Error("No tienes permiso para eliminar este artículo.");
-   router.replace("/jshop/mine");
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar el anuncio.");}
-  finally{setBusy(false);}
+   await assertMessageScope(origin);if(scopeRef.current===origin)router.replace("/jshop/mine");
+  }catch(e){if(scopeRef.current===origin)setError(e instanceof Error?e.message:"No se pudo eliminar el anuncio.");}
+  finally{operation.current=false;if(scopeRef.current===origin)setBusy(false);}
  }
- const requestDelete=()=>Alert.alert("Eliminar anuncio","Esta acción no se puede deshacer.",[
-  {text:"Cancelar",style:"cancel"},{text:"Eliminar",style:"destructive",onPress:()=>void deleteItem()}
- ]);
+ const requestDelete=()=>{
+  const origin=scopeRef.current,targetId=item?.id;if(!origin||!targetId)return;
+  Alert.alert("Eliminar anuncio","Esta acción no se puede deshacer.",[
+   {text:"Cancelar",style:"cancel"},{text:"Eliminar",style:"destructive",onPress:()=>void deleteItem(origin,targetId)}
+  ]);
+ };
  async function contactSeller(){
-  if(!listing||owner||busy)return;
-  setBusy(true);setError("");
+  const scope=scopeRef.current;
+  if(!scope||!listing||owner||operation.current||scope.owner!==viewer)return;
+  operation.current=true;setBusy(true);setError("");
   try{
-   const conversation=await startJShopConversation(listing);
+   const conversation=await startJShopConversation(listing,scope);
+   if(scopeRef.current!==scope)return;
    router.push({pathname:"/message",params:{user:listing.sellerId,name:listing.sellerName,conversation:conversation.id}});
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo abrir la conversación con el vendedor.");}
-  finally{setBusy(false);}
+  }catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo abrir la conversación con el vendedor.");}
+  finally{operation.current=false;if(scopeRef.current===scope)setBusy(false);}
  }
  function share(){if(listing){setError("");setShareOpen(true);}}
  return <>

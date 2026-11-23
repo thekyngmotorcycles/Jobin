@@ -22,7 +22,9 @@ test("JCard and skeleton share the same responsive dimensions for small screens 
 test("Ghost flip tutorial has no permanent buttons, text, hands or gestures blocking actual card interactions",()=>{
  const card=src("src/components/JobinCard.tsx");
  const flip=src("src/components/BusinessCard3D.tsx");
- assert.ok(card.includes("jobeen.jcard.flip.ghost.v2."));
+ assert.ok(card.includes('const key="jobeen.jcard.flip.ghost.v3."+scope.owner'));
+ assert.ok(!card.includes('const key="jobeen.jcard.flip.ghost.v2."+ownerId'));
+ assert.ok(card.includes("await assertMessageScope(scope);if(!active||value)return;"));
  assert.ok(card.includes("AsyncStorage.getItem(key)"));
  assert.ok(card.includes("ghostPreview={hintVisible}"));
  assert.ok(!card.includes('name="hand-left-outline"'));

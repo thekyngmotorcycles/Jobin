@@ -3,7 +3,8 @@ import {useCallback,useState} from "react";
 import {ActivityIndicator,Pressable,ScrollView,Text,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {HomePostCard} from "../../components/HomePublishedPosts";
-import {currentSocialUser,loadHomePosts,type FeedPost} from "../../lib/social-content";
+import {captureMessageScope,assertMessageScope} from "../../lib/message-session";
+import {loadHomePosts,type FeedPost} from "../../lib/social-content";
 import {useUi} from "../../components/ui";
 import {useTabClearance} from "../../theme/navigation";
 
@@ -16,16 +17,17 @@ export default function PostDetail(){
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
  useFocusEffect(useCallback(()=>{
-  let active=true;setLoading(true);
+  let active=true;setLoading(true);setPost(null);setViewer("");
   void(async()=>{
    try{
-    const user=await currentSocialUser().catch(()=>"");
-    const loaded=id?await loadHomePosts(user,undefined,id):[];
+    const scope=await captureMessageScope(),user=scope.owner;
+    const loaded=id?await loadHomePosts(user,undefined,id,undefined,0,scope):[];
+    await assertMessageScope(scope);
     if(active){setPost(loaded[0]??null);setViewer(user);setError("");}
    }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudo abrir esta publicación.");}
    finally{if(active)setLoading(false);}
   })();
-  return()=>{active=false;};
+  return()=>{active=false;setPost(null);setViewer("");};
  },[id]));
  return <>
   <Stack.Screen options={{title:"Publicación"}}/>

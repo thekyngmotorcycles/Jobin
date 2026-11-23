@@ -1,11 +1,11 @@
 import {Alert,Keyboard,Pressable,ScrollView,Text,TextInput,View} from "react-native";
-import {appearanceOwner} from "../lib/jcard-appearance";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
 import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
-import {useEffect,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {router} from "expo-router";
 import {loadCatalog} from "../lib/professional-api";
 import type {ProfessionalCatalog} from "../lib/professional-types";
-import {EMPTY_BUSINESS_CARD,readScopedBusinessCard,writeScopedBusinessCard} from "../lib/business-card-cache";
+import {EMPTY_BUSINESS_CARD} from "../lib/business-card-cache";
 import {Ionicons} from "@expo/vector-icons";
 import {Screen,Button,useUi} from "../components/ui";
 import {JOBEEN_TYPE} from "../theme/typography";
@@ -25,7 +25,9 @@ const sections:{id:Section;title:string;icon:React.ComponentProps<typeof Ionicon
 export default function BusinessEditor(){
  const {s,colors}=useUi();
  const [data,setData]=useState<BusinessCardData>(empty);
- const [editorOwner,setEditorOwner]=useState("");
+ const originRef=useRef<MessageScope|null>(null),activeRef=useRef(false),savingRef=useRef(false);
+ const [editorScope,setEditorScope]=useState<MessageScope|null>(null);
+ const [loadRevision,setLoadRevision]=useState(0);
  const [open,setOpen]=useState<Section|null>(null);
  const [handleFeedback,setHandleFeedback]=useState("");
  const [servicesInput,setServicesInput]=useState("");
@@ -34,31 +36,27 @@ export default function BusinessEditor(){
  const [categoryQuery,setCategoryQuery]=useState("");
  useEffect(()=>{let active=true;void loadCatalog().then(value=>{if(active)setCatalog(value);}).catch(()=>{});return()=>{active=false;};},[]);
  const [visibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
- useEffect(()=>{let live=true;void appearanceOwner().then(readJCardVisibility).then(v=>{if(live)setVisibility(v);}).catch(()=>{});return()=>{live=false;};},[]);
  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
  useEffect(()=>{
-  let live=true;
+  let live=true;activeRef.current=true;
+  setLoading(true);setEditorScope(null);setNotice("");setOpen(null);
+  setData(EMPTY_BUSINESS_CARD);setServicesInput("");
   void(async()=>{
    try{
-    const owner=await appearanceOwner();
+    const scope=await captureMessageScope(originRef.current??undefined);
     if(!live)return;
-    setEditorOwner(owner);setData(EMPTY_BUSINESS_CARD);setServicesInput("");
-    try{
-     const cloud=await readCloudBusiness();
-     if(!live||(await appearanceOwner())!==owner)return;
-     const next={...EMPTY_BUSINESS_CARD,...(cloud??{})};
-     setData(next);setServicesInput(next.services.join(", "));
-     if(cloud)void writeScopedBusinessCard(owner,next).catch(()=>{});
-    }catch{
-     const cached=await readScopedBusinessCard(owner).catch(()=>null);
-     if(live&&(await appearanceOwner().catch(()=>null))===owner){setData(cached??EMPTY_BUSINESS_CARD);setServicesInput((cached??EMPTY_BUSINESS_CARD).services.join(", "));}
-     if(live)setNotice("Sin conexión a la nube. No se sobrescribirán datos de otra cuenta.");
-    }
-   }catch{if(live)setNotice("Inicia sesión para editar tu JCard.");}
-   finally{if(live)setLoading(false);}
+    originRef.current=scope;
+    const [cloud,settings]=await Promise.all([readCloudBusiness(scope.owner,scope),readJCardVisibility(scope.owner,scope)]);
+    await assertMessageScope(scope);
+    if(!live)return;
+    const next={...EMPTY_BUSINESS_CARD,...(cloud??{})};
+    setData(next);setServicesInput(next.services.join(", "));setVisibility(settings);setEditorScope(scope);
+   }catch{
+    if(live)setNotice("No se pudo cargar tu JCard y su privacidad. Vuelve a intentarlo o abre de nuevo el editor.");
+   }finally{if(live)setLoading(false);}
   })();
-  return()=>{live=false;};
- },[]);
+  return()=>{live=false;activeRef.current=false;};
+ },[loadRevision]);
  // Keep the raw services text while typing. Splitting and joining on each keypress
  // previously inserted spaces after commas and moved the caret backwards.
  const update=(key:Field,value:string)=>{
@@ -66,16 +64,17 @@ export default function BusinessEditor(){
   setData(d=>({...d,[key]:key==="businessHandle"?value.replace(/^@+/,"").toLowerCase():value}));
  };
  useEffect(()=>{
-  if(open!=="main")return;
+  if(open!=="main"||!editorScope)return;
   const handle=(data.businessHandle??"").trim().toLowerCase();
   if(!handle){setHandleFeedback("Puedes dejar este campo vacío.");return;}
   if(!BUSINESS_HANDLE_PATTERN.test(handle)){setHandleFeedback("Usa 3–30 caracteres. Empieza con una letra; admite números, puntos y guiones bajos.");return;}
   let active=true;setHandleFeedback("Comprobando disponibilidad...");
-  const timer=setTimeout(()=>{void checkBusinessHandleAvailable(handle).then(available=>{
-   if(active)setHandleFeedback(available?"Usuario empresarial disponible.":"Este nombre de usuario está ocupado.");
+  const timer=setTimeout(()=>{void checkBusinessHandleAvailable(handle,editorScope).then(async available=>{
+   await assertMessageScope(editorScope);
+   if(active&&activeRef.current)setHandleFeedback(available?"Usuario empresarial disponible.":"Este nombre de usuario está ocupado.");
   }).catch(()=>{if(active)setHandleFeedback("No se pudo comprobar la disponibilidad.");});},400);
   return()=>{active=false;clearTimeout(timer);};
- },[open,data.businessHandle]);
+ },[open,data.businessHandle,editorScope]);
  const value=(key:Field)=>key==="services"?servicesInput:key==="businessHandle"?"@"+(data.businessHandle??""):String(data[key]??"");
  const categoryOptions=[
   {code:"",label:"Ninguna (opcional)"},
@@ -85,7 +84,8 @@ export default function BusinessEditor(){
  const normalizedCategoryQuery=categoryQuery.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("es").trim();
  const visibleCategories=categoryOptions.filter(item=>item.label.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("es").includes(normalizedCategoryQuery));
  async function save(section:Section){
-  if(saving)return;
+  if(savingRef.current||!editorScope||loading||!activeRef.current)return;
+  const origin=editorScope,editorOwner=origin.owner;
   const year=new Date().getFullYear(),opened=data.opened.trim(),closed=data.closed.trim();
   if(section==="main"&&data.name.trim().length>30){setNotice("El nombre admite máximo 30 caracteres.");return;}
   const businessHandle=(data.businessHandle??"").trim().toLowerCase();
@@ -95,13 +95,35 @@ export default function BusinessEditor(){
   const parsedServices=servicesInput.split(",").map(v=>v.trim()).filter(Boolean);
   if(section==="services"&&(parsedServices.length>3||servicesInput.length>100)){setNotice("Máximo 3 servicios y 100 caracteres.");return;}
   if(section==="contact"&&[data.phoneLabel,data.phoneSecondaryLabel].some(v=>v&&Array.from(v).length>4)){setNotice("Identificadores: máximo 4 caracteres.");return;}
-  setSaving(true);setNotice("");
-  try{if(!editorOwner||(await appearanceOwner())!==editorOwner)throw new Error("La cuenta cambió. Abre de nuevo tu JCard.");if(section==="main"&&businessHandle&&!(await checkBusinessHandleAvailable(businessHandle)))throw new Error("Este usuario empresarial ya está ocupado.");
-   if(section==="privacy"){await saveJCardVisibility(visibility);}else{const stored=await readCloudBusiness()??empty;const keys=sections.find(item=>item.id===section)?.keys??[];const clean:BusinessCardData={...empty,...stored};for(const key of keys){(clean as unknown as Record<string,unknown>)[key]=key==="services"?parsedServices:key==="name"?data.name.trim():key==="businessHandle"?businessHandle:data[key];}await writeCloudBusiness(clean,editorOwner);await writeScopedBusinessCard(editorOwner,clean);setData(clean);if(section==="services")setServicesInput(clean.services.join(", "));}setOpen(null);}
-  catch(e){setNotice(e instanceof Error?e.message:"No se pudieron guardar los cambios.");}finally{setSaving(false);}
+  savingRef.current=true;setSaving(true);setNotice("");
+  try{
+   const verify=async()=>{await assertMessageScope(origin);if(!activeRef.current||originRef.current!==origin)throw Error("La sesión cambió. Abre de nuevo tu JCard.");};
+   await verify();
+   if(section==="main"&&businessHandle&&!(await checkBusinessHandleAvailable(businessHandle,origin)))throw Error("Este usuario empresarial ya está ocupado.");
+   await verify();
+   if(section==="privacy"){
+    await saveJCardVisibility(visibility,editorOwner,origin);
+   }else{
+    const stored=await readCloudBusiness(editorOwner,origin)??empty;
+    await verify();
+    const keys=sections.find(item=>item.id===section)?.keys??[];
+    const clean:BusinessCardData={...empty,...stored};
+    for(const key of keys){(clean as unknown as Record<string,unknown>)[key]=key==="services"?parsedServices:key==="name"?data.name.trim():key==="businessHandle"?businessHandle:data[key];}
+    await writeCloudBusiness(clean,editorOwner,origin);
+    await verify();
+    setData(clean);if(section==="services")setServicesInput(clean.services.join(", "));
+   }
+   await verify();setOpen(null);
+  }catch(e){
+   if(activeRef.current){
+    try{await assertMessageScope(origin);}catch{if(activeRef.current){setEditorScope(null);setData(empty);setServicesInput("");setVisibility(DEFAULT_JCARD_VISIBILITY);setOpen(null);}}
+    if(activeRef.current)setNotice(e instanceof Error?e.message:"No se pudieron guardar los cambios.");
+   }
+  }finally{savingRef.current=false;if(activeRef.current)setSaving(false);}
  }
  return <Screen demo={false} hideHeader hideFooter title="JCard de negocio" subtitle="">
   <View style={{gap:8,paddingTop:0,paddingBottom:8}}>
+   {loading?<Text style={s.muted}>Cargando JCard…</Text>:!editorScope?<Button title="Reintentar" onPress={()=>setLoadRevision(v=>v+1)}/>:<>
    {sections.map(section=><View key={section.id} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap}]}>
     <Pressable accessibilityRole="button" accessibilityState={{expanded:open===section.id}} onPress={()=>setOpen(current=>current===section.id?null:section.id)} style={{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:JOBEEN_CONTROL.accordionRowVerticalPadding,minHeight:JOBEEN_CONTROL.touchTarget}}>
      <Ionicons name={section.icon} size={23} color={colors.ink}/><Text style={[s.h3,{flex:1,fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined}]}>{section.title}</Text><Ionicons name={open===section.id?"chevron-up":"chevron-down"} size={20} color={colors.muted}/>
@@ -131,6 +153,7 @@ export default function BusinessEditor(){
    </View>)}
    <View style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap}]}><Pressable accessibilityRole="button" accessibilityState={{expanded:open==="privacy"}} onPress={()=>setOpen(v=>v==="privacy"?null:"privacy")} style={{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:JOBEEN_CONTROL.accordionRowVerticalPadding,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name="lock-closed-outline" size={23} color={colors.ink}/><Text style={[s.h3,{flex:1,fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined}]}>Privacidad</Text><Ionicons name={open==="privacy"?"chevron-up":"chevron-down"} size={20} color={colors.muted}/></Pressable>{open==="privacy"&&<View style={{gap:12,paddingBottom:12}}>{([{key:"business_show_email",label:"Mostrar correo empresarial"},{key:"business_show_phone",label:"Mostrar teléfono empresarial"},{key:"business_enabled",label:"Mostrar mi JCard de negocio en el perfil"}] as const).map(item=><Pressable key={item.key} accessibilityRole="checkbox" accessibilityState={{checked:visibility[item.key]}} onPress={()=>{if(item.key==="business_enabled"&&visibility.business_enabled&&!visibility.personal_enabled){Alert.alert("Al menos una JCard activa","Debes conservar activa la JCard personal o la de negocio.");return;}setVisibility(v=>({...v,[item.key]:!v[item.key]}));}} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name={visibility[item.key]?"checkbox":"square-outline"} size={25} color={colors.ink}/><Text style={{color:colors.ink,flex:1}}>{item.label}</Text></Pressable>)}<Button title={saving?"Guardando…":"Guardar"} onPress={()=>void save("privacy")}/></View>}</View>
    <View style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap}]}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-business-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:JOBEEN_CONTROL.accordionRowVerticalPadding,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name="color-palette-outline" size={23} color={colors.ink}/><Text style={[s.h3,{flex:1,fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined}]}>Apariencia</Text><Ionicons name="chevron-forward" size={20} color={colors.muted}/></Pressable></View>
+   </>}
    {!!notice&&<Text style={{color:colors.ink}}>{notice}</Text>}
 
   </View>

@@ -1,13 +1,14 @@
 import { useTabClearance } from "../../theme/navigation";
-import {router,useLocalSearchParams} from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {router,useFocusEffect,useLocalSearchParams} from "expo-router";
+import {privateMetadataStorage} from "../../lib/private-metadata-storage";
 import {usePreventRemove} from "@react-navigation/native";
 import {FlashComposer} from "../../components/FlashComposer";
 import { WorkRulesFields,useWorkDraft } from "../../components/WorkRulesFields";
 import { MyWorkMedia } from "../../components/MyWorkMedia";
-import { uploadWorkVideo } from "../../lib/safety-api";
-import {currentSocialUser} from "../../lib/social-content";
-import { useEffect, useRef, useState } from "react";
+import {createWorkVideoUpload,rememberWorkVideoSelection} from "../../lib/private-work-video";
+import {captureMessageScope,assertMessageScope,type MessageScope} from "../../lib/message-session";
+import {serializePrivateWrite} from "../../lib/private-write-queue";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState,Platform,Pressable,Text,TextInput,View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { VideoView, useVideoPlayer } from "expo-video";
@@ -15,12 +16,50 @@ import { Button, Notice, Screen, useUi } from "../../components/ui";
 import {BottomSheet} from "../../components/social-ui";
 import { CHAPTERS, CLIP_SECONDS, chapterAt, emptyClips, nextOpenSlot, type ChapterId, type SlotClips } from "../../lib/day";
 type VideoEditorState={title:string;start:string;end:string};
-function Editor({asset,edit,onEdit}:{asset:ImagePicker.ImagePickerAsset;edit:VideoEditorState;onEdit:(edit:VideoEditorState)=>void}){
+const localVideo=(uri:string)=>/^(file:|content:|ph:|assets-library:|blob:)/i.test(uri);
+function Editor({asset,edit,onEdit,scope}:{asset:ImagePicker.ImagePickerAsset;edit:VideoEditorState;onEdit:(edit:VideoEditorState)=>void;scope:MessageScope}){
  const {s,colors}=useUi();const {title,start,end}=edit;const [notice,setNotice]=useState("");
  const draft=useWorkDraft();const [sending,setSending]=useState(false);const sendingGuard=useRef(false);
- const player=useVideoPlayer(asset.uri,p=>{p.timeUpdateEventInterval=0.25;});
+ const pending=useRef<{key:string;upload:ReturnType<typeof createWorkVideoUpload>}|null>(null);
+ const generation=useRef(0),mounted=useRef(false);
+ const player=useVideoPlayer({uri:asset.uri,useCaching:false},p=>{p.timeUpdateEventInterval=0.25;});
  const from=Number(start),to=Number(end),valid=Number.isFinite(from)&&Number.isFinite(to)&&from>=0&&to>from&&to-from<=180;
  useEffect(()=>{const sub=player.addListener("timeUpdate",e=>{if(e.currentTime>=to&&to>0)player.pause();});return()=>sub.remove();},[player,to]);
+ useEffect(()=>{const sub=AppState.addEventListener("change",state=>{if(state!=="active")player.pause();});return()=>sub.remove();},[player]);
+ useEffect(()=>{
+  mounted.current=true;
+  const stop=()=>{generation.current++;pending.current?.upload.stop();};
+  const sub=AppState.addEventListener("change",state=>{if(state!=="active")stop();});
+  return()=>{mounted.current=false;sub.remove();stop();pending.current=null;};
+ },[asset,scope]);
+ async function sendVideo(){
+  if(sendingGuard.current)return;
+  sendingGuard.current=true;
+  setSending(true);
+  const started=generation.current;
+  let attempt:typeof pending.current=null;
+  try{
+   if(!valid||!title.trim()||to>player.duration)throw Error("Completa un título y un intervalo válido de hasta 180 segundos.");
+   const input={title,profession:draft.profession,activity:draft.activity,employer:draft.employer,consent:draft.consent,
+    start_ms:Math.round(from*1000),end_ms:Math.round(to*1000)};
+   const key=JSON.stringify(input);
+   await captureMessageScope(scope);
+   if(generation.current!==started||AppState.currentState!=="active")return;
+   if(pending.current&&pending.current.key!==key)throw Error("Para reintentar, conserva los datos del envío anterior o vuelve a seleccionar el video.");
+   attempt=pending.current??{key,upload:createWorkVideoUpload(asset,input,scope)};
+   pending.current=attempt;
+   await attempt.upload.send();
+   await assertMessageScope(scope);
+   if(generation.current===started&&pending.current===attempt)setNotice("Video enviado de forma privada. Solo se publicará después del procesamiento, la moderación completa y la confirmación del proveedor.");
+  }catch(error){
+   await assertMessageScope(scope).then(()=>{
+    if(generation.current===started&&(!attempt||pending.current===attempt))setNotice(error instanceof Error?error.message:"No se pudo enviar el video.");
+   }).catch(()=>{});
+  }finally{
+   sendingGuard.current=false;
+   if(mounted.current)setSending(false);
+  }
+ }
  const input={borderWidth:1,borderColor:colors.line,color:colors.ink,padding:12,borderRadius:10};
  return <View style={s.panel}><Text style={s.h2}>Tu resumen del día</Text>
  <VideoView player={player} style={{height:280,width:"100%",borderRadius:12}} nativeControls contentFit="contain"/>
@@ -31,11 +70,7 @@ function Editor({asset,edit,onEdit}:{asset:ImagePicker.ImagePickerAsset;edit:Vid
  <Button secondary title="Ver recorte" onPress={()=>{if(!valid||to>player.duration){setNotice("Selecciona un intervalo válido dentro del video de hasta 180 segundos.");return;}player.currentTime=from;player.play();}}/>
  <Text style={s.muted}>Los cambios en el título y el recorte se guardan automáticamente como borrador local.</Text>
  <WorkRulesFields draft={draft} live={false}/>
- <Button title={sending?"Enviando a procesamiento…":"Enviar video a procesamiento y moderación"} onPress={()=>{if(sendingGuard.current)return;sendingGuard.current=true;void (async()=>{setSending(true);try{
- if(!valid||!title.trim()||to>player.duration)throw new Error("Completa un título y un intervalo válido de hasta 180 segundos.");
- await uploadWorkVideo(asset,{title,profession:draft.profession,activity:draft.activity,employer:draft.employer,consent:draft.consent,start_ms:Math.round(from*1000),end_ms:Math.round(to*1000)});
- setNotice("Video enviado de forma privada. Solo se publicará después del procesamiento, la moderación completa y la confirmación del proveedor.");
- }catch(e){setNotice(e instanceof Error?e.message:String(e));}finally{sendingGuard.current=false;setSending(false);}})();}}/>
+ <Button title={sending?"Enviando a procesamiento…":"Enviar video a procesamiento y moderación"} onPress={()=>void sendVideo()}/>
  <Text style={s.muted}>El borrador es local. Enviar el video registra una solicitud real; no equivale a que haya sido analizado o publicado.</Text>
  {!!notice&&<Notice text={notice} onClose={()=>setNotice("")}/>}
  </View>;
@@ -47,30 +82,40 @@ function CreateVideo(){
  const [owner,setOwner]=useState("");const [hydrated,setHydrated]=useState(false);
  const [exitOpen,setExitOpen]=useState(false);const [exitAllowed,setExitAllowed]=useState(false);const [goHome,setGoHome]=useState(false);
  const suppressRef=useRef(false);
+ const scopeRef=useRef<MessageScope|null>(null),picking=useRef(false),discarding=useRef(false);
  const draftRef=useRef({clips,asset,edit});
  draftRef.current={clips,asset,edit};
  const hasWork=Boolean(asset||edit.title.trim()||Object.values(clips).some(list=>list.some(Boolean)));
  async function persist(){
-  if(!owner||!hydrated||suppressRef.current)return;
+  const scope=scopeRef.current;
+  if(!scope||scope.owner!==owner||!hydrated||suppressRef.current)return;
   const draft=draftRef.current;
   if(!draft.asset&&!draft.edit.title.trim()&&!Object.values(draft.clips).some(list=>list.some(Boolean)))return;
-  await AsyncStorage.setItem("jobeen.reel.draft.v1."+owner,JSON.stringify({...draft,savedAt:Date.now()}));
+  if(draft.asset&&!localVideo(draft.asset.uri))throw Error("Archivo de borrador no verificado.");
+  const key="jobeen.reel.draft.v1."+owner;
+  await serializePrivateWrite(key,async()=>{
+   await assertMessageScope(scope);if(scopeRef.current!==scope||suppressRef.current)return;
+   await privateMetadataStorage.write("reel-draft",scope,JSON.stringify({...draft,asset:draft.asset?{uri:draft.asset.uri,width:draft.asset.width,height:draft.asset.height,duration:draft.asset.duration,fileSize:draft.asset.fileSize,mimeType:draft.asset.mimeType,type:draft.asset.type}:null,savedAt:Date.now()}));await assertMessageScope(scope);
+  });
  }
  function home(){suppressRef.current=true;setExitOpen(false);setExitAllowed(true);setGoHome(true);}
  function requestExit(){if(hasWork)setExitOpen(true);else home();}
  usePreventRemove(!exitAllowed,()=>requestExit());
- useEffect(()=>{if(goHome)router.replace("/(tabs)/index");},[goHome]);
- useEffect(()=>{let active=true;void(async()=>{
+ useEffect(()=>{const scope=scopeRef.current;if(goHome&&!scope)router.replace("/(tabs)/index");else if(goHome&&scope)void captureMessageScope(scope).then(()=>{if(scopeRef.current===scope)router.replace("/(tabs)/index");}).catch(()=>{});},[goHome]);
+ useFocusEffect(useCallback(()=>{let active=true;scopeRef.current=null;suppressRef.current=true;setHydrated(false);setOwner("");setClips(emptyClips());setAsset(null);setEdit({title:"",start:"0",end:"180"});void(async()=>{
   try{
-   const id=await currentSocialUser();if(!active)return;setOwner(id);
-   const raw=await AsyncStorage.getItem("jobeen.reel.draft.v1."+id);
-   if(raw&&active){
+   const scope=await captureMessageScope(),id=scope.owner;
+   const raw=await privateMetadataStorage.read("reel-draft",scope);
+   await assertMessageScope(scope);if(!active)return;
+   if(raw&&raw!=="null"){
     const saved=JSON.parse(raw) as {clips:SlotClips;asset:ImagePicker.ImagePickerAsset|null;edit:VideoEditorState};
-    if(saved.clips&&saved.edit){setClips(saved.clips);setAsset(saved.asset);setEdit(saved.edit);}
+    if(!saved.clips||!saved.edit||typeof saved.edit.title!=="string"||typeof saved.edit.start!=="string"||typeof saved.edit.end!=="string"||(saved.asset&&(typeof saved.asset.uri!=="string"||!localVideo(saved.asset.uri)))||CHAPTERS.some(ch=>!Array.isArray(saved.clips[ch.id])||saved.clips[ch.id].some(uri=>uri!==null&&(typeof uri!=="string"||!localVideo(uri)))))throw Error("El borrador requiere recuperación segura.");
+    setClips(saved.clips);setAsset(saved.asset);setEdit(saved.edit);
    }
+   scopeRef.current=scope;setOwner(id);suppressRef.current=false;
   }catch(e){if(active)setNotice(e instanceof Error?e.message:"No se pudo recuperar el borrador.");}
   finally{if(active)setHydrated(true);}
- })();return()=>{active=false;};},[]);
+ })();return()=>{active=false;scopeRef.current=null;suppressRef.current=true;setOwner("");setAsset(null);setClips(emptyClips());setEdit({title:"",start:"0",end:"180"});};},[]));
  useEffect(()=>{
   if(!owner||!hydrated||!hasWork||suppressRef.current)return;
   const timer=setTimeout(()=>{void persist().catch(()=>{});},180);
@@ -78,21 +123,33 @@ function CreateVideo(){
  },[clips,asset,edit,owner,hydrated]);
  useEffect(()=>{
   const subscription=AppState.addEventListener("change",state=>{if(state!=="active")void persist().catch(()=>{});});
-  return()=>{subscription.remove();void persist().catch(()=>{});};
+  return()=>{subscription.remove();};
  },[owner,hydrated]);
+ async function saveAndExit(){
+  const scope=scopeRef.current;
+  if(!scope)return;
+  try{await persist();await assertMessageScope(scope);if(scopeRef.current===scope)home();}
+  catch(e){if(scopeRef.current===scope)setNotice(e instanceof Error?e.message:"No se pudo guardar el borrador.");}
+ }
  async function discardAndExit(){
-  suppressRef.current=true;
-  try{if(owner)await AsyncStorage.removeItem("jobeen.reel.draft.v1."+owner);home();}
-  catch(e){suppressRef.current=false;setNotice(e instanceof Error?e.message:"No se pudo descartar el borrador.");setExitOpen(false);}
+  const scope=scopeRef.current;if(!scope||scope.owner!==owner||discarding.current)return;
+  suppressRef.current=true;discarding.current=true;
+  try{const key="jobeen.reel.draft.v1."+owner;await serializePrivateWrite(key,async()=>{await assertMessageScope(scope);if(scopeRef.current!==scope)return;await privateMetadataStorage.write("reel-draft",scope,"null");await assertMessageScope(scope);});if(scopeRef.current===scope)home();}
+  catch(e){if(scopeRef.current===scope){suppressRef.current=false;setNotice(e instanceof Error?e.message:"No se pudo descartar el borrador.");setExitOpen(false);}}
+  finally{discarding.current=false;}
  }
  const chapter=chapterAt(new Date());const open=nextOpenSlot(clips[chapter.id]);const slot=open>=0?chapter.slots[open]:null;
- async function record(camera:boolean){try{
+ async function record(camera:boolean){
+ const scope=scopeRef.current;if(!scope||picking.current||discarding.current)return;
+ picking.current=true;
+ try{await captureMessageScope(scope);if(scopeRef.current!==scope)return;
   if(open<0){setNotice(chapter.title+" is full. Remove a clip to re-record.");return;}
-  if(camera){const permission=await ImagePicker.requestCameraPermissionsAsync();if(!permission.granted){setNotice("Camera permission is needed to record your POV.");return;}}
+  if(camera){const permission=await ImagePicker.requestCameraPermissionsAsync();await assertMessageScope(scope);if(scopeRef.current!==scope)return;if(!permission.granted){setNotice("Camera permission is needed to record your POV.");return;}}
   const options:ImagePicker.ImagePickerOptions={mediaTypes:["videos"],allowsEditing:false,videoMaxDuration:CLIP_SECONDS};
   const result=camera?await ImagePicker.launchCameraAsync(options):await ImagePicker.launchImageLibraryAsync(options);
-  if(!result.canceled){const a=result.assets[0];setAsset(a);setEdit({title:"",start:"0",end:String(Math.min(180,(a.duration??180000)/1000))});setClips(c=>({...c,[chapter.id]:c[chapter.id].map((x,i)=>i===open?a.uri:x)}));setNotice("");}
- }catch(error){setNotice(error instanceof Error?error.message:"Could not open the video.");}}
+  await assertMessageScope(scope);if(scopeRef.current!==scope)return;
+  if(!result.canceled){const a=result.assets[0];if(!a||!localVideo(a.uri))throw Error("Selecciona un video local.");rememberWorkVideoSelection(a,scope);setAsset(a);setEdit({title:"",start:"0",end:String(Math.min(180,(a.duration??180000)/1000))});setClips(c=>({...c,[chapter.id]:c[chapter.id].map((x,i)=>i===open?a.uri:x)}));setNotice("");}
+ }catch(error){if(scopeRef.current===scope)setNotice(error instanceof Error?error.message:"Could not open the video.");}finally{picking.current=false;}}
  function remove(id:ChapterId,index:number){setClips(c=>({...c,[id]:c[id].map((x,i)=>i===index?null:x)}));}
  return <Screen bottomPadding={contentBottom} demo={false} title="Crear video profesional" subtitle={"Graba o selecciona clips de "+CLIP_SECONDS+" segundos. Tus avances se guardan localmente."}>
  <Button secondary title="Volver a inicio" onPress={requestExit}/>
@@ -109,13 +166,13 @@ function CreateVideo(){
   <Text style={{color:filled?colors.inverse:colors.muted,fontSize:11,fontWeight:"700"}}>{filled?"✓ "+CLIP_SECONDS+"s":sl.label}</Text>{filled&&<Text style={{color:colors.inverse,fontSize:10}}>{sl.label}</Text>}</Pressable>;})}</View>
  </View>)}
  <Text style={s.muted}>Toca un clip para retirarlo. Los clips permanecen locales hasta que envíes el resumen; no se publican automáticamente.</Text>
- {asset&&<Editor key={asset.uri} asset={asset} edit={edit} onEdit={setEdit}/>}
+ {asset&&scopeRef.current&&<Editor key={asset.uri} asset={asset} edit={edit} onEdit={setEdit} scope={scopeRef.current}/>}
  <MyWorkMedia/>
  <Text style={s.muted}>El título y las selecciones se recuperan como borrador local. Si Android borra un archivo temporal, será necesario seleccionar el video nuevamente.</Text>
  <BottomSheet visible={exitOpen} onClose={()=>setExitOpen(false)} title="¿Qué deseas hacer con tu video?">
   <View style={{gap:10,paddingTop:9}}>
    <Text style={s.muted}>El video no se publicará al salir. Puedes conservar los datos de edición como borrador.</Text>
-   <Button title="Guardar borrador" onPress={()=>void persist().then(home).catch(e=>setNotice(String(e)))}/>
+   <Button title="Guardar borrador" onPress={()=>void saveAndExit()}/>
    <Button secondary title="Descartar cambios" onPress={()=>void discardAndExit()}/>
    <Button secondary title="Continuar editando" onPress={()=>setExitOpen(false)}/>
   </View>

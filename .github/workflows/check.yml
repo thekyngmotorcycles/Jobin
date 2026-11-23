@@ -11,11 +11,40 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install --no-audit --no-fund
+      - name: Require regression coverage for security-sensitive PR changes
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/check-security-change-coverage.mjs --base "$BASE_SHA" --head "$HEAD_SHA"
+      - name: Verify SecureStore lock integrity against npm registry
+        run: |
+          test "$(npm view expo-secure-store@15.0.8 dist.integrity --registry=https://registry.npmjs.org)" = "$(node -p "require('./package-lock.json').packages['node_modules/expo-secure-store'].integrity")"
+      - run: npm ci --no-audit --no-fund
       - run: npx expo install --check
+      - name: Validate isolated security pilot Expo config (no native build)
+        env:
+          JOBEEN_SECURITY_PILOT: "1"
+          EXPO_PUBLIC_JOBEEN_SECURITY_PILOT: "1"
+          EXPO_PUBLIC_SUPABASE_URL: "https://mkvzkvkmrribcaecvphq.supabase.co"
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_synthetic-never-used"
+          JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID: "de0b71bb-0646-48fa-a875-6b9662c3c2c7"
+        run: |
+          npx expo config --type public --json > "$RUNNER_TEMP/jobeen-pilot-expo-config.json"
+          node scripts/check-security-pilot-config.mjs "$RUNNER_TEMP/jobeen-pilot-expo-config.json"
+      - name: Verify security pilot fails closed (no build)
+        run: node scripts/test-security-pilot-fail-closed.mjs
+      - name: Verify Android native autolinking (no build)
+        run: |
+          npx --no-install expo-modules-autolinking resolve --platform android --json > "$RUNNER_TEMP/jobeen-autolinking.json"
+          node scripts/check-native-autolinking.mjs "$RUNNER_TEMP/jobeen-autolinking.json"
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
@@ -55,3 +84,11 @@ jobs:
           done
       - run: psql -v ON_ERROR_STOP=1 -f tests/database.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/catalog-migration-idempotence.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/jcards-save-rls.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/business-card-privacy.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/employment-privacy.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/company-verification-privacy.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/social-media-ownership.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/message-jshop-authorization.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/employer-links-authorization.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/security-integration.test.sql
