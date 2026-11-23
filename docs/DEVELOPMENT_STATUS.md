@@ -1,5 +1,10 @@
 # Jobeen — registro central de desarrollo
 
+## UI-RH-01 — Royal Hive, fase 1: fundamentos candidatos (2026-11-23)
+**EN DESARROLLO / PENDIENTE DE INTEGRACIÓN.** El propietario autorizó comenzar la etapa 1 conforme al Master Plan v1.1, sin merge/OTA/APK. Base documental PR #93 (`4b60e042`), base funcional development `6cdfe74c` (CI 45268228054 success). Se preparan los tokens Royal Hive claro/oscuro, estados, tamaños tipográficos inferiores del intervalo aprobado para muestras, medidas y perfiles por ancho en los módulos existentes, con pruebas unitarias de contraste y geometría. No se activa un tema, no se modifica una preferencia ni un consumidor productivo; no se toca JCard ni seguridad. PR #62/#63 son candidatos previos: reutilizar sus patrones contrastados, no fusionarlos sin reconciliar con la base de seguridad actual. SEC-07 sigue pendiente y no se autoriza publicación visual.
+**Aceptación siguiente:** revisión de CI de este candidato; muestra de los componentes compartidos (Compartir, aviso, botón/campo) claro/oscuro, ancho 280–480 dp y texto ampliado; validar con propietario antes de activar/migrar tema y escala. No declarar finalizada la fase por aprobar tests de tokens. Google Login #92: OTA 45268716475 success, Android runtime jobeen-native-20261123; el propietario confirmó acceso Google en su teléfono, sin reabrir el incidente. No implica cierre de SEC-07.
+
+
 ## Acceso Google en Android (2026-11-23)
 
 **PENDIENTE DE INTEGRACIÓN.** La OTA Android con runtime `jobeen-native-20261123` publicó `b9b3c869`, pero el usuario volvió a Login. En la ventana del incidente Supabase registró seis retornos OAuth y cero canjes PKCE. GoTrue construye el callback con `net/url`, que serializa `jobin://` con el código como `jobin:?code=…`. El parser de Jobeen descartaba ese formato antes del canje. Se reprodujo el encabezado HTTP de retorno con Go y se añadieron pruebas para ese formato con el SDK de Supabase. Se conserva el esquema, el requisito de intento pendiente y PKCE. La prueba en el teléfono queda pendiente de la entrega autorizada.

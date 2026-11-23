@@ -33,3 +33,17 @@ export function jobeenModalTokens(theme:ThemeName,tone:JobeenNoticeTone="neutral
   radius:JOBEEN_MODAL_RADIUS,
  };
 }
+
+/** Candidate semantic states from Master Plan v1.1 §2.2. */
+export const ROYAL_HIVE_STATES={
+ light:{
+  success:{background:"#E6F4EA",foreground:"#14633A"},info:{background:"#EAF3FF",foreground:"#1D497E"},
+  warning:{background:"#FFF0CA",foreground:"#71480D"},danger:{background:"#FBE8E8",foreground:"#922B2B"},
+  live:{background:"#B91C1C",foreground:"#FFFFFF"},
+ },
+ dark:{
+  success:{background:"#123523",foreground:"#86E3AB"},info:{background:"#152D4A",foreground:"#A9CFFF"},
+  warning:{background:"#3D2C14",foreground:"#FFD47A"},danger:{background:"#482329",foreground:"#FFB4B4"},
+  live:{background:"#B91C1C",foreground:"#FFFFFF"},
+ },
+} as const;

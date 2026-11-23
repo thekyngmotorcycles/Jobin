@@ -67,3 +67,24 @@ function makeTheme(theme:ThemeName){
 export const palettes=Object.fromEntries(THEMES.map(({id})=>[id,makeTheme(id)])) as Record<ThemeName,ReturnType<typeof makeTheme>>;
 export type ThemeColors=ReturnType<typeof makeTheme>;
 export function themeTokens(theme:ThemeName){return palettes[theme];}
+
+/** Royal Hive v1.1 — candidate for visual review. Not a persisted theme or default.
+ * Do not route existing themes through these values before owner approval.
+ * JCard art, export colors and existing theme preferences remain unchanged.
+ */
+export const ROYAL_HIVE_PALETTE={
+ light:{
+  paper:"#F5F7FA",surface:"#FFFFFF",modal:"#F0F3F7",primary:"#FFC629",onPrimary:"#0D1B2A",
+  ink:"#0D1B2A",muted:"#526071",line:"#DCE3EA",outline:"#526071",disabled:"#E1E5EB",onDisabled:"#687383",
+  selected:"#FFF0BC",focus:"#1D497E",media:"#0B1422",onMedia:"#FFFFFF",
+  scrim:"rgba(0,0,0,0.48)",mediaScrim:"rgba(0,0,0,0.72)",
+ },
+ dark:{
+  paper:"#0B1422",surface:"#152235",modal:"#152235",primary:"#FFC629",onPrimary:"#0D1B2A",
+  ink:"#F4F6FA",muted:"#ADB9C8",line:"#2D3D51",outline:"#8293A8",disabled:"#243348",onDisabled:"#8293A8",
+  selected:"#3D341C",focus:"#FFC629",media:"#0B1422",onMedia:"#FFFFFF",
+  scrim:"rgba(0,0,0,0.62)",mediaScrim:"rgba(0,0,0,0.72)",
+ },
+} as const;
+export type RoyalHiveMode=keyof typeof ROYAL_HIVE_PALETTE;
+export const ROYAL_HIVE_BRAND={jcard:"#00072E",silver:"#C9CCD1"} as const;
