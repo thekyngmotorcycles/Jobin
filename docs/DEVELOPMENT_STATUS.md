@@ -1,5 +1,13 @@
 # Jobeen — registro central de desarrollo
 
+## GOV-03 — preflight de integración única, 2026-11-22 (sin merge ni publicación)
+
+- La comparación GitHub confirma development como ancestro directo de PR #74, con cero commits detrás y 395 delante en cc41d237. El orden de PR #69→#74 permanece lineal, todos borradores. Reutilizar únicamente la rama final governance/security-foundation-20261122; no crear otra ni integrar PR intermedios secuencialmente.
+- GitHub Actions 45092030140 aprobó validate y database para cc41d237. Ruleset 27866497, leído directamente, permanece activo sobre main y development, con PR obligatorio, checks y sin bypass. Esta evidencia no autoriza un merge.
+- Los workflows del árbol final se revisaron para la integración: rutas OTA y APK manuales con identidad/confirmación/SHA exacto; publicadores heredados retirados; CI sin publicación. Dos sincronizadores antiguos de lockfile solo actúan en ramas de funciones independientes, no al actualizar development.
+- Se excluye también la rama governance/security-foundation-20261122 del despliegue automático de preview mediante vercel.json para no crear publicación web colateral durante la preparación. Conservar package-lock.json ya validado: no efectuar actualizaciones de dependencias ni regeneraciones antes de la promoción.
+- Operación siguiente: retargetear PR #74, manteniéndolo en borrador, a development, sin fusionarlo. Confirmar CI contra la nueva base y SHA final exacto, presentar un único merge y pedir aprobación expresa del propietario. No ejecutar EAS/OTA, builds, SQL alojado, migraciones, limpieza de ramas ni despliegues Vercel.
+
 
 ## Estado operativo más reciente — 2026-11-22 (reemplaza los snapshots históricos más abajo)
 
