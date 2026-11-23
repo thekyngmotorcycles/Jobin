@@ -39,6 +39,11 @@ test("config and workflow changes require separate matching regressions", () => 
   assert.equal(check([...changes, "tests/security-pilot-config.test.ts", "tests/security-change-coverage.test.ts"]).status, 0);
 });
 
+test("release workflow edits use release-approval test evidence, not unrelated app tests", () => {
+  assert.equal(check([".github/workflows/expo-development.yml", "tests/auth-entry.test.ts"]).status, 1);
+  assert.equal(check([".github/workflows/expo-development.yml", "tests/release-approval-workflows.test.ts"]).status, 0);
+});
+
 test("native vault, video and social privacy require evidence from their own areas", () => {
   assert.equal(check(["modules/jobeen-private-files/android/src/main/java/PrivateFiles.kt", "tests/auth-entry.test.ts"]).status, 1);
   assert.equal(check(["modules/jobeen-private-files/android/src/main/java/PrivateFiles.kt", "tests/android-private-file.test.ts"]).status, 0);
