@@ -53,7 +53,7 @@ test("Security pilot requires distinct backend, native identity, and disables OT
   assert.notEqual(variant.android.package,base.android.package);
   assert.equal(base.updates.url,"https://u.expo.dev/a6befb1a-dc03-45a8-a18c-294643e99434");
   assert.equal(eas.build["security-pilot"].env.JOBEEN_SECURITY_PILOT,"1");
-  assert.equal(eas.build["security-pilot"].env.EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL,"");
+  assert.equal(Object.hasOwn(eas.build["security-pilot"].env,"EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL"),false);
   assert.equal(eas.build["security-pilot"].env.EXPO_PUBLIC_JOBEEN_SECURITY_PILOT,"1");
  }finally{keys.forEach((k,i)=>{if(original[i]===undefined)delete process.env[k];else process.env[k]=original[i];});}
 });

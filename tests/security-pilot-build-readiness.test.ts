@@ -50,7 +50,7 @@ test("pilot build preflight rejects a normal backend, wrong Expo project or miss
 
 test("pilot profile explicitly disables even a previously configured remote gateway", () => {
   const eas = JSON.parse(readFileSync(new URL("../eas.json", import.meta.url).pathname, "utf8"));
-  assert.equal(eas.build["security-pilot"].env.EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL, "");
+  assert.equal(Object.hasOwn(eas.build["security-pilot"].env,"EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL"),false);
   assert.equal(check().status, 0);
 });
 

@@ -31,8 +31,8 @@ try {
   const key = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
   requirePilot(/^sb_publishable_[A-Za-z0-9_-]{10,}$/.test(key) && key === key.trim(),
     "missing or invalid pilot publishable key in caller environment");
-  requirePilot(profile.env.EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL === "",
-    "pilot must override any remote video gateway with an explicit empty value");
+  requirePilot(!Object.prototype.hasOwnProperty.call(profile.env, "EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL"),
+    "pilot must not configure a video gateway in eas.json");
   requirePilot(!process.env.EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL,
     "unverified video gateway must remain disabled");
   requirePilot(app.extra?.eas?.projectId !== pilotId,
