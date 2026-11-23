@@ -6,7 +6,7 @@ import { router } from "expo-router";
 import { AuthField } from "../components/AuthForms";
 import { startJobinSession } from "../components/AuthGate";
 import { requireSupabase } from "../lib/supabase";
-import {runSignedOutAuth,cancelPendingGoogle} from "../lib/auth-entry";
+import {runSignedOutAuth} from "../lib/auth-entry";
 import {captureMessageScope,assertMessageScope} from "../lib/message-session";
 
 const VALID_USERNAME = /^[a-z][a-z0-9_]{2,29}$/;
@@ -28,7 +28,6 @@ export default function Account() {
   if(password!==confirmPassword){setNotice("Las contraseñas no coinciden.");return;}
   setBusy(true);
   try{
-   cancelPendingGoogle();
    await runSignedOutAuth(async()=>{
    const client=requireSupabase();
    const {data:existing,error:lookupError}=await client.from("usernames").select("username").eq("username",handle).maybeSingle();

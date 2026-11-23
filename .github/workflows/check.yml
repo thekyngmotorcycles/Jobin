@@ -92,3 +92,37 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f tests/message-jshop-authorization.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/employer-links-authorization.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/security-integration.test.sql
+
+  inspect-approved-eas-archive:
+    # Temporary read-only diagnostic for the exact already integrated source.
+    if: github.event_name == 'pull_request' && github.event.pull_request.number == 80 && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '8e2d097b5d388136abdcf89f3bbb6cbef1482a0e'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Inspect EAS archive without a build or upload
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          CI: '1'
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '8e2d097b5d388136abdcf89f3bbb6cbef1482a0e'
+          npx --yes eas-cli@27.1.0 build:inspect --platform android --stage archive --output "$RUNNER_TEMP/eas-archive" --profile preview --force
+          root="$RUNNER_TEMP/eas-archive"
+          for f in modules/jobeen-private-files/package.json modules/jobeen-private-files/expo-module.config.json modules/jobeen-private-files/android/build.gradle modules/jobeen-private-files/android/src/main/AndroidManifest.xml modules/jobeen-private-files/android/src/main/java/expo/modules/jobeenprivatefiles/JobeenPrivateFilesModule.kt app.json package.json package-lock.json; do
+            test -f "$root/$f"
+            cmp "$f" "$root/$f"
+          done
+          test ! -d "$root/android"
+          test ! -d "$root/ios"
+          test ! -d "$root/node_modules"
+          test ! -f "$root/.env"
+          echo "EAS_ARCHIVE_VERIFIED 8e2d097b5d388136abdcf89f3bbb6cbef1482a0e: native encrypted module and appearance configuration present, identical to approved source."

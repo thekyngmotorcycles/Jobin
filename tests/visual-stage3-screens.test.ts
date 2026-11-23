@@ -54,7 +54,7 @@ test("Personal and business JCard editors use compact accessible accordion secti
  assert.ok(personal.includes("padding:12,minHeight:JOBEEN_CONTROL.touchTarget"),"Personal form inputs use 48dp minimum height");
  assert.ok(personal.includes("minWidth:72,minHeight:JOBEEN_CONTROL.touchTarget"),"Personal editor compact actions remain accessible");
  assert.ok(business.includes("minHeight:JOBEEN_CONTROL.touchTarget"),"Business editor controls use accessible tap targets");
- assert.ok(personal.includes('fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined,color:sunflower?colors.glassText:colors.ink}]}>Apariencia'),"Personal appearance row uses section typography");
+ assert.ok(personal.includes('fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined,color:colors.ink}]}>Apariencia'),"Personal appearance row uses section typography");
  assert.ok(business.includes('fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined}]}>Apariencia'),"Business appearance row uses section typography");
  assert.ok(personal.includes("backgroundColor:modal.scrim"));
  assert.ok(business.includes("saveJCardVisibility(visibility,editorOwner,origin)"),"Business privacy persistence retains the originating session");

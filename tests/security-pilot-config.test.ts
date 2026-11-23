@@ -53,7 +53,7 @@ test("Security pilot requires distinct backend, native identity, and disables OT
   assert.notEqual(variant.android.package,base.android.package);
   assert.equal(base.updates.url,"https://u.expo.dev/a6befb1a-dc03-45a8-a18c-294643e99434");
   assert.equal(eas.build["security-pilot"].env.JOBEEN_SECURITY_PILOT,"1");
-  assert.equal(eas.build["security-pilot"].env.EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL,"");
+  assert.equal(Object.hasOwn(eas.build["security-pilot"].env,"EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL"),false);
   assert.equal(eas.build["security-pilot"].env.EXPO_PUBLIC_JOBEEN_SECURITY_PILOT,"1");
  }finally{keys.forEach((k,i)=>{if(original[i]===undefined)delete process.env[k];else process.env[k]=original[i];});}
 });
@@ -64,4 +64,18 @@ test("Client pilot mode cannot fall back to the live backend",()=>{
  assert.ok(source.includes("u.hostname!==new URL(backendConfig.url).hostname"));
  assert.ok(source.includes('u.hostname==="mkvzkvkmrribcaecvphq.supabase.co"'));
  assert.ok(readFileSync("app.config.js","utf8").includes('parsed.hostname!=="mkvzkvkmrribcaecvphq.supabase.co"'));
+});
+
+test("Native System mode uses automatic OS appearance and the SDK 54 compatible SystemUI module",()=>{
+ assert.equal(base.userInterfaceStyle,"automatic");
+ assert.ok(base.plugins.includes("expo-system-ui"));
+ const pkg=JSON.parse(readFileSync("package.json","utf8"));
+ const lock=JSON.parse(readFileSync("package-lock.json","utf8"));
+ assert.equal(pkg.dependencies["expo-system-ui"],"~6.0.9");
+ assert.equal(lock.packages[""].dependencies["expo-system-ui"],"~6.0.9");
+ assert.equal(lock.packages["node_modules/expo-system-ui"].version,"6.0.9");
+ assert.equal(base.android.package,"com.thekyngmotorcycles.jobin");
+ assert.equal(base.runtimeVersion.policy,"fingerprint");
+ assert.ok(readFileSync("scripts/check-native-autolinking.mjs","utf8").includes('"expo-system-ui"'));
+ assert.ok(!Object.keys(pkg.dependencies).some(name=>/mwdat|meta-wearable/i.test(name)));
 });

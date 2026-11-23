@@ -45,3 +45,12 @@ test("Search remains one common route with contextual Streams preset",()=>{
  assert.ok(search.includes("height:48,minHeight:48"));
  assert.ok(home.includes('router.push("/search")'));
 });
+
+test("Live and Flashes category menu uses Royal Hive and scrollable accessible rows",()=>{
+ const header=load("src/components/FeedTopBar.tsx");
+ assert.ok(header.includes("const modal=jobeenModalTokens(theme)"));
+ assert.ok(header.includes("backgroundColor:modal.surface"));
+ assert.ok(header.includes("minHeight:JOBEEN_CONTROL.touchTarget"));
+ assert.ok(header.includes("maxHeight:Math.max(0,height-insets.bottom-8-menuTop)"));
+ assert.ok(header.includes("<ScrollView style={{flexShrink:1}}"));
+});

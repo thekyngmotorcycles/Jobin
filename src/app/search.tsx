@@ -1,3 +1,5 @@
+import {JOBEEN_TYPE} from "../theme/typography";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {ActivityIndicator,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -121,7 +123,7 @@ export default function Search(){
   return <SafeAreaView style={s.screen}>
   <View style={{flexDirection:"row",alignItems:"center",padding:12,gap:6}}>
    <IconButton icon="arrow-back" label="Volver" onPress={()=>router.canGoBack()?router.back():router.replace("/")}/>
-   <TextInput accessibilityLabel="Buscar en Jobeen" placeholder={effectiveKind==="Flashes"?"Buscar Flashes":effectiveKind==="Streams"?"Buscar Lives":"Buscar personas, negocios o profesiones"} placeholderTextColor={colors.muted} value={query} onFocus={()=>setShowRecent(true)} onChangeText={value=>{setQuery(value);setShowRecent(true);invalidateResults();}} onSubmitEditing={()=>void runSearch()} returnKeyType="search" style={{flex:1,minWidth:0,minHeight:46,borderRadius:24,backgroundColor:colors.accent,paddingHorizontal:18,color:colors.ink}}/>
+   <TextInput accessibilityLabel="Buscar en Jobeen" placeholder={effectiveKind==="Flashes"?"Buscar Flashes":effectiveKind==="Streams"?"Buscar Lives":"Buscar personas, negocios o profesiones"} placeholderTextColor={colors.muted} value={query} onFocus={()=>setShowRecent(true)} onChangeText={value=>{setQuery(value);setShowRecent(true);invalidateResults();}} onSubmitEditing={()=>void runSearch()} returnKeyType="search" style={{flex:1,minWidth:0,minHeight:JOBEEN_CONTROL.inputHeight,borderRadius:JOBEEN_CONTROL.inputRadius,backgroundColor:colors.card,borderColor:colors.outline,borderWidth:1,paddingHorizontal:12,color:colors.ink,fontSize:JOBEEN_TYPE.input}}/>
    {!!query&&<IconButton icon="close" label="Borrar búsqueda" onPress={()=>{setQuery("");setShowRecent(true);invalidateResults();}}/>}
   </View>
   <View style={{flexDirection:"row",gap:8,paddingHorizontal:16,paddingBottom:9}}>
@@ -173,10 +175,10 @@ export default function Search(){
    {(effectiveKind==="Todo"||effectiveKind==="Profesionales"||effectiveKind==="Empresas"||effectiveKind==="Personas")?<>
     <Text style={s.h3}>{effectiveKind==="Todo"?"Busca en todas las cuentas de Jobeen":effectiveKind==="Personas"?"Encuentra personas por nombre, usuario o ciudad":effectiveKind==="Empresas"?"Encuentra empresas por sector, servicio y ciudad":"Encuentra profesionales por profesión, especialidad y ciudad"}</Text>
     <Text style={s.muted}>{effectiveKind==="Todo"?"Busca personas, profesionales y negocios por nombre, usuario, profesión o ciudad.":effectiveKind==="Personas"?"Usuarios que no han agregado ninguna profesión a su JCard. Pueden ver videos, streams y buscar profesionales.":"Describe lo que necesitas: «Técnico de aire acondicionado especializado en VRF en Miami»."}</Text>
-    <TextInput accessibilityLabel="Ciudad" value={city} onChangeText={value=>{setCity(value);invalidateResults();}} placeholder="Ciudad (opcional si la escribiste arriba)" placeholderTextColor={colors.muted} style={{minHeight:48,paddingHorizontal:14,borderWidth:1,borderColor:colors.line,borderRadius:12,color:colors.ink}}/>
-    {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&<TextInput accessibilityLabel="Especialidad" value={specialty} onChangeText={value=>{setSpecialty(value);invalidateResults();}} placeholder="Especialidad (opcional, ej. VRF)" placeholderTextColor={colors.muted} style={{minHeight:48,paddingHorizontal:14,borderWidth:1,borderColor:colors.line,borderRadius:12,color:colors.ink}}/>}
-    <Pressable accessibilityRole="button" onPress={()=>void runSearch()} disabled={loading} style={{padding:15,borderRadius:14,backgroundColor:colors.ink,alignItems:"center"}}>
-     <Text style={{color:colors.paper,fontWeight:"700"}}>{loading?"Buscando…":effectiveKind==="Todo"?"Buscar en todo":effectiveKind==="Personas"?"Buscar personas":effectiveKind==="Empresas"?"Buscar empresas":"Buscar profesionales"}</Text>
+    <TextInput accessibilityLabel="Ciudad" value={city} onChangeText={value=>{setCity(value);invalidateResults();}} placeholder="Ciudad (opcional si la escribiste arriba)" placeholderTextColor={colors.muted} style={{minHeight:JOBEEN_CONTROL.inputHeight,paddingHorizontal:12,borderWidth:1,borderColor:colors.outline,borderRadius:JOBEEN_CONTROL.inputRadius,color:colors.ink,fontSize:JOBEEN_TYPE.input}}/>
+    {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&<TextInput accessibilityLabel="Especialidad" value={specialty} onChangeText={value=>{setSpecialty(value);invalidateResults();}} placeholder="Especialidad (opcional, ej. VRF)" placeholderTextColor={colors.muted} style={{minHeight:JOBEEN_CONTROL.inputHeight,paddingHorizontal:12,borderWidth:1,borderColor:colors.outline,borderRadius:JOBEEN_CONTROL.inputRadius,color:colors.ink,fontSize:JOBEEN_TYPE.input}}/>}
+    <Pressable accessibilityRole="button" onPress={()=>void runSearch()} disabled={loading} style={{minHeight:JOBEEN_CONTROL.touchTarget,padding:12,borderRadius:JOBEEN_CONTROL.buttonRadius,backgroundColor:colors.primary,alignItems:"center",justifyContent:"center"}}>
+     <Text style={{color:colors.onPrimary,fontSize:JOBEEN_TYPE.action,fontWeight:"700",textAlign:"center"}}>{loading?"Buscando…":effectiveKind==="Todo"?"Buscar en todo":effectiveKind==="Personas"?"Buscar personas":effectiveKind==="Empresas"?"Buscar empresas":"Buscar profesionales"}</Text>
     </Pressable>
     {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&<Text style={s.muted}>Primero coincidencia con tu búsqueda; después credenciales y reconocimientos verificados. Las cuentas personales no tienen puntuación por estrellas.</Text>}
     {loading&&<ActivityIndicator color={colors.ink}/>}

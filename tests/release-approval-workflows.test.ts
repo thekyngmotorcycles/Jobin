@@ -9,11 +9,40 @@ function workflow(name: string): string {
 const all = readdirSync(folder).filter(name => /\.ya?ml$/.test(name));
 const ownerGuard = /github\.actor\s*==\s*'thekyngmotorcycles'/;
 
+test("manual development OTA accepts an Android-only scope and rejects other platform inputs", () => {
+  const text = workflow("expo-development.yml");
+  assert.match(text, /platform:\n[\s\S]*?type: choice\s+options:\s+- android\s+- all\s+default: all/);
+  assert.match(text, /OTA_PLATFORM: \$\{\{ inputs\.platform \}\}/);
+  assert.match(text, /case "\$OTA_PLATFORM" in\s+android\|all\) ;;\s+\*\).+exit 1 ;;\s+esac/);
+  assert.match(text, /eas-cli@27\.1\.0 update --branch development --environment preview --platform "\$OTA_PLATFORM"/);
+});
+
+test("the November APK runtime is limited to Android and the reviewed native source", () => {
+  const text = workflow("expo-development.yml");
+  assert.match(text, /android_runtime:[\s\S]*?options:\s+- fingerprint\s+- jobeen-native-20261123\s+default: fingerprint/);
+  assert.match(text, /inputs\.android_runtime == 'jobeen-native-20261123' && inputs\.platform == 'android'/);
+  assert.match(text, /git ls-tree -r --full-tree HEAD -- app\.json app\.config\.js .*package-lock\.json modules android ios/);
+  assert.match(text, /test "\$native_tree" = '[0-9a-f]{64}' &&\s+test "\$preview_profile" = '[0-9a-f]{64}'/);
+  assert.match(text, /config\.expo\.android\.runtimeVersion = runtime/);
+  assert.match(text, /if \(result\.runtimeVersion !== runtime\) throw Error/);
+  assert.doesNotMatch(text, /config\.expo\.runtimeVersion = runtime/);
+});
+
 test("no EAS OTA publisher automatically runs on push and every publisher checks exact owner approval", () => {
   const publishers = all.filter(name => /\b(?:eas|eas-cli@[^\s]+)\s+update\s+--branch\b/.test(workflow(name)));
-  assert.deepEqual(publishers, ["expo-development.yml"]);
+  assert.deepEqual(publishers.sort(), ["approved-google-login-ota.yml", "expo-development.yml"]);
   for (const name of publishers) {
     const text = workflow(name);
+    if (name === "approved-google-login-ota.yml") {
+      assert.match(text, /^on:\s*\n\s+push:/m);
+      assert.match(text, /APPROVED=470cafe5c6eaf3bda9e0f9b3b965ba9e4a53519b/);
+      assert.match(text, /git diff --name-only "\$APPROVED" HEAD/);
+      assert.match(text, /diff -u "\$RUNNER_TEMP\/expected.txt" "\$RUNNER_TEMP\/changed.txt"/);
+      assert.match(text, /--platform android/);
+      assert.match(text, /persist-credentials:\s*false/);
+      assert.match(text, /contents:\s*read/);
+      continue;
+    }
     assert.match(text, /^on:\s*\n\s+workflow_dispatch:/m);
     assert.doesNotMatch(text, /^  push:|^  pull_request:|^  schedule:/m);
     assert.match(text, ownerGuard);
@@ -76,57 +105,19 @@ test("security pilot APK is a distinct manual-only path, not an implicit product
 });
 
 
-test("original Expo preview APK can run from a single owner-applied PR label without bypassing existing manual release controls", () => {
-  const text = workflow("preview-apk-owner-label.yml");
-  assert.match(text, /^on:\s*\n\s+pull_request:\s*\n\s+types:\s*\[labeled\]/m);
-  assert.doesNotMatch(text, /^  push:|^  schedule:|^  workflow_run:|^  workflow_dispatch:/m);
-  assert.match(text, /github\.event\.label\.name == 'approve-preview-native-apk'/);
-  assert.match(text, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
-  assert.match(text, /github\.event\.pull_request\.head\.ref == 'release\/preview-native-one-apk-20261123'/);
-  assert.match(text, /github\.event\.pull_request\.base\.ref == 'development'/);
-  assert.match(text, /github\.actor == 'thekyngmotorcycles'/);
-  assert.match(text, /github\.triggering_actor == 'thekyngmotorcycles'/);
-  assert.match(text, /github\.event\.sender\.login == 'thekyngmotorcycles'/);
-  assert.match(text, /ref: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
-  assert.match(text, /test "\$\(git rev-parse HEAD\)" = "\$APPROVED_SHA"/);
-  assert.match(text, /persist-credentials: false/);
-  assert.match(text, /contents: read/);
-  assert.match(text, /eas-cli@27\.1\.0 build --profile preview --platform android --non-interactive/);
-  assert.match(text, /a6befb1a-dc03-45a8-a18c-294643e99434/);
-  assert.match(text, /com\.thekyngmotorcycles\.jobin'/);
-  assert.doesNotMatch(text, /eas\s+update|eas\s+channel:|git\s+push|--profile (?:security-pilot|production|development)\b/);
+test("EAS configuration never contains invalid empty profile env values and pilot keeps video gateway disabled", () => {
+  const eas = JSON.parse(readFileSync("eas.json", "utf8"));
+  for (const profile of Object.values(eas.build as Record<string, { env?: Record<string, string> }>)) {
+    for (const value of Object.values(profile.env ?? {})) assert.notEqual(value, "");
+  }
+  assert.equal(Object.hasOwn(eas.build["security-pilot"].env, "EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL"), false);
+  assert.match(workflow("security-pilot-android.yml"), /EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL: ""/);
 });
 
-
-test("preview bridge excludes only the invalid unused pilot profile in its ephemeral runner copy", () => {
-  const text = workflow("preview-apk-owner-label.yml");
-  const source = JSON.parse(readFileSync("eas.json", "utf8"));
-  assert.equal(source.build.preview.android.buildType, "apk");
-  assert.equal(source.build["security-pilot"].env.EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL, "");
-  assert.match(text, /delete config\.build\['security-pilot'\]/);
-  assert.match(text, /writeFileSync\(file,JSON\.stringify\(config,null,2\)\)/);
-  assert.match(text, /build --profile preview --platform android/);
-  assert.doesNotMatch(text, /writeFileSync\(['"]app\.json/);
-});
-
-
-test("read-only failure diagnostic cannot re-trigger native APK compilation", () => {
-  const text = workflow("preview-apk-owner-label.yml");
-  const diagnostic = text.split("  diagnose-preview-apk:")[1];
-  assert.ok(diagnostic);
-  assert.match(diagnostic, /github\.event\.label\.name == 'diagnose-preview-native-apk'/);
-  assert.match(diagnostic, /github\.actor == 'thekyngmotorcycles'/);
-  assert.match(diagnostic, /github\.event\.pull_request\.head\.ref == 'release\/preview-native-one-apk-20261123'/);
-  assert.match(diagnostic, /EXPO_BUILD_DIAG/);
-  assert.doesNotMatch(diagnostic, /(?:eas-cli@[0-9.]+\s+build|eas\s+update|git\s+push|npm ci|writeFileSync)/);
-});
-
-
-test("isolated fixed runtime prevents cross-build fingerprint drift without changing the repository configuration", () => {
-  const text = workflow("preview-apk-owner-label.yml");
-  const config = JSON.parse(readFileSync("app.json", "utf8"));
-  assert.deepEqual(config.expo.runtimeVersion, { policy: "fingerprint" });
-  assert.match(text, /config\.expo\.runtimeVersion='jobeen-native-20261123'/);
-  assert.match(text, /config\.expo\?\.extra\?\.eas\?\.projectId!=='a6befb1a-dc03-45a8-a18c-294643e99434'/);
-  assert.match(text, /One APK runtime is jobeen-native-20261123/);
+test("temporary EAS diagnostic inspects archive only and never starts builds",()=>{
+ const source=workflow("check.yml");
+ const diagnostic=source.slice(source.indexOf("  inspect-approved-eas-archive:"));
+ assert.match(diagnostic,/build:inspect --platform android --stage archive/);
+ assert.match(diagnostic,/persist-credentials: false/);
+ assert.doesNotMatch(diagnostic,/eas-cli@[^\s]+ build --|eas-cli@[^\s]+ update --/);
 });

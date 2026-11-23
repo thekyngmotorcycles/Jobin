@@ -11,6 +11,22 @@ on:
         required: true
         type: boolean
         default: false
+      platform:
+        description: Platforms included in the approved OTA
+        required: true
+        type: choice
+        options:
+          - android
+          - all
+        default: all
+      android_runtime:
+        description: Runtime matched by the approved Android APK
+        required: true
+        type: choice
+        options:
+          - fingerprint
+          - jobeen-native-20261123
+        default: fingerprint
 permissions:
   contents: read
 concurrency:
@@ -23,7 +39,9 @@ jobs:
       github.actor == 'thekyngmotorcycles' &&
       github.ref == 'refs/heads/development' &&
       inputs.confirm_ota == true &&
-      inputs.approved_commit == github.sha
+      inputs.approved_commit == github.sha &&
+      (inputs.android_runtime == 'fingerprint' ||
+       (inputs.android_runtime == 'jobeen-native-20261123' && inputs.platform == 'android'))
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -59,13 +77,47 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      - name: Match the November 23 Android APK runtime
+        if: inputs.android_runtime == 'jobeen-native-20261123'
+        env:
+          OTA_PLATFORM: ${{ inputs.platform }}
+        run: |
+          set -euo pipefail
+          test "$OTA_PLATFORM" = android
+          # EAS build 7a5e4641-d586-42d3-909f-3656371d6429, source 689c965b.
+          native_tree=$(git ls-tree -r --full-tree HEAD -- app.json app.config.js app.config.ts package.json package-lock.json modules android ios .fingerprintignore fingerprint.config.js fingerprint.config.ts | sha256sum | cut -d ' ' -f 1)
+          preview_profile=$(jq -cS '.build.preview' eas.json | sha256sum | cut -d ' ' -f 1)
+          test "$native_tree" = '7ad050624404797d3485144dc72f3ac52fa86647816a6a1bbead545b3ab522c4' &&
+          test "$preview_profile" = '03be88ff905c211430e60648ce0ef98968056ce7efd48b450be070ea82468cca' ||
+          { echo "::error::The source no longer matches this APK's native configuration"; exit 1; }
+          node <<'JS'
+          const { readFileSync, writeFileSync } = require('node:fs');
+          const { resolveRuntimeVersionAsync } = require('expo-updates/utils/build/resolveRuntimeVersionAsync');
+          const config = JSON.parse(readFileSync('app.json', 'utf8'));
+          const runtime = 'jobeen-native-20261123';
+          config.expo.android.runtimeVersion = runtime;
+          writeFileSync('app.json', JSON.stringify(config, null, 2) + '\n');
+          resolveRuntimeVersionAsync(process.cwd(), 'android', {}, { workflowOverride: 'managed' }).then(result => {
+            if (result.runtimeVersion !== runtime) throw Error('Android runtime mismatch');
+            console.log('Android OTA runtime: ' + result.runtimeVersion);
+          }).catch(error => {
+            console.error(error.message);
+            process.exitCode = 1;
+          });
+          JS
       - name: Publish only the explicitly approved OTA (no builds, Git pushes or channel changes)
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          OTA_PLATFORM: ${{ inputs.platform }}
         run: |
           test -n "$EXPO_TOKEN" || { echo "::error::Missing EXPO_TOKEN"; exit 1; }
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA" || { echo "::error::Commit mismatch"; exit 1; }
-          npx eas-cli@27.1.0 update --branch development --environment preview --platform all --message "Jobeen approved OTA $GITHUB_SHA" --non-interactive --json > "$RUNNER_TEMP/expo-update.json"
+          case "$OTA_PLATFORM" in
+            android|all) ;;
+            *) echo "::error::Invalid OTA platform"; exit 1 ;;
+          esac
+          npx eas-cli@27.1.0 update --branch development --environment preview --platform "$OTA_PLATFORM" --message "Jobeen approved OTA $GITHUB_SHA" --non-interactive --json > "$RUNNER_TEMP/expo-update.json"
+          jq -c 'if type == "array" then .[] | {id, group, runtimeVersion, platform} else empty end' "$RUNNER_TEMP/expo-update.json"
       - uses: actions/upload-artifact@v4
         with:
           name: jobeen-approved-development-ota
