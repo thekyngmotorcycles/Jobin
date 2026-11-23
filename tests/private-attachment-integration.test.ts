@@ -1,3 +1,5 @@
+import {spawnSync} from "node:child_process";
+import {existsSync} from "node:fs";
 import assert from "node:assert/strict";
 import {createCipheriv,createDecipheriv,randomBytes,randomUUID} from "node:crypto";
 import test from "node:test";
@@ -91,4 +93,21 @@ test("evidence never unlinks a provider original and stays assigned to its selec
  assert.doesNotThrow(()=>assertEvidenceSession(pending,a));
  assert.throws(()=>assertEvidenceSession(pending,a2));
  assert.throws(()=>assertEvidenceSession(pending,b));
+});
+
+test("EAS upload ignore rules keep every tracked source of the local private Android module",()=>{
+ // EAS applies ignore patterns even to tracked files. --no-index models that distinction.
+ const files=["modules/jobeen-private-files/package.json","modules/jobeen-private-files/expo-module.config.json",
+  "modules/jobeen-private-files/android/build.gradle",
+  "modules/jobeen-private-files/android/src/main/AndroidManifest.xml",
+  "modules/jobeen-private-files/android/src/main/java/expo/modules/jobeenprivatefiles/JobeenPrivateFilesModule.kt"];
+ for(const path of files){
+  assert.ok(existsSync(path),path+" must exist");
+  const result=spawnSync("git",["check-ignore","--no-index","-q","--",path]);
+  assert.equal(result.status,1,path+" must NOT be excluded from EAS upload");
+ }
+ for(const path of ["android/app/build.gradle","ios/Podfile",".env","node_modules/expo/package.json"]){
+  assert.equal(spawnSync("git",["check-ignore","--no-index","-q","--",path]).status,0,path+" must remain ignored");
+ }
+ assert.equal(existsSync(".easignore"),false,"If a separate EAS ignore file is added, update this test to verify the actual EAS archive.");
 });
