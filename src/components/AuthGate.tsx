@@ -138,14 +138,17 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }
 
   // Expo keeps the latest Android intent even when the React Native event is missed.
-  const androidLink=()=>Platform.OS==="android"?Linking.getLinkingURL():null;
+  function androidOAuthLink(){
+   const url=Platform.OS==="android"?Linking.getLinkingURL():null;
+   return isGoogleCallbackUrl(url)?url:null;
+  }
   const linkSubscription=Linking.addEventListener("url",({url})=>{
    if(isGoogleCallbackUrl(url))receivedLiveOAuthLink=true;
    void handleLinkOrCheck(url,{live:true});
   });
-  const cachedInitial=androidLink();
+  const cachedInitial=androidOAuthLink();
   if(cachedInitial)void handleLinkOrCheck(cachedInitial,{initial:true});
-  else void Linking.getInitialURL().then(url=>handleLinkOrCheck(androidLink()??(receivedLiveOAuthLink?null:url),{initial:true}))
+  else void Linking.getInitialURL().then(url=>handleLinkOrCheck(androidOAuthLink()??(receivedLiveOAuthLink?null:url),{initial:true}))
    .catch(()=>handleLinkOrCheck(null,{initial:true}));
 
   const exitSubscription=sessionExitFence.subscribe(()=>{
@@ -154,7 +157,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
    if(sessionExitFence.current()){setSessionScope(null);setNeedsUsername(false);setReady(false);}
    else setTimeout(()=>{if(active)void check();},0);
   });
-  const appSubscription = AppState.addEventListener("change", state => { if(state==="active")void handleLinkOrCheck(androidLink()); });
+  const appSubscription = AppState.addEventListener("change", state => { if(state==="active")void handleLinkOrCheck(androidOAuthLink()); });
   const subscription = supabase?.auth.onAuthStateChange((event,session) => {
    let nextSession:string|null=null;
    try{if(session)nextSession=sessionMarkerKey(session.user.id,session.access_token);}catch{/* Invalid metadata cannot select a private account. */}

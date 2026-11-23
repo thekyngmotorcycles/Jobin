@@ -197,6 +197,17 @@ test("Android recreation consumes Expo's cached callback ahead of an unrelated l
   } finally { gate.cleanup(); }
 });
 
+test("a cached navigation link cannot hide a valid React Native startup callback", async () => {
+  const app = fixture();
+  await app.createEntry().startGoogleAuth(async () => {});
+  const gate = app.mountGate(app.createEntry(), Promise.resolve("jobin://?code=startup-return"), "jobin://");
+  try {
+    await tick();
+    assert.deepEqual(app.exchangedCodes, ["startup-return"]);
+    assert.equal(gate.scope(), "google-owner");
+  } finally { gate.cleanup(); }
+});
+
 test("another entry removes the old persisted Google intent even if Email Login fails", async () => {
   const app = fixture();
   const entry = app.createEntry();
