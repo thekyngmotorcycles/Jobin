@@ -14,7 +14,6 @@ import type {JShopPlace,MapPoint} from "../../lib/jshop-location-core";
 import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
 import {jobeenModalTokens} from "../../theme/modals";
-import {JOBEEN_TYPE} from "../../theme/typography";
 
 export default function SaleLocationPicker(){
  const {target,session}=useLocalSearchParams<{target?:string;session?:string}>();

@@ -25,7 +25,7 @@ export function JShopIconButton({icon,label,onPress,selected=false,disabled=fals
 }){
  const {theme}=useTheme();const t=jobeenTokens(theme);
  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected,disabled}} disabled={disabled} onPress={onPress}
-  style={({pressed})=>({height:JOBEEN_CONTROL.touchTarget,width:JOBEEN_CONTROL.touchTarget,borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:t.line,backgroundColor:selected?t.cream:t.surface,alignItems:"center",justifyContent:"center",opacity:disabled?0.42:pressed?0.7:1})}>
+  style={({pressed})=>({height:JOBEEN_CONTROL.touchTarget,width:JOBEEN_CONTROL.touchTarget,borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:t.outline,backgroundColor:selected?t.cream:t.surface,alignItems:"center",justifyContent:"center",opacity:disabled?0.42:pressed?0.7:1})}>
   <Ionicons name={icon} size={JOBEEN_CONTROL.icon} color={t.ink}/>
  </Pressable>;
 }
@@ -55,7 +55,7 @@ export function JShopCategories({value,onChange}:{
  const {theme}=useTheme();const t=jobeenTokens(theme);
  return <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" contentContainerStyle={{gap:8,paddingVertical:2,alignItems:"center"}}>
   {JSHOP_CATEGORIES.map(category=><Pressable accessibilityRole="button" accessibilityState={{selected:value===category}} key={category} onPress={()=>onChange(category)}
-   style={({pressed})=>({minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:12,paddingVertical:8,borderRadius:22,borderWidth:1,borderColor:value===category?t.ink:t.line,backgroundColor:value===category?t.ink:t.surface,justifyContent:"center",opacity:pressed?0.72:1})}>
+   style={({pressed})=>({minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:12,paddingVertical:8,borderRadius:22,borderWidth:1,borderColor:value===category?t.ink:t.outline,backgroundColor:value===category?t.ink:t.surface,justifyContent:"center",opacity:pressed?0.72:1})}>
    <Text style={{fontSize:JOBEEN_TYPE.secondary,fontWeight:value===category?"700":"600",color:value===category?t.bg:t.ink}}>{category}</Text>
   </Pressable>)}
  </ScrollView>;

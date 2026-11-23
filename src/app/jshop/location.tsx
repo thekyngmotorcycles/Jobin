@@ -16,7 +16,6 @@ import type {JShopPlace,MapPoint} from "../../lib/jshop-location-core";
 import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
 import {jobeenModalTokens} from "../../theme/modals";
-import {JOBEEN_TYPE} from "../../theme/typography";
 type MapSize={width:number;height:number};
 export default function JShopLocationPicker(){
  const {theme}=useTheme(),t=jobeenTokens(theme),modal=jobeenModalTokens(theme),insets=useSafeAreaInsets();

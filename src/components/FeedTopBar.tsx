@@ -1,5 +1,5 @@
 import {useRef,useState} from "react";
-import {Modal,Pressable,Text,View,useWindowDimensions} from "react-native";
+import {Modal,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {FEED_TABS,type FeedTab} from "../lib/feed";
 import {WORK_FILTERS,type WorkFilter} from "./WorkCategoryFilters";
@@ -7,6 +7,9 @@ import {TopNavigationFade} from "./TopNavigationFade";
 import {JobeenFlashIcon} from "./JobeenFlashIcon";
 import {IconButton} from "./social-ui";
 import {useTheme} from "../state/ThemeProvider";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
+import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
+import {jobeenModalTokens} from "../theme/modals";
 import {jobeenTokens} from "../theme/jobeen";
 import {Ionicons} from "@expo/vector-icons";
 
@@ -16,13 +19,15 @@ export function FeedTopBar({tab,onTab,onLeading,leading,onSearch,category,onCate
  onSearch:()=>void;category:WorkFilter;onCategory:(category:WorkFilter)=>void;
 }){
  const {theme,colors}=useTheme();
- const jt=jobeenTokens(theme);
+ const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme);
  const insets=useSafeAreaInsets();
  const {width,height}=useWindowDimensions();
  const [opened,setOpened]=useState(false);
  const [anchor,setAnchor]=useState({top:insets.top+56,left:12});
  const activeRef=useRef<View>(null);
- const menuWidth=Math.min(236,Math.max(180,width-24));
+ const menuWidth=Math.max(0,Math.min(236,width-insets.left-insets.right-24));
+ const menuTop=Math.max(insets.top+4,Math.min(anchor.top,height-insets.bottom-56));
+ const menuLeft=Math.max(insets.left+12,Math.min(anchor.left,width-insets.right-menuWidth-12));
  const labelSize=width<350?12:13;
  const textColor=colors.navIcon;
  function openMenu(){
@@ -37,7 +42,7 @@ export function FeedTopBar({tab,onTab,onLeading,leading,onSearch,category,onCate
   <TopNavigationFade/>
   <View style={{flexDirection:"row",alignItems:"center",paddingHorizontal:4,gap:5}}>
    <Pressable accessibilityRole="button" accessibilityLabel={leading==="live"?"Abrir Lives":"Volver a Flashes"} onPress={onLeading}
-    style={({pressed})=>({width:48,height:44,flexShrink:0,alignItems:"center",justifyContent:"center",
+    style={({pressed})=>({width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,flexShrink:0,alignItems:"center",justifyContent:"center",
       backgroundColor:theme==="light"?jt.bar:jt.surface,borderRadius:13,borderWidth:1,borderColor:jt.line,
       shadowColor:jt.ink,shadowOpacity:0.11,shadowOffset:{width:0,height:3},shadowRadius:5,elevation:3,
       opacity:pressed?0.73:1})}>
@@ -52,7 +57,7 @@ export function FeedTopBar({tab,onTab,onLeading,leading,onSearch,category,onCate
      return <Pressable key={item} ref={selected?activeRef:undefined} accessibilityRole="tab"
       accessibilityLabel={selected?item+", filtrar "+category:item} accessibilityState={{selected,expanded:selected&&opened}}
       onPress={()=>{if(selected)openMenu();else{setOpened(false);onTab(item);}}}
-      style={({pressed})=>({height:44,minWidth:0,flexShrink:1,justifyContent:"center",alignItems:"center",
+      style={({pressed})=>({height:JOBEEN_CONTROL.touchTarget,minWidth:0,flexShrink:1,justifyContent:"center",alignItems:"center",
        paddingHorizontal:width<350?2:5,borderRadius:11,backgroundColor:selected?(theme==="light"?jt.cream:colors.line):colors.transparent,
        borderBottomWidth:selected?2:0,borderBottomColor:theme==="light"?jt.yellow:textColor,opacity:pressed?0.75:1})}>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:selected?1:0,flexShrink:1}}>
@@ -70,18 +75,20 @@ export function FeedTopBar({tab,onTab,onLeading,leading,onSearch,category,onCate
   <Modal visible={opened} transparent animationType="fade" statusBarTranslucent onRequestClose={()=>setOpened(false)}>
    <View style={{flex:1}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar filtros" onPress={()=>setOpened(false)} style={{position:"absolute",top:0,bottom:0,left:0,right:0}}/>
-    <View accessibilityViewIsModal style={{position:"absolute",top:anchor.top,left:anchor.left,width:menuWidth,
-     backgroundColor:theme==="light"?jt.bar:jt.surface,borderWidth:1,borderColor:jt.line,
-     borderRadius:18,padding:6,shadowColor:jt.ink,shadowOpacity:0.16,shadowOffset:{width:0,height:5},
+    <View accessibilityViewIsModal style={{position:"absolute",top:menuTop,left:menuLeft,width:menuWidth,maxHeight:Math.max(0,height-insets.bottom-8-menuTop),
+     backgroundColor:modal.surface,borderWidth:1,borderColor:modal.border,
+     borderRadius:modal.radius.popover,padding:6,shadowColor:jt.ink,shadowOpacity:0.16,shadowOffset:{width:0,height:5},
      shadowRadius:12,elevation:8}}>
+     <ScrollView style={{flexShrink:1}} keyboardShouldPersistTaps="handled">
      {WORK_FILTERS.map(filter=><Pressable key={filter} accessibilityRole="button" accessibilityState={{selected:category===filter}}
       accessibilityLabel={"Filtrar "+tab+" por "+filter}
       onPress={()=>{onCategory(filter);setOpened(false);}}
-      style={({pressed})=>({minHeight:43,paddingHorizontal:12,borderRadius:12,flexDirection:"row",alignItems:"center",
+      style={({pressed})=>({minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:12,paddingVertical:8,borderRadius:JOBEEN_CONTROL.buttonRadius,flexDirection:"row",alignItems:"center",
        justifyContent:"space-between",backgroundColor:category===filter?jt.cream:pressed?jt.line:colors.transparent})}>
-      <Text numberOfLines={1} style={{fontSize:13,fontWeight:category===filter?"700":"500",color:jt.ink}}>{filter}</Text>
+      <Text style={{flex:1,fontSize:JOBEEN_TYPE.body,lineHeight:JOBEEN_LINE_HEIGHT.body,fontWeight:category===filter?"700":"500",color:modal.text}}>{filter}</Text>
       {category===filter&&<Ionicons name="checkmark" color={jt.ink} size={17}/>}
      </Pressable>)}
+     </ScrollView>
     </View>
    </View>
   </Modal>

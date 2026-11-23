@@ -45,7 +45,7 @@ export function JobeenNoticeDialog({visible,title,description,tone="neutral",con
      <Pressable accessibilityRole="button" accessibilityLabel={confirmLabel} disabled={busy} onPress={onConfirm}
       style={{flexGrow:1,flexBasis:fontScale>1.3||width<280?"auto":0,minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:8,paddingVertical:10,borderRadius:t.radius.control,alignItems:"center",justifyContent:"center",
        backgroundColor:destructive?t.background:t.accent,opacity:busy?0.5:1}}>
-      <Text style={{fontSize:JOBEEN_TYPE.action,fontWeight:"800",
+      <Text style={{fontSize:JOBEEN_TYPE.action,textAlign:"center",fontWeight:"800",
        color:destructive?t.destructiveOnColor:t.onAccent}}>{busy?"Procesando...":confirmLabel}</Text>
      </Pressable>
     </View>
