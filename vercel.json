@@ -4,7 +4,8 @@
     "deploymentEnabled": {
       "integration/security-pilot-native-20261122": false,
       "test/sec06-hosted-isolation-harness-20261122": false,
-      "governance/security-foundation-20261122": false
+      "governance/security-foundation-20261122": false,
+      "development": false
     }
   }
 }
