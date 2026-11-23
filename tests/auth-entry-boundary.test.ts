@@ -31,3 +31,20 @@ test("Pending OAuth blocks other entry until cancelled; in-flight exchange canno
  });
  assert.equal(result,1);assert.equal(await boundary.exclusive(async()=>true),true);
 });
+
+test("Google callback intent can be restored once after Android process recreation, within TTL",async()=>{
+ let now=1000;
+ const boundary=createAuthEntryBoundary(()=>now);
+ assert.equal(boundary.restorePendingGoogle(now+300001),false);
+ assert.equal(boundary.restorePendingGoogle(now-1),false);
+ assert.equal(boundary.restorePendingGoogle(now+120000),true);
+ assert.equal(boundary.restorePendingGoogle(now+120000),false);
+ let exchanges=0;
+ assert.equal(await boundary.exchange("jobin://?code=fixture",async()=>++exchanges),1);
+ assert.equal(await boundary.exchange("jobin://?code=fixture",async()=>++exchanges),null);
+ const expired=createAuthEntryBoundary(()=>now);
+ assert.equal(expired.restorePendingGoogle(now+1000),true);
+ now+=1001;
+ assert.equal(await expired.exchange("jobin://?code=fixture",async()=>++exchanges),null);
+ assert.equal(exchanges,1);
+});

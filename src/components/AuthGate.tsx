@@ -11,6 +11,8 @@ import {parseGoogleCallback} from "../lib/auth-entry-boundary";
 import { sessionMarkerKey,sessionLifetimeState } from "../lib/session-lifetime";
 
 const AuthNavigationContext=createContext<AuthNavigationPhase>("checking");
+const OAuthErrorContext=createContext<string>("");
+export function useOAuthError(){return useContext(OAuthErrorContext);}
 export function useAuthNavigationPhase(){return useContext(AuthNavigationContext);}
 let usernameCompleted: (()=>void)|null=null;
 export function completeUsernameOnboarding(){usernameCompleted?.();}
@@ -49,6 +51,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
  const [sessionScope,setSessionScope]=useState<string|null>(null);
  const [handlingOAuth, setHandlingOAuth] = useState(true);
  const [needsUsername,setNeedsUsername]=useState(false);
+ const [oauthError,setOAuthError]=useState("");
  useEffect(() => {
   let active = true;
   let revision=0;
@@ -110,7 +113,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
    if(oauthInFlight)return true;
    oauthInFlight=true;revision++;
    try{
-    await exchangePendingGoogle(url,async code=>{
+    setOAuthError("");
+    const exchanged=await exchangePendingGoogle(url,async code=>{
      if(!active||!supabase)throw Error("Acceso no disponible.");
      setHandlingOAuth(true);
      const {data,error}=await supabase.auth.exchangeCodeForSession(code);
@@ -118,7 +122,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
      await startJobinSession(data.session.user.id,data.session.access_token);
      return true;
     });
-   }catch{/* Unsolicited or failed callbacks must not clear another signed-in session. */}
+    if(!exchanged)setOAuthError("No se pudo completar el acceso con Google. Vuelve a intentarlo.");
+   }catch{/* Do not disclose session data or OAuth codes. */setOAuthError("Google no pudo completar la sesión. Vuelve a intentarlo.");}
    finally{oauthInFlight=false;if(active){setHandlingOAuth(false);void check();}}
    return true;
   }
@@ -156,5 +161,5 @@ export function AuthGate({ children }: { children: ReactNode }) {
  }, []);
  // Protected routes are absent from the navigator until authorized.
  const phase=classifyAuthNavigation(ready,handlingOAuth,sessionScope,needsUsername);
- return <AuthNavigationContext.Provider value={phase}><Fragment key={sessionScope??"signed-out"}>{children}</Fragment></AuthNavigationContext.Provider>;
+ return <AuthNavigationContext.Provider value={phase}><OAuthErrorContext.Provider value={oauthError}><Fragment key={sessionScope??"signed-out"}>{children}</Fragment></OAuthErrorContext.Provider></AuthNavigationContext.Provider>;
 }
