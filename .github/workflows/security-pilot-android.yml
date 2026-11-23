@@ -35,7 +35,7 @@ jobs:
       - name: Checkout the exact approved SHA without write credentials
         uses: actions/checkout@v4
         with:
-          ref: \${{ github.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Install Node 22
         uses: actions/setup-node@v4
@@ -45,7 +45,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Reject incorrect project, key and native identity BEFORE contacting EAS
         env:
-          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: \${{ secrets.JOBEEN_SECURITY_PILOT_PUBLISHABLE_KEY }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.JOBEEN_SECURITY_PILOT_PUBLISHABLE_KEY }}
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
@@ -54,8 +54,8 @@ jobs:
           node scripts/check-security-pilot-config.mjs "$RUNNER_TEMP/jobeen-security-pilot-expo-config.json"
       - name: Build isolated Android pilot only (approved operation)
         env:
-          EXPO_TOKEN: \${{ secrets.EXPO_TOKEN }}
-          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: \${{ secrets.JOBEEN_SECURITY_PILOT_PUBLISHABLE_KEY }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.JOBEEN_SECURITY_PILOT_PUBLISHABLE_KEY }}
         run: |
           set -euo pipefail
           test -n "$EXPO_TOKEN" || { echo "::error::Missing Expo token"; exit 1; }
@@ -66,5 +66,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jobeen-security-pilot-build
-          path: \${{ runner.temp }}/jobeen-security-pilot-build.json
+          path: ${{ runner.temp }}/jobeen-security-pilot-build.json
           if-no-files-found: error
