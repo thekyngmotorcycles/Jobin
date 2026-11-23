@@ -18,7 +18,7 @@ Referencias: https://docs.expo.dev/build-reference/variants/ y https://docs.expo
 - `security-pilot` usa el proyecto EAS independiente `de0b71bb-0646-48fa-a875-6b9662c3c2c7`, el backend `mkvzkvkmrribcaecvphq.supabase.co`, el paquete Android `com.thekyngmotorcycles.jobin.securitypilot`, y OTA deshabilitado.
 - Antes de `eas build`, `app.config.js` necesita la clave `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en el proceso que evalúa la configuración; EAS remoto `preview` por sí solo podría no estar disponible durante la evaluación inicial. El workflow manual `security-pilot-android.yml` exige `JOBEEN_SECURITY_PILOT_PUBLISHABLE_KEY` como secreto de GitHub para inyectar exclusivamente esa clave publicable al proceso; el proyecto EAS separado debe mantener la misma clave en `preview`. No copiar ni imprimir valores en documentación, tests o logs.
 - El workflow requiere propietario, SHA exacto y confirmación; no se activa con push/PR. El workflow ya existe en `main` por PR #76, pero **solo es ejecutable sobre la ref `development`** con SHA exacto y confirmación. No seleccionar `main`; no ejecutar sin aprobación adicional.
-- Sin gateway aprobado se fija `EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL` en cadena vacía en `security-pilot.env` para impedir que una variable remota antigua active cargas; SEC-03 seguirá rechazando cargas. Google OAuth, recuperación y AndroidKeyStore requieren pruebas reales específicas, no una nueva auditoría general.
+- Sin gateway aprobado se fija `EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL` en cadena vacía en `eas.json` (perfil `security-pilot`) para impedir que una variable remota antigua active cargas; SEC-03 seguirá rechazando cargas. Google OAuth, recuperación y AndroidKeyStore requieren pruebas reales específicas, no una nueva auditoría general.
 
 La variable `EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL` está fijada como cadena vacía en el perfil `security-pilot` y se comprueba antes de EAS; esto impide que un valor existente en el entorno remoto `preview` habilite el gateway privado no autorizado.
 
@@ -30,3 +30,12 @@ La variable `EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL` está fijada como cadena vac�
 4. Después de estas verificaciones, solicitar autorización **independiente** para una sola compilación del SHA aprobado de `development`. En Actions seleccionar `Jobeen Security Pilot APK` y **`development`**, ingresar el SHA exacto y marcar la confirmación solo cuando el propietario apruebe ejecutar el build. No iniciar el workflow para meramente inspeccionar el entorno.
 
 La integración de Google OAuth real puede probarse en una fase posterior usando `jobeen-security-pilot://`; las rutas de recuperación y medios privados no se declaran validadas. Los primeros ensayos pueden limitarse al login ficticio por correo y al aislamiento/KeyStore siempre que sean operables y las funciones no validadas permanezcan deshabilitadas.
+
+## Verificación mediante conexiones (2026-11-22)
+
+- **Supabase:** el proyecto de pruebas `mkvzkvkmrribcaecvphq` está `ACTIVE_HEALTHY`, con clave moderna `sb_publishable_` habilitada. No se imprimió ni almacenó su valor en GitHub.
+- **GitHub:** el workflow manual de `security-pilot` está en `main` y en `development`, e impide iniciar compilación sin identidad de propietario, SHA exacto y confirmación. PR #77 aprobó `validate` y `database` ([CI](https://github.com/thekyngmotorcycles/Jobin/actions/runs/45104180657)). La conexión no permite leer los secretos del repositorio ni ejecutar directamente `workflow_dispatch`.
+- **Vercel:** el proyecto conectado `jobin` no presenta variables de entorno de proyecto; esto **no es** una prueba de que falten en Expo. EAS Build obtiene sus variables de EAS y del entorno del job de GitHub, no de Vercel. No crear variables duplicadas en Vercel.
+- **Expo:** no existe conector directo para leer el proyecto EAS, su entorno `preview`, permisos del token o firma Android. Quedan **sin verificar** la presencia e igualdad real de `JOBEEN_SECURITY_PILOT_PUBLISHABLE_KEY` (GitHub) y `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (EAS) respecto de la clave del proyecto Supabase, así como acceso del token y la firma.
+
+El siguiente paso requiere una validación en Expo y GitHub Settings que estas conexiones no pueden simular. Se prohíbe declarar el piloto listo para compilación o publicar usando solo los controles de CI.
