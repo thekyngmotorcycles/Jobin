@@ -16,7 +16,7 @@ test("no EAS OTA publisher automatically runs on push and every publisher checks
     const text = workflow(name);
     if (name === "approved-google-login-ota.yml") {
       assert.match(text, /^on:\s*\n\s+push:/m);
-      assert.match(text, /APPROVED=32b4e28202bcdeb0a2d2dba3808f7c24414b1a3a/);
+      assert.match(text, /APPROVED=64168641b8918825e2e7269533e84706888ab791/);
       assert.match(text, /git diff --name-only "\$APPROVED" HEAD/);
       assert.match(text, /diff -u "\$RUNNER_TEMP\/expected.txt" "\$RUNNER_TEMP\/changed.txt"/);
       assert.match(text, /--platform android/);
