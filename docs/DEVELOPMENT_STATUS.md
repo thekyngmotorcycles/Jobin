@@ -2,6 +2,8 @@
 
 ## Acceso Google en Android (2026-11-23)
 
+El PR #89 se fusionó en `development` como `3e9dac8e`. La entrega autorizada para la APK actual requiere limitar la OTA a Android. La opción del workflow manual conserva la comprobación de propietario y SHA exacto.
+
 **PENDIENTE DE INTEGRACIÓN.** El fallo persistió tras #87 y #88. Dos regresiones reproducidas en `0be272eb` muestran que `AuthGate` podía perder el retorno que Expo conserva al reanudar Android y volver a mostrar Login al recibir un enlace de arranque normal mientras el canje PKCE todavía tenía la entrada reservada.
 
 La corrección consume el retorno de Expo al arrancar y reanudar, distingue el callback de los enlaces de navegación y protege el canje hasta su finalización. El intento persistente se consume una sola vez y un acceso por correo invalida cualquier intento Google abandonado. Las pruebas usan el SDK fijado de Supabase con el almacén seguro simulado, verifican el desafío PKCE y comprueban que el retorno tardío no sustituye la cuenta de correo. Pendiente confirmar el retorno con Google real en Android después de la integración y una entrega autorizada.
