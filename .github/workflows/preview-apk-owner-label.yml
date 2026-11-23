@@ -119,38 +119,61 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
-      - name: Read one failed EAS build and redact log messages
+      - name: Inspect existing APK only (no EAS build)
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --max-time 100 --output "$RUNNER_TEMP/existing.apk" 'https://expo.dev/artifacts/eas/xq2sf6sA-vKFESVawyBMwSpLKW07-bSJ090KkgkhenQ.apk'
+          python3 - <<'PY'
+          import os, struct, zipfile, hashlib, re
+          p=os.path.join(os.environ["RUNNER_TEMP"],"existing.apk")
+          print("APK_SHA256", hashlib.file_digest(open(p,"rb"),"sha256").hexdigest())
+          target="Lexpo/modules/jobeenprivatefiles/JobeenPrivateFilesModule;"
+          found=False
+          provider=False
+          names=set()
+          with zipfile.ZipFile(p) as z:
+              for name in z.namelist():
+                  if not re.fullmatch(r"classes(?:[0-9]+)?\.dex",name): continue
+                  b=z.read(name)
+                  u=lambda p: struct.unpack_from("<I",b,p)[0]
+                  sc,so,tc,to=u(56),u(60),u(64),u(68)
+                  cc,co=u(96),u(100)
+                  def string(idx):
+                      p=u(so+4*idx)
+                      while b[p]&128: p+=1
+                      p+=1
+                      return b[p:b.index(0,p)].decode("utf-8",errors="replace")
+                  for j in range(cc):
+                      cls=string(u(to+4*u(co+j*32)))
+                      if cls==target: found=True
+                      if "ExpoModulesPackageList" in cls or "ExpoModulesProvider" in cls: provider=True
+                  for token in [b"JobeenPrivateFiles",b"readPicked",b"discardImagePickerCopy"]:
+                      if token in b: names.add(token.decode())
+          print("APK_PRIVATE_CLASS_DEFINED",found)
+          print("APK_EXPO_PROVIDER_DEFINED",provider)
+          print("APK_PRIVATE_SYMBOLS",sorted(names))
+          PY
+      - name: Read relevant existing EAS build log evidence
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           node --input-type=module <<'JS'
-          const appId='a6befb1a-dc03-45a8-a18c-294643e99434';
-          const buildId='795c16c9-ee0f-4844-94d1-5f851f29448f';
-          const token=process.env.EXPO_TOKEN;
-          if(!token)throw Error('EXPO_TOKEN missing');
-          const resp=await fetch('https://api.expo.dev/graphql',{
-            method:'POST',
-            headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
-            body:JSON.stringify({query:'query FailedPreviewBuild($appId: String!) { app { byId(appId: $appId) { builds(offset: 0, limit: 10) { id status logFiles error { message errorCode } } } } }',variables:{appId}}),
-            signal:AbortSignal.timeout(20000),
-          });
-          if(!resp.ok)throw Error('Expo build status HTTP '+resp.status);
-          const payload=await resp.json();
-          if(payload.errors?.length)throw Error('Expo project query refused (no sensitive details printed)');
-          const build=payload.data?.app?.byId?.builds?.find(x=>x.id===buildId);
-          if(!build)throw Error('Failed Expo build ID not found among latest 10');
-          const redact=s=>String(s??'').replace(/sb_(?:publishable|secret)_[A-Za-z0-9_-]+/g,'[REDACTED]').replace(/eyJ[A-Za-z0-9._-]+/g,'[REDACTED]').replace(/(pk|sk)[.][A-Za-z0-9._-]+/g,'[REDACTED]');
-          console.log('EXPO_BUILD_DIAG',JSON.stringify({id:build.id,status:build.status,code:build.error?.errorCode??null,message:redact(build.error?.message).slice(0,400)}));
-          for(const url of (build.logFiles??[]).slice(-2)){
+          const appId='a6befb1a-dc03-45a8-a18c-294643e99434', buildId='7a5e4641-d586-42d3-909f-3656371d6429';
+          const r=await fetch('https://api.expo.dev/graphql',{method:'POST',headers:{Authorization:'Bearer '+process.env.EXPO_TOKEN,'Content-Type':'application/json'},body:JSON.stringify({query:'query ExistingBuild($appId: String!) { app { byId(appId: $appId) { builds(offset: 0, limit: 10) { id status logFiles } } } }',variables:{appId}}),signal:AbortSignal.timeout(20000)});
+          if(!r.ok)throw Error('Expo status unavailable');
+          const b=(await r.json()).data?.app?.byId?.builds?.find(x=>x.id===buildId);
+          if(!b)throw Error('Build unavailable');
+          console.log('EXPO_BUILD_STATUS',b.status);
+          let logs=0, mentions=0, compiles=0;
+          for(const url of b.logFiles??[]){
             try{
-              const response=await fetch(url,{signal:AbortSignal.timeout(15000)});
-              if(!response.ok)continue;
-              const rows=(await response.text()).split(String.fromCharCode(10)).filter(Boolean);
-              const lines=rows.flatMap(t=>{try{const o=JSON.parse(t);return typeof o.msg==='string'?[{phase:o.phase,msg:o.msg}]:[]}catch{return []}});
-              const relevant=lines.filter(o=>/(?:error|failed|failure|what went wrong|could not|exception|missing|compile|gradle|cannot|kotlin|CMake|resource linking)/i.test(o.msg)).slice(-22);
-              console.log('EXPO_BUILD_LOG_LINES',JSON.stringify(relevant.map(o=>({phase:o.phase,msg:redact(o.msg).slice(0,420)}))));
-              const updates=lines.filter(o=>o.phase==='CONFIGURE_EXPO_UPDATES').slice(-14);
-              console.log('EXPO_UPDATES_DETAIL',JSON.stringify(updates.map(o=>({msg:redact(o.msg).slice(-1900)}))));
-            }catch{console.log('One Expo log file was unavailable; no credentials exposed');}
+              const res=await fetch(url,{signal:AbortSignal.timeout(15000)});if(!res.ok)continue;
+              logs++;
+              for(const line of (await res.text()).split('\n')){
+                if(/jobeen-private-files|jobeenprivatefiles|JobeenPrivateFilesModule/i.test(line))mentions++;
+                if(/:jobeen-private-files:compile.*Kotlin/i.test(line))compiles++;
+              }
+            }catch{}
           }
+          console.log('EXPO_LOG_EVIDENCE',JSON.stringify({logs,mentions,compiles}));
           JS
