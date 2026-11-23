@@ -113,11 +113,3 @@ test("EAS configuration never contains invalid empty profile env values and pilo
   assert.equal(Object.hasOwn(eas.build["security-pilot"].env, "EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL"), false);
   assert.match(workflow("security-pilot-android.yml"), /EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL: ""/);
 });
-
-test("temporary EAS diagnostic inspects archive only and never starts builds",()=>{
- const source=workflow("check.yml");
- const diagnostic=source.slice(source.indexOf("  inspect-approved-eas-archive:"));
- assert.match(diagnostic,/build:inspect --platform android --stage archive/);
- assert.match(diagnostic,/persist-credentials: false/);
- assert.doesNotMatch(diagnostic,/eas-cli@[^\s]+ build --|eas-cli@[^\s]+ update --/);
-});
