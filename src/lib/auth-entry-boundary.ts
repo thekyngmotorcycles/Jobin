@@ -3,8 +3,11 @@ export const authRedirectScheme = process.env.EXPO_PUBLIC_JOBEEN_SECURITY_PILOT 
 
 function callbackSuffix(url: string | null, scheme: string) {
   if (!url || url.length > 4096 || (scheme !== "jobin" && scheme !== "jobeen-security-pilot")) return null;
-  const prefix = scheme + "://";
-  return url.startsWith(prefix) ? url.slice(prefix.length) : null;
+  const prefix = scheme + ":";
+  if (!url.startsWith(prefix)) return null;
+  // GoTrue's net/url serialization omits // for an empty authority and path.
+  const suffix = url.slice(prefix.length);
+  return suffix.startsWith("//") ? suffix.slice(2) : suffix;
 }
 
 export function isGoogleCallbackUrl(url: string | null, scheme = authRedirectScheme) {
