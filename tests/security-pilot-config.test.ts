@@ -65,3 +65,17 @@ test("Client pilot mode cannot fall back to the live backend",()=>{
  assert.ok(source.includes('u.hostname==="mkvzkvkmrribcaecvphq.supabase.co"'));
  assert.ok(readFileSync("app.config.js","utf8").includes('parsed.hostname!=="mkvzkvkmrribcaecvphq.supabase.co"'));
 });
+
+test("Native System mode uses automatic OS appearance and the SDK 54 compatible SystemUI module",()=>{
+ assert.equal(base.userInterfaceStyle,"automatic");
+ assert.ok(base.plugins.includes("expo-system-ui"));
+ const pkg=JSON.parse(readFileSync("package.json","utf8"));
+ const lock=JSON.parse(readFileSync("package-lock.json","utf8"));
+ assert.equal(pkg.dependencies["expo-system-ui"],"~6.0.9");
+ assert.equal(lock.packages[""].dependencies["expo-system-ui"],"~6.0.9");
+ assert.equal(lock.packages["node_modules/expo-system-ui"].version,"6.0.9");
+ assert.equal(base.android.package,"com.thekyngmotorcycles.jobin");
+ assert.equal(base.runtimeVersion.policy,"fingerprint");
+ assert.ok(readFileSync("scripts/check-native-autolinking.mjs","utf8").includes('"expo-system-ui"'));
+ assert.ok(!Object.keys(pkg.dependencies).some(name=>/mwdat|meta-wearable/i.test(name)));
+});

@@ -9,6 +9,9 @@ Investigación actualizada: 2026-11-22. Estado: **compatibilidad probable alta; 
 - SDK y muestras Android: https://github.com/meta/meta-wearables-dat-android y https://github.com/meta/meta-wearables-dat-android/tree/main/samples/CameraAccess
 - Documentación y compatibilidad: https://developers.meta.com/wearables/faq/ y https://developers.meta.com/wearables/device-access-toolkit/
 
+## Decisión del propietario — 2026-11-23
+Pospuesto expresamente para una etapa futura. Excluir SDK DAT, dependencias, permisos y puente Meta de la siguiente APK consolidada; no condicionar la corrección de fotografías ni Royal Hive a Meta. Retomar la viabilidad cuando el propietario autorice el trabajo Live.
+
 ## Prioridad y alcance
 
 **Función de producto aprobada para evaluación de viabilidad; no compromiso de la próxima APK.** No introducir SDK ni permisos nativos especulativos mientras están pendientes SEC-02/SEC-03/SEC-05 y el servicio de directos de Jobeen. Evitar una APK por cada función: incluir el puente nativo en el binario consolidado **solo si** Codex valida previamente que es compatible, está justificado por el alcance del Live inicial, las autorizaciones están disponibles y el propietario aprueba ampliar el alcance de esa compilación.
