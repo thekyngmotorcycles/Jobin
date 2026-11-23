@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 const script = new URL("../scripts/check-security-pilot-build-readiness.mjs", import.meta.url);
@@ -45,6 +46,12 @@ test("pilot build preflight rejects a normal backend, wrong Expo project or miss
   ]) {
     assert.notEqual(check(diff).status, 0);
   }
+});
+
+test("pilot profile explicitly disables even a previously configured remote gateway", () => {
+  const eas = JSON.parse(readFileSync(new URL("../eas.json", import.meta.url), "utf8"));
+  assert.equal(eas.build["security-pilot"].env.EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL, "");
+  assert.equal(check().status, 0);
 });
 
 test("pilot build preflight refuses an unverified video gateway", () => {
