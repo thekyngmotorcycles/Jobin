@@ -43,7 +43,8 @@
         "JOBEEN_SECURITY_PILOT": "1",
         "EXPO_PUBLIC_JOBEEN_SECURITY_PILOT": "1",
         "EXPO_PUBLIC_SUPABASE_URL": "https://mkvzkvkmrribcaecvphq.supabase.co",
-        "JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID": "de0b71bb-0646-48fa-a875-6b9662c3c2c7"
+        "JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID": "de0b71bb-0646-48fa-a875-6b9662c3c2c7",
+        "EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL": ""
       }
     }
   },

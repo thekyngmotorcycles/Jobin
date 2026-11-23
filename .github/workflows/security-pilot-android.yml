@@ -1,0 +1,70 @@
+name: Jobeen Security Pilot APK (manual approval only)
+on:
+  workflow_dispatch:
+    inputs:
+      approved_commit:
+        description: Exact development commit approved by the owner for one pilot APK
+        required: true
+        type: string
+      confirm_pilot_build:
+        description: I explicitly authorize an EAS Android build of the isolated security pilot
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: jobeen-security-pilot-apk
+  cancel-in-progress: false
+jobs:
+  security-pilot-apk:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.actor == 'thekyngmotorcycles' &&
+      github.ref == 'refs/heads/development' &&
+      inputs.confirm_pilot_build == true &&
+      inputs.approved_commit == github.sha
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      JOBEEN_SECURITY_PILOT: "1"
+      EXPO_PUBLIC_JOBEEN_SECURITY_PILOT: "1"
+      EXPO_PUBLIC_SUPABASE_URL: "https://mkvzkvkmrribcaecvphq.supabase.co"
+      JOBEEN_SECURITY_PILOT_EAS_PROJECT_ID: "de0b71bb-0646-48fa-a875-6b9662c3c2c7"
+    steps:
+      - name: Checkout the exact approved SHA without write credentials
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Install Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Reject incorrect project, key and native identity BEFORE contacting EAS
+        env:
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.JOBEEN_SECURITY_PILOT_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          node scripts/check-security-pilot-build-readiness.mjs
+          npx expo config --type public --json > "$RUNNER_TEMP/jobeen-security-pilot-expo-config.json"
+          node scripts/check-security-pilot-config.mjs "$RUNNER_TEMP/jobeen-security-pilot-expo-config.json"
+      - name: Build isolated Android pilot only (approved operation)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.JOBEEN_SECURITY_PILOT_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$EXPO_TOKEN" || { echo "::error::Missing Expo token"; exit 1; }
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          node scripts/check-security-pilot-build-readiness.mjs
+          npx eas-cli@27.1.0 build --profile security-pilot --platform android --non-interactive --wait --json > "$RUNNER_TEMP/jobeen-security-pilot-build.json"
+      - name: Archive non-secret build metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: jobeen-security-pilot-build
+          path: ${{ runner.temp }}/jobeen-security-pilot-build.json
+          if-no-files-found: error
