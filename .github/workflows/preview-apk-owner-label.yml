@@ -72,6 +72,20 @@ jobs:
           writeFileSync(file,JSON.stringify(config,null,2));
           console.log('Using original preview profile; isolated pilot profile removed from runner copy only.');
           JS
+      - name: Use a unique runtime version for this native APK in runner only
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const file='app.json', config=JSON.parse(readFileSync(file,'utf8'));
+          if(config.expo?.runtimeVersion?.policy!=='fingerprint' ||
+             config.expo?.extra?.eas?.projectId!=='a6befb1a-dc03-45a8-a18c-294643e99434')
+            throw Error('Unexpected Expo app identity or runtime policy');
+          // Local and builder fingerprints diverge after native prebuild/autolinking.
+          // Use an isolated runtime string so older OTA bundles cannot target this APK.
+          config.expo.runtimeVersion='jobeen-native-20261123';
+          writeFileSync(file,JSON.stringify(config,null,2));
+          console.log('One APK runtime is jobeen-native-20261123; OTA requires matching runtime.');
+          JS
       - name: Build original Jobeen preview APK (only after owner labeled)
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
