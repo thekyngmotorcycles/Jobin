@@ -84,3 +84,13 @@ test("security pilot APK is a distinct manual-only path, not an implicit product
   assert.match(text, /secrets\.JOBEEN_SECURITY_PILOT_PUBLISHABLE_KEY/);
   assert.doesNotMatch(text, /eas\s+update|eas\s+channel:(?:create|edit)|git\s+push|expo:configure|--profile (?:preview|production|development)\b/);
 });
+
+
+test("EAS configuration never contains invalid empty profile env values and pilot keeps video gateway disabled", () => {
+  const eas = JSON.parse(readFileSync("eas.json", "utf8"));
+  for (const profile of Object.values(eas.build as Record<string, { env?: Record<string, string> }>)) {
+    for (const value of Object.values(profile.env ?? {})) assert.notEqual(value, "");
+  }
+  assert.equal(Object.hasOwn(eas.build["security-pilot"].env, "EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL"), false);
+  assert.match(workflow("security-pilot-android.yml"), /EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL: ""/);
+});
