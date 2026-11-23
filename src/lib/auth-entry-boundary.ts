@@ -47,6 +47,11 @@ export function createAuthEntryBoundary(now=Date.now){
    const lease=active;lease.kind="google-exchange";
    try{return await action(code);}finally{if(active===lease)active=null;}
   },
+  restorePendingGoogle(deadline:number){
+   if(active||!Number.isFinite(deadline)||deadline<=now()||deadline>now()+TTL)return false;
+   active={kind:"google-pending",deadline};
+   return true;
+  },
   cancelPendingGoogle(){
    if(active?.kind==="google-pending")active=null;
   }
