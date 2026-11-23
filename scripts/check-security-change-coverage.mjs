@@ -12,7 +12,7 @@ const rules = [
   {
     name: "workflow",
     source: [/^\.github\/workflows\/.*\.ya?ml$/i, /^scripts\/check-security-change-coverage\.mjs$/i],
-    evidence: [/^tests\/(?:security-change-coverage|workflow|ci-security).*\.test\.ts$/i],
+    evidence: [/^tests\/(?:security-change-coverage|release-approval-workflows|workflow|ci-security).*\.test\.ts$/i],
   },
   {
     name: "expo-config",
