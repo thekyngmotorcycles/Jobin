@@ -11,9 +11,19 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Require regression coverage for security-sensitive PR changes
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/check-security-change-coverage.mjs --base "$BASE_SHA" --head "$HEAD_SHA"
       - name: Verify SecureStore lock integrity against npm registry
         run: |
           test "$(npm view expo-secure-store@15.0.8 dist.integrity --registry=https://registry.npmjs.org)" = "$(node -p "require('./package-lock.json').packages['node_modules/expo-secure-store'].integrity")"
