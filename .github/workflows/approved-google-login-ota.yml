@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APPROVED=64168641b8918825e2e7269533e84706888ab791
+          APPROVED=470cafe5c6eaf3bda9e0f9b3b965ba9e4a53519b
           test "$GITHUB_REF" = "refs/heads/development"
           git merge-base --is-ancestor "$APPROVED" HEAD
           test "$(git rev-parse "$APPROVED:src/lib/auth-entry.ts")" = "$(git rev-parse "HEAD:src/lib/auth-entry.ts")"
@@ -57,7 +57,7 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           test -n "$EXPO_TOKEN" || { echo "::error::Missing EXPO_TOKEN"; exit 1; }
-          npx eas-cli@27.1.0 update --branch development --environment preview --platform android --message "Google OAuth Android callback - approved 64168641" --non-interactive --json > "$RUNNER_TEMP/expo-update.json"
+          npx eas-cli@27.1.0 update --branch development --environment preview --platform android --message "Google OAuth callback diagnostics - approved 470cafe5" --non-interactive --json > "$RUNNER_TEMP/expo-update.json"
       - uses: actions/upload-artifact@v4
         with:
           name: jobeen-google-login-ota
