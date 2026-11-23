@@ -17,6 +17,17 @@ test("manual development OTA accepts an Android-only scope and rejects other pla
   assert.match(text, /eas-cli@27\.1\.0 update --branch development --environment preview --platform "\$OTA_PLATFORM"/);
 });
 
+test("the November APK runtime is limited to Android and the reviewed native source", () => {
+  const text = workflow("expo-development.yml");
+  assert.match(text, /android_runtime:[\s\S]*?options:\s+- fingerprint\s+- jobeen-native-20261123\s+default: fingerprint/);
+  assert.match(text, /inputs\.android_runtime == 'jobeen-native-20261123' && inputs\.platform == 'android'/);
+  assert.match(text, /git ls-tree -r --full-tree HEAD -- app\.json app\.config\.js .*package-lock\.json modules android ios/);
+  assert.match(text, /test "\$native_tree" = '[0-9a-f]{64}' &&\s+test "\$preview_profile" = '[0-9a-f]{64}'/);
+  assert.match(text, /config\.expo\.android\.runtimeVersion = runtime/);
+  assert.match(text, /if \(result\.runtimeVersion !== runtime\) throw Error/);
+  assert.doesNotMatch(text, /config\.expo\.runtimeVersion = runtime/);
+});
+
 test("no EAS OTA publisher automatically runs on push and every publisher checks exact owner approval", () => {
   const publishers = all.filter(name => /\b(?:eas|eas-cli@[^\s]+)\s+update\s+--branch\b/.test(workflow(name)));
   assert.deepEqual(publishers.sort(), ["approved-google-login-ota.yml", "expo-development.yml"]);

@@ -2,6 +2,8 @@
 
 ## Acceso Google en Android (2026-11-23)
 
+**PENDIENTE DE VALIDACIÓN.** EAS confirmó que la APK preview Android `7a5e4641-d586-42d3-909f-3656371d6429` del canal `development` se compiló con `jobeen-native-20261123`. La OTA `45258878012` usó fingerprint. La opción manual para esa APK selecciona el runtime en el runner y exige que coincidan la configuración nativa y el perfil de la compilación. La corrección adicional mantiene Login en espera desde que se reclama un retorno Google válido. El fallo se reprodujo localmente al retrasar la lectura de sesión. La OTA compatible y la validación en dispositivo quedan pendientes.
+
 El PR #89 se fusionó en `development` como `3e9dac8e`. La entrega autorizada para la APK actual requiere limitar la OTA a Android. La opción del workflow manual conserva la comprobación de propietario y SHA exacto.
 
 **PENDIENTE DE INTEGRACIÓN.** El fallo persistió tras #87 y #88. Dos regresiones reproducidas en `0be272eb` muestran que `AuthGate` podía perder el retorno que Expo conserva al reanudar Android y volver a mostrar Login al recibir un enlace de arranque normal mientras el canje PKCE todavía tenía la entrada reservada.

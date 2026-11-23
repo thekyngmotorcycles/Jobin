@@ -78,7 +78,7 @@ export function createAuthEntryBoundary(now = Date.now, pending?: PendingGoogleS
       }
     },
 
-    async completeGoogle<T>(url: string | null, action: (code: string | null) => Promise<T>): Promise<T | null> {
+    async completeGoogle<T>(url: string | null, action: (code: string | null) => Promise<T>, onClaim?: () => void): Promise<T | null> {
       if (!isGoogleCallbackUrl(url) || (active ? active.kind !== "google-pending" : !canRestore)) return null;
       const liveDeadline = active?.deadline;
       const lease: Lease = { kind: "google-exchange", deadline: 0 };
@@ -86,8 +86,10 @@ export function createAuthEntryBoundary(now = Date.now, pending?: PendingGoogleS
       try {
         if (!withinWindow(liveDeadline ?? await pending?.readDeadline())) return null;
         canRestore = false;
+        const code = parseGoogleCallback(url);
+        if (code) onClaim?.();
         await pending?.clear(); // Consume the persisted intent before Supabase can create a session.
-        return await action(parseGoogleCallback(url));
+        return await action(code);
       } finally { if (active === lease) active = null; }
     },
   };

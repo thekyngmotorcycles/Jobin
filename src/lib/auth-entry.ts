@@ -43,13 +43,13 @@ export function startGoogleAuth(open: (url: string) => Promise<unknown>) {
   }, replacePendingGoogle);
 }
 
-export function exchangePendingGoogle(url: string | null, accept: (code: string) => Promise<void>) {
+export function exchangePendingGoogle(url: string | null, accept: (code: string) => Promise<void>, onClaim?: () => void) {
   return boundary.completeGoogle(url, async code => {
     if (!code) return "invalid" as const;
     await signedOut();
     await accept(code);
     return "exchanged" as const;
-  });
+  }, onClaim);
 }
 
 export function runAuthExit<T>(action: () => Promise<T>) {
