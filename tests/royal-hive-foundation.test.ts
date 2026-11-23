@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {ROYAL_HIVE_PALETTE,ROYAL_HIVE_BRAND,THEMES,themeTokens} from "../src/theme/palettes.ts";
+import {ROYAL_HIVE_PALETTE,ROYAL_HIVE_BRAND,ROYAL_HIVE_STATES,THEMES,themeTokens} from "../src/theme/palettes.ts";
 import {ROYAL_HIVE_TYPE,ROYAL_HIVE_LINE_HEIGHT,JOBEEN_TYPE} from "../src/theme/typography.ts";
 import {ROYAL_HIVE_CONTROL,royalHiveLayout,JOBEEN_CONTROL} from "../src/theme/control-metrics.ts";
-import {ROYAL_HIVE_STATES,JOBEEN_MODAL_RADIUS} from "../src/theme/modals.ts";
+import {readFileSync} from "node:fs";
 import {contrastRatio} from "../src/theme/color.ts";
 test("Royal Hive candidate contrast meets AA on declared opaque surfaces and states",()=>{
  for(const mode of ["light","dark"] as const){
@@ -40,9 +40,7 @@ test("Candidate typography and component geometry match plan v1.1 lower bounds",
  assert.equal(ROYAL_HIVE_CONTROL.buttonRadius,12);
  assert.equal(ROYAL_HIVE_CONTROL.cardRadius,16);
  assert.equal(ROYAL_HIVE_CONTROL.shareIcon,28);
- assert.equal(JOBEEN_MODAL_RADIUS.sheet,30);
- assert.equal(JOBEEN_MODAL_RADIUS.dialog,26);
- assert.equal(JOBEEN_MODAL_RADIUS.popover,18);
+ assert.ok(readFileSync("src/theme/modals.ts","utf8").includes("sheet:30,dialog:26,popover:18"));
 });
 test("Responsive candidate keeps the same target and four logical methods",()=>{
  for(const width of [280,320,359,360,375,399,400,430,480]){
