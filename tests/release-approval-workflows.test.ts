@@ -74,3 +74,25 @@ test("security pilot APK is a distinct manual-only path, not an implicit product
   assert.match(text, /secrets\.JOBEEN_SECURITY_PILOT_PUBLISHABLE_KEY/);
   assert.doesNotMatch(text, /eas\s+update|eas\s+channel:(?:create|edit)|git\s+push|expo:configure|--profile (?:preview|production|development)\b/);
 });
+
+
+test("original Expo preview APK can run from a single owner-applied PR label without bypassing existing manual release controls", () => {
+  const text = workflow("preview-apk-owner-label.yml");
+  assert.match(text, /^on:\s*\n\s+pull_request:\s*\n\s+types:\s*\[labeled\]/m);
+  assert.doesNotMatch(text, /^  push:|^  schedule:|^  workflow_run:|^  workflow_dispatch:/m);
+  assert.match(text, /github\.event\.label\.name == 'approve-preview-native-apk'/);
+  assert.match(text, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
+  assert.match(text, /github\.event\.pull_request\.head\.ref == 'release\/preview-native-one-apk-20261123'/);
+  assert.match(text, /github\.event\.pull_request\.base\.ref == 'development'/);
+  assert.match(text, /github\.actor == 'thekyngmotorcycles'/);
+  assert.match(text, /github\.triggering_actor == 'thekyngmotorcycles'/);
+  assert.match(text, /github\.event\.sender\.login == 'thekyngmotorcycles'/);
+  assert.match(text, /ref: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
+  assert.match(text, /test "\$\(git rev-parse HEAD\)" = "\$APPROVED_SHA"/);
+  assert.match(text, /persist-credentials: false/);
+  assert.match(text, /contents: read/);
+  assert.match(text, /eas-cli@27\.1\.0 build --profile preview --platform android --non-interactive/);
+  assert.match(text, /a6befb1a-dc03-45a8-a18c-294643e99434/);
+  assert.match(text, /com\.thekyngmotorcycles\.jobin'/);
+  assert.doesNotMatch(text, /eas\s+update|eas\s+channel:|git\s+push|--profile (?:security-pilot|production|development)\b/);
+});
