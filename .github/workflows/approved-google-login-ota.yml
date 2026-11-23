@@ -1,4 +1,4 @@
-# One-time, owner-authorized publication of the Google sign-in retry fix.
+# One-time, owner-authorized publication of Google OAuth Android return fix.
 # This workflow cannot be used to publish later application changes.
 name: Approved Google login OTA (one shot)
 on:
@@ -24,12 +24,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APPROVED=32b4e28202bcdeb0a2d2dba3808f7c24414b1a3a
+          APPROVED=64168641b8918825e2e7269533e84706888ab791
           test "$GITHUB_REF" = "refs/heads/development"
           git merge-base --is-ancestor "$APPROVED" HEAD
-          test "$(git rev-parse "$APPROVED:src/app/login.tsx")" = "3aa7ab3c100d78714fbb7fdf1cd62dff73c49c42"
+          test "$(git rev-parse "$APPROVED:src/lib/auth-entry.ts")" = "$(git rev-parse "HEAD:src/lib/auth-entry.ts")"
+          test "$(git rev-parse "$APPROVED:src/components/AuthGate.tsx")" = "$(git rev-parse "HEAD:src/components/AuthGate.tsx")"
           git diff --name-only "$APPROVED" HEAD > "$RUNNER_TEMP/changed.txt"
-          printf '%s\n' '.github/workflows/approved-google-login-ota.yml' '.github/workflows/security-pilot-android.yml' 'eas.json' 'scripts/check-security-pilot-build-readiness.mjs' 'tests/eas-config-regression.test.ts' 'tests/release-approval-workflows.test.ts' 'tests/security-pilot-build-readiness.test.ts' 'tests/security-pilot-config.test.ts' > "$RUNNER_TEMP/expected.txt"
+          printf '%s\n' '.github/workflows/approved-google-login-ota.yml' 'tests/release-approval-workflows.test.ts' > "$RUNNER_TEMP/expected.txt"
           diff -u "$RUNNER_TEMP/expected.txt" "$RUNNER_TEMP/changed.txt"
           test "$(git show HEAD:.github/workflows/approved-google-login-ota.yml | sha256sum | cut -d' ' -f1)" = "$(sha256sum .github/workflows/approved-google-login-ota.yml | cut -d' ' -f1)"
       - uses: actions/setup-node@v4
@@ -56,7 +57,7 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           test -n "$EXPO_TOKEN" || { echo "::error::Missing EXPO_TOKEN"; exit 1; }
-          npx eas-cli@27.1.0 update --branch development --environment preview --platform android --message "Google login retry only - approved 32b4e282" --non-interactive --json > "$RUNNER_TEMP/expo-update.json"
+          npx eas-cli@27.1.0 update --branch development --environment preview --platform android --message "Google OAuth Android callback - approved 64168641" --non-interactive --json > "$RUNNER_TEMP/expo-update.json"
       - uses: actions/upload-artifact@v4
         with:
           name: jobeen-google-login-ota
