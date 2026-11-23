@@ -47,8 +47,8 @@ hotfix/*                  incidente crítico de main; PR a main y vuelta a devel
 
 ## Reglas automáticas que acompañan al código
 
-- `scripts/check-security-change-coverage.mjs`: en cada PR, si cambia Auth/usuarios, privacidad, RLS, Storage, video, JShop, mensajes, módulos nativos, configuración Expo/EAS o workflows, exige que el PR también cambie al menos una prueba de regresión. Esto **no garantiza la calidad** del test; revisión humana debe comprobar correspondencia con el cambio.
-- `tests/security-change-coverage.test.ts`: prueba el gate con ejemplos positivos y negativos, sin credenciales ni conexiones.
+- `scripts/check-security-change-coverage.mjs`: en cada PR, clasifica los archivos sensibles por área (`database`, `workflow`, `expo-config`, `native`, `auth`, `media`, `social-privacy`). Cada área afectada requiere una prueba de regresión modificada **de su propia categoría**; un test de otra función no basta. Detecta también eliminación de código sensible; una prueba eliminada no cuenta como cobertura. Esto **no garantiza la calidad** del test, su ejecución ni la correspondencia semántica de los casos; revisión humana sigue siendo necesaria.
+- `tests/security-change-coverage.test.ts`: verifica positivos, negativos, tests no relacionados, cambios multiárea y eliminaciones, sin credenciales ni conexiones.
 - `.github/workflows/check.yml`: conserva `validate` y `database` y añade la comprobación incremental; ninguna operación EAS, SQL hosted o OTA.
 - `.github/dependabot.yml`: propuestas semanales limitadas de versiones npm y GitHub Actions. Revisar cambios Expo/React Native que tengan implicaciones nativas; jamás auto-merge.
 - `.github/workflows/security-dependencies.yml`: auditoría de CVE conocidas del lockfile semanal y manual, sin instalar binarios ni publicar nada. Un hallazgo abre un registro concreto para el componente afectado, no una nueva auditoría de toda la app. Funciona como alerta, no como defensa de runtime.
