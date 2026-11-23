@@ -48,3 +48,17 @@ test("Google callback intent can be restored once after Android process recreati
  assert.equal(await expired.exchange("jobin://?code=fixture",async()=>++exchanges),null);
  assert.equal(exchanges,1);
 });
+
+// OAuth return parsing must fail closed; a malformed app callback must not be
+// treated as a valid exchange even when a Google attempt is pending.
+test("Malformed Android Google callback cannot exchange an in-flight session",async()=>{
+ const boundary=createAuthEntryBoundary();
+ await boundary.google(async ready=>ready());
+ let calls=0;
+ for(const url of ["jobin://?error=access_denied","jobin://?code=abc&state=unexpected","jobin://auth?code=abc"]){
+  assert.equal(await boundary.exchange(url,async()=>++calls),null);
+ }
+ assert.equal(calls,0);
+ boundary.cancelPendingGoogle();
+ assert.equal(await boundary.exclusive(async()=>true),true);
+});
