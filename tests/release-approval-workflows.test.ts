@@ -11,9 +11,19 @@ const ownerGuard = /github\.actor\s*==\s*'thekyngmotorcycles'/;
 
 test("no EAS OTA publisher automatically runs on push and every publisher checks exact owner approval", () => {
   const publishers = all.filter(name => /\b(?:eas|eas-cli@[^\s]+)\s+update\s+--branch\b/.test(workflow(name)));
-  assert.deepEqual(publishers, ["expo-development.yml"]);
+  assert.deepEqual(publishers.sort(), ["approved-google-login-ota.yml", "expo-development.yml"]);
   for (const name of publishers) {
     const text = workflow(name);
+    if (name === "approved-google-login-ota.yml") {
+      assert.match(text, /^on:\s*\n\s+push:/m);
+      assert.match(text, /APPROVED=32b4e28202bcdeb0a2d2dba3808f7c24414b1a3a/);
+      assert.match(text, /git diff --name-only "\$APPROVED" HEAD/);
+      assert.match(text, /diff -u "\$RUNNER_TEMP\/expected.txt" "\$RUNNER_TEMP\/changed.txt"/);
+      assert.match(text, /--platform android/);
+      assert.match(text, /persist-credentials:\s*false/);
+      assert.match(text, /contents:\s*read/);
+      continue;
+    }
     assert.match(text, /^on:\s*\n\s+workflow_dispatch:/m);
     assert.doesNotMatch(text, /^  push:|^  pull_request:|^  schedule:/m);
     assert.match(text, ownerGuard);
