@@ -120,3 +120,13 @@ test("read-only failure diagnostic cannot re-trigger native APK compilation", ()
   assert.match(diagnostic, /EXPO_BUILD_DIAG/);
   assert.doesNotMatch(diagnostic, /(?:eas-cli@[0-9.]+\s+build|eas\s+update|git\s+push|npm ci|writeFileSync)/);
 });
+
+
+test("isolated fixed runtime prevents cross-build fingerprint drift without changing the repository configuration", () => {
+  const text = workflow("preview-apk-owner-label.yml");
+  const config = JSON.parse(readFileSync("app.json", "utf8"));
+  assert.deepEqual(config.expo.runtimeVersion, { policy: "fingerprint" });
+  assert.match(text, /config\.expo\.runtimeVersion='jobeen-native-20261123'/);
+  assert.match(text, /config\.expo\?\.extra\?\.eas\?\.projectId!=='a6befb1a-dc03-45a8-a18c-294643e99434'/);
+  assert.match(text, /One APK runtime is jobeen-native-20261123/);
+});
