@@ -56,3 +56,21 @@ test("no GitHub workflow can silently push a commit into development", () => {
     assert.doesNotMatch(text, /\bgh\s+workflow\s+run\s+expo-development\.yml/);
   }
 });
+
+
+test("security pilot APK is a distinct manual-only path, not an implicit production build", () => {
+  const text = workflow("security-pilot-android.yml");
+  assert.match(text, /^on:\s*\n\s+workflow_dispatch:/m);
+  assert.doesNotMatch(text, /^  push:|^  pull_request:|^  schedule:|^  workflow_run:/m);
+  assert.match(text, ownerGuard);
+  assert.match(text, /github\.ref\s*==\s*'refs\/heads\/development'/);
+  assert.match(text, /inputs\.approved_commit\s*==\s*github\.sha/);
+  assert.match(text, /inputs\.confirm_pilot_build\s*==\s*true/);
+  assert.match(text, /persist-credentials:\s*false/);
+  assert.match(text, /contents:\s*read/);
+  assert.match(text, /node scripts\/check-security-pilot-build-readiness\.mjs/);
+  assert.match(text, /node scripts\/check-security-pilot-config\.mjs/);
+  assert.match(text, /eas-cli@27\.1\.0 build --profile security-pilot --platform android/);
+  assert.match(text, /secrets\.JOBEEN_SECURITY_PILOT_PUBLISHABLE_KEY/);
+  assert.doesNotMatch(text, /eas\s+update|eas\s+channel:(?:create|edit)|git\s+push|expo:configure|--profile (?:preview|production|development)\b/);
+});
