@@ -92,3 +92,49 @@ jobs:
             console.log('Build status and link are also available in Expo > Builds.');
           }
           JS
+  diagnose-preview-apk:
+    # Diagnostic only: no EAS build, no build-profile edits, no rerun of native compilation.
+    if: >-
+      github.repository == 'thekyngmotorcycles/Jobin' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'release/preview-native-one-apk-20261123' &&
+      github.event.pull_request.base.ref == 'development' &&
+      github.event.label.name == 'diagnose-preview-native-apk' &&
+      github.actor == 'thekyngmotorcycles' &&
+      github.event.sender.login == 'thekyngmotorcycles'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Read one failed EAS build and redact log messages
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          const appId='a6befb1a-dc03-45a8-a18c-294643e99434';
+          const buildId='795c16c9-ee0f-4844-94d1-5f851f29448f';
+          const token=process.env.EXPO_TOKEN;
+          if(!token)throw Error('EXPO_TOKEN missing');
+          const resp=await fetch('https://api.expo.dev/graphql',{
+            method:'POST',
+            headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+            body:JSON.stringify({query:'query FailedPreviewBuild($appId: String!) { app { byId(appId: $appId) { builds(offset: 0, limit: 10) { id status logFiles error { message errorCode } } } } }',variables:{appId}}),
+            signal:AbortSignal.timeout(20000),
+          });
+          if(!resp.ok)throw Error('Expo build status HTTP '+resp.status);
+          const payload=await resp.json();
+          if(payload.errors?.length)throw Error('Expo project query refused (no sensitive details printed)');
+          const build=payload.data?.app?.byId?.builds?.find(x=>x.id===buildId);
+          if(!build)throw Error('Failed Expo build ID not found among latest 10');
+          const redact=s=>String(s??'').replace(/sb_(?:publishable|secret)_[A-Za-z0-9_-]+/g,'[REDACTED]').replace(/eyJ[A-Za-z0-9._-]+/g,'[REDACTED]').replace(/(pk|sk)\\.[A-Za-z0-9._-]+/g,'[REDACTED]');
+          console.log('EXPO_BUILD_DIAG',JSON.stringify({id:build.id,status:build.status,code:build.error?.errorCode??null,message:redact(build.error?.message).slice(0,400)}));
+          for(const url of (build.logFiles??[]).slice(-2)){
+            try{
+              const response=await fetch(url,{signal:AbortSignal.timeout(15000)});
+              if(!response.ok)continue;
+              const rows=(await response.text()).split('\\n').filter(Boolean);
+              const lines=rows.flatMap(t=>{try{const o=JSON.parse(t);return typeof o.msg==='string'?[{phase:o.phase,msg:o.msg}]:[]}catch{return []}});
+              const relevant=lines.filter(o=>/(?:error|failed|failure|what went wrong|could not|exception|missing|compile|gradle|cannot|kotlin|CMake|resource linking)/i.test(o.msg)).slice(-22);
+              console.log('EXPO_BUILD_LOG_LINES',JSON.stringify(relevant.map(o=>({phase:o.phase,msg:redact(o.msg).slice(0,420)}))));
+            }catch{console.log('One Expo log file was unavailable; no credentials exposed');}
+          }
+          JS
