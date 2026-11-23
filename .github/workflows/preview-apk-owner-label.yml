@@ -56,6 +56,22 @@ jobs:
             throw new Error('Original Jobeen Expo identity or APK preview profile mismatch.');
           }
           JS
+      - name: Ignore the unused pilot profile only in this runner's EAS configuration
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync, writeFileSync} from 'node:fs';
+          const file='eas.json';
+          const config=JSON.parse(readFileSync(file,'utf8'));
+          if(config.build?.preview?.android?.buildType!=='apk' ||
+             config.build?.['security-pilot']?.env?.EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL!=='') {
+            throw new Error('Unexpected EAS profiles: original preview APK cannot proceed.');
+          }
+          // EAS CLI 27 rejects an empty value in ANY profile, even an unused one.
+          // The source repository and isolated pilot safety configuration stay unchanged.
+          delete config.build['security-pilot'];
+          writeFileSync(file,JSON.stringify(config,null,2)+'\\n');
+          console.log('Using original preview profile; isolated pilot profile removed from runner copy only.');
+          JS
       - name: Build original Jobeen preview APK (only after owner labeled)
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
