@@ -125,13 +125,13 @@ jobs:
           if(payload.errors?.length)throw Error('Expo project query refused (no sensitive details printed)');
           const build=payload.data?.app?.byId?.builds?.find(x=>x.id===buildId);
           if(!build)throw Error('Failed Expo build ID not found among latest 10');
-          const redact=s=>String(s??'').replace(/sb_(?:publishable|secret)_[A-Za-z0-9_-]+/g,'[REDACTED]').replace(/eyJ[A-Za-z0-9._-]+/g,'[REDACTED]').replace(/(pk|sk)\\.[A-Za-z0-9._-]+/g,'[REDACTED]');
+          const redact=s=>String(s??'').replace(/sb_(?:publishable|secret)_[A-Za-z0-9_-]+/g,'[REDACTED]').replace(/eyJ[A-Za-z0-9._-]+/g,'[REDACTED]').replace(/(pk|sk)[.][A-Za-z0-9._-]+/g,'[REDACTED]');
           console.log('EXPO_BUILD_DIAG',JSON.stringify({id:build.id,status:build.status,code:build.error?.errorCode??null,message:redact(build.error?.message).slice(0,400)}));
           for(const url of (build.logFiles??[]).slice(-2)){
             try{
               const response=await fetch(url,{signal:AbortSignal.timeout(15000)});
               if(!response.ok)continue;
-              const rows=(await response.text()).split('\\n').filter(Boolean);
+              const rows=(await response.text()).split(String.fromCharCode(10)).filter(Boolean);
               const lines=rows.flatMap(t=>{try{const o=JSON.parse(t);return typeof o.msg==='string'?[{phase:o.phase,msg:o.msg}]:[]}catch{return []}});
               const relevant=lines.filter(o=>/(?:error|failed|failure|what went wrong|could not|exception|missing|compile|gradle|cannot|kotlin|CMake|resource linking)/i.test(o.msg)).slice(-22);
               console.log('EXPO_BUILD_LOG_LINES',JSON.stringify(relevant.map(o=>({phase:o.phase,msg:redact(o.msg).slice(0,420)}))));
