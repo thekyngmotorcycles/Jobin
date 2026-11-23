@@ -1,5 +1,7 @@
 import {useMemo,useState} from "react";
 import {FlatList,Modal,Pressable,Text,TextInput,View,useWindowDimensions} from "react-native";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
+import {JOBEEN_TYPE} from "../theme/typography";
 import {Ionicons} from "@expo/vector-icons";
 import {useUi} from "./ui";
 import {jobeenModalTokens} from "../theme/modals";
@@ -25,7 +27,7 @@ export function LanguagePicker({value,onChange,selected=[]}:{value:string;onChan
       <Text style={[s.h3,{fontSize:JOBEEN_TYPE.modalTitle}]}>Seleccionar idioma</Text>
       <Pressable accessibilityRole="button" accessibilityLabel="Cerrar lista" onPress={()=>setOpen(false)} style={{padding:5}}><Ionicons name="close" size={24} color={colors.ink}/></Pressable>
      </View>
-     <TextInput autoCapitalize="sentences" autoCorrect={false} value={query} onChangeText={setQuery} placeholder="Buscar idioma…" placeholderTextColor={colors.muted} accessibilityLabel="Buscar idioma" style={[s.text,{borderWidth:1,borderColor:colors.line,borderRadius:10,paddingHorizontal:12,minHeight:46,color:colors.ink}]}/>
+     <TextInput autoCapitalize="sentences" autoCorrect={false} value={query} onChangeText={setQuery} placeholder="Buscar idioma…" placeholderTextColor={colors.muted} accessibilityLabel="Buscar idioma" style={[s.text,{borderWidth:1,borderColor:colors.outline,borderRadius:JOBEEN_CONTROL.inputRadius,paddingHorizontal:12,minHeight:JOBEEN_CONTROL.inputHeight,fontSize:JOBEEN_TYPE.input,color:colors.ink}]}/>
      <FlatList data={options} keyExtractor={item=>item} keyboardShouldPersistTaps="handled" style={{flexGrow:0}} ListEmptyComponent={<Text style={[s.muted,{paddingVertical:18,textAlign:"center"}]}>No se encontraron idiomas.</Text>} renderItem={({item})=>{
       const disabled=unavailable.has(item)&&item!==current;
       return <Pressable accessibilityRole="button" accessibilityState={{selected:item===current,disabled}} disabled={disabled} onPress={()=>{onChange(item);setOpen(false);}} style={{minHeight:45,flexDirection:"row",alignItems:"center",paddingHorizontal:12,borderRadius:8,backgroundColor:item===current?modal.soft:modal.surface,opacity:disabled?0.45:1}}>

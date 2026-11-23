@@ -1,6 +1,6 @@
 import {menuChrome} from "../theme/menu-chrome";
-import {ROYAL_HIVE_CONTROL} from "../theme/control-metrics";
-import {JOBEEN_TYPE,jobeenTypeWidthScale} from "../theme/typography";
+import {JOBEEN_CONTROL,royalHiveLayout} from "../theme/control-metrics";
+import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT,jobeenTypeWidthScale} from "../theme/typography";
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
 import { JobinWordmark } from "./JobinWordmark";
@@ -10,14 +10,13 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimen
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useApp } from "../state/AppProvider";
 
-// Phone typography density is consistent. A narrower display may reduce it slightly;
-// larger screens show more content instead of inflating all labels.
+// Preserve semantic text sizes; adapt margins and layout to available width.
 export function useUi() { const { colors,theme } = useTheme(); const chrome=menuChrome(theme,colors); const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme); const { width } = useWindowDimensions();
- const k=jobeenTypeWidthScale(width);
+ const k=jobeenTypeWidthScale(width);const layout=royalHiveLayout(width);
  const fs = useCallback((size: number) => Math.round(size * k), [k]);
  const s = useMemo(() => StyleSheet.create({
   screen: { flex: 1, backgroundColor: jt.bg },
-  content: { padding: 20, gap: 20, width: "100%", maxWidth: 1180, alignSelf: "center" },
+  content: { padding: layout.margin, gap: 16, width: "100%", maxWidth: 1180, alignSelf: "center" },
   header: { gap: 16, marginBottom: 4 },
   top: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 },
   brand: { fontSize: fs(28), fontWeight: "900", color: colors.ink, letterSpacing: -1.5 },
@@ -25,15 +24,15 @@ export function useUi() { const { colors,theme } = useTheme(); const chrome=menu
   h1: { fontSize: fs(JOBEEN_TYPE.display), fontFamily: Platform.OS === "android" ? "serif" : "Georgia", fontStyle: "italic", fontWeight: "500", letterSpacing: -1, color: colors.ink },
   h2: { fontSize: fs(JOBEEN_TYPE.headline), fontFamily: Platform.OS === "android" ? "serif" : "Georgia", fontStyle: "italic", fontWeight: "500", color: colors.ink },
   h3: { fontSize: fs(JOBEEN_TYPE.sectionTitle), fontWeight: "700", color: colors.ink },
-  text: { fontSize: fs(JOBEEN_TYPE.body), lineHeight: fs(21), color: colors.ink },
-  muted: { fontSize: fs(JOBEEN_TYPE.secondary), lineHeight: fs(18), color: colors.muted },
+  text: { fontSize: fs(JOBEEN_TYPE.body), lineHeight: fs(JOBEEN_LINE_HEIGHT.body), color: colors.ink },
+  muted: { fontSize: fs(JOBEEN_TYPE.secondary), lineHeight: fs(JOBEEN_LINE_HEIGHT.secondary), color: colors.muted },
   row: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" },
-  panel: { backgroundColor: jt.surface, borderWidth: 1, borderColor: jt.line, borderRadius: ROYAL_HIVE_CONTROL.cardRadius, padding: 22, gap: 16 },
-  button: { minHeight: ROYAL_HIVE_CONTROL.touchTarget, borderRadius: ROYAL_HIVE_CONTROL.buttonRadius, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", maxWidth: "100%" },
+  panel: { backgroundColor: jt.surface, borderWidth: 1, borderColor: jt.line, borderRadius: JOBEEN_CONTROL.cardRadius, padding: JOBEEN_CONTROL.panelPadding, gap: JOBEEN_CONTROL.panelGap },
+  button: { minHeight: JOBEEN_CONTROL.touchTarget, borderRadius: JOBEEN_CONTROL.buttonRadius, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", maxWidth: "100%" },
   buttonText: { color: colors.onPrimary, fontWeight: "700", fontSize: fs(JOBEEN_TYPE.action), textAlign: "center", flexShrink: 1 },
   secondary: { backgroundColor: jt.surface, borderWidth: 1, borderColor: colors.outline },
   secondaryText: { color: colors.ink },
-  chip: { borderRadius: 24, borderWidth: 1, borderColor: jt.line, paddingHorizontal: 14, minHeight: 44, justifyContent: "center", backgroundColor: jt.surface },
+  chip: { borderRadius: 24, borderWidth: 1, borderColor: colors.outline, paddingHorizontal: 14, minHeight: JOBEEN_CONTROL.touchTarget, justifyContent: "center", backgroundColor: jt.surface },
   chipSelected: { backgroundColor: colors.ink, borderColor: colors.ink },
   chipText: { fontSize: fs(JOBEEN_TYPE.secondary), color: colors.ink },
   tag: { fontSize: fs(10), fontWeight: "600", color: colors.ink, backgroundColor: colors.accent, alignSelf: "flex-start", paddingVertical: 7, paddingHorizontal: 12, borderRadius: 18, overflow: "hidden" },
@@ -41,7 +40,7 @@ export function useUi() { const { colors,theme } = useTheme(); const chrome=menu
   notice: { padding: 16, borderRadius: modal.radius.popover, backgroundColor:modal.surface, gap: 10, borderWidth:1, borderColor:modal.border },
   footer: { paddingVertical: 20, borderTopWidth: 1, borderTopColor: jt.line, gap: 6 },
   pressed: { opacity: 0.82 },
-}), [colors, fs, chrome.surface, chrome.border, theme]); return { s, colors, fs, k }; }
+}), [colors, fs, chrome.surface, chrome.border, theme, layout.margin]); return { s, colors, fs, k }; }
 export function Button({ title, onPress, secondary = false, selected, label }: {
   title: string; onPress: () => void; secondary?: boolean; selected?: boolean; label?: string;
 }) {

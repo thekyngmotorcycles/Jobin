@@ -5,7 +5,7 @@ import {PublicProfileAvatar} from "./PublicProfileAvatar";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
-import {JOBEEN_TYPE} from "../theme/typography";
+import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {draftPhotoDisplayUri} from "../lib/post-draft-photo";
 import {MAX_POST_DRAFTS,type PostDraft,type PostDraftPhoto} from "../lib/post-drafts";
@@ -30,11 +30,11 @@ export function PostComposerSheets(p:Props){
  const action=(label:string,icon:React.ComponentProps<typeof Ionicons>["name"],onPress:()=>void,primary=false)=>
   <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
    style={{minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
-   <View style={{width:"100%",height:JOBEEN_CONTROL.visualAction+2,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8,
-    backgroundColor:primary?modal.accent:modal.inner,borderWidth:primary?0:1,borderColor:label==="Descartar cambios"?danger.icon:modal.border,
+   <View style={{width:"100%",minHeight:JOBEEN_CONTROL.visualAction,paddingVertical:10,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8,
+    backgroundColor:primary?modal.accent:modal.inner,borderWidth:primary?0:1,borderColor:label==="Descartar cambios"?danger.icon:modal.outline,
     borderRadius:modal.radius.control,paddingHorizontal:15}}>
     <Ionicons name={icon} size={18} color={primary?modal.onAccent:label==="Descartar cambios"?danger.icon:modal.text}/>
-    <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"700",color:primary?modal.onAccent:label==="Descartar cambios"?danger.icon:modal.text}}>{label}</Text>
+    <Text style={{flexShrink:1,textAlign:"center",fontSize:JOBEEN_TYPE.modalAction,lineHeight:JOBEEN_LINE_HEIGHT.modalAction,fontWeight:"700",color:primary?modal.onAccent:label==="Descartar cambios"?danger.icon:modal.text}}>{label}</Text>
    </View>
   </Pressable>;
  const backdrop=(onPress:()=>void)=><Pressable accessibilityRole="button" accessibilityLabel="Cerrar ventana"
@@ -66,10 +66,10 @@ export function PostComposerSheets(p:Props){
      paddingHorizontal:20,paddingTop:12,paddingBottom:Math.max(safe.bottom,22),
      shadowColor:t.floatingCardShadow,shadowOpacity:0.2,shadowRadius:20,elevation:20}}>
      <View style={{width:42,height:5,backgroundColor:modal.handle,borderRadius:5,alignSelf:"center",marginBottom:18}}/>
-     <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.modalTitle,lineHeight:22,color:modal.text,fontWeight:"800",marginBottom:8}}>
+     <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle,color:modal.text,fontWeight:"800",marginBottom:8}}>
       ¿Guardar tu publicación?
      </Text>
-     <Text style={{fontSize:13,lineHeight:20,color:t.ink2,marginBottom:22}}>
+     <Text style={{fontSize:JOBEEN_TYPE.body,lineHeight:JOBEEN_LINE_HEIGHT.body,color:t.ink2,marginBottom:22}}>
       Puedes continuar después o descartar los cambios. No se publicará ningún contenido.
      </Text>
      <View style={{gap:10}}>
@@ -77,7 +77,7 @@ export function PostComposerSheets(p:Props){
       {action("Descartar cambios","trash-outline",p.onDiscardExit)}
       <Pressable accessibilityRole="button" accessibilityLabel="Continuar editando" onPress={p.onContinue}
        style={{minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
-       <Text style={{color:t.ink2,fontSize:14,fontWeight:"600"}}>Continuar editando</Text>
+       <Text style={{color:t.ink2,fontSize:JOBEEN_TYPE.action,fontWeight:"600"}}>Continuar editando</Text>
       </Pressable>
      </View>
     </View>

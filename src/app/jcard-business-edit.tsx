@@ -130,14 +130,14 @@ export default function BusinessEditor(){
     </Pressable>
     {open===section.id&&<View style={{gap:12,paddingBottom:12}}>{section.keys.map(key=><View key={key} style={{gap:5}}><Text style={s.muted}>{fields[key]}</Text>{key==="category"?<View style={{gap:8}}>
   <Pressable accessibilityRole="button" accessibilityLabel="Seleccionar categoría empresarial" accessibilityState={{expanded:categoryOpen}}
-   onPress={()=>{Keyboard.dismiss();setCategoryOpen(v=>!v);}} style={{minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:12,borderColor:colors.line,borderWidth:1,borderRadius:10,flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:10}}>
+   onPress={()=>{Keyboard.dismiss();setCategoryOpen(v=>!v);}} style={{minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:12,borderColor:colors.outline,borderWidth:1,borderRadius:JOBEEN_CONTROL.inputRadius,flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:10}}>
    <Text numberOfLines={1} style={{flex:1,color:data.category?colors.ink:colors.muted}}>{data.category||"Seleccionar categoría"}</Text>
    <Ionicons name={categoryOpen?"chevron-up":"chevron-down"} size={20} color={colors.ink}/>
   </Pressable>
   {categoryOpen&&<View style={{borderWidth:1,borderColor:colors.line,borderRadius:12,padding:8,gap:7}}>
    <TextInput accessibilityLabel="Buscar categoría empresarial" placeholder="Buscar categoría…" placeholderTextColor={colors.muted}
     value={categoryQuery} onChangeText={setCategoryQuery} autoCorrect={false}
-    style={{minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:12,borderWidth:1,borderColor:colors.line,borderRadius:9,color:colors.ink}}/>
+    style={{minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:12,borderWidth:1,borderColor:colors.outline,borderRadius:JOBEEN_CONTROL.inputRadius,fontSize:JOBEEN_TYPE.input,color:colors.ink}}/>
    <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="always" style={{maxHeight:230}} showsVerticalScrollIndicator>
     {visibleCategories.map(option=><Pressable key={option.code||"none"} accessibilityRole="button" accessibilityState={{selected:data.category===option.label}}
      onPress={()=>{setData(d=>({...d,category:option.code?option.label:""}));setCategoryOpen(false);setCategoryQuery("");Keyboard.dismiss();}}

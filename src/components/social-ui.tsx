@@ -1,19 +1,20 @@
 import {userImageSource} from "../lib/media-urls";
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps,ReactNode } from "react";
-import { Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,StyleSheet,Text,View } from "react-native";
+import { Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,StyleSheet,Text,View,useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState } from "react";
 import {opacity} from "../theme/color";
 import {jobeenModalTokens} from "../theme/modals";
-import {JOBEEN_TYPE} from "../theme/typography";
+import {JOBEEN_CONTROL,royalHiveLayout} from "../theme/control-metrics";
+import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {jobeenTokens} from "../theme/jobeen";
 import { useTheme } from "../state/ThemeProvider";
 export type IconName=ComponentProps<typeof Ionicons>["name"];
-export function IconButton({icon,label,onPress,color,size=25,background,selected=false}:{icon:IconName;label:string;onPress:()=>void;color?:string;size?:number;background?:string;selected?:boolean}){
+export function IconButton({icon,label,onPress,color,size=JOBEEN_CONTROL.icon,background,selected=false}:{icon:IconName;label:string;onPress:()=>void;color?:string;size?:number;background?:string;selected?:boolean}){
  const {colors}=useTheme();
  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected}} onPress={onPress}
- style={({pressed})=>({width:44,height:44,borderRadius:22,alignItems:"center",justifyContent:"center",backgroundColor:background??colors.transparent,opacity:pressed ? 0.6 : 1})}>
+ style={({pressed})=>({width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,borderRadius:24,alignItems:"center",justifyContent:"center",backgroundColor:background??colors.transparent,opacity:pressed ? 0.6 : 1})}>
  <Ionicons name={icon} size={size} color={color||colors.ink}/></Pressable>;
 }
 export function Avatar({uri,name,size=44,height=size,shape="circle",initials,emphasis=false,framed=true}:{uri?:string;name:string;size?:number;height?:number;shape?:"circle"|"portrait";initials?:string;emphasis?:boolean;framed?:boolean}){
@@ -27,14 +28,14 @@ export function Avatar({uri,name,size=44,height=size,shape="circle",initials,emp
  </View>;
 }
 export function BottomSheet({visible,onClose,title,children,translucent=false}:{visible:boolean;onClose:()=>void;title:string;children:ReactNode;translucent?:boolean}){
- const {theme}=useTheme();const modal=jobeenModalTokens(theme);const inset=useSafeAreaInsets();
+ const {theme}=useTheme();const modal=jobeenModalTokens(theme);const inset=useSafeAreaInsets();const {width}=useWindowDimensions();const layout=royalHiveLayout(Math.min(width,700));
  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent={false}>
   <KeyboardAvoidingView style={{flex:1,justifyContent:"flex-end"}} behavior={Platform.OS==="ios"?"padding":undefined}>
    <Pressable accessibilityRole="button" accessibilityLabel="Close panel" onPress={onClose} style={{flex:1,backgroundColor:modal.scrim}}/>
-   <View accessibilityViewIsModal style={{maxHeight:"85%",minHeight:180,maxWidth:700,width:"100%",alignSelf:"center",backgroundColor:translucent?opacity(modal.surface,0.96):modal.surface,borderTopLeftRadius:modal.radius.sheet,borderTopRightRadius:modal.radius.sheet,borderWidth:1,borderColor:modal.border,paddingHorizontal:20,paddingBottom:Math.max(inset.bottom,16)}}>
+   <View accessibilityViewIsModal style={{maxHeight:"85%",maxWidth:700,width:"100%",alignSelf:"center",backgroundColor:translucent?opacity(modal.surface,0.96):modal.surface,borderTopLeftRadius:modal.radius.sheet,borderTopRightRadius:modal.radius.sheet,borderWidth:1,borderColor:modal.border,paddingHorizontal:layout.margin,paddingBottom:Math.max(inset.bottom,16)}}>
     <View style={{width:38,height:4,backgroundColor:modal.handle,borderRadius:4,alignSelf:"center",marginTop:10}}/>
-    <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingVertical:8}}><Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.modalTitle,fontWeight:"700",color:modal.text}}>{title}</Text><IconButton icon="close" label="Close panel" onPress={onClose}/></View>
-    <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets={false} nestedScrollEnabled showsVerticalScrollIndicator contentContainerStyle={{paddingBottom:16,flexGrow:0}}>
+    <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingVertical:8}}><Text accessibilityRole="header" style={{flex:1,minWidth:0,fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle,fontWeight:"700",color:modal.text}}>{title}</Text><IconButton icon="close" label="Close panel" onPress={onClose}/></View>
+    <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets={false} nestedScrollEnabled showsVerticalScrollIndicator style={{flexShrink:1}} contentContainerStyle={{paddingBottom:16,flexGrow:0}}>
      {children}
     </ScrollView>
    </View>
