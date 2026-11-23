@@ -108,3 +108,15 @@ test("preview bridge excludes only the invalid unused pilot profile in its ephem
   assert.match(text, /build --profile preview --platform android/);
   assert.doesNotMatch(text, /writeFileSync\(['"]app\.json/);
 });
+
+
+test("read-only failure diagnostic cannot re-trigger native APK compilation", () => {
+  const text = workflow("preview-apk-owner-label.yml");
+  const diagnostic = text.split("  diagnose-preview-apk:")[1];
+  assert.ok(diagnostic);
+  assert.match(diagnostic, /github\.event\.label\.name == 'diagnose-preview-native-apk'/);
+  assert.match(diagnostic, /github\.actor == 'thekyngmotorcycles'/);
+  assert.match(diagnostic, /github\.event\.pull_request\.head\.ref == 'release\/preview-native-one-apk-20261123'/);
+  assert.match(diagnostic, /EXPO_BUILD_DIAG/);
+  assert.doesNotMatch(diagnostic, /(?:eas-cli@[0-9.]+\s+build|eas\s+update|git\s+push|npm ci|writeFileSync)/);
+});
