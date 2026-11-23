@@ -1,9 +1,11 @@
 name: Build Jobin Android development APK
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: [.github/workflows/android-development-apk.yml]
+    inputs:
+      approved_commit:
+        description: 'Exact commit SHA explicitly approved for Android compilation'
+        required: true
+        type: string
 permissions:
   contents: read
 concurrency:
@@ -11,6 +13,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build:
+    if: github.event_name == 'workflow_dispatch' && github.actor == 'thekyngmotorcycles' && github.ref == 'refs/heads/development' && inputs.approved_commit == github.sha
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
