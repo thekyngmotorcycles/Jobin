@@ -1,4 +1,4 @@
-import {themeTokens,ROYAL_HIVE_PALETTE,ROYAL_HIVE_STATES,ROYAL_HIVE_BRAND,type ThemeName} from "./palettes";
+import {ROYAL_HIVE_PALETTE,ROYAL_HIVE_STATES,ROYAL_HIVE_BRAND,type ThemeName} from "./palettes";
 import {composite,opacity,secondaryText} from "./color";
 
 /** Preserved JCard artwork/export palette; not a selectable global appearance. */

@@ -51,10 +51,10 @@ test("Responsive candidate keeps the same target and four logical methods",()=>{
  }
  assert.equal(royalHiveLayout(200).methodsNeedScroll,true);
 });
-test("Candidate does not migrate or activate persisted themes or live typography",()=>{
- assert.deepEqual(THEMES.map(t=>t.id),["light","dark","pink","navy-green","camel","sunflower"]);
- assert.equal(themeTokens("light").paper,"#F5F4F0");
- assert.equal(themeTokens("dark").paper,"#000000");
+test("Only approved Royal Hive palettes are active; candidate typography stays separate until review",()=>{
+ assert.deepEqual(THEMES.map(t=>t.id),["light","dark"]);
+ assert.equal(themeTokens("light").paper,"#F5F7FA");
+ assert.equal(themeTokens("dark").paper,"#0B1422");
  assert.equal(JOBEEN_TYPE.modalTitle,17);
  assert.equal(JOBEEN_CONTROL.visualAction,40);
 });

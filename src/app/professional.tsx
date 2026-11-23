@@ -330,7 +330,7 @@ export default function Professional() {
       <Pressable accessibilityRole="button" accessibilityLabel="Descartar cambios sin guardar"
        onPress={discardChanges} style={{minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:modal.radius.control,backgroundColor:modal.accent,
         alignItems:"center",justifyContent:"center",paddingHorizontal:14}}>
-       <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"700",color:modal.text}}>Descartar cambios</Text>
+       <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"700",color:modal.onAccent}}>Descartar cambios</Text>
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Seguir editando"
        onPress={keepEditing} style={{minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:modal.radius.control,borderWidth:1,borderColor:modal.border,

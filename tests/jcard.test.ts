@@ -21,7 +21,7 @@ test("JCard selects its finish from the displayed one-decimal rating", () => {
 });
 
 test("JCard small text meets WCAG AA across every gradient and seal surface", () => {
-  for (const theme of ["light","dark","pink","navy-green","camel"] as const) {
+  for (const theme of ["light","dark"] as const) {
     for (const tier of ["base","silver","gold"] as const) {
       const t = jcardTokens(theme, tier);
       for (let step=0; step<=20; step++) {

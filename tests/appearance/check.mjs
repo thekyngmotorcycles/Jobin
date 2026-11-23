@@ -9,7 +9,7 @@ const server=createServer(async(req,res)=>{try{let file=resolve(root,"."+decodeU
 await new Promise(done=>server.listen(4173,"127.0.0.1",done));
 await mkdir("appearance-results",{recursive:true});
 const browser=await chromium.launch();
-const themes=[["light","Light","#000000"],["dark","Dark","#ffffff"],["pink","Pink","#54243a"],["navy-green","Navy Green","#35530a"],["camel","Camel","#5b4a47"]];
+const themes=[["light","Royal Hive Light","#0D1B2A"],["dark","Royal Hive Dark","#F4F6FA"]];
 const pages=[["Home","/",true],["Live","/streams",true],["Videos","/videos",true],["Mensajes","/inbox",true],["Perfil","/profile",true],["Configuración","/settings"],["Inicio de sesión","/account"],["Subir","/create",true],["Buscar","/search"],["Servicios","/services"],["Comunidades","/communities"],["Empresa","/company"],["Profesional","/professional"],["Certificados","/certificates"],["Revisión de certificados","/credential-review"],["Oportunidades","/opportunities"],["Seguridad","/safety"],["Revisión de seguridad","/safety-review"],["Términos","/terms"],["JCard sin sesión","/jcard"],["Live sin sesión","/live"],["Sala de live","/stream/design-studio"],["Video sin sesión","/work-media/00000000-0000-0000-0000-000000000000"]];
 const results=[];let failed=0;
 try{
@@ -26,8 +26,8 @@ try{
     assert.equal(await page.getByText(/Something went wrong|Uncaught Error/).count(),0,"No render crash");
     const marks=page.getByTestId("jobin-wordmark");const count=await marks.count();
     result.wordmark=count?"visible":"not present in existing layout";
-    for(let i=0;i<count;i++){const mark=marks.nth(i);await mark.waitFor({state:"visible"});const shape=mark.locator("svg path").first();assert.ok(await shape.count(),"Vector paths");const fill=await shape.evaluate(el=>getComputedStyle(el).fill);const expected=await page.evaluate(hex=>{const el=document.createElement("span");el.style.color=hex;document.body.append(el);const color=getComputedStyle(el).color;el.remove();return color;},ink);assert.equal(fill,expected,"Wordmark uses theme foreground");assert.equal(await mark.evaluate(el=>Number.parseFloat(getComputedStyle(el).backgroundColor.split(",").at(-1))),0,"Wordmark background alpha is zero");}
-    if(tabs){for(const name of ["index","streams","videos","inbox","profile"])await page.getByTestId("tab-"+name).waitFor({state:"visible"});const nav=await page.getByTestId("tab-index").evaluate(el=>{let node=el.parentElement;while(node&&!["streams","videos","inbox","profile"].every(name=>node.querySelector('[data-testid="tab-'+name+'"]')))node=node.parentElement;if(!node)throw new Error("Missing navigation container");const checked=[];while(node&&node.getBoundingClientRect().height<=100){const s=getComputedStyle(node);checked.push({background:s.backgroundColor,border:s.borderTopWidth,shadow:s.boxShadow});node=node.parentElement;}return checked;});assert.ok(nav.length,"Navigation styles measured");for(const s of nav){assert.equal(Number.parseFloat(s.background.split(",").at(-1)),0,"Transparent navigation background");assert.equal(s.border,"0px");assert.ok(s.shadow==="none"||(s.shadow.endsWith(" 0px 0px 0px 0px")&&Number.parseFloat(s.shadow.split(")")[0].split(",").at(-1))===0),"No visible box shadow");}result.navigation="transparent, no border/shadow, five visible icons";}else result.navigation="not part of this route";
+    for(let i=0;i<count;i++){const mark=marks.nth(i);await mark.waitFor({state:"visible"});const shape=mark.locator("svg path").first();assert.ok(await shape.count(),"Vector paths");const fill=await shape.evaluate(el=>getComputedStyle(el).stroke);const expected=await page.evaluate(hex=>{const el=document.createElement("span");el.style.color=hex;document.body.append(el);const color=getComputedStyle(el).color;el.remove();return color;},ink);assert.equal(fill,expected,"Wordmark uses theme foreground");assert.equal(await mark.evaluate(el=>Number.parseFloat(getComputedStyle(el).backgroundColor.split(",").at(-1))),0,"Wordmark background alpha is zero");}
+    if(tabs){for(const name of ["index","shop","videos","inbox","profile"])await page.getByTestId("tab-"+name).waitFor({state:"visible"});const nav=await page.getByTestId("tab-index").evaluate(el=>{let node=el.parentElement;while(node&&!["shop","videos","inbox","profile"].every(name=>node.querySelector('[data-testid="tab-'+name+'"]')))node=node.parentElement;if(!node)throw new Error("Missing navigation container");const checked=[];while(node&&node.getBoundingClientRect().height<=100){const s=getComputedStyle(node);checked.push({background:s.backgroundColor,border:s.borderTopWidth,shadow:s.boxShadow});node=node.parentElement;}return checked;});assert.ok(nav.length,"Navigation styles measured");for(const s of nav){assert.equal(Number.parseFloat(s.background.split(",").at(-1)),0,"Transparent navigation background");assert.equal(s.border,"0px");assert.ok(s.shadow==="none"||(s.shadow.endsWith(" 0px 0px 0px 0px")&&Number.parseFloat(s.shadow.split(")")[0].split(",").at(-1))===0),"No visible box shadow");}result.navigation="transparent, no border/shadow, five visible icons";}else result.navigation="not part of this route";
     const ai=page.getByTestId("home-ai-assistant");
     assert.equal(await ai.count(),path==="/"?1:0,"AI only on Home");
     result.ai=path==="/"? "visible":"absent";
@@ -40,10 +40,10 @@ try{
  }
  // Actual interaction: choose theme, reload, drag/snap, restore and rotate.
  const context=await browser.newContext({viewport:{width:390,height:844}});const page=await context.newPage();
- await page.goto("http://127.0.0.1:4173/settings");await page.getByText("Camel",{exact:true}).click();
- assert.equal(await page.evaluate(()=>localStorage.getItem("jobin.theme")),"camel");
+ await page.goto("http://127.0.0.1:4173/menu/modo-oscuro");await page.getByText("Royal Hive Dark",{exact:true}).click();
+ assert.equal(await page.evaluate(()=>localStorage.getItem("jobin.theme")),"dark");
  await page.reload();await page.getByTestId("jobin-wordmark").waitFor();
- assert.equal(await page.evaluate(()=>localStorage.getItem("jobin.theme")),"camel");
+ assert.equal(await page.evaluate(()=>localStorage.getItem("jobin.theme")),"dark");
  await page.goto("http://127.0.0.1:4173/");const ai=page.getByTestId("home-ai-assistant");await ai.waitFor();await page.waitForTimeout(500);
  let box=await ai.boundingBox();assert.ok(box.width>=48&&box.height>=48);
  await ai.click();assert.equal(new URL(page.url()).pathname,"/");
@@ -52,7 +52,7 @@ try{
  const saved=await page.evaluate(()=>localStorage.getItem("jobin.assistant.position.v1"));assert.equal(JSON.parse(saved).edge,"left");
  await page.reload();await ai.waitFor();await page.waitForTimeout(500);box=await ai.boundingBox();assert.ok(box.x<=12,"Restores position");
  await page.setViewportSize({width:844,height:390});await page.waitForTimeout(500);box=await ai.boundingBox();assert.ok(box.x>=0&&box.y>=0&&box.x+box.width<=844&&box.y+box.height<=390-58,"Rotation respects visible bounds and bottom navigation");
- results.push({screen:"Interactions",theme:"Camel",status:"PASS",ai:"drag, snap, tap no-op, restore, rotate",persistence:"PASS"});await context.close();
+ results.push({screen:"Interactions",theme:"Royal Hive Dark",status:"PASS",ai:"drag, snap, tap no-op, restore, rotate",persistence:"PASS"});await context.close();
 }catch(error){failed++;results.push({screen:"Interactions",status:"FAIL",error:String(error)});console.error(error);}
 finally{await writeFile("appearance-results/matrix.json",JSON.stringify(results,null,2));await browser.close();await new Promise(done=>server.close(done));}
 if(failed)throw new Error(failed+" appearance checks failed; see matrix.json and screenshots");

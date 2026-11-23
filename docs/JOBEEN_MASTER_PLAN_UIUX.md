@@ -1,6 +1,6 @@
-# JOBEEN — Master Plan UI/UX v1.1
+# JOBEEN — Master Plan UI/UX v1.2
 **Fecha:** 23 de noviembre de 2026  
-**Estado:** v1.1 aprobada por el propietario el 23 de noviembre de 2026 como marco de diseño y planificación. Registro documental autorizado; integración de este PR y ejecución de cada etapa requieren aprobación separada. Medidas candidatas y excepciones pendientes de revisión visual y validación física. No autoriza implementación, publicación ni gasto.  
+**Estado:** v1.1 aprobada por el propietario el 23 de noviembre de 2026 como marco de diseño y planificación; v1.2 incorpora su nueva orden expresa de eliminar todas las apariencias globales salvo Royal Hive Light, Dark y selección Sistema. Registro documental autorizado; integración de este PR y ejecución de cada etapa requieren aprobación separada. Medidas candidatas y excepciones pendientes de revisión visual y validación física. No autoriza implementación, publicación ni gasto.  
 **Repositorio de referencia:** `thekyngmotorcycles/Jobin`, rama `development`.
 
 ## 1. Propósito y decisiones
@@ -34,7 +34,7 @@ Jobeen es una plataforma mobile-first de streaming de trabajo real. Descubrir, e
 | Azul histórico JCard | #00072E | #00072E |
 | Plateado de marca | #C9CCD1 | #C9CCD1 |
 
-El amarillo identifica acciones importantes y selección, no rellena todas las pantallas. El logo oficial, arte de las JCards, sellos, QR, fondos personalizados y exportaciones conservan sus contratos actuales. No se eliminan los temas Light, Dark, Pink, Navy Green, Camel y Sunflower ni se decide aún cómo migrar las preferencias existentes. Se propone evaluar Royal Hive como base clara/oscura antes de cambiar los valores predeterminados. No usar color como única señal de estado.
+El amarillo identifica acciones importantes y selección, no rellena todas las pantallas. El logo oficial, arte de las JCards, sellos, QR, fondos personalizados y exportaciones conservan sus contratos actuales. **Decisión permanente v1.2:** solo dos paletas globales, Royal Hive Light y Royal Hive Dark. La tercera opción del menú es Usar configuración del sistema (no una paleta), sigue cambios del OS y es la opción por defecto. Eliminar las cuatro paletas obsoletas y sus ramas de UI; conservar la selección explícita light/dark existente y normalizar cualquier otro valor antiguo a system. Los fondos, acabados, sellos y arte JCard permanecen independientes y no se eliminan. No usar color como única señal de estado.
 
 ### 2.2 Estados semánticos
 | Estado | Fondo claro / texto claro | Fondo oscuro / texto oscuro |
@@ -150,7 +150,7 @@ Este orden orientativo no obliga a retrasar trabajo independiente ni rehacer fun
 
 ## 11. Decisiones pendientes antes de implementación
 1. Destino predeterminado de Videos (En vivo, última sección o Flashes actual); ubicación definitiva de JAcademy y JHighlights en navegación audiovisual.
-2. Royal Hive como tema predeterminado o adicional; tratamiento de las preferencias existentes y excepciones de JCard/exportación. No eliminar temas.
+2. RESUELTO v1.2: Royal Hive Light/Dark, selector Sistema y migración segura de preferencias obsoletas; validar comportamiento nativo y web antes de publicar.
 3. Apariencia final de la fila Panel/Editar/Compartir en Jelly, manteniendo opción B y área táctil.
 4. Referencias Mobbin específicas por pantalla: consultarlas e inspeccionar imágenes, sin copiar estilos externos. Las búsquedas previas devolvieron enlaces, pero no se verificaron sus imágenes; no se consideran aprobación visual. No generar bocetos sin solicitud/aprobación.
 5. Funciones visibles del Panel en cada etapa; roles comerciales, visibilidad, nombres y política de IA; detalles Academy, pagos/regalos y reparto según etapas.
@@ -227,7 +227,7 @@ Mantener mismo orden, número de columnas lógicas, acciones y jerarquía. En la
 | Galaxy S22 físico o perfil Android equivalente | Misma estructura, proporciones y orden; teclado, scroll, safe areas y navegación correctos |
 | iPhone 17 físico o simulador equivalente | Misma jerarquía, márgenes, escala y comportamiento; safe areas y gestos iOS correctos |
 | Escala tipográfica | Normal y ampliada, incluyendo 130 % y 200 % donde el sistema permita; texto esencial completo, scroll cuando corresponda |
-| Temas | Royal Hive claro y oscuro; comprobar temas actuales sin eliminar preferencias |
+| Temas | Royal Hive Light/Dark; selección Sistema sigue cambios de OS, selección manual persiste y preferencias obsoletas se normalizan; fondos de JCards intactos |
 | Compartir | Sin contactos, lista larga, nombres extensos, selección múltiple, carga, error, teclado, QR y cancelación; solo datos autorizados |
 | Accesibilidad | Contraste 4.5:1 texto normal, 3:1 texto grande/controles esenciales; foco, lectores de pantalla, etiquetas, objetivos 48 dp y reducción de movimiento |
 | Streaming / editores | Controles sin cubrir contenido crítico; contraste con video dinámico, safe areas y salida visible |

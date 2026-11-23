@@ -33,8 +33,8 @@ export function PostComposerSheets(p:Props){
    <View style={{width:"100%",height:JOBEEN_CONTROL.visualAction+2,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8,
     backgroundColor:primary?modal.accent:modal.inner,borderWidth:primary?0:1,borderColor:label==="Descartar cambios"?danger.icon:modal.border,
     borderRadius:modal.radius.control,paddingHorizontal:15}}>
-    <Ionicons name={icon} size={18} color={label==="Descartar cambios"?danger.icon:modal.text}/>
-    <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"700",color:label==="Descartar cambios"?danger.icon:modal.text}}>{label}</Text>
+    <Ionicons name={icon} size={18} color={primary?modal.onAccent:label==="Descartar cambios"?danger.icon:modal.text}/>
+    <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"700",color:primary?modal.onAccent:label==="Descartar cambios"?danger.icon:modal.text}}>{label}</Text>
    </View>
   </Pressable>;
  const backdrop=(onPress:()=>void)=><Pressable accessibilityRole="button" accessibilityLabel="Cerrar ventana"
