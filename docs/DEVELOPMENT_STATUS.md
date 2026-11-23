@@ -1,5 +1,13 @@
 # Jobeen — registro central de desarrollo
 
+## SEC-05 — verificación remota EAS (2026-11-23)
+
+**PENDIENTE DE VALIDACIÓN.** GitHub confirmó `development` en `daf3137f8792950cbd58d19b3c406200185a421c` y el CI del PR #77 en `540d2e23b490c91b31aeff9d00e57690776fce2f` con `validate` y `database` aprobados. Expo MCP tiene OAuth. Cloud carece de sesión EAS CLI y la API de GitHub denegó los metadatos de ambos secrets con HTTP 403.
+
+El PR sobre #77 prepara la verificación de lectura. Tras revisar el SHA, solo el propietario puede aprobar la ejecución aplicando la etiqueta `approve-eas-pilot-read` a ese PR. El job comprueba autenticación EAS CLI, acceso al UUID del piloto, clave EAS `preview`, coincidencia con el secret GitHub y aceptación de la clave por Supabase. También comprueba si el paquete piloto tiene un keystore asociado a la credencial predeterminada. Los resultados se limitan a estados y no incluyen valores, material de firma ni artefactos.
+
+Con todos los estados aprobados, solicitar autorización independiente para una única APK Android del perfil `security-pilot` en el SHA vigente de `development`.
+
 ## Estado operativo vigente — APK piloto Android (2026-11-22)
 
 **Último HEAD verificado:** `development` = `daf3137f8792950cbd58d19b3c406200185a421c` y `main` = `887d85750b9b3f137676f85dc04c76302d15a8bb`. Este resumen sustituye los estados de PRs abiertos de los snapshots históricos debajo; no reabrir bloques de código aprobados.

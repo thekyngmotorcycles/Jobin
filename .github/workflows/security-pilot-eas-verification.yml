@@ -1,0 +1,46 @@
+name: Jobeen EAS pilot verification (read only)
+run-name: Jobeen EAS verification of ${{ github.event.pull_request.head.sha }}
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jobeen-eas-pilot-verification
+  cancel-in-progress: false
+
+jobs:
+  verify-eas-pilot:
+    # The owner applies the label after reviewing the current SHA. Opening or updating the PR cannot run this job.
+    if: >-
+      github.repository == 'thekyngmotorcycles/Jobin' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'security/verify-pilot-eas-read-only' &&
+      github.actor == 'thekyngmotorcycles' &&
+      github.triggering_actor == 'thekyngmotorcycles' &&
+      github.event.sender.login == 'thekyngmotorcycles' &&
+      github.event.label.name == 'approve-eas-pilot-read'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout the approved PR head
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Install the pinned EAS CLI without secrets
+        run: npm install --prefix "$RUNNER_TEMP/pilot-eas" --ignore-scripts --no-audit --no-fund eas-cli@27.1.0
+      - name: Verify Expo and Supabase pilot access
+        env:
+          APPROVED_SHA: ${{ github.event.pull_request.head.sha }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          JOBEEN_SECURITY_PILOT_PUBLISHABLE_KEY: ${{ secrets.JOBEEN_SECURITY_PILOT_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          node scripts/verify-security-pilot-eas.mjs "$RUNNER_TEMP/pilot-eas/node_modules/.bin/eas"

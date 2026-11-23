@@ -7,7 +7,8 @@
       "governance/security-foundation-20261122": false,
       "development": false,
       "feature/security-pilot-apk-preflight": false,
-      "docs/sec05-pilot-readiness-state-20261122": false
+      "docs/sec05-pilot-readiness-state-20261122": false,
+      "security/verify-pilot-eas-read-only": false
     }
   }
 }
