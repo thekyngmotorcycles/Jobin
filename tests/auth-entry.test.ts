@@ -51,8 +51,12 @@ function fixture() {
   const exchangedCodes: string[] = [];
   const exchangeStarted = deferred<void>();
   let pauseExchange: Promise<void> | undefined;
+  let pauseSession: Promise<void> | undefined;
   const auth = {
-    async getSession() { return { data: { session }, error: null }; },
+    async getSession() {
+      await pauseSession;
+      return { data: { session }, error: null };
+    },
     async signInWithOAuth() { return { data: { url: "https://example.test/authorize" }, error: null }; },
     async exchangeCodeForSession(code: string) {
       exchangedCodes.push(code);
@@ -138,6 +142,7 @@ function fixture() {
   return {
     createEntry, mountGate, exchangedCodes, exchangeStarted,
     holdExchange: (promise: Promise<void>) => { pauseExchange = promise; },
+    holdSessionRead: (promise: Promise<void>) => { pauseSession = promise; },
   };
 }
 
@@ -195,6 +200,29 @@ test("Android recreation consumes Expo's cached callback ahead of an unrelated l
     assert.deepEqual(app.exchangedCodes, ["restart-return"]);
     assert.equal(gate.scope(), "google-owner");
   } finally { gate.cleanup(); }
+});
+
+test("Login is unavailable as soon as a valid Google return reserves the entry, before Supabase responds", async () => {
+  const app = fixture();
+  const entry = app.createEntry();
+  const gate = app.mountGate(entry, Promise.resolve(null));
+  const sessionRead = deferred<void>();
+  try {
+    await tick();
+    await entry.startGoogleAuth(async () => {});
+    app.holdSessionRead(sessionRead.promise);
+    gate.emit("jobin://?code=return-with-slow-session");
+    await tick();
+    assert.deepEqual(app.exchangedCodes, []);
+    await assert.rejects(entry.startGoogleAuth(async () => {}), /Hay un acceso en proceso/);
+    assert.equal(gate.checkingOAuth(), true, "Login must be guarded before the pending session read completes");
+  } finally {
+    sessionRead.resolve();
+    await tick();
+    gate.cleanup();
+  }
+  assert.deepEqual(app.exchangedCodes, ["return-with-slow-session"]);
+  assert.equal(gate.scope(), "google-owner");
 });
 
 test("a cached navigation link cannot hide a valid React Native startup callback", async () => {

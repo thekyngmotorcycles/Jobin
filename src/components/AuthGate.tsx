@@ -119,11 +119,14 @@ export function AuthGate({ children }: { children: ReactNode }) {
    try{
     const result=await exchangePendingGoogle(url,async code=>{
      if(!active||!supabase)throw Error("Acceso no disponible.");
-     setOAuthError("");
-     setHandlingOAuth(true);
      const {data,error}=await supabase.auth.exchangeCodeForSession(code);
      if(error||!data.session)throw Error("No se pudo iniciar sesión.");
      await startJobinSession(data.session.user.id,data.session.access_token);
+    },()=>{
+     if(active&&!observedSession){
+      setOAuthError("");
+      setHandlingOAuth(true);
+     }
     });
     if(active&&result==="invalid")setOAuthError("Google regresó sin un código de acceso válido. Inténtalo de nuevo.");
    }catch{if(active)setOAuthError("Google no pudo completar la sesión. Vuelve a intentarlo.");}
