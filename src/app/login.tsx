@@ -50,6 +50,8 @@ export default function Login(){
   if(busy)return;
   setBusy(true);setError("");
   try{
+   // A previous browser login may have been abandoned; permit a fresh attempt.
+   cancelPendingGoogle();
    await startGoogleAuth(url=>Linking.openURL(url));
   }catch(e){setError(e instanceof Error?e.message:`No se pudo abrir el acceso con ${provider}.`);}
   finally{setBusy(false);}
