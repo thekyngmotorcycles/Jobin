@@ -1,17 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, Fragment, useContext, useEffect, useState, type ReactNode } from "react";
 import * as Linking from "expo-linking";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
 import {classifyAuthNavigation,type AuthNavigationPhase} from "../lib/auth-navigation-phase";
 import { supabase } from "../lib/supabase";
-import {exchangePendingGoogle,runAuthExit,cancelPendingGoogle} from "../lib/auth-entry";
+import {exchangePendingGoogle,runAuthExit} from "../lib/auth-entry";
 import {sessionExitFence} from "../lib/session-exit-fence";
 import type {MessageScope} from "../lib/session-continuity";
-import {parseGoogleCallback,authRedirectScheme} from "../lib/auth-entry-boundary";
+import {isGoogleCallbackUrl} from "../lib/auth-entry-boundary";
 import { sessionMarkerKey,sessionLifetimeState } from "../lib/session-lifetime";
 
 const AuthNavigationContext=createContext<AuthNavigationPhase>("checking");
-const OAuthErrorContext=createContext<string>("");
+const OAuthErrorContext=createContext({message:"",clear:()=>{}});
 export function useOAuthError(){return useContext(OAuthErrorContext);}
 export function useAuthNavigationPhase(){return useContext(AuthNavigationContext);}
 let usernameCompleted: (()=>void)|null=null;
@@ -57,6 +57,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
   let revision=0;
   let observedSession:string|null=null;
   let oauthInFlight=false;
+  let receivedLiveOAuthLink=false;
+  let lastOAuthUrl:string|null=null;
   usernameCompleted=()=>{if(active)setNeedsUsername(false);};
   async function usernameRequired(userId:string,sessionSetupIncomplete:boolean){
    const [{data:claimed,error:usernameError},{data:profile,error:profileError},{data:jcard,error:jcardError}]=await Promise.all([
@@ -108,37 +110,43 @@ export function AuthGate({ children }: { children: ReactNode }) {
    }catch{if(valid())setSessionScope(null);}
    finally{if(valid())setReady(true);}
   }
-  async function handleOAuthUrl(url:string|null){
-   // Reject a malformed OAuth return visibly, rather than silently retaining the pending lease.
-   if(url?.startsWith(authRedirectScheme+"://") && !parseGoogleCallback(url)){
-    cancelPendingGoogle();
-    setOAuthError("Google regresó sin un código de acceso válido. Inténtalo de nuevo.");
-    if(active){setHandlingOAuth(false);void check();}
-    return true;
-   }
-   if(!parseGoogleCallback(url))return false;
+  async function handleOAuthUrl(url:string|null,live:boolean){
+   if(!active||!isGoogleCallbackUrl(url))return false;
    if(oauthInFlight)return true;
+   if(!live&&url===lastOAuthUrl)return false;
+   lastOAuthUrl=url;
    oauthInFlight=true;revision++;
    try{
-    setOAuthError("");
-    const exchanged=await exchangePendingGoogle(url,async code=>{
+    const result=await exchangePendingGoogle(url,async code=>{
      if(!active||!supabase)throw Error("Acceso no disponible.");
+     setOAuthError("");
      setHandlingOAuth(true);
      const {data,error}=await supabase.auth.exchangeCodeForSession(code);
      if(error||!data.session)throw Error("No se pudo iniciar sesión.");
      await startJobinSession(data.session.user.id,data.session.access_token);
-     return true;
     });
-    if(!exchanged)setOAuthError("No se pudo completar el acceso con Google. Vuelve a intentarlo.");
-   }catch{/* Do not disclose session data or OAuth codes. */setOAuthError("Google no pudo completar la sesión. Vuelve a intentarlo.");}
+    if(active&&result==="invalid")setOAuthError("Google regresó sin un código de acceso válido. Inténtalo de nuevo.");
+   }catch{if(active)setOAuthError("Google no pudo completar la sesión. Vuelve a intentarlo.");}
    finally{oauthInFlight=false;if(active){setHandlingOAuth(false);void check();}}
    return true;
   }
-  void Linking.getInitialURL().then(async url=>{
-   const handled=await handleOAuthUrl(url);
-   if(!handled){if(active)setHandlingOAuth(false);void check();}
-  }).catch(()=>{if(active)setHandlingOAuth(false);void check();});
-  const linkSubscription=Linking.addEventListener("url",event=>{void handleOAuthUrl(event.url).then(handled=>{if(!handled)void check();});});
+
+  async function handleLinkOrCheck(url:string|null,{initial=false,live=false}={}){
+   if(await handleOAuthUrl(url,live)||!active||oauthInFlight)return;
+   if(initial)setHandlingOAuth(false);
+   void check();
+  }
+
+  // Expo keeps the latest Android intent even when the React Native event is missed.
+  const androidLink=()=>Platform.OS==="android"?Linking.getLinkingURL():null;
+  const linkSubscription=Linking.addEventListener("url",({url})=>{
+   if(isGoogleCallbackUrl(url))receivedLiveOAuthLink=true;
+   void handleLinkOrCheck(url,{live:true});
+  });
+  const cachedInitial=androidLink();
+  if(cachedInitial)void handleLinkOrCheck(cachedInitial,{initial:true});
+  else void Linking.getInitialURL().then(url=>handleLinkOrCheck(androidLink()??(receivedLiveOAuthLink?null:url),{initial:true}))
+   .catch(()=>handleLinkOrCheck(null,{initial:true}));
 
   const exitSubscription=sessionExitFence.subscribe(()=>{
    revision++;
@@ -146,7 +154,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
    if(sessionExitFence.current()){setSessionScope(null);setNeedsUsername(false);setReady(false);}
    else setTimeout(()=>{if(active)void check();},0);
   });
-  const appSubscription = AppState.addEventListener("change", state => { if(state==="active"&&!oauthInFlight)void check(); });
+  const appSubscription = AppState.addEventListener("change", state => { if(state==="active")void handleLinkOrCheck(androidLink()); });
   const subscription = supabase?.auth.onAuthStateChange((event,session) => {
    let nextSession:string|null=null;
    try{if(session)nextSession=sessionMarkerKey(session.user.id,session.access_token);}catch{/* Invalid metadata cannot select a private account. */}
@@ -168,5 +176,5 @@ export function AuthGate({ children }: { children: ReactNode }) {
  }, []);
  // Protected routes are absent from the navigator until authorized.
  const phase=classifyAuthNavigation(ready,handlingOAuth,sessionScope,needsUsername);
- return <AuthNavigationContext.Provider value={phase}><OAuthErrorContext.Provider value={oauthError}><Fragment key={sessionScope??"signed-out"}>{children}</Fragment></OAuthErrorContext.Provider></AuthNavigationContext.Provider>;
+ return <AuthNavigationContext.Provider value={phase}><OAuthErrorContext.Provider value={{message:oauthError,clear:()=>setOAuthError("")}}><Fragment key={sessionScope??"signed-out"}>{children}</Fragment></OAuthErrorContext.Provider></AuthNavigationContext.Provider>;
 }
