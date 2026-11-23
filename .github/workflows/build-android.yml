@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build-android:
-    if: github.ref == 'refs/heads/development' && inputs.approved_commit == github.sha
+    if: github.event_name == 'workflow_dispatch' && github.actor == 'thekyngmotorcycles' && github.ref == 'refs/heads/development' && inputs.approved_commit == github.sha
     name: Build preview APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
