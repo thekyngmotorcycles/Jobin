@@ -34,7 +34,7 @@ export async function exchangePendingGoogle<T>(url:string|null,accept:(code:stri
  try{return await boundary.exchange(url,async code=>{await signedOut();return accept(code);});}
  finally{await clearGooglePending();}
 }
-export const cancelPendingGoogle=()=>{boundary.cancelPendingGoogle();void clearGooglePending();};
+export const cancelPendingGoogle=()=>boundary.cancelPendingGoogle();
 // Serialize logout with every entry, including completion of Google PKCE.
 export function runAuthExit<T>(action:()=>Promise<T>){
  boundary.cancelPendingGoogle();
