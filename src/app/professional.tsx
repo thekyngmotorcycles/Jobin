@@ -30,8 +30,6 @@ export default function Professional() {
  const {theme}=useTheme();
  const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme);
  const insets=useSafeAreaInsets();
- const sunflower=theme==="sunflower";
- const glassPanel=(expanded:boolean)=>sunflower&&!expanded?{backgroundColor:colors.glassPanel,borderColor:colors.glassBorder,shadowColor:colors.glassShadow,shadowOpacity:0.27,shadowRadius:16,shadowOffset:{width:0,height:7},elevation:6}:undefined;
  const workspace=useProfessionalData(loadWorkspace,true);
  useFocusEffect(useCallback(()=>{
   let active=true;
@@ -145,7 +143,7 @@ export default function Professional() {
  const input={color:colors.ink,borderColor:colors.line,borderWidth:1,borderRadius:10,padding:12,minHeight:JOBEEN_CONTROL.touchTarget};
  function choose(code:string){setProfession(code);setSpecialties(w?.professions.find(p=>p.profession_code===code)?.specialties??[]);const pp=w?.professions.find(p=>p.profession_code===code);setTraining(pp?.training_status??"graduado");setInstitution(pp?.institution_id??null);}
  const sectionRow=(id:Section,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:JOBEEN_CONTROL.accordionRowVerticalPadding,minHeight:JOBEEN_CONTROL.touchTarget}}>
-  <Ionicons name={icon} size={23} color={sunflower&&section!==id?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined,color:sunflower&&section!==id?colors.glassText:colors.ink}]}>{title}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={sunflower&&section!==id?colors.glassMuted:colors.muted}/>
+  <Ionicons name={icon} size={23} color={colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined,color:colors.ink}]}>{title}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={colors.muted}/>
  </Pressable>;
  type SaveTarget="identity"|"languages"|"privacy";
  const identityDirty=!!w&&(name!==w.card.name||handle!==w.card.handle||city!==(w.profile.city??"")||
@@ -231,7 +229,7 @@ export default function Professional() {
   {!w?<ProfessionalStatus loading={workspace.loading||(!settingsReady&&!editorError)} error={editorError||workspace.error} retry={retryEditor}/>:<>
    {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
    <View style={{gap:6,paddingTop:0,paddingBottom:8}}>
-    <View onLayout={e=>{positions.current.identity=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap},glassPanel(section==="identity")]}>
+    <View onLayout={e=>{positions.current.identity=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap}]}>
      {sectionRow("identity","Datos principales","person-outline")}
      {section==="identity"&&<View style={{gap:12,paddingBottom:12}}>
       <Button secondary title={"Cambiar foto de JCard personal"} onPress={changePhoto}/>
@@ -245,7 +243,7 @@ export default function Professional() {
       <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("identity")}/>
      </View>}
     </View>
-    <View onLayout={e=>{positions.current.languages=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap},glassPanel(section==="languages")]}>
+    <View onLayout={e=>{positions.current.languages=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap}]}>
      {sectionRow("languages","Idiomas","globe-outline")}
      {section==="languages"&&<View style={{gap:16,paddingBottom:12}}>
       <Text style={s.muted}>El aro indica visualmente tu nivel. Se guarda como una puntuación compatible con tu JCard actual.</Text>
@@ -264,7 +262,7 @@ export default function Professional() {
       <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("languages")}/>
      </View>}
     </View>
-    {w.card.accountType==="personal"&&<View onLayout={e=>{positions.current.professions=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap},glassPanel(section==="professions")]}>
+    {w.card.accountType==="personal"&&<View onLayout={e=>{positions.current.professions=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap}]}>
      {sectionRow("professions","Profesiones y formación","school-outline")}
      {section==="professions"&&<View style={{gap:14,paddingBottom:12}}>
       <Text style={s.muted}>Puedes declarar tus profesiones sin un límite global. Una es principal y las demás secundarias. Declarar una profesión no verifica tus credenciales: los certificados se revisan por separado.</Text>
@@ -296,7 +294,7 @@ export default function Professional() {
       </View>}
      </View>}
     </View>}
-    <View onLayout={e=>{positions.current.privacy=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap},glassPanel(section==="privacy")]}>
+    <View onLayout={e=>{positions.current.privacy=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap}]}>
      {sectionRow("privacy","Privacidad de contacto","lock-closed-outline")}
      {section==="privacy"&&<View style={{gap:18,paddingBottom:12}}>
       <Text style={s.muted}>Ambos datos permanecen ocultos por defecto.</Text>
@@ -306,7 +304,7 @@ export default function Professional() {
       <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("privacy")}/>
      </View>}
     </View>
-    <View style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap},glassPanel(false)]}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:JOBEEN_CONTROL.accordionRowVerticalPadding,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name="color-palette-outline" size={23} color={sunflower?colors.glassText:colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined,color:sunflower?colors.glassText:colors.ink}]}>Apariencia</Text></View><Ionicons name="chevron-forward" size={20} color={sunflower?colors.glassMuted:colors.muted}/></Pressable></View>
+    <View style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap}]}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:JOBEEN_CONTROL.accordionRowVerticalPadding,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name="color-palette-outline" size={23} color={colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined,color:colors.ink}]}>Apariencia</Text></View><Ionicons name="chevron-forward" size={20} color={colors.muted}/></Pressable></View>
 
    </View>
   </>}

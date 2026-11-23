@@ -9,11 +9,12 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {HOME_MENU_ITEMS} from "../../components/HomeSideMenu";
 import {useUi} from "../../components/ui";
 import {useTheme} from "../../state/ThemeProvider";
-import {THEMES} from "../../theme/palettes";
+import {THEME_PREFERENCES} from "../../theme/palettes";
+import {JOBEEN_CONTROL} from "../../theme/control-metrics";
 export default function MenuSection(){
  const [query,setQuery]=useState("");
  const filtered=useMemo(()=>JOBIN_SETTINGS_GROUPS.map(group=>({...group,items:group.items.filter(entry=>(entry.title+" "+entry.description).toLowerCase().includes(query.trim().toLowerCase()))})).filter(group=>group.items.length>0),[query]);
- const {section}=useLocalSearchParams<{section:string}>();const {s,colors}=useUi();const {theme,setTheme}=useTheme();const chrome=menuChrome(theme,colors);
+ const {section}=useLocalSearchParams<{section:string}>();const {s,colors}=useUi();const {theme,preference,setTheme}=useTheme();const chrome=menuChrome(theme,colors);
  const item=HOME_MENU_ITEMS.find(entry=>entry.slug===section);
  if(!item)return <SafeAreaView style={[s.screen,{backgroundColor:chrome.surface}]}><Text style={s.h2}>Sección no encontrada</Text></SafeAreaView>;
  return <SafeAreaView edges={["bottom"]} style={[s.screen,{backgroundColor:chrome.surface}]}>
@@ -34,9 +35,9 @@ export default function MenuSection(){
    </View>}
    {section==="centro-privacidad"&&<Pressable accessibilityRole="button" onPress={()=>router.push("/professional")} style={s.panel}><Text style={s.text}>Visibilidad del correo y teléfono en mi JCard</Text><Text style={s.muted}>Configura estos datos desde Editar JCard.</Text></Pressable>}
    {section==="modo-oscuro"&&<View style={s.panel}><Text style={s.h3}>Tema de la aplicación</Text>
-    {THEMES.map(option=><Pressable key={option.id} accessibilityRole="radio" accessibilityState={{checked:theme===option.id}} onPress={()=>setTheme(option.id)}
-     style={{flexDirection:"row",alignItems:"center",paddingVertical:13,gap:12}}>
-     <Ionicons name={theme===option.id?"radio-button-on":"radio-button-off"} size={24} color={colors.ink}/>
+    {THEME_PREFERENCES.map(option=><Pressable key={option.id} accessibilityRole="radio" accessibilityState={{checked:preference===option.id}} onPress={()=>setTheme(option.id)}
+     style={{flexDirection:"row",alignItems:"center",paddingVertical:13,gap:12,minHeight:JOBEEN_CONTROL.touchTarget}}>
+     <Ionicons name={preference===option.id?"radio-button-on":"radio-button-off"} size={24} color={colors.ink}/>
      <Text style={s.text}>{option.label}</Text>
     </Pressable>)}
    </View>}

@@ -1,4 +1,5 @@
 import {menuChrome} from "../theme/menu-chrome";
+import {ROYAL_HIVE_CONTROL} from "../theme/control-metrics";
 import {JOBEEN_TYPE,jobeenTypeWidthScale} from "../theme/typography";
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
@@ -11,11 +12,11 @@ import { useApp } from "../state/AppProvider";
 
 // Phone typography density is consistent. A narrower display may reduce it slightly;
 // larger screens show more content instead of inflating all labels.
-export function useUi() { const { colors,theme } = useTheme(); const chrome=menuChrome(theme,colors); const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme);const premium=theme==="light"; const { width } = useWindowDimensions();
+export function useUi() { const { colors,theme } = useTheme(); const chrome=menuChrome(theme,colors); const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme); const { width } = useWindowDimensions();
  const k=jobeenTypeWidthScale(width);
  const fs = useCallback((size: number) => Math.round(size * k), [k]);
  const s = useMemo(() => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: premium?jt.bg:colors.paper },
+  screen: { flex: 1, backgroundColor: jt.bg },
   content: { padding: 20, gap: 20, width: "100%", maxWidth: 1180, alignSelf: "center" },
   header: { gap: 16, marginBottom: 4 },
   top: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 },
@@ -27,20 +28,20 @@ export function useUi() { const { colors,theme } = useTheme(); const chrome=menu
   text: { fontSize: fs(JOBEEN_TYPE.body), lineHeight: fs(21), color: colors.ink },
   muted: { fontSize: fs(JOBEEN_TYPE.secondary), lineHeight: fs(18), color: colors.muted },
   row: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" },
-  panel: { backgroundColor: premium?jt.surface:colors.card, borderWidth: 1, borderColor: premium?jt.line:colors.line, borderRadius: 20, padding: 22, gap: 16 },
-  button: { minHeight: 46, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: premium?jt.ink:colors.ink, alignItems: "center", justifyContent: "center", maxWidth: "100%" },
-  buttonText: { color: premium?jt.surface:colors.inverse, fontWeight: "700", fontSize: fs(JOBEEN_TYPE.action), textAlign: "center", flexShrink: 1 },
-  secondary: { backgroundColor: premium?jt.cream:chrome.sunflower?chrome.surface:colors.accent, borderWidth: premium||chrome.sunflower ? 1 : 0, borderColor: chrome.border },
-  secondaryText: { color: premium?jt.ink:chrome.sunflower?chrome.text:colors.ink },
-  chip: { borderRadius: 24, borderWidth: 1, borderColor: premium?jt.line:colors.line, paddingHorizontal: 14, minHeight: 44, justifyContent: "center", backgroundColor: premium?jt.surface:colors.card },
+  panel: { backgroundColor: jt.surface, borderWidth: 1, borderColor: jt.line, borderRadius: ROYAL_HIVE_CONTROL.cardRadius, padding: 22, gap: 16 },
+  button: { minHeight: ROYAL_HIVE_CONTROL.touchTarget, borderRadius: ROYAL_HIVE_CONTROL.buttonRadius, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", maxWidth: "100%" },
+  buttonText: { color: colors.onPrimary, fontWeight: "700", fontSize: fs(JOBEEN_TYPE.action), textAlign: "center", flexShrink: 1 },
+  secondary: { backgroundColor: jt.surface, borderWidth: 1, borderColor: colors.outline },
+  secondaryText: { color: colors.ink },
+  chip: { borderRadius: 24, borderWidth: 1, borderColor: jt.line, paddingHorizontal: 14, minHeight: 44, justifyContent: "center", backgroundColor: jt.surface },
   chipSelected: { backgroundColor: colors.ink, borderColor: colors.ink },
   chipText: { fontSize: fs(JOBEEN_TYPE.secondary), color: colors.ink },
   tag: { fontSize: fs(10), fontWeight: "600", color: colors.ink, backgroundColor: colors.accent, alignSelf: "flex-start", paddingVertical: 7, paddingHorizontal: 12, borderRadius: 18, overflow: "hidden" },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
   notice: { padding: 16, borderRadius: modal.radius.popover, backgroundColor:modal.surface, gap: 10, borderWidth:1, borderColor:modal.border },
-  footer: { paddingVertical: 20, borderTopWidth: 1, borderTopColor: premium?jt.line:colors.line, gap: 6 },
+  footer: { paddingVertical: 20, borderTopWidth: 1, borderTopColor: jt.line, gap: 6 },
   pressed: { opacity: 0.82 },
-}), [colors, fs, chrome.sunflower, chrome.surface, chrome.border, theme]); return { s, colors, fs, k }; }
+}), [colors, fs, chrome.surface, chrome.border, theme]); return { s, colors, fs, k }; }
 export function Button({ title, onPress, secondary = false, selected, label }: {
   title: string; onPress: () => void; secondary?: boolean; selected?: boolean; label?: string;
 }) {
@@ -48,7 +49,7 @@ export function Button({ title, onPress, secondary = false, selected, label }: {
   return <Pressable accessibilityRole="button" accessibilityLabel={label ?? title}
     accessibilityState={selected === undefined ? undefined : { selected }}
     onPress={onPress} style={({ pressed }) => [s.button, secondary && s.secondary, pressed && s.pressed]}>
-    <Text numberOfLines={2} style={[s.buttonText, secondary && s.secondaryText]}>{title}</Text>
+    <Text style={[s.buttonText, secondary && s.secondaryText]}>{title}</Text>
   </Pressable>;
 }
 export function Chips<T extends string>({ values, value, onChange, label, getLabel = (item:T) => String(item) }: {

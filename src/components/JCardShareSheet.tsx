@@ -134,7 +134,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
     </View>
     <View style={{paddingHorizontal:18,flexDirection:"row",alignItems:"center",gap:10,paddingTop:7,paddingBottom:9}}>
      <View style={{width:39,height:39,borderRadius:13,alignItems:"center",justifyContent:"center",backgroundColor:t.yellow}}>
-      <Ionicons name="share-social-outline" color={t.ink} size={24}/>
+      <Ionicons name="share-social-outline" color={t.onYellow} size={24}/>
      </View>
      <Text numberOfLines={2} style={{flex:1,fontSize:headerSize,lineHeight:compact?JOBEEN_LINE_HEIGHT.modalTitle:26,fontWeight:"800",color:t.ink}}>{showQr?qrHeading:shareTitle}</Text>
      <Pressable accessibilityRole="button" accessibilityLabel={showQr?"Volver a compartir":"Cerrar panel de compartir"}
@@ -162,7 +162,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
         <Ionicons name="people-outline" size={19} color={t.yellow}/>
         <Text numberOfLines={1} style={{fontSize:sectionSize,fontWeight:"800",color:t.ink}}>Contactos Jobeen</Text>
        </View>
-       <Text style={{fontSize:JOBEEN_TYPE.secondary,color:selected.length?t.ink:t.yellow,fontWeight:selected.length?"700":"700"}}>
+       <Text style={{fontSize:JOBEEN_TYPE.secondary,color:selected.length?t.ink:t.accentText,fontWeight:selected.length?"700":"700"}}>
         {selected.length?"Seleccionados: "+selected.length:"Seleccionar varios"}
        </Text>
       </View>
@@ -179,7 +179,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
            <PublicProfileAvatar userId={contact.id} name={contact.name} size={52} framed={false}/>
            {active&&<View style={{position:"absolute",right:-4,top:-5,width:23,height:23,borderRadius:12,
             backgroundColor:t.yellow,borderWidth:2,borderColor:modal.surface,alignItems:"center",justifyContent:"center"}}>
-            <Ionicons name="checkmark" color={t.ink} size={16}/>
+            <Ionicons name="checkmark" color={t.onYellow} size={16}/>
            </View>}
           </View>
           <Text numberOfLines={2} style={{fontSize:recipientSize,textAlign:"center",fontWeight:active?"800":"600",color:t.ink,lineHeight:15}}>{contact.name}</Text>
@@ -215,8 +215,8 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
         alignItems:"center",justifyContent:"center",opacity:sending?0.6:1}}>
        <View style={{height:JOBEEN_CONTROL.visualAction,width:"100%",backgroundColor:t.yellow,borderRadius:20,
         alignItems:"center",justifyContent:"center",flexDirection:"row",gap:8}}>
-        {sending?<ActivityIndicator color={t.ink}/>:<Ionicons name="paper-plane-outline" color={t.ink} size={19}/>}
-        <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"700",color:t.ink}}>{sending?"Enviando...":"Enviar a "+selected.length+" contacto"+(selected.length===1?"":"s")}</Text>
+        {sending?<ActivityIndicator color={t.onYellow}/>:<Ionicons name="paper-plane-outline" color={t.onYellow} size={19}/>}
+        <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"700",color:t.onYellow}}>{sending?"Enviando...":"Enviar a "+selected.length+" contacto"+(selected.length===1?"":"s")}</Text>
        </View>
       </Pressable>}
      </>}

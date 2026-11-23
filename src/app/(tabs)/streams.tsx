@@ -22,7 +22,7 @@ function matchesFilter(room:LiveStream,filter:WorkFilter){
  return room.category==="Work"&&!/trainer|teacher|profesor|instructor|educa/i.test(room.profession);
 }
 export default function Live(){
- const {s,colors}=useUi();const {theme}=useTheme();const jt=jobeenTokens(theme);const glass=theme==="sunflower";const inset=useSafeAreaInsets();const {contentBottom}=useTabClearance();const {city}=useApp();
+ const {s,colors}=useUi();const {theme}=useTheme();const jt=jobeenTokens(theme);const inset=useSafeAreaInsets();const {contentBottom}=useTabClearance();const {city}=useApp();
  const [tab,setTab]=useState<FeedTab>("Local");const [filter,setFilter]=useState<WorkFilter>("Todo");
  const rooms=browseStreams(tab==="Local"?"Nearby":"Popular",city).filter(room=>matchesFilter(room,filter));
  return <View style={s.screen}>
@@ -31,8 +31,8 @@ export default function Live(){
     <Text accessibilityRole="header" style={{color:colors.ink,fontSize:17,fontWeight:"800",flex:1}}>Transmisiones</Text>
     <Pressable accessibilityRole="button" accessibilityLabel="Iniciar una transmisión de tu trabajo" onPress={()=>router.push("/live")}
      style={({pressed})=>({minHeight:44,paddingHorizontal:13,flexDirection:"row",alignItems:"center",gap:7,borderRadius:15,
-      backgroundColor:glass?colors.glassPromo:theme==="light"?jt.cream:colors.accent,borderWidth:1,
-      borderColor:glass?colors.glassBorder:theme==="light"?jt.line:colors.line,opacity:pressed?0.7:1})}>
+      backgroundColor:jt.cream,borderWidth:1,
+      borderColor:jt.line,opacity:pressed?0.7:1})}>
      <Ionicons name="radio-outline" size={19} color={colors.ink}/>
      <Text style={{fontSize:13,fontWeight:"700",color:colors.ink}}>Transmitir</Text>
     </Pressable>

@@ -2,12 +2,12 @@ import {useState} from "react";
 import {Text,View,useWindowDimensions,type DimensionValue} from "react-native";
 import {JCardAbstractBee} from "./JCardAbstractBee";
 import {useTheme} from "../state/ThemeProvider";
-import {jobeenTokens} from "../theme/jobeen";
+import {jcardArtTokens} from "../theme/jobeen";
 import {businessCardPaper,jcardCommon,jcardSurfaceMetrics,jcardSurfaceSize} from "../theme/jcard";
 
 /** The placeholder uses exactly the real JCard's responsive outer dimensions. */
 export function JCardLoadingSkeleton(){
- const {theme}=useTheme(),t=jobeenTokens(theme);
+ const {theme}=useTheme(),t=jcardArtTokens(theme);
  const {width:screenWidth,fontScale}=useWindowDimensions();
  const [measuredWidth,setMeasuredWidth]=useState(0);
  const {height,radius,compact}=jcardSurfaceSize({screenWidth,measuredWidth,fontScale,theme});

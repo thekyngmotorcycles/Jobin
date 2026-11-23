@@ -2,7 +2,7 @@ import {presentJCardContact} from "../lib/jcard-save-contact";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {useReducedMotion} from "react-native-reanimated";
 import {BusinessCard3D,CardFlipInteractionContext} from "./BusinessCard3D";
-import {jobeenTokens} from "../theme/jobeen";
+import {jobeenTokens,jcardArtTokens} from "../theme/jobeen";
 import {personalAvatarUrl} from "../lib/personal-jcard-photo";
 import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY,type JCardVisibility} from "../lib/jcard-visibility";
 import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
@@ -90,7 +90,7 @@ const Pressable:typeof NativePressable = ((props:React.ComponentProps<typeof Nat
 
 function CardFace({ card, theme, appearance="original", expanded = false, onEdit, onShare, onEditPhoto, onSaveContact, contact, employerLink }: { card: CardData; theme: ThemeName; appearance?:JCardPremiumBackgroundId; expanded?: boolean; onEdit?: () => void; onShare?: () => void; onEditPhoto?: () => void; onSaveContact?:()=>void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null }) {
   const { s, fs } = useUi();
-  const jobeen=jobeenTokens(theme);
+  const jobeen=jcardArtTokens(theme);
   const { fontScale } = useWindowDimensions();
   const gradientId = "jcard" + useId().replace(/[^a-zA-Z0-9]/g, "");
   const shineId=gradientId+"shine";
@@ -251,11 +251,11 @@ function BusinessAward({label,icon,level,finish,surface,onPress,compact=false}:{
    <Svg width="100%" height="100%" viewBox="0 0 54 54" style={{position:"absolute"}}><Defs><LinearGradient id={"metal-"+label.replace(/[^a-zA-Z0-9]/g,"")} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={level===3?BUSINESS_MEDAL_COLORS[0]:level===2?BUSINESS_MEDAL_COLORS[1]:level===1?BUSINESS_MEDAL_COLORS[2]:BUSINESS_MEDAL_COLORS[3]}/><Stop offset="24%" stopColor={level===3?BUSINESS_MEDAL_COLORS[4]:level===2?BUSINESS_MEDAL_COLORS[5]:level===1?BUSINESS_MEDAL_COLORS[6]:BUSINESS_MEDAL_COLORS[7]}/><Stop offset="53%" stopColor={level===3?BUSINESS_MEDAL_COLORS[8]:level===2?BUSINESS_MEDAL_COLORS[9]:level===1?BUSINESS_MEDAL_COLORS[10]:BUSINESS_MEDAL_COLORS[11]}/><Stop offset="77%" stopColor={level===3?BUSINESS_MEDAL_COLORS[12]:level===2?BUSINESS_MEDAL_COLORS[13]:level===1?BUSINESS_MEDAL_COLORS[14]:BUSINESS_MEDAL_COLORS[15]}/><Stop offset="100%" stopColor={level===3?BUSINESS_MEDAL_COLORS[16]:level===2?BUSINESS_MEDAL_COLORS[17]:level===1?BUSINESS_MEDAL_COLORS[18]:BUSINESS_MEDAL_COLORS[19]}/></LinearGradient></Defs><Path d={path} fill={"url(#metal-"+label.replace(/[^a-zA-Z0-9]/g,"")+")"} stroke={tone} strokeWidth="1.4"/><Circle cx="27" cy="27" r="21" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.65" strokeWidth="1.3"/><Circle cx="27" cy="27" r="19.2" fill={BUSINESS_BADGE_NEUTRAL.face} stroke={tone} strokeWidth="1.4"/><Path d="M 12 26 A 15 15 0 0 1 41 23" fill="none" stroke={BUSINESS_MEDAL_COLORS[1]} strokeOpacity="0.45" strokeWidth="2"/></Svg>
    <BusinessAwardGlyph label={label} icon={icon}/>
   </View>
-  <Text numberOfLines={1} style={{fontSize:10,color:compact?jobeenTokens("light").ink:(level===0?surface.pending:tone),letterSpacing:-1}}>{level===0?"☆☆☆":"★".repeat(level)+"☆".repeat(3-level)}</Text>
+  <Text numberOfLines={1} style={{fontSize:10,color:compact?jcardArtTokens("light").ink:(level===0?surface.pending:tone),letterSpacing:-1}}>{level===0?"☆☆☆":"★".repeat(level)+"☆".repeat(3-level)}</Text>
  </Pressable></View>;
 }
 export function BusinessFace({card,theme,appearance="original",contact,onShare,onSaveContact,canEditMedia=false,onEditMedia,visibility=DEFAULT_JCARD_VISIBILITY}:{card:CardData;theme:ThemeName;appearance?:JCardPremiumBackgroundId;contact?:{email:string|null;phone:string|null};onShare?:()=>void;onSaveContact?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void;visibility?:typeof DEFAULT_JCARD_VISIBILITY}){
- const b=card.business;const jobeen=jobeenTokens(theme);const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=false;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:premium?.base??jobeen.biz,end:premium?.base??jobeen.biz,text:premium?.ink??jobeen.ink,secondary:premium?.ink??jobeen.textSoft,line:premium?.line??jobeen.bizBorder,sealFill:jobeen.surface};
+ const b=card.business;const jobeen=jcardArtTokens(theme);const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=false;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:premium?.base??jobeen.biz,end:premium?.base??jobeen.biz,text:premium?.ink??jobeen.ink,secondary:premium?.ink??jobeen.textSoft,line:premium?.line??jobeen.bizBorder,sealFill:jobeen.surface};
  const [selectedAward,setSelectedAward]=useState<{label:string;level:number}|null>(null);
  const [showBusinessVerification,setShowBusinessVerification]=useState(false);
  const [artSize,setArtSize]=useState({width:0,height:0});
