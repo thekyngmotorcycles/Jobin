@@ -29,7 +29,7 @@ jobs:
           git merge-base --is-ancestor "$APPROVED" HEAD
           test "$(git rev-parse "$APPROVED:src/app/login.tsx")" = "3aa7ab3c100d78714fbb7fdf1cd62dff73c49c42"
           git diff --name-only "$APPROVED" HEAD > "$RUNNER_TEMP/changed.txt"
-          printf '%s\n' '.github/workflows/approved-google-login-ota.yml' '.github/workflows/security-pilot-android.yml' 'eas.json' 'scripts/check-security-pilot-build-readiness.mjs' 'tests/eas-config-regression.test.ts' 'tests/release-approval-workflows.test.ts' > "$RUNNER_TEMP/expected.txt"
+          printf '%s\n' '.github/workflows/approved-google-login-ota.yml' '.github/workflows/security-pilot-android.yml' 'eas.json' 'scripts/check-security-pilot-build-readiness.mjs' 'tests/eas-config-regression.test.ts' 'tests/release-approval-workflows.test.ts' 'tests/security-pilot-build-readiness.test.ts' 'tests/security-pilot-config.test.ts' > "$RUNNER_TEMP/expected.txt"
           diff -u "$RUNNER_TEMP/expected.txt" "$RUNNER_TEMP/changed.txt"
           test "$(git show HEAD:.github/workflows/approved-google-login-ota.yml | sha256sum | cut -d' ' -f1)" = "$(sha256sum .github/workflows/approved-google-login-ota.yml | cut -d' ' -f1)"
       - uses: actions/setup-node@v4
