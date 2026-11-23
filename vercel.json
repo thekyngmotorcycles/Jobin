@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "integration/security-pilot-native-20261122": false,
+      "test/sec06-hosted-isolation-harness-20261122": false,
+      "governance/security-foundation-20261122": false,
+      "development": false,
+      "feature/security-pilot-apk-preflight": false,
+      "main": false,
+      "release/pilot-apk-manual-gates-20261122": false
+    }
+  }
+}
