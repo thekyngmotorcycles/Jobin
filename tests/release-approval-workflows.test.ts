@@ -96,3 +96,15 @@ test("original Expo preview APK can run from a single owner-applied PR label wit
   assert.match(text, /com\.thekyngmotorcycles\.jobin'/);
   assert.doesNotMatch(text, /eas\s+update|eas\s+channel:|git\s+push|--profile (?:security-pilot|production|development)\b/);
 });
+
+
+test("preview bridge excludes only the invalid unused pilot profile in its ephemeral runner copy", () => {
+  const text = workflow("preview-apk-owner-label.yml");
+  const source = JSON.parse(readFileSync("eas.json", "utf8"));
+  assert.equal(source.build.preview.android.buildType, "apk");
+  assert.equal(source.build["security-pilot"].env.EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL, "");
+  assert.match(text, /delete config\.build\['security-pilot'\]/);
+  assert.match(text, /writeFileSync\(file,JSON\.stringify\(config,null,2\)\)/);
+  assert.match(text, /build --profile preview --platform android/);
+  assert.doesNotMatch(text, /writeFileSync\(['"]app\.json/);
+});
