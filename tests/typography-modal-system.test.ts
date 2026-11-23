@@ -6,11 +6,11 @@ const src=(file:string)=>readFileSync(file,"utf8");
 
 test("Jobeen semantic typography preserves compact density across phone sizes",()=>{
  const type=src("src/theme/typography.ts");
- assert.ok(type.includes("modalTitle:17"));
- assert.ok(type.includes("sectionTitle:14"));
- assert.ok(type.includes("input:13"));
- assert.ok(type.includes("action:14"));
- assert.ok(type.includes("screenWidth<360?0.95:1"));
+ assert.ok(type.includes("modalTitle:20"));
+ assert.ok(type.includes("sectionTitle:17"));
+ assert.ok(type.includes("input:15"));
+ assert.ok(type.includes("action:15"));
+ assert.ok(type.includes("return 1;"));
  const ui=src("src/components/ui.tsx");
  assert.ok(ui.includes("jobeenTypeWidthScale(width)"));
  assert.ok(ui.includes("JOBEEN_TYPE.body"));
@@ -23,11 +23,11 @@ test("Premium Jobeen share sheet uses common type scale and compact accessible s
  assert.ok(sheet.includes("JOBEEN_TYPE.modalSectionTitle"));
  assert.ok(sheet.includes("JOBEEN_TYPE.input"));
  assert.ok(sheet.includes("JOBEEN_TYPE.modalAction"));
- assert.ok(sheet.includes("minHeight:JOBEEN_CONTROL.touchTarget,marginHorizontal:13"));
- assert.ok(sheet.includes("paddingBottom:18,gap:10"));
- assert.ok(sheet.includes("flex:1,fontSize:headerSize,lineHeight:compact?JOBEEN_LINE_HEIGHT.modalTitle:26"));
- assert.ok(sheet.includes("const compact=width<360"));
- assert.ok(sheet.includes("const headerSize=compact?JOBEEN_TYPE.modalTitle:20"));
+ assert.ok(sheet.includes("minHeight:JOBEEN_CONTROL.touchTarget,marginTop:2"));
+ assert.ok(sheet.includes("gap:JOBEEN_CONTROL.modalContentGap"));
+ assert.ok(sheet.includes("flex:1,minWidth:0,fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle"));
+ assert.ok(sheet.includes("royalHiveLayout("));
+ assert.ok(sheet.includes("scrollEnabled={layout.methodsNeedScroll}"));
  assert.ok(sheet.includes("contentTitle??\"Compartir \"+cardType"));
  assert.ok(sheet.includes("if(result.sent.length)onShared?.()"));
  assert.ok(sheet.includes('name="checkmark" color={t.onYellow} size={16}'));

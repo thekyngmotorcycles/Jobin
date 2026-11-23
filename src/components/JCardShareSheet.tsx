@@ -2,7 +2,7 @@ import {useEffect,useRef,useState} from "react";
 import {captureMessageScope,assertMessageScope,type MessageScope} from "../lib/message-session";
 import {ActivityIndicator,KeyboardAvoidingView,Linking,Modal,Platform,Pressable,ScrollView,Share,Text,TextInput,View,useWindowDimensions} from "react-native";
 import {Ionicons} from "@expo/vector-icons";
-import {SafeAreaView} from "react-native-safe-area-context";
+import {SafeAreaView,useSafeAreaInsets} from "react-native-safe-area-context";
 import QRCode from "react-native-qrcode-svg";
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
@@ -27,7 +27,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
  contentTitle?:string;contentMessage?:string;onShared?:()=>void;onError?:(reason:string)=>void;
 }){
  const t=jobeenTokens(theme);const modal=jobeenModalTokens(theme);
- const {width,fontScale}=useWindowDimensions();
+ const {width,fontScale}=useWindowDimensions();const insets=useSafeAreaInsets();
  const [query,setQuery]=useState("");
  const [showQr,setShowQr]=useState(false);
  const [contacts,setContacts]=useState<ShareRecipient[]>([]);
@@ -49,7 +49,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
  const matchingContacts=contacts.filter(c=>c.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
  const options=OPTIONS.filter(item=>item.id!=="qr"||!!link.trim());
  // Preserve the four logical methods; allow horizontal scroll at accessible text sizes.
- const layout=royalHiveLayout(Math.min(width,700),fontScale,options.length);
+ const layout=royalHiveLayout(Math.max(0,Math.min(width,700)-insets.left-insets.right),fontScale,options.length);
  const {actionSize,avatarSize,recipientCell,methodCell}=layout;
  useEffect(()=>{
   if(!visible){scopeRef.current=null;setReady(false);setContacts([]);setSelected([]);setQuery("");setShowQr(false);return;}
@@ -142,7 +142,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
     </View>
     {showQr?<View style={{alignItems:"center",gap:12,padding:20}}>
       <View style={{backgroundColor:jcardCommon.qrPaper,padding:15,borderRadius:19}}>
-       <QRCode value={link} size={Math.max(48,Math.min(layout.available-30,250))} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
+       <QRCode value={link} size={Math.max(48,Math.min(layout.available-70,250))} color={jcardCommon.qrInk} backgroundColor={jcardCommon.qrPaper}/>
       </View>
       <Text style={{color:t.ink,fontSize:15,fontWeight:"700"}}>{label}</Text>
      </View>:<>
@@ -152,7 +152,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
        <Ionicons name="search-outline" size={20} color={t.ink2}/>
        <TextInput value={query} onChangeText={setQuery} placeholder="Buscar contactos de Jobeen"
         accessibilityLabel="Buscar contactos de Jobeen" placeholderTextColor={t.ink2}
-        autoCapitalize="none" style={{flex:1,fontSize:JOBEEN_TYPE.input,color:t.ink,paddingVertical:7}}/>
+        autoCapitalize="none" style={{flex:1,minWidth:0,fontSize:JOBEEN_TYPE.input,color:t.ink,paddingVertical:7}}/>
       </View>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,marginTop:4}}>
        <View style={{flexDirection:"row",gap:8,alignItems:"center",flexShrink:1}}>
@@ -164,7 +164,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
        </Text>
       </View>
       {loading?<ActivityIndicator color={t.yellow} style={{height:76}}/>:matchingContacts.length?
-       <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled"
+       <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{gap:14,paddingHorizontal:2,paddingTop:7,paddingBottom:6}}>
         {matchingContacts.map(contact=>{
          const active=selected.includes(contact.id);
@@ -191,7 +191,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
       <View style={{height:1,backgroundColor:t.line,marginVertical:4}}/>
       <View style={{flexDirection:"row",alignItems:"center",gap:9}}>
        <Ionicons name="layers-outline" size={JOBEEN_CONTROL.secondaryIcon} color={t.accentText}/>
-       <Text style={{fontSize:JOBEEN_TYPE.modalSectionTitle,fontWeight:"800",color:t.ink}}>Compartir mediante</Text>
+       <Text style={{flex:1,fontSize:JOBEEN_TYPE.modalSectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalSectionTitle,fontWeight:"800",color:t.ink}}>Compartir mediante</Text>
       </View>
       <ScrollView horizontal nestedScrollEnabled scrollEnabled={layout.methodsNeedScroll} showsHorizontalScrollIndicator={layout.methodsNeedScroll} keyboardShouldPersistTaps="handled" contentContainerStyle={{width:layout.methodsWidth,flexDirection:"row",gap:layout.gap,paddingBottom:4}}>
        {options.map(option=><Pressable key={option.id} accessibilityRole="button"

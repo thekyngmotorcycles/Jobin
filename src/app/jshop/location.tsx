@@ -1,3 +1,5 @@
+import {JOBEEN_TYPE} from "../../theme/typography";
+import {JOBEEN_CONTROL} from "../../theme/control-metrics";
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useFocusEffect} from "expo-router";
 import {useCallback,useEffect,useRef,useState} from "react";
@@ -132,7 +134,7 @@ export default function JShopLocationPicker(){
      </Pressable>
     </View>
     <View style={{paddingHorizontal:14,paddingBottom:9}}>
-     <View style={{height:48,borderRadius:16,backgroundColor:t.surface,borderColor:t.line,borderWidth:1,
+     <View style={{minHeight:JOBEEN_CONTROL.inputHeight,borderRadius:JOBEEN_CONTROL.inputRadius,backgroundColor:t.surface,borderColor:t.outline,borderWidth:1,
       flexDirection:"row",alignItems:"center",paddingHorizontal:12,gap:9}}>
       <Ionicons name="search-outline" size={20} color={t.ink2}/>
       <TextInput ref={input} accessibilityLabel="Buscar ubicación" value={query}
@@ -140,7 +142,7 @@ export default function JShopLocationPicker(){
         setMoved(false);setMatches([]);setError("");}}
        onSubmitEditing={()=>void submitSearch()} returnKeyType="search"
        placeholder="Buscar ciudad o zona" placeholderTextColor={t.ink2}
-       style={{flex:1,minHeight:44,color:t.ink,fontSize:14}}/>
+       style={{flex:1,minWidth:0,minHeight:JOBEEN_CONTROL.inputHeight,color:t.ink,fontSize:JOBEEN_TYPE.input}}/>
       {searching&&<ActivityIndicator size="small" color={t.ink2}/>}
       {!!query&&typing&&<Pressable accessibilityRole="button" accessibilityLabel="Borrar búsqueda"
        onPress={()=>{setQuery("");setMatches([]);input.current?.focus();}}

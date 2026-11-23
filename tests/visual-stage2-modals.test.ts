@@ -7,8 +7,8 @@ const src=(p:string)=>readFileSync(p,"utf8");
 test("Share, composer, notices and message privacy share the same touch metrics",()=>{
  const controls=src("src/theme/control-metrics.ts");
  assert.ok(controls.includes("touchTarget:48"));
- assert.ok(controls.includes("visualAction:40"));
- assert.ok(controls.includes("inputHeight:42"));
+ assert.ok(controls.includes("visualAction:48"));
+ assert.ok(controls.includes("inputHeight:48"));
  for(const p of [
   "src/components/JCardShareSheet.tsx",
   "src/components/PostComposerSheets.tsx",
@@ -65,7 +65,7 @@ test("Destructive public profile action uses the shared premium menu row with re
 });
 test("Composer keeps draft and media preview behavior while using compact action heights",()=>{
  const s=src("src/components/PostComposerSheets.tsx");
- assert.ok(s.includes("height:JOBEEN_CONTROL.visualAction+2"));
+ assert.ok(s.includes("minHeight:JOBEEN_CONTROL.visualAction"));
  assert.ok(s.includes("minHeight:JOBEEN_CONTROL.touchTarget"));
  assert.ok(s.includes("p.drafts.length?<ScrollView"),"Draft lists remain scrollable when populated");
  assert.ok(s.includes("paddingHorizontal:18,paddingTop:6,paddingBottom:20"),"Empty dialog hugs a single message");

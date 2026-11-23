@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {ROYAL_HIVE_PALETTE,ROYAL_HIVE_BRAND,ROYAL_HIVE_STATES,THEMES,themeTokens} from "../src/theme/palettes.ts";
-import {ROYAL_HIVE_TYPE,ROYAL_HIVE_LINE_HEIGHT,JOBEEN_TYPE} from "../src/theme/typography.ts";
+import {ROYAL_HIVE_TYPE,ROYAL_HIVE_LINE_HEIGHT,JOBEEN_TYPE,JOBEEN_LINE_HEIGHT,jobeenTypeWidthScale} from "../src/theme/typography.ts";
 import {ROYAL_HIVE_CONTROL,royalHiveLayout,JOBEEN_CONTROL} from "../src/theme/control-metrics.ts";
 import {readFileSync} from "node:fs";
 import {contrastRatio} from "../src/theme/color.ts";
-test("Royal Hive candidate contrast meets AA on declared opaque surfaces and states",()=>{
+test("Royal Hive contrast meets AA on declared opaque surfaces and states",()=>{
  for(const mode of ["light","dark"] as const){
   const p=ROYAL_HIVE_PALETTE[mode];
   for(const bg of [p.paper,p.surface,p.modal,p.selected]){
@@ -24,7 +24,7 @@ test("Royal Hive candidate contrast meets AA on declared opaque surfaces and sta
  }
  assert.equal(ROYAL_HIVE_BRAND.jcard,"#00072E");
 });
-test("Candidate typography and component geometry match plan v1.1 lower bounds",()=>{
+test("Active shared typography and control geometry match plan v1.2",()=>{
  assert.equal(ROYAL_HIVE_TYPE.modalTitle,20);
  assert.equal(ROYAL_HIVE_TYPE.modalSectionTitle,17);
  assert.equal(ROYAL_HIVE_TYPE.modalRecipient,14);
@@ -42,19 +42,29 @@ test("Candidate typography and component geometry match plan v1.1 lower bounds",
  assert.equal(ROYAL_HIVE_CONTROL.shareIcon,28);
  assert.ok(readFileSync("src/theme/modals.ts","utf8").includes("sheet:30,dialog:26,popover:18"));
 });
-test("Responsive candidate keeps the same target and four logical methods",()=>{
- for(const width of [280,320,359,360,375,399,400,430,480]){
-  const l=royalHiveLayout(width);
+test("Responsive controls keep four logical methods without clipping across widths and text scales",()=>{
+ for(const width of [280,320,359,360,375,399,400,430,480])for(const scale of [1,1.3,2])for(const count of [3,4]){
+  const l=royalHiveLayout(width,scale,count);
   assert.equal(l.touchTarget,48);
-  assert.equal(l.methodsNeedScroll,false);
   assert.equal(l.profile,width<360?"compact":width<400?"standard":"wide");
+  assert.ok(l.actionSize>=48&&l.actionSize<=60);
+  assert.ok(l.methodCell>=48&&l.methodCell>=l.actionSize);
+  assert.equal(l.methodsWidth,count*l.methodCell+(count-1)*l.gap);
+  assert.equal(l.methodsNeedScroll,l.methodsWidth>l.available);
+  assert.ok(l.avatarSize>=48&&l.avatarSize<=60);
+  assert.ok(l.recipientCell>=l.avatarSize+12);
+  assert.equal(jobeenTypeWidthScale(width),1);
  }
  assert.equal(royalHiveLayout(200).methodsNeedScroll,true);
+ assert.equal(royalHiveLayout(280,2).methodsNeedScroll,true);
 });
-test("Only approved Royal Hive palettes are active; candidate typography stays separate until review",()=>{
+test("Only two Royal Hive palettes and one shared active type/control system",()=>{
  assert.deepEqual(THEMES.map(t=>t.id),["light","dark"]);
  assert.equal(themeTokens("light").paper,"#F5F7FA");
  assert.equal(themeTokens("dark").paper,"#0B1422");
- assert.equal(JOBEEN_TYPE.modalTitle,17);
- assert.equal(JOBEEN_CONTROL.visualAction,40);
+ assert.equal(JOBEEN_TYPE.modalTitle,20);
+ assert.equal(JOBEEN_CONTROL.visualAction,48);
+ assert.equal(JOBEEN_TYPE,ROYAL_HIVE_TYPE);
+ assert.equal(JOBEEN_LINE_HEIGHT,ROYAL_HIVE_LINE_HEIGHT);
+ assert.equal(JOBEEN_CONTROL,ROYAL_HIVE_CONTROL);
 });

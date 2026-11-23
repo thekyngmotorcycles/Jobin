@@ -52,12 +52,12 @@ test("Notice tones are semantic; normal windows keep a neutral surface",()=>{
 });
 test("The user-facing typography and touch targets stay compact and accessible",()=>{
  const typography=src("src/theme/typography.ts");
- assert.ok(typography.includes("modalTitle:17"));
- assert.ok(typography.includes("sectionTitle:14"));
- assert.ok(typography.includes("action:14"));
+ assert.ok(typography.includes("modalTitle:20"));
+ assert.ok(typography.includes("sectionTitle:17"));
+ assert.ok(typography.includes("action:15"));
  const share=src("src/components/JCardShareSheet.tsx");
  assert.ok(share.includes("style={{flexShrink:1}}"),"scrollable actions remain reachable above the send button");
- assert.ok(share.includes("minHeight:JOBEEN_CONTROL.touchTarget,marginHorizontal:13"));
+ assert.ok(share.includes("minHeight:JOBEEN_CONTROL.touchTarget,marginTop:2"));
  const notice=src("src/components/JobeenNoticeDialog.tsx");
  assert.ok(notice.includes("minHeight:JOBEEN_CONTROL.touchTarget"));
  assert.ok(notice.includes("statusBarTranslucent={false}"));
