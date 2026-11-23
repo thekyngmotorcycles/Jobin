@@ -2,73 +2,113 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 
-// Gate de alcance incremental: no es una auditoría ni certifica la seguridad del código.
-const sensitive = [
-  /^supabase\/(?:migrations|security-review|functions)\//i,
-  /^modules\/.*\.(?:kt|java|ts|tsx)$/i,
-  /^src\/.*(?:auth|session|account|secure|private|jcard|jshop|message|storage|video|media|permission|privacy|recovery|supabase)/i,
-  /^app\/.*(?:auth|login|register|profile|settings|messages|jshop|publish|notifications|recovery)/i,
-  /^app\.config\.js$/,
-  /^eas\.json$/,
-  /^\.github\/workflows\/.*\.ya?ml$/,
+// Gate incremental, no certificación de seguridad. Cada área sensible exige prueba del área.
+const rules = [
+  {
+    name: "database",
+    source: [/^supabase\/(?:migrations|security-review|functions)\//i],
+    evidence: [/^tests\/.*\.test\.sql$/i],
+  },
+  {
+    name: "workflow",
+    source: [/^\.github\/workflows\/.*\.ya?ml$/i, /^scripts\/check-security-change-coverage\.mjs$/i],
+    evidence: [/^tests\/(?:security-change-coverage|workflow|ci-security).*\.test\.ts$/i],
+  },
+  {
+    name: "expo-config",
+    source: [/^(?:app\.config\.js|eas\.json|app\.json)$/i],
+    evidence: [/^tests\/.*(?:security-pilot-config|expo-config|eas-config|native-autolinking).*\.test\.ts$/i,
+      /^scripts\/test-security-pilot-fail-closed\.mjs$/i],
+  },
+  {
+    name: "native",
+    source: [/^modules\//i, /^src\/.*(?:android-private-file|private-file-vault|private-metadata-vault|auth-storage\.native)/i],
+    evidence: [/^tests\/.*(?:native|android|file|vault|storage|secure|metadata).*\.test\.ts$/i],
+  },
+  {
+    name: "auth",
+    source: [/^src\/.*(?:auth|session|account-scope|credential|recovery|supabase)/i,
+      /^app\/.*(?:auth|login|register|session|recovery|cuenta)/i],
+    evidence: [/^tests\/.*(?:auth|session|account|credential|recovery|pilot-config|security-pilot-config).*\.test\.ts$/i],
+  },
+  {
+    name: "media",
+    source: [/^src\/.*(?:video|media|upload|photo|evidence|storage|file-vault)/i,
+      /^app\/.*(?:videos|flashes|publish|camera|media|photos)/i],
+    evidence: [/^tests\/.*(?:video|media|upload|photo|evidence|storage|file|publish|flash).*\.test\.ts$/i],
+  },
+  {
+    name: "social-privacy",
+    source: [/^src\/.*(?:jcard|jshop|message|feed|story|stories|privacy|permission|contact)/i,
+      /^app\/.*(?:jcard|jshop|message|feed|stories|story|profile|notifications)/i],
+    evidence: [/^tests\/.*(?:jcard|jshop|message|feed|story|stories|social|privacy|permission|contact|profile|notification).*\.test\.ts$/i],
+  },
 ];
-const regressions = [
-  /^tests\/.*(?:\.test\.ts|\.test\.sql)$/,
-  /^scripts\/test-[^/]+\.mjs$/,
-  /\/__tests__\/.*\.(?:ts|tsx|js)$/,
-];
-const allowedToMain = /^(?:release|hotfix)\/[a-z0-9][a-z0-9._/-]*$/;
 
-export function assessChanges(paths, baseBranch = "", headBranch = "") {
-  const files = [...new Set(paths.filter(value => typeof value === "string").map(value => value.replaceAll("\\", "/").trim()).filter(Boolean))];
-  const affected = files.filter(path => sensitive.some(pattern => pattern.test(path)));
-  const testFiles = files.filter(path => regressions.some(pattern => pattern.test(path)));
-  const findings = [];
-  if (affected.length > 0 && testFiles.length === 0) {
-    findings.push("Cambios en archivos sensibles sin una prueba de regresión modificada en este PR.");
-  }
-  if (baseBranch === "main" && !allowedToMain.test(headBranch)) {
-    findings.push("main solo acepta PR desde release/* o hotfix/*; cambios de trabajo van a development/integration.");
-  }
-  return { ok: findings.length === 0, affected, testFiles, findings };
+function changeRecord(input) {
+  if (typeof input === "string") return { path: input, status: "M" };
+  if (input && typeof input.path === "string" && /^[AMRCD]$/.test(input.status))
+    return { path: input.path, status: input.status };
+  throw new Error("Registro Git diff inválido.");
 }
 
-function gitDiffPaths(base, head) {
-  if (!/^[0-9a-f]{40}$/.test(base) || !/^[0-9a-f]{40}$/.test(head)) {
-    throw new Error("Se requieren SHA Git completos para comprobar el diff.");
+export function assessChanges(changes, baseBranch = "", headBranch = "") {
+  if (!Array.isArray(changes)) throw new Error("Se requiere un array de cambios.");
+  const normalized = changes.map(changeRecord)
+    .map(({ path, status }) => ({ path: path.replaceAll("\\", "/").trim(), status }))
+    .filter(({ path }) => path.length > 0);
+  const missing = [];
+  const checked = [];
+  for (const rule of rules) {
+    const affected = normalized.filter(({ path }) => rule.source.some(pattern => pattern.test(path)));
+    if (affected.length === 0) continue;
+    checked.push({ area: rule.name, files: affected.map(x => x.path) });
+    const covered = normalized.some(({ path, status }) =>
+      status !== "D" && rule.evidence.some(pattern => pattern.test(path)));
+    if (!covered) missing.push(rule.name);
   }
-  return execFileSync("git", ["diff", "--name-only", "--diff-filter=ACMR", base, head], {
+  const findings = missing.map(name => "Falta una prueba modificada del área: " + name);
+  if (baseBranch === "main" && !/^(?:release|hotfix)\/[a-z0-9][a-z0-9._/-]*$/.test(headBranch)) {
+    findings.push("main solo acepta PR desde release/* o hotfix/*.");
+  }
+  return { ok: findings.length === 0, checked, missing, findings };
+}
+
+function gitDiffRecords(base, head) {
+  if (!/^[0-9a-f]{40}$/.test(base) || !/^[0-9a-f]{40}$/.test(head))
+    throw new Error("Se requieren SHA Git completos.");
+  const diff = execFileSync("git", ["diff", "--name-status", "--find-renames", "--diff-filter=ACMRD", base, head], {
     encoding: "utf8", maxBuffer: 4 * 1024 * 1024,
-  }).split("\n").filter(Boolean);
+  });
+  return diff.split("\n").filter(Boolean).map(line => {
+    const fields = line.split("\t");
+    return { status: fields[0][0], path: fields.at(-1) };
+  });
 }
 
 function main(args) {
-  let files;
+  let changes;
   if (args[0] === "--paths-json" && args.length === 2) {
-    files = JSON.parse(args[1]);
-    if (!Array.isArray(files) || !files.every(path => typeof path === "string")) {
-      throw new Error("Lista de rutas inválida.");
-    }
+    changes = JSON.parse(args[1]);
   } else if (args[0] === "--base" && args[2] === "--head" && args.length === 4) {
-    files = gitDiffPaths(args[1], args[3]);
+    changes = gitDiffRecords(args[1], args[3]);
   } else {
     throw new Error("Uso: --base <sha> --head <sha> o --paths-json '[...]'.");
   }
-  const result = assessChanges(files, process.env.GITHUB_BASE_REF ?? "", process.env.GITHUB_HEAD_REF ?? "");
+  const result = assessChanges(changes, process.env.GITHUB_BASE_REF ?? "", process.env.GITHUB_HEAD_REF ?? "");
   if (!result.ok) {
     for (const finding of result.findings) console.error("SEGURIDAD: " + finding);
-    console.error("Archivos sensibles: " + result.affected.join(", "));
-    console.error("Añade o actualiza un test pertinente; no elimines ni silencies pruebas.");
+    console.error("Áreas afectadas: " + result.checked.map(x => x.area).join(", "));
     process.exitCode = 1;
   } else {
-    console.log("SEGURIDAD: comprobación incremental de cambios OK (" + result.affected.length + " archivos sensibles).");
+    console.log("SEGURIDAD: regresiones por área verificadas (" + result.checked.length + " áreas sensibles).");
   }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try { main(process.argv.slice(2)); }
   catch (error) {
-    console.error("SEGURIDAD: no se pudo analizar el diff: " + (error instanceof Error ? error.message : "error"));
+    console.error("SEGURIDAD: análisis interrumpido: " + (error instanceof Error ? error.message : "error"));
     process.exitCode = 2;
   }
 }
