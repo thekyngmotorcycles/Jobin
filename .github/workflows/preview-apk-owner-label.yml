@@ -69,7 +69,7 @@ jobs:
           // EAS CLI 27 rejects an empty value in ANY profile, even an unused one.
           // The source repository and isolated pilot safety configuration stay unchanged.
           delete config.build['security-pilot'];
-          writeFileSync(file,JSON.stringify(config,null,2)+'\\n');
+          writeFileSync(file,JSON.stringify(config,null,2));
           console.log('Using original preview profile; isolated pilot profile removed from runner copy only.');
           JS
       - name: Build original Jobeen preview APK (only after owner labeled)
