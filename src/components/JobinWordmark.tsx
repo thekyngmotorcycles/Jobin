@@ -19,7 +19,7 @@ export function JobinWordmark({width=112,style}:{width?:number;style?:StyleProp<
    <Text style={lettering}>Job</Text>
    <View style={{justifyContent:"center"}}>
     <View pointerEvents="none" style={{position:"absolute",left:0,right:0,bottom:fontSize*.15,height:fontSize*.48,backgroundColor:t.yellow}}/>
-    <Text style={lettering}>ee</Text>
+    <Text style={[lettering,{color:t.onYellow}]}>ee</Text>
    </View>
    <Text style={lettering}>n</Text>
   </View>

@@ -1,6 +1,7 @@
-import {themeTokens,type ThemeName} from "./palettes";
+import {ROYAL_HIVE_PALETTE,ROYAL_HIVE_STATES,ROYAL_HIVE_BRAND,type ThemeName} from "./palettes";
+import {composite,opacity,secondaryText} from "./color";
 
-/** Phase 1 Jobeen semantic tokens. Exported cards always use LIGHT_JOBEEN. */
+/** Preserved JCard artwork/export palette; not a selectable global appearance. */
 export const LIGHT_JOBEEN={
  bg:"#FFFDF7",surface:"#FFFFFF",cream:"#FFF4CC",biz:"#FFF9E3",
  bizBorder:"#F0DFA0",yellow:"#F5C842",line:"#EFE7CF",
@@ -14,20 +15,30 @@ export const LIGHT_JOBEEN={
  feedPhotoCounterBg:"rgba(0,0,0,0.64)",feedPhotoCounterText:"#FFFFFF",feedLiked:"#E64C5B",uploadScrim:"rgba(0,0,0,0.36)",
 } as const;
 
-/** Other themes retain their original colors while using identical semantic keys. */
-export function jobeenTokens(theme:ThemeName){
+/** Historical artwork tokens are independent of the global appearance palette. */
+export function jcardArtTokens(theme:ThemeName){
  if(theme==="light")return LIGHT_JOBEEN;
- const p=themeTokens(theme);
+ const paper="#000000",ink="#ffffff";
+ const card=composite(opacity(ink,.025),paper),accent=composite(opacity(ink,.06),paper);
+ const line=opacity(ink,.18),muted=secondaryText(ink,[paper,card,accent]);
  return {
-  bg:p.paper,surface:p.card,cream:p.accent,biz:p.card,bizBorder:p.line,
-  yellow:p.reaction,line:p.line,ink:p.ink,ink2:p.muted,label:p.ink,
-  textSoft:p.muted,starEmpty:p.muted,chipBorder:p.line,
-  okBackground:p.card,okText:p.ink,okDot:p.statusLive,
-  qrBorder:p.line,hexFront:p.accent,hexBack:p.accent,
-  videoTile1:p.card,videoTile2:p.accent,videoTile3:p.card,
+  bg:paper,surface:card,cream:accent,biz:card,bizBorder:line,yellow:ink,line,ink,ink2:muted,label:ink,
+  textSoft:muted,starEmpty:muted,chipBorder:line,okBackground:card,okText:ink,okDot:ink,
+  qrBorder:line,hexFront:accent,hexBack:accent,videoTile1:card,videoTile2:accent,videoTile3:card,
   videoViewsOverlay:"rgba(0,0,0,0.6)",videoViewsText:"#FFFFFF",
-  bar:p.mediaControl,silver:p.muted,floatingCardShadow:"#000000",
-  feedPhotoCounterBg:"rgba(0,0,0,0.64)",feedPhotoCounterText:"#FFFFFF",feedLiked:p.reaction,uploadScrim:"rgba(0,0,0,0.36)",
+  bar:opacity(paper,.94),silver:muted,floatingCardShadow:"#000000",
+  feedPhotoCounterBg:"rgba(0,0,0,0.64)",feedPhotoCounterText:"#FFFFFF",feedLiked:ink,uploadScrim:"rgba(0,0,0,0.36)",
+ };
+}
+/** Shared application chrome: Royal Hive, independent of the user's JCard art. */
+export function jobeenTokens(theme:ThemeName){
+ const p=ROYAL_HIVE_PALETTE[theme],states=ROYAL_HIVE_STATES[theme],art=jcardArtTokens(theme);
+ return {...art,bg:p.paper,surface:p.surface,cream:p.selected,biz:p.surface,bizBorder:p.line,
+  yellow:p.primary,onYellow:p.onPrimary,accentText:theme==="light"?p.ink:p.primary,
+  line:p.line,outline:p.outline,ink:p.ink,ink2:p.muted,label:p.ink,textSoft:p.muted,
+  starEmpty:p.muted,chipBorder:p.line,okBackground:states.success.background,okText:states.success.foreground,okDot:states.success.foreground,
+  qrBorder:p.line,hexFront:p.selected,hexBack:p.selected,videoTile1:p.surface,videoTile2:p.selected,videoTile3:p.surface,
+  bar:opacity(p.paper,.94),silver:ROYAL_HIVE_BRAND.silver,feedLiked:LIGHT_JOBEEN.feedLiked,
  };
 }
 export const exportedJobeenTokens=LIGHT_JOBEEN;

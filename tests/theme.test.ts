@@ -2,36 +2,51 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readdirSync,readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { THEMES,themeTokens,ORIGINAL_PINK,CAMEL_FOREGROUND,isThemeName } from "../src/theme/palettes.ts";
+import { THEMES,THEME_PREFERENCES,themeTokens,isThemeName,isThemePreference,normalizeThemePreference,resolveThemePreference,ROYAL_HIVE_PALETTE } from "../src/theme/palettes.ts";
 import { composite,contrastRatio,opacity } from "../src/theme/color.ts";
 import { assistantBounds,clampAssistant,snapAssistant,restoreAssistant,parseAssistantPosition,ASSISTANT_SIZE } from "../src/lib/assistant-position.ts";
 import { ACCOUNT_IDENTITIES } from "../src/lib/account-identities.ts";
-test("six themes meet AA for text, secondary text and icons",()=>{
- assert.equal(THEMES.length,6);
+test("Only Royal Hive light and dark are actual palettes, both meet AA",()=>{
+ assert.deepEqual(THEMES.map(t=>t.id),["light","dark"]);
  for(const {id} of THEMES){
-  const p=themeTokens(id);
+  const p=themeTokens(id),expected=ROYAL_HIVE_PALETTE[id];
+  assert.equal(p.paper,expected.paper);assert.equal(p.card,expected.surface);
+  assert.equal(p.primary,expected.primary);assert.equal(p.onPrimary,expected.onPrimary);
   for(const bg of [p.paper,p.card,p.accent]){
    assert.ok(contrastRatio(p.ink,bg)>=4.5,id+" foreground");
-   if(id==="pink"&&bg===p.accent)assert.ok(contrastRatio(p.muted,bg)>=4.26,"Documented unchanged Pink accent exception");
-   else assert.ok(contrastRatio(p.muted,bg)>=4.5,id+" secondary");
+   assert.ok(contrastRatio(p.muted,bg)>=4.5,id+" secondary");
    assert.ok(contrastRatio(p.icon,bg)>=3,id+" icons");
   }
+  assert.ok(contrastRatio(p.onPrimary,p.primary)>=4.5,id+" primary action");
   for(const image of ["#000000","#ffffff"]){
    const underIcon=composite(opacity(p.paper,p.navigationOpacity),image);
    assert.ok(contrastRatio(p.navIcon,underIcon)>=3,id+" navigation on media");
+   assert.ok(contrastRatio(p.mediaText,composite(p.mediaCaption,image))>=4.5,id+" media caption");
   }
   assert.equal(p.wordmark,p.ink);
  }
- assert.equal(themeTokens("camel").ink,CAMEL_FOREGROUND);
- assert.equal(themeTokens("sunflower").paper,"#FFCC01");
- assert.equal(themeTokens("sunflower").ink,"#272A2F");
- assert.ok(isThemeName("sunflower"));
- assert.equal(themeTokens("navy-green").paper,"#E2ECD4");
- assert.ok(isThemeName("camel")&&!isThemeName("invalid"));
 });
-test("Pink keeps all original palette values and uses black bottom icons",()=>{
- const p=themeTokens("pink");for(const [name,value]of Object.entries(ORIGINAL_PINK))assert.equal(p[name as keyof typeof ORIGINAL_PINK],value,name);
- assert.equal(p.navIcon,"#000000");
+test("System is a preference, not a third palette; removed preferences migrate safely",()=>{
+ assert.deepEqual(THEME_PREFERENCES.map(t=>t.id),["light","dark","system"]);
+ assert.ok(!isThemeName("system")&&isThemePreference("system"));
+ for(const value of ["pink","camel","navy-green","sunflower",null,undefined,"invalid"]){
+  assert.equal(isThemeName(value),false);assert.equal(isThemePreference(value),false);
+  assert.equal(normalizeThemePreference(value),"system");
+ }
+ for(const mode of ["light","dark","system"] as const)assert.equal(normalizeThemePreference(mode),mode);
+ assert.equal(resolveThemePreference("system","light"),"light");
+ assert.equal(resolveThemePreference("system","dark"),"dark");
+ assert.equal(resolveThemePreference("system",null),"light");
+ assert.equal(resolveThemePreference("light","dark"),"light");
+ assert.equal(resolveThemePreference("dark","light"),"dark");
+ const provider=readFileSync("src/state/ThemeProvider.tsx","utf8");
+ assert.ok(provider.includes("useColorScheme()"));
+ assert.ok(provider.includes("normalizeThemePreference(value)"));
+ assert.ok(provider.includes('Appearance.setColorScheme(preference==="system"?null:preference)'));
+ assert.ok(provider.includes('AsyncStorage.setItem("jobin.theme",preference)'));
+ const selector=readFileSync("src/app/menu/[section].tsx","utf8");
+ assert.ok(selector.includes("THEME_PREFERENCES.map"));
+ assert.ok(selector.includes("checked:preference===option.id"));
 });
 test("assistant stays clear of safe areas/navigation and snaps to the nearest edge",()=>{
  const b=assistantBounds(390,844,{top:44,bottom:34,left:0,right:0},92);

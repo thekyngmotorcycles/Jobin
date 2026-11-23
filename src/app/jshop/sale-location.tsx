@@ -1,3 +1,5 @@
+import {JOBEEN_TYPE} from "../../theme/typography";
+import {JOBEEN_CONTROL} from "../../theme/control-metrics";
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useLocalSearchParams} from "expo-router";
 import {useEffect,useRef,useState} from "react";
@@ -12,7 +14,6 @@ import type {JShopPlace,MapPoint} from "../../lib/jshop-location-core";
 import {useTheme} from "../../state/ThemeProvider";
 import {jobeenTokens} from "../../theme/jobeen";
 import {jobeenModalTokens} from "../../theme/modals";
-import {JOBEEN_TYPE} from "../../theme/typography";
 
 export default function SaleLocationPicker(){
  const {target,session}=useLocalSearchParams<{target?:string;session?:string}>();
@@ -116,19 +117,19 @@ export default function SaleLocationPicker(){
       {article?"Ubicación del artículo":"Ubicación de venta"}
      </Text>
      <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" onPress={()=>router.back()}
-      style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}>
+      style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
       <Ionicons name="close" size={24} color={t.ink}/>
      </Pressable>
     </View>
     <View style={{paddingHorizontal:14,paddingBottom:10}}>
-     <View style={{minHeight:48,borderRadius:17,backgroundColor:t.surface,borderWidth:1,
-      borderColor:t.line,flexDirection:"row",alignItems:"center",gap:9,paddingHorizontal:13}}>
+     <View style={{minHeight:JOBEEN_CONTROL.inputHeight,borderRadius:JOBEEN_CONTROL.inputRadius,backgroundColor:t.surface,borderWidth:1,
+      borderColor:t.outline,flexDirection:"row",alignItems:"center",gap:9,paddingHorizontal:13}}>
       <Ionicons name="search-outline" size={20} color={t.ink2}/>
       <TextInput accessibilityLabel="Buscar ciudad de venta" value={query}
        placeholder="Buscar ciudad o zona" placeholderTextColor={t.ink2} autoCorrect={false}
        editable={!busy&&!loading} onChangeText={v=>{sequence.current++;setSearching(false);setTyping(true);setQuery(v);setChosen(null);setMoved(false);setResults([]);setError("");}}
        returnKeyType="search" onSubmitEditing={()=>{if(!mapboxConfigured)void searchOnSubmit();}}
-       style={{flex:1,minWidth:0,color:t.ink,fontSize:14,minHeight:46}}/>
+       style={{flex:1,minWidth:0,color:t.ink,fontSize:JOBEEN_TYPE.input,minHeight:JOBEEN_CONTROL.inputHeight}}/>
       {searching?<ActivityIndicator size="small" color={t.ink2}/>:!mapboxConfigured&&<Pressable accessibilityRole="button" accessibilityLabel="Buscar ciudad" onPress={()=>void searchOnSubmit()} style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}><Ionicons name="arrow-forward" size={20} color={t.ink}/></Pressable>}
      </View>
     </View>

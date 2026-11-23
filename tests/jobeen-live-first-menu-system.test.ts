@@ -52,3 +52,13 @@ test("Creator profile section strip has five text-only choices while global bott
  assert.ok(global.includes('JobeenMessageIcon'),"Global tab icon language stays unchanged");
  assert.ok(layout.includes("JobinTabIcon"),"Global bottom navigation is preserved");
 });
+
+test("Create menu retains four routes with growable controls and safe scroll",()=>{
+ const create=src("src/components/JobeenCreateMenu.tsx");
+ for(const route of ["/post/create","/story/create","/create","/live"])assert.ok(create.includes('route:"'+route+'"'));
+ assert.ok(create.includes("width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget"));
+ assert.ok(create.includes("minHeight:MENU_ROW_HEIGHT"));
+ assert.ok(create.includes("maxHeight:Math.max(0,bottomMax-menuTop)"));
+ assert.ok(create.includes("<ScrollView style={{flexShrink:1}}"));
+ assert.ok(create.includes("fontSize:JOBEEN_TYPE.body,lineHeight:JOBEEN_LINE_HEIGHT.body"));
+});

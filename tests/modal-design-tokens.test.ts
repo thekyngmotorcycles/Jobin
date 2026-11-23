@@ -4,12 +4,12 @@ import {readFileSync} from "node:fs";
 
 const src=(path:string)=>readFileSync(path,"utf8");
 
-test("One provisional Premium Warm surface is shared by all major Jobeen windows",()=>{
+test("One Royal Hive surface is shared by all major Jobeen windows",()=>{
  const theme=src("src/theme/modals.ts");
- assert.ok(theme.includes('const surface=light?\"#FCF9F4\":t.surface'));
- assert.ok(theme.includes('const inner=light?LIGHT_JOBEEN.surface:t.bg'));
- assert.ok(theme.includes('const border=light?LIGHT_JOBEEN.line:t.line'));
- assert.ok(theme.includes('const accent=light?LIGHT_JOBEEN.yellow:t.yellow'));
+ assert.ok(theme.includes("surface:p.modal"));
+ assert.ok(theme.includes("inner:p.surface"));
+ assert.ok(theme.includes("border:p.line"));
+ assert.ok(theme.includes("accent:p.primary,onAccent:p.onPrimary"));
  assert.ok(theme.includes("sheet:30,dialog:26,popover:18"));
  for(const path of [
   "src/components/JCardShareSheet.tsx",
@@ -31,14 +31,16 @@ test("One provisional Premium Warm surface is shared by all major Jobeen windows
  }
 });
 test("Notice tones are semantic; normal windows keep a neutral surface",()=>{
- const tokens=src("src/theme/modals.ts");
- for(const name of ["neutral","info","success","warning","danger"])
+ const tokens=src("src/theme/palettes.ts");
+ for(const name of ["info","success","warning","danger"])
   assert.ok(tokens.includes(name+":"),name+" semantic variant");
- assert.ok(tokens.includes('danger:{background:light?"#FBE8E8"'));
+ assert.ok(tokens.includes('danger:{background:"#FBE8E8",foreground:"#922B2B"}'));
+ assert.ok(tokens.includes('danger:{background:"#482329",foreground:"#FFB4B4"}'));
+ assert.ok(src("src/theme/modals.ts").includes('tone==="neutral"?{background:p.modal,foreground:p.ink}:states[tone]'));
  const notice=src("src/components/JobeenNoticeDialog.tsx");
  assert.ok(notice.includes("jobeenModalTokens(theme,tone)"));
  assert.ok(notice.includes("backgroundColor:t.surface"));
- assert.ok(notice.includes('backgroundColor:destructive&&theme==="light"?t.icon:t.accent'));
+ assert.ok(notice.includes('backgroundColor:destructive?t.background:t.accent'));
  assert.ok(notice.includes("JOBEEN_TYPE.modalTitle"));
  const profile=src("src/components/ProfileCommunityActions.tsx");
  assert.ok(profile.includes('<JobeenNoticeDialog visible={confirm!==null}'));
@@ -50,12 +52,12 @@ test("Notice tones are semantic; normal windows keep a neutral surface",()=>{
 });
 test("The user-facing typography and touch targets stay compact and accessible",()=>{
  const typography=src("src/theme/typography.ts");
- assert.ok(typography.includes("modalTitle:17"));
- assert.ok(typography.includes("sectionTitle:14"));
- assert.ok(typography.includes("action:14"));
+ assert.ok(typography.includes("modalTitle:20"));
+ assert.ok(typography.includes("sectionTitle:17"));
+ assert.ok(typography.includes("action:15"));
  const share=src("src/components/JCardShareSheet.tsx");
  assert.ok(share.includes("style={{flexShrink:1}}"),"scrollable actions remain reachable above the send button");
- assert.ok(share.includes("minHeight:JOBEEN_CONTROL.touchTarget,marginHorizontal:13"));
+ assert.ok(share.includes("minHeight:JOBEEN_CONTROL.touchTarget,marginTop:2"));
  const notice=src("src/components/JobeenNoticeDialog.tsx");
  assert.ok(notice.includes("minHeight:JOBEEN_CONTROL.touchTarget"));
  assert.ok(notice.includes("statusBarTranslucent={false}"));

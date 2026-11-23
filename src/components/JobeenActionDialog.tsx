@@ -22,19 +22,19 @@ export function JobeenActionDialog({visible,title,description,actions,onClose,bu
  const close=()=>{if(!busy)onClose();};
  return <Modal visible={visible} transparent animationType="fade" statusBarTranslucent={false} onRequestClose={close}>
   <View style={{flex:1,alignItems:"center",justifyContent:"center",
-   paddingHorizontal:18,paddingVertical:Math.max(insets.top,insets.bottom)+16}}>
+   paddingHorizontal:JOBEEN_CONTROL.modalHorizontalPadding,paddingTop:insets.top+16,paddingBottom:insets.bottom+16}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Cerrar opciones" disabled={busy} onPress={close}
     style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:modal.scrim}}/>
-   <View accessibilityViewIsModal style={{width:"100%",maxWidth:Math.min(420,width-36),maxHeight:"90%",
+   <View accessibilityViewIsModal style={{width:"100%",maxWidth:Math.min(420,width-2*JOBEEN_CONTROL.modalHorizontalPadding),maxHeight:"90%",
     backgroundColor:modal.surface,borderRadius:modal.radius.dialog,borderWidth:1,borderColor:modal.border,
-    paddingHorizontal:16,paddingTop:12,paddingBottom:16,gap:8}}>
+    paddingHorizontal:JOBEEN_CONTROL.modalHorizontalPadding,paddingTop:12,paddingBottom:16,gap:JOBEEN_CONTROL.modalContentGap}}>
     <View style={{flexDirection:"row",alignItems:"center",gap:9}}>
      <Text accessibilityRole="header" style={{flex:1,color:modal.text,fontSize:JOBEEN_TYPE.modalTitle,
       lineHeight:JOBEEN_LINE_HEIGHT.modalTitle,fontWeight:"800"}}>{title}</Text>
      <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" disabled={busy} onPress={close}
       style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,
        alignItems:"center",justifyContent:"center"}}>
-      <Ionicons name="close" size={22} color={modal.text}/>
+      <Ionicons name="close" size={JOBEEN_CONTROL.icon} color={modal.text}/>
      </Pressable>
     </View>
     {!!description&&<Text style={{fontSize:JOBEEN_TYPE.secondary,color:modal.muted,

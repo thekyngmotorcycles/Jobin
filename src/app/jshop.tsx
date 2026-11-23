@@ -1,3 +1,5 @@
+import {JOBEEN_TYPE} from "../theme/typography";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import {useCallback,useRef,useState} from "react";
@@ -83,10 +85,10 @@ export default function JShop(){
     <JShopIconButton icon="location-outline" label="Elegir ubicación de búsqueda" selected={!!searchArea} onPress={()=>router.push("/jshop/location")}/>
    </View>}/>
    <View style={{flexDirection:"row",gap:9,alignItems:"center"}}>
-    <View style={{flex:1,minHeight:48,borderRadius:18,backgroundColor:t.surface,borderWidth:1,borderColor:t.line,paddingHorizontal:13,flexDirection:"row",alignItems:"center",gap:9}}>
+    <View style={{flex:1,minHeight:JOBEEN_CONTROL.inputHeight,borderRadius:JOBEEN_CONTROL.inputRadius,backgroundColor:t.surface,borderWidth:1,borderColor:t.outline,paddingHorizontal:13,flexDirection:"row",alignItems:"center",gap:9}}>
      <Ionicons name="search-outline" color={t.ink2} size={20}/>
-     <TextInput accessibilityLabel="Buscar artículos o vendedores" autoCapitalize="none" returnKeyType="search" placeholder="Buscar artículos o vendedores" placeholderTextColor={t.ink2} value={query} onChangeText={setQuery} style={{flex:1,color:t.ink,fontSize:14,minHeight:46}}/>
-     {!!query&&<Pressable accessibilityRole="button" accessibilityLabel="Borrar búsqueda" onPress={()=>setQuery("")} style={{padding:5}}><Ionicons name="close-circle" size={19} color={t.ink2}/></Pressable>}
+     <TextInput accessibilityLabel="Buscar artículos o vendedores" autoCapitalize="none" returnKeyType="search" placeholder="Buscar artículos o vendedores" placeholderTextColor={t.ink2} value={query} onChangeText={setQuery} style={{flex:1,minWidth:0,color:t.ink,fontSize:JOBEEN_TYPE.input,minHeight:JOBEEN_CONTROL.inputHeight}}/>
+     {!!query&&<Pressable accessibilityRole="button" accessibilityLabel="Borrar búsqueda" onPress={()=>setQuery("")} style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}><Ionicons name="close-circle" size={19} color={t.ink2}/></Pressable>}
     </View>
     <JShopIconButton icon="options-outline" label={"Filtros"+(filterCount?" ("+filterCount+")":"")} selected={filterCount>0} onPress={openFilters}/>
    </View>
@@ -141,10 +143,10 @@ export default function JShop(){
     <Text style={{color:t.ink,fontWeight:"700"}}>Precio</Text>
     <View style={{flexDirection:"row",gap:10}}>
      {([{field:"minPrice",label:"Mínimo"},{field:"maxPrice",label:"Máximo"}] as const).map(input=><TextInput key={input.field} accessibilityLabel={"Precio "+input.label.toLowerCase()} keyboardType="decimal-pad" placeholder={input.label} placeholderTextColor={t.ink2} value={pending[input.field]} onChangeText={v=>setPending(x=>({...x,[input.field]:v}))}
-      style={{flex:1,minHeight:48,borderWidth:1,borderColor:t.line,borderRadius:16,paddingHorizontal:12,color:t.ink,backgroundColor:t.surface}}/>)}
+      style={{flex:1,minHeight:JOBEEN_CONTROL.inputHeight,borderWidth:1,borderColor:t.outline,borderRadius:JOBEEN_CONTROL.inputRadius,paddingHorizontal:12,color:t.ink,fontSize:JOBEEN_TYPE.input,backgroundColor:t.surface}}/>)}
     </View>
     <Text style={{color:t.ink,fontWeight:"700"}}>Ordenar por</Text>
-    {([{id:"recent",label:"Más recientes"},{id:"price_low",label:"Menor precio"},{id:"price_high",label:"Mayor precio"}] as const).map(order=><Pressable key={order.id} accessibilityRole="radio" accessibilityState={{checked:pending.order===order.id}} onPress={()=>setPending(x=>({...x,order:order.id as JShopOrder}))} style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:10}}>
+    {([{id:"recent",label:"Más recientes"},{id:"price_low",label:"Menor precio"},{id:"price_high",label:"Mayor precio"}] as const).map(order=><Pressable key={order.id} accessibilityRole="radio" accessibilityState={{checked:pending.order===order.id}} onPress={()=>setPending(x=>({...x,order:order.id as JShopOrder}))} style={{minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",gap:10}}>
      <Ionicons name={pending.order===order.id?"radio-button-on":"radio-button-off"} size={22} color={t.ink}/><Text style={{color:t.ink}}>{order.label}</Text>
     </Pressable>)}
     <View style={{flexDirection:"row",gap:10,paddingTop:5}}>
