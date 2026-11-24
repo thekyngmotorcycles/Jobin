@@ -6,12 +6,12 @@ import {jobeenModalTokens} from "../theme/modals";
 import { JobinWordmark } from "./JobinWordmark";
 import { useCallback, useMemo, type ReactNode, type RefObject } from "react";
 import { useTheme } from "../state/ThemeProvider";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useApp } from "../state/AppProvider";
 
 // Preserve semantic text sizes; adapt margins and layout to available width.
-export function useUi() { const { colors,theme } = useTheme(); const chrome=menuChrome(theme,colors); const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme); const { width } = useWindowDimensions();
+export function useUi() { const { colors,theme } = useTheme(); const chrome=menuChrome(theme,colors); const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme);const danger=jobeenModalTokens(theme,"danger"); const { width } = useWindowDimensions();
  const k=jobeenTypeWidthScale(width);const layout=royalHiveLayout(width);
  const fs = useCallback((size: number) => Math.round(size * k), [k]);
  const s = useMemo(() => StyleSheet.create({
@@ -29,9 +29,14 @@ export function useUi() { const { colors,theme } = useTheme(); const chrome=menu
   row: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" },
   panel: { backgroundColor: jt.surface, borderWidth: 1, borderColor: jt.line, borderRadius: JOBEEN_CONTROL.cardRadius, padding: JOBEEN_CONTROL.panelPadding, gap: JOBEEN_CONTROL.panelGap },
   button: { minHeight: JOBEEN_CONTROL.touchTarget, borderRadius: JOBEEN_CONTROL.buttonRadius, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", maxWidth: "100%" },
-  buttonText: { color: colors.onPrimary, fontWeight: "700", fontSize: fs(JOBEEN_TYPE.action), textAlign: "center", flexShrink: 1 },
+  buttonText: { color: colors.onPrimary, fontWeight: "700", fontSize: fs(JOBEEN_TYPE.action), lineHeight: fs(JOBEEN_LINE_HEIGHT.action), textAlign: "center", flexShrink: 1 },
   secondary: { backgroundColor: jt.surface, borderWidth: 1, borderColor: colors.outline },
   secondaryText: { color: colors.ink },
+  tertiary: { backgroundColor: colors.transparent },
+  dangerButton: { backgroundColor: danger.background },
+  dangerButtonText: { color: danger.foreground },
+  disabledButton: { backgroundColor: colors.disabled, borderColor: colors.disabled },
+  disabledButtonText: { color: colors.onDisabled },
   chip: { borderRadius: 24, borderWidth: 1, borderColor: colors.outline, paddingHorizontal: 14, minHeight: JOBEEN_CONTROL.touchTarget, justifyContent: "center", backgroundColor: jt.surface },
   chipSelected: { backgroundColor: colors.ink, borderColor: colors.ink },
   chipText: { fontSize: fs(JOBEEN_TYPE.secondary), color: colors.ink },
@@ -41,15 +46,18 @@ export function useUi() { const { colors,theme } = useTheme(); const chrome=menu
   footer: { paddingVertical: 20, borderTopWidth: 1, borderTopColor: jt.line, gap: 6 },
   pressed: { opacity: 0.82 },
 }), [colors, fs, chrome.surface, chrome.border, theme, layout.margin]); return { s, colors, fs, k }; }
-export function Button({ title, onPress, secondary = false, selected, label }: {
-  title: string; onPress: () => void; secondary?: boolean; selected?: boolean; label?: string;
-}) {
-  const {s} = useUi();
-  return <Pressable accessibilityRole="button" accessibilityLabel={label ?? title}
-    accessibilityState={selected === undefined ? undefined : { selected }}
-    onPress={onPress} style={({ pressed }) => [s.button, secondary && s.secondary, pressed && s.pressed]}>
-    <Text style={[s.buttonText, secondary && s.secondaryText]}>{title}</Text>
-  </Pressable>;
+export type JobeenButtonVariant="primary"|"secondary"|"tertiary"|"danger";
+export function Button({title,onPress,secondary=false,variant,selected,label,disabled=false,busy=false,busyLabel="Procesando…",style}:{
+ title:string;onPress:()=>void;secondary?:boolean;variant?:JobeenButtonVariant;selected?:boolean;label?:string;
+ disabled?:boolean;busy?:boolean;busyLabel?:string;style?:StyleProp<ViewStyle>;
+}){
+ const {s}=useUi();const kind=variant??(secondary?"secondary":"primary");const locked=disabled||busy;
+ return <Pressable accessibilityRole="button" accessibilityLabel={label??title}
+  accessibilityState={{selected,disabled:locked,busy}} disabled={locked} onPress={onPress}
+  style={({pressed})=>[s.button,kind==="secondary"&&s.secondary,kind==="tertiary"&&s.tertiary,kind==="danger"&&s.dangerButton,
+   style,locked&&s.disabledButton,pressed&&!locked&&s.pressed]}>
+  <Text style={[s.buttonText,(kind==="secondary"||kind==="tertiary")&&s.secondaryText,kind==="danger"&&s.dangerButtonText,locked&&s.disabledButtonText]}>{busy?busyLabel:title}</Text>
+ </Pressable>;
 }
 export function Chips<T extends string>({ values, value, onChange, label, getLabel = (item:T) => String(item) }: {
   values: readonly T[]; value: T; onChange: (value: T) => void; label: string; getLabel?: (item:T) => string;

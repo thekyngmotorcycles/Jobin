@@ -40,7 +40,7 @@ export function JobeenActionDialog({visible,title,description,actions,onClose,bu
     {!!description&&<Text style={{fontSize:JOBEEN_TYPE.secondary,color:modal.muted,
      lineHeight:JOBEEN_LINE_HEIGHT.secondary,marginBottom:4}}>{description}</Text>}
     <ScrollView style={{flexShrink:1}} keyboardShouldPersistTaps="always"
-     contentContainerStyle={{gap:8}}>
+     contentContainerStyle={{gap:2}}>
      {actions.map(action=><SettingsMenuRow key={action.label} variant="action"
       title={action.label} description={action.description} icon={action.icon}
       tone={action.tone} disabled={busy} onPress={action.onPress}/>)}

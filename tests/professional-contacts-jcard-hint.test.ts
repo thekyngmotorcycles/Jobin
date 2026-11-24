@@ -93,3 +93,23 @@ test("Contact actions and notifications use the originating session across await
  assert.ok(notices.includes("revision.current!==generation"));
  assert.ok(notices.includes("markActivityNotificationsRead(notices,scope)"));
 });
+
+test("Royal Hive contact confirmation preserves the captured account and single in-flight mutation",()=>{
+ const network=source("src/components/ProfileFollowCounts.tsx");
+ const confirm=network.slice(network.indexOf(" function confirmRemove("),network.indexOf(" function changeTab("));
+ const mutation=network.slice(network.indexOf(" async function contactAction("),network.indexOf(" function confirmRemove("));
+ assert.ok(confirm.includes('scope.owner!==userId||person.direction!=="accepted"||contactMutation.current'));
+ assert.ok(confirm.includes("setPendingRemove({person,scope})"));
+ assert.ok(confirm.includes("const request=pendingRemove,{person,scope}=request"));
+ assert.ok(confirm.includes("await contactAction(person,undefined,scope)"));
+ assert.ok(confirm.includes("current=>current===request?null:current"));
+ assert.ok(mutation.includes("scopeRef.current?.session!==scope.session||scope.owner!==userId||contactMutation.current"));
+ assert.ok(mutation.indexOf("contactMutation.current=operation")<mutation.indexOf("await captureMessageScope(scope)"));
+ assert.ok(mutation.indexOf("await captureMessageScope(scope);if(!active())return false;")<mutation.indexOf("await removeContactRequest(person.requestId,scope)"));
+ assert.ok(mutation.includes("contactMutation.current===operation&&scopeRef.current?.session===scope.session"));
+ assert.ok(mutation.includes('finally{if(contactMutation.current===operation){contactMutation.current=null;setBusy("");}}'));
+ assert.ok(network.includes('setSheet(false);setPendingRemove(null);contactMutation.current=null;setBusy("");setRows([]);setContactRows([]);'));
+ assert.ok(network.includes('visible={sheet&&!pendingRemove}'));
+ assert.ok(network.includes('visible={sheet&&pendingRemove!==null}'));
+ assert.ok(network.includes('busy={!!busy} onCancel={()=>{if(!contactMutation.current)'));
+});

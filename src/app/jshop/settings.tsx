@@ -4,6 +4,9 @@ import {useCallback,useRef,useState} from "react";
 import {ActivityIndicator,Pressable,Text,View} from "react-native";
 import {BottomSheet} from "../../components/social-ui";
 import {JShopPage} from "../../components/JShopUI";
+import {SettingsMenuRow} from "../../components/SettingsMenuRow";
+import {JOBEEN_CONTROL} from "../../theme/control-metrics";
+import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../../theme/typography";
 import {captureMessageScope,assertMessageScope,type MessageScope} from "../../lib/message-session";
 import {readDefaultSaleLocation,type SaleLocation} from "../../lib/jshop-selling-location";
 import {readSellerCurrency,writeSellerCurrency} from "../../lib/jshop-selling-preferences";
@@ -46,24 +49,12 @@ export default function JShopSettings(){
   }catch(e){if(scopeRef.current===scope)setError(e instanceof Error?e.message:"No se pudo guardar la moneda.");}
   finally{setSaving(false);}
  }
- const row=(icon:Icon,title:string,detail:string,onPress:()=>void,disabled=false)=>
-  <Pressable key={title} accessibilityRole="button" accessibilityLabel={title}
-   accessibilityHint={detail} disabled={disabled} onPress={onPress}
-   style={({pressed})=>({minHeight:64,flexDirection:"row",alignItems:"center",paddingHorizontal:14,
-    paddingVertical:11,gap:12,backgroundColor:pressed?t.cream:t.surface,opacity:disabled?0.6:1})}>
-   <Ionicons name={icon} size={23} color={t.ink}/>
-   <View style={{flex:1,minWidth:0,gap:4}}>
-    <Text numberOfLines={2} style={{color:t.ink,fontSize:14,fontWeight:"700"}}>{title}</Text>
-    {!!detail&&<Text numberOfLines={2} style={{color:t.ink2,fontSize:12,lineHeight:17}}>{detail}</Text>}
-   </View>
-   <Ionicons name="chevron-forward" size={19} color={t.ink2}/>
-  </Pressable>;
+ const row=(icon:Icon,title:string,value:string|undefined,onPress:()=>void,disabled=false,variant:"action"|"navigation"="navigation")=>
+  <SettingsMenuRow key={title} icon={icon} title={title} value={value} variant={variant} onPress={onPress} disabled={disabled}/>;
  const section=(heading:string,children:React.ReactNode)=>
-  <View style={{gap:9}}>
-   <Text style={{fontSize:13,fontWeight:"800",color:t.ink2,marginLeft:2}}>{heading}</Text>
-   <View style={{borderRadius:18,borderWidth:1,borderColor:t.line,overflow:"hidden",backgroundColor:t.surface}}>
-    {children}
-   </View>
+  <View style={{gap:2}}>
+   <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,fontWeight:"700",color:t.ink,marginBottom:4}}>{heading}</Text>
+   {children}
   </View>;
  return <>
   <Stack.Screen options={{title:"Configuración de JShop",headerShadowVisible:false,
@@ -73,31 +64,30 @@ export default function JShopSettings(){
     {section("Vender",<>
      {row("location-outline","Mi ubicación de venta",loading?"Cargando...":location?.city??"Sin configurar",
       ()=>router.push({pathname:"/jshop/sale-location",params:{target:"default"}}),loading)}
-     <View style={{height:1,backgroundColor:t.line,marginLeft:49}}/>
-     {row("cash-outline","Moneda predeterminada",currency+" · "+currencies[currency],
-      ()=>setCurrencyOpen(true),loading)}
+     {row("cash-outline","Moneda predeterminada",loading?"Cargando…":currency,
+      ()=>setCurrencyOpen(true),loading,"action")}
     </>)}
     {section("Actividad",<>
-     {row("albums-outline","Mis anuncios","Publicados, borradores, pausados y vendidos",()=>router.replace("/jshop/mine"))}
-     <View style={{height:1,backgroundColor:t.line,marginLeft:49}}/>
-     {row("notifications-outline","Notificaciones","Actividad de tu cuenta",()=>router.push("/notifications"))}
+     {row("albums-outline","Mis anuncios",undefined,()=>router.replace("/jshop/mine"))}
+     {row("notifications-outline","Notificaciones",undefined,()=>router.push("/notifications"))}
     </>)}
-    {section("Ayuda",row("document-text-outline","Guía para publicar","Requisitos y buenas prácticas",()=>router.push("/jshop/guide")))}
+    {section("Ayuda",row("document-text-outline","Guía para publicar",undefined,()=>router.push("/jshop/guide")))}
     {!!error&&<Text accessibilityLiveRegion="polite" style={{fontSize:12,color:t.ink}}>{error}</Text>}
    </View>
   </JShopPage>
-  <BottomSheet visible={currencyOpen} onClose={()=>setCurrencyOpen(false)} title="Moneda predeterminada">
+  <BottomSheet visible={currencyOpen} onClose={()=>{if(!saving)setCurrencyOpen(false);}} title="Moneda predeterminada">
    <View style={{paddingTop:8,gap:8}}>
     {JSHOP_CURRENCIES.map(option=><Pressable key={option} accessibilityRole="radio"
      accessibilityState={{checked:option===currency,disabled:saving}} disabled={saving}
      onPress={()=>void setPreferredCurrency(option)}
-     style={({pressed})=>({minHeight:54,borderRadius:15,borderWidth:1,borderColor:option===currency?t.yellow:t.line,
-      backgroundColor:pressed?t.cream:t.surface,paddingHorizontal:15,flexDirection:"row",gap:12,alignItems:"center"})}>
+     style={({pressed})=>({minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:option===currency?t.yellow:t.line,
+      backgroundColor:pressed?t.cream:t.surface,paddingHorizontal:12,paddingVertical:10,flexDirection:"row",gap:12,alignItems:"center"})}>
      <Ionicons name={option===currency?"radio-button-on":"radio-button-off"} size={22} color={t.ink}/>
-     <Text style={{flex:1,fontSize:14,color:t.ink}}>{option} · {currencies[option]}</Text>
+     <Text style={{flex:1,fontSize:JOBEEN_TYPE.body,lineHeight:JOBEEN_LINE_HEIGHT.body,color:t.ink}}>{option} · {currencies[option]}</Text>
      {saving&&option===currency&&<ActivityIndicator size="small" color={t.ink}/>}
     </Pressable>)}
-    <Text style={{fontSize:12,lineHeight:18,color:t.ink2}}>
+    {!!error&&<Text accessibilityLiveRegion="polite" style={{fontSize:JOBEEN_TYPE.secondary,color:t.ink}}>{error}</Text>}
+    <Text style={{fontSize:JOBEEN_TYPE.secondary,lineHeight:JOBEEN_LINE_HEIGHT.secondary,color:t.ink2}}>
      Se aplicará a los nuevos anuncios. Puedes cambiarla al publicar.
     </Text>
    </View>

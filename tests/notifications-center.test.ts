@@ -15,7 +15,9 @@ test("My network is replaced by a notification bell and old links remain safe",(
 });
 test("Profile followers and following open a private accessible bottom sheet",()=>{
  const counts=file("src/components/ProfileFollowCounts.tsx");
- assert.ok(counts.includes("<BottomSheet visible={sheet}"));
+ assert.ok(counts.includes("<BottomSheet visible={sheet&&!pendingRemove}"),"The private sheet is hidden while its confirmation is open");
+ assert.ok(counts.includes("<JobeenNoticeDialog visible={sheet&&pendingRemove!==null}"),"The confirmation cannot overlap the network sheet");
+ assert.ok(counts.includes("if(!contactMutation.current)setSheet(false)"),"The sheet cannot close during a contact mutation");
  assert.ok(counts.includes("viewer===userId"));
  assert.ok(counts.includes('option==="followers"'));
  assert.ok(counts.includes("loadConnections("));

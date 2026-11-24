@@ -80,3 +80,33 @@ test("Composer keeps draft and media preview behavior while using compact action
  assert.ok(s.includes("onRestore(draft)"));
  assert.ok(s.includes("p.onClosePreview"));
 });
+
+test("Shared buttons and compact action windows retain semantic states and account-bound destructive actions",()=>{
+ const ui=src("src/components/ui.tsx");
+ const notice=src("src/components/JobeenNoticeDialog.tsx");
+ const chat=src("src/app/message.tsx");
+ const contacts=src("src/components/ProfileFollowCounts.tsx");
+ const shop=src("src/app/jshop/settings.tsx");
+ const row=src("src/components/SettingsMenuRow.tsx");
+ assert.ok(ui.includes('JobeenButtonVariant="primary"|"secondary"|"tertiary"|"danger"'));
+ assert.ok(ui.includes("const locked=disabled||busy"));
+ assert.ok(ui.includes("accessibilityState={{selected,disabled:locked,busy}}"));
+ assert.ok(ui.includes("minHeight: JOBEEN_CONTROL.touchTarget"));
+ assert.ok(notice.includes('variant="secondary" disabled={busy}'));
+ assert.ok(notice.includes('variant={destructive?"danger":"primary"} busy={busy}'));
+ assert.ok(!chat.includes("Gestiona esta conversación profesional."));
+ assert.ok(chat.includes('description={blockError||"No podrá enviarte más mensajes."}'));
+ assert.ok(!contacts.includes("Alert.alert("));
+ assert.ok(contacts.includes('visible={sheet&&!pendingRemove}'));
+ assert.ok(contacts.includes('visible={sheet&&pendingRemove!==null}'));
+ assert.ok(contacts.includes("contactAction(person,undefined,scope)"));
+ assert.ok(contacts.includes("await captureMessageScope(scope)"));
+ assert.ok(contacts.includes("contactMutation.current===operation"));
+ assert.ok(contacts.includes("await removeContactRequest(person.requestId,scope)"));
+ assert.ok(shop.includes("<SettingsMenuRow"));
+ assert.ok(row.includes("!!value"));
+ assert.ok(!shop.includes("Publicados, borradores, pausados y vendidos"));
+ assert.ok(shop.includes("if(!saving)setCurrencyOpen(false)"));
+ assert.ok(shop.includes("Se aplicará a los nuevos anuncios."));
+ assert.ok(shop.includes("await writeSellerCurrency(owner,next,scope)"));
+});

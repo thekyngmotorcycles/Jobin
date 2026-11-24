@@ -9,9 +9,9 @@ import {JobinSettingsIcon} from "./JobinSettingsIcon";
 
 /** Compact shared settings/action row. Descriptions are opt-in only for essential consequences; search metadata is not rendered here. */
 export function SettingsMenuRow({
- title,description,onPress,settingId,icon,variant="navigation",tone="normal",disabled=false
+ title,description,value,onPress,settingId,icon,variant="navigation",tone="normal",disabled=false
 }:{
- title:string;description?:string;onPress:()=>void;settingId?:string;icon?:keyof typeof Ionicons.glyphMap;
+ title:string;description?:string;value?:string;onPress:()=>void;settingId?:string;icon?:keyof typeof Ionicons.glyphMap;
  variant?:"navigation"|"action";tone?:"normal"|"danger";disabled?:boolean;
 }){
  const {theme,colors}=useTheme();
@@ -20,7 +20,7 @@ export function SettingsMenuRow({
  const iconColor=tone==="danger"?danger.icon:chrome.iconText;
  return <Pressable
   accessibilityRole="button"
-  accessibilityLabel={title}
+  accessibilityLabel={value?title+", "+value:title}
   accessibilityState={{disabled}}
   onPress={onPress}
   disabled={disabled}
@@ -35,6 +35,7 @@ export function SettingsMenuRow({
   </View>}
   <View style={{flex:1,minWidth:0,gap:3}}>
    <Text style={{fontSize:JOBEEN_TYPE.body,lineHeight:JOBEEN_LINE_HEIGHT.body,fontWeight:"700",color:chrome.text}}>{title}</Text>
+   {!!value&&<Text style={{fontSize:JOBEEN_TYPE.secondary,lineHeight:JOBEEN_LINE_HEIGHT.secondary,color:chrome.muted}}>{value}</Text>}
    {!!description&&<Text style={{fontSize:JOBEEN_TYPE.secondary,lineHeight:JOBEEN_LINE_HEIGHT.secondary,color:chrome.muted}}>{description}</Text>}
   </View>
   {variant==="navigation"&&<Ionicons name="chevron-forward" size={18} color={chrome.muted}/>}
