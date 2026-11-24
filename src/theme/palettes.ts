@@ -16,7 +16,7 @@ export const ROYAL_HIVE_PALETTE={
  },
 } as const;
 export type RoyalHiveMode=keyof typeof ROYAL_HIVE_PALETTE;
-export const ROYAL_HIVE_BRAND={jcard:"#00072E",silver:"#C9CCD1"} as const;
+export const ROYAL_HIVE_BRAND={jcard:"#00072E",silver:"#C9CCD1",mediaGold:"#C8A95C"} as const;
 
 /** Shared semantic states from Master Plan v1.1. */
 export const ROYAL_HIVE_STATES={
@@ -52,6 +52,8 @@ function makeTheme(theme:ThemeName){
   primary:p.primary,onPrimary:p.onPrimary,outline:p.outline,disabled:p.disabled,onDisabled:p.onDisabled,focus:p.focus,
   reaction:p.ink,wordmark:p.ink,icon:p.ink,navIcon:p.ink,transparent:opacity(p.ink,0),
   scrim:p.scrim,shadow:opacity(neutral.black,.22),statusLive:states.live.background,statusInactive:p.muted,
+  mediaProgress:opacity(ROYAL_HIVE_BRAND.mediaGold,.45),mediaProgressActive:ROYAL_HIVE_BRAND.mediaGold,
+  mediaProgressTrack:opacity(mediaInk,.24),mediaProgressTrackActive:opacity(mediaInk,.52),mediaNavigationHandle:opacity(ROYAL_HIVE_BRAND.silver,.80),
   mediaText:mediaInk,mediaSurface:opacity(media,.92),mediaSoftSurface:opacity(media,.72),
   mediaControl:opacity(media,.94),mediaMuted:opacity(mediaInk,.90),mediaBorder:opacity(mediaInk,.32),
   mediaShadow:opacity(neutral.black,.65),mediaTint:opacity(media,.2),mediaChip:opacity(media,.94),

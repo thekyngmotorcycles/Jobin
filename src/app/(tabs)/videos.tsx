@@ -1,5 +1,5 @@
 import { useTheme } from "../../state/ThemeProvider";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { FlatList, View, type ViewToken } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -25,6 +25,8 @@ export default function Videos() {
   const [count, setCount] = useState(PAGE);
   const [active, setActive] = useState(0);
   const [height, setHeight] = useState(600);
+  const [scrubbingId,setScrubbingId]=useState<string|null>(null);
+  const onScrubbingChange=useCallback((id:string,dragging:boolean)=>setScrubbingId(current=>dragging?id:current===id?null:current),[]);
   const base = useMemo(() => visiblePosts(tab, following), [tab, following]);
   const filtered=useMemo(()=>base.filter(clip=>{
    const role=clip.role.toLowerCase();
@@ -51,11 +53,11 @@ export default function Videos() {
       </View>
       <View style={{ flex: 1 }} onLayout={e => { const next=Math.max(1,Math.round(e.nativeEvent.layout.height)); setHeight(previous=>previous===next?previous:next); }}>
         <FlatList key={tab + category + Math.round(height) + (post || "")} data={clips} keyExtractor={clip => clip.id}
-          pagingEnabled snapToInterval={height} decelerationRate="fast" disableIntervalMomentum showsVerticalScrollIndicator={false}
+          scrollEnabled={scrubbingId===null} pagingEnabled snapToInterval={height} decelerationRate="fast" disableIntervalMomentum showsVerticalScrollIndicator={false}
           initialScrollIndex={clips.length && tab === "Para ti" ? target : undefined} onViewableItemsChanged={visible} viewabilityConfig={viewability}
           onEndReached={() => { if (filtered.length) setCount(current => current + PAGE); }} onEndReachedThreshold={1}
           initialNumToRender={1} maxToRenderPerBatch={2} windowSize={3} getItemLayout={(_, index) => ({ length: height, offset: height * index, index })}
-          renderItem={({ item, index }) => <FeedVideo clip={item} height={height} active={focused && active === index} />} />
+          renderItem={({ item, index }) => <FeedVideo clip={item} height={height} active={focused && active === index} onScrubbingChange={onScrubbingChange} />} />
       </View>
     </View>
   );
