@@ -19,7 +19,7 @@ test("manual development OTA accepts an Android-only scope and rejects other pla
 
 test("the November APK runtime is limited to Android and the reviewed native source", () => {
   const text = workflow("expo-development.yml");
-  assert.match(text, /android_runtime:[\s\S]*?options:\s+- fingerprint\s+- jobeen-native-20261123\s+default: fingerprint/);
+  assert.match(text, /android_runtime:[\s\S]*?options:\s+- fingerprint\s+- jobeen-native-20261123\s+- jobeen-native-20261123-feed-4425bdf1\s+default: fingerprint/);
   assert.match(text, /inputs\.android_runtime == 'jobeen-native-20261123' && inputs\.platform == 'android'/);
   assert.match(text, /git ls-tree -r --full-tree HEAD -- app\.json app\.config\.js .*package-lock\.json modules android ios/);
   assert.match(text, /test "\$native_tree" = '[0-9a-f]{64}' &&\s+test "\$preview_profile" = '[0-9a-f]{64}'/);
@@ -112,4 +112,16 @@ test("EAS configuration never contains invalid empty profile env values and pilo
   }
   assert.equal(Object.hasOwn(eas.build["security-pilot"].env, "EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL"), false);
   assert.match(workflow("security-pilot-android.yml"), /EXPO_PUBLIC_PRIVATE_VIDEO_UPLOAD_URL: ""/);
+});
+
+test("Consolidated Android APK OTA uses the same manual publisher and verifies native compatibility",()=>{
+ const text=workflow("expo-development.yml");
+ assert.match(text,/inputs\.android_runtime == 'jobeen-native-20261123-feed-4425bdf1' && inputs\.platform == 'android'/);
+ assert.ok(text.includes("BASE=4425bdf1b39d3085033e77296dac2ec4a528f443"));
+ assert.ok(text.includes('git diff --exit-code "$BASE" HEAD -- app.json app.config.js app.config.ts eas.json package.json package-lock.json modules android ios'));
+ assert.ok(text.includes("4497923f-9f26-47ae-bfd9-92864b677028"));
+ assert.ok(text.includes("build.status!=='FINISHED'"));
+ assert.ok(text.includes("build.runtime?.version!==runtime"));
+ assert.ok(text.includes("config.expo.android.runtimeVersion = runtime"));
+ assert.ok(text.indexOf("Match the consolidated feed APK runtime")<text.indexOf("Publish only the explicitly approved OTA"));
 });
