@@ -48,7 +48,7 @@ export function FeedPostOptions({visible,onClose,postId,viewerId,originScope,onH
   await perform(async scope=>{if(activeScope.current===scope){await onShareLink();if(activeScope.current===scope)onClose();}});
  }
  return <BottomSheet visible={visible} onClose={close} title="Opciones de publicación">
-  <View style={{gap:8,paddingVertical:8}}>
+  <View style={{gap:2,paddingVertical:4}}>
    <SettingsMenuRow variant="action" icon={saved?"bookmark":"bookmark-outline"}
     title={saved?"Quitar de guardados":"Guardar publicación"} disabled={busy||!ready} onPress={()=>void toggleSaved()}/>
    <SettingsMenuRow variant="action" icon="share-social-outline"

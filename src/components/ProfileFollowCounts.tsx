@@ -1,12 +1,15 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import {useCallback,useEffect,useImperativeHandle,useRef,useState,type Ref} from "react";
-import {ActivityIndicator,Alert,Pressable,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Pressable,Text,TextInput,View} from "react-native";
 import {requireSupabase} from "../lib/supabase";
 import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
 import {contactCount,myContacts,replyContactRequest,removeContactRequest,type ContactPerson} from "../lib/professional-contacts";
 import {useUi} from "./ui";
 import {BottomSheet} from "./social-ui";
+import {JobeenNoticeDialog} from "./JobeenNoticeDialog";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
+import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {AccountAvatar} from "./AccountAvatar";
 import {jobeenTokens} from "../theme/jobeen";
 import {useTheme} from "../state/ThemeProvider";
@@ -27,6 +30,8 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userI
  const [loading,setLoading]=useState(false);
  const [busy,setBusy]=useState("");
  const [error,setError]=useState("");
+ const [pendingRemove,setPendingRemove]=useState<{person:ContactPerson;scope:MessageScope}|null>(null);
+ const contactMutation=useRef<object|null>(null);
  const refreshCounts=useCallback(async()=>{
   const generation=++countRevision.current;
   if(!userId)return;
@@ -43,7 +48,7 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userI
    if(countRevision.current===generation){scopeRef.current=scope;setViewer(scope.owner);setCounts({followers:followers.count??0,following:following.count??0,contacts});}
   }catch{if(countRevision.current===generation){scopeRef.current=null;setViewer("");setCounts(null);}}
  },[userId]);
- useFocusEffect(useCallback(()=>{void refreshCounts();return()=>{scopeRef.current=null;countRevision.current++;listRevision.current++;setSheet(false);setRows([]);setContactRows([]);};},[refreshCounts]));
+ useFocusEffect(useCallback(()=>{void refreshCounts();return()=>{scopeRef.current=null;countRevision.current++;listRevision.current++;setSheet(false);setPendingRemove(null);contactMutation.current=null;setBusy("");setRows([]);setContactRows([]);};},[refreshCounts]));
  useEffect(()=>{void refreshCounts();},[refreshCounts,refreshKey]);
  const isOwner=!!viewer&&viewer===userId;
 
@@ -106,46 +111,52 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userI
  }
  async function contactAction(person:ContactPerson,approve?:boolean,expectedScope=scopeRef.current){
   const scope=expectedScope;
-  if(!scope||scopeRef.current?.session!==scope.session||scope.owner!==userId||busy)return;
-  setBusy(person.requestId);setError("");
+  if(!scope||scopeRef.current?.session!==scope.session||scope.owner!==userId||contactMutation.current)return false;
+  const operation={};contactMutation.current=operation;setBusy(person.requestId);setError("");
+  const active=()=>contactMutation.current===operation&&scopeRef.current?.session===scope.session;
   try{
+   await captureMessageScope(scope);if(!active())return false;
    if(person.direction==="incoming")await replyContactRequest(person.requestId,approve===true,scope);
    else await removeContactRequest(person.requestId,scope);
-   if(scopeRef.current?.session!==scope.session)return;
+   if(!active())return false;
    await loadConnections("contacts");
+   if(!active())return false;
    await refreshCounts();
-  }catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar la relación profesional.");}
-  finally{setBusy("");}
+   return active();
+  }catch(e){if(active())setError(e instanceof Error?e.message:"No se pudo actualizar la relación profesional.");return false;}
+  finally{if(contactMutation.current===operation){contactMutation.current=null;setBusy("");}}
  }
  function confirmRemove(person:ContactPerson){
-  const scope=scopeRef.current;if(!scope)return;
-  Alert.alert("Eliminar contacto","Se eliminará la relación profesional para ambos perfiles.",[
-   {text:"Cancelar",style:"cancel"},
-   {text:"Eliminar",style:"destructive",onPress:()=>void contactAction(person,undefined,scope)}
-  ]);
+  const scope=scopeRef.current;if(!scope||scope.owner!==userId||person.direction!=="accepted"||contactMutation.current)return;
+  setError("");setPendingRemove({person,scope});
+ }
+ async function removeConfirmed(){
+  if(!pendingRemove)return;
+  const request=pendingRemove,{person,scope}=request;
+  if(await contactAction(person,undefined,scope))setPendingRemove(current=>current===request?null:current);
  }
  function changeTab(next:ListType){setTab(next);setQuery("");void loadConnections(next);}
  const visible=rows.filter(r=>r.name.toLowerCase().includes(query.trim().toLowerCase()));
  const visibleContacts=contactRows.filter(r=>r.name.toLowerCase().includes(query.trim().toLowerCase()));
  return <>
-  <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:15,paddingVertical:3,minHeight:44}}>
+  <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:15,paddingVertical:3,minHeight:JOBEEN_CONTROL.touchTarget}}>
    {([{id:"followers",label:"Seguidores",value:counts?.followers},{id:"contacts",label:"Contactos",value:counts?.contacts}] as const).map((item,index)=>
     <View key={item.id} style={{flexDirection:"row",alignItems:"center",gap:15}}>
      {index>0&&<View style={{width:1,height:18,backgroundColor:jt.line}}/>}
      <Pressable accessibilityRole={isOwner?"button":undefined}
       accessibilityLabel={item.label+": "+(item.value??"no disponible")+(isOwner?", ver lista":"")}
       disabled={!isOwner} onPress={()=>openList(item.id)}
-      style={{minHeight:44,flexDirection:"row",gap:5,alignItems:"center",justifyContent:"center",paddingHorizontal:2}}>
+      style={{minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",gap:5,alignItems:"center",justifyContent:"center",paddingHorizontal:2}}>
       <Text style={{fontSize:14,fontWeight:"800",color:colors.ink}}>{item.value===undefined?"—":new Intl.NumberFormat("es").format(item.value)}</Text>
       <Text style={{fontSize:13,color:colors.muted}}>{item.label}</Text>
      </Pressable>
     </View>)}
   </View>
-  <BottomSheet visible={sheet} onClose={()=>setSheet(false)} title="Mi red">
+  <BottomSheet visible={sheet&&!pendingRemove} onClose={()=>{if(!contactMutation.current)setSheet(false);}} title="Mi red">
    <View style={{gap:12,paddingVertical:8}}>
     <View style={{flexDirection:"row",gap:5}}>
      {(["followers","following","contacts"] as const).map(option=><Pressable key={option} accessibilityRole="tab" accessibilityState={{selected:tab===option}}
-      onPress={()=>changeTab(option)} style={{flex:1,minHeight:44,borderRadius:12,borderWidth:1,borderColor:tab===option?colors.ink:colors.line,
+      onPress={()=>changeTab(option)} style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:12,borderWidth:1,borderColor:tab===option?colors.ink:colors.line,
        backgroundColor:tab===option?colors.accent:colors.paper,alignItems:"center",justifyContent:"center",paddingHorizontal:3}}>
       <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}
        style={{color:colors.ink,fontWeight:tab===option?"800":"600",fontSize:12}}>
@@ -154,8 +165,7 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userI
      </Pressable>)}
     </View>
     <TextInput accessibilityLabel="Buscar en mi red" value={query} onChangeText={setQuery} placeholder="Buscar personas" placeholderTextColor={colors.muted}
-     style={{minHeight:44,borderRadius:13,borderWidth:1,borderColor:colors.line,paddingHorizontal:12,color:colors.ink}}/>
-    {tab==="contacts"&&<Text style={{color:colors.muted,fontSize:12,lineHeight:17}}>Los contactos se crean cuando ambas personas aceptan relacionarse. Seguir una cuenta no la convierte en contacto.</Text>}
+     style={{minHeight:JOBEEN_CONTROL.inputHeight,borderRadius:JOBEEN_CONTROL.inputRadius,borderWidth:1,borderColor:colors.outline,paddingHorizontal:12,color:colors.ink,fontSize:JOBEEN_TYPE.input,lineHeight:JOBEEN_LINE_HEIGHT.input}}/>
     {loading&&<ActivityIndicator color={colors.ink}/>}
     {!!error&&<Text accessibilityLiveRegion="polite" style={s.muted}>{error}</Text>}
     {!loading&&!(tab==="contacts"?visibleContacts:visible).length&&<Text style={[s.muted,{paddingVertical:16,textAlign:"center"}]}>
@@ -173,18 +183,18 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userI
      </Pressable>
      {person.direction==="incoming"?<View style={{flexDirection:"row",gap:4}}>
       <Pressable accessibilityRole="button" accessibilityLabel={"Aceptar invitación de "+person.name} disabled={!!busy}
-       onPress={()=>void contactAction(person,true)} style={{minHeight:44,paddingHorizontal:9,alignItems:"center",justifyContent:"center",borderRadius:12,backgroundColor:colors.ink}}>
+       onPress={()=>void contactAction(person,true)} style={{minHeight:JOBEEN_CONTROL.touchTarget,minWidth:JOBEEN_CONTROL.touchTarget,paddingHorizontal:9,alignItems:"center",justifyContent:"center",borderRadius:12,backgroundColor:colors.ink}}>
        <Ionicons name="checkmark" size={18} color={colors.paper}/>
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel={"Rechazar invitación de "+person.name} disabled={!!busy}
-       onPress={()=>void contactAction(person,false)} style={{minHeight:44,paddingHorizontal:9,alignItems:"center",justifyContent:"center",borderRadius:12,backgroundColor:colors.accent}}>
+       onPress={()=>void contactAction(person,false)} style={{minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:9,alignItems:"center",justifyContent:"center",borderRadius:12,backgroundColor:colors.accent}}>
        <Ionicons name="close" size={18} color={colors.ink}/>
       </Pressable>
      </View>:<Pressable accessibilityRole="button" disabled={!!busy}
       accessibilityLabel={person.direction==="outgoing"?"Cancelar solicitud de "+person.name:"Eliminar contacto "+person.name}
       onPress={()=>person.direction==="outgoing"?void contactAction(person):confirmRemove(person)}
-      style={{minHeight:44,paddingHorizontal:10,alignItems:"center",justifyContent:"center",borderRadius:12,borderWidth:1,borderColor:colors.line}}>
-      <Text style={{fontSize:11,color:colors.ink,fontWeight:"600"}}>{person.direction==="outgoing"?"Cancelar":"Eliminar"}</Text>
+      style={{minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:10,alignItems:"center",justifyContent:"center",borderRadius:12,borderWidth:1,borderColor:colors.line}}>
+      <Text style={{fontSize:JOBEEN_TYPE.action,color:colors.ink,fontWeight:"600"}}>{person.direction==="outgoing"?"Cancelar":"Eliminar"}</Text>
      </Pressable>}
     </View>):visible.map(person=><View key={person.id} style={{flexDirection:"row",alignItems:"center",gap:9,minHeight:58}}>
      <Pressable accessibilityRole="button" accessibilityLabel={"Ver perfil de "+person.name} onPress={()=>{setSheet(false);router.push({pathname:"/jcard",params:{user:person.id}});}}
@@ -193,14 +203,17 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userI
       <Text numberOfLines={1} style={[s.text,{fontWeight:"700",flex:1}]}>{person.name}</Text>
      </Pressable>
      <Pressable accessibilityRole="button" accessibilityLabel={person.following?"Dejar de seguir a "+person.name:"Seguir a "+person.name}
-      onPress={()=>void toggleFollow(person)} style={{minHeight:42,paddingHorizontal:12,borderRadius:13,
+      onPress={()=>void toggleFollow(person)} style={{minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:12,borderRadius:JOBEEN_CONTROL.buttonRadius,
        backgroundColor:person.following?colors.accent:colors.ink,alignItems:"center",justifyContent:"center"}}>
-      <Text style={{fontSize:12,fontWeight:"700",color:person.following?colors.ink:colors.paper}}>{person.following?"Siguiendo":"Seguir"}</Text>
+      <Text style={{fontSize:JOBEEN_TYPE.action,fontWeight:"700",color:person.following?colors.ink:colors.paper}}>{person.following?"Siguiendo":"Seguir"}</Text>
      </Pressable>
     </View>)}
     {tab!=="contacts"&&rows.length>=200&&<Text style={s.muted}>Mostrando las primeras 200 conexiones.</Text>}
     {tab==="contacts"&&contactRows.length>=300&&<Text style={s.muted}>Mostrando las primeras 300 relaciones.</Text>}
    </View>
   </BottomSheet>
+  <JobeenNoticeDialog visible={sheet&&pendingRemove!==null} title="Eliminar contacto"
+   description={error||"Se eliminará la relación profesional para ambos perfiles."} tone="danger" confirmLabel="Eliminar"
+   busy={!!busy} onCancel={()=>{if(!contactMutation.current){setPendingRemove(null);setError("");}}} onConfirm={()=>void removeConfirmed()}/>
  </>;
 }

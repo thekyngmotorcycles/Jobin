@@ -197,7 +197,6 @@ export default function DirectMessage(){
    </View>
   </KeyboardAvoidingView>
   <JobeenActionDialog visible={menuStep!==null} title={menuStep==="report"?"Reportar conversación":"Opciones de conversación"}
-   description={menuStep==="report"?"Selecciona el motivo del reporte.":"Gestiona esta conversación profesional."}
    busy={menuBusy} error={menuError}
    onClose={()=>{setMenuError("");setMenuStep(null);}}
    actions={menuStep==="report"
@@ -208,12 +207,11 @@ export default function DirectMessage(){
     :[
       ...(conversation?[{
        label:jshopSpam?"Quitar de Spam":"Mover a Spam",
-       description:jshopSpam?"Devuelve el chat a JShop.":"Oculta esta conversación de la bandeja principal.",
        icon:"mail-unread-outline" as const,onPress:()=>void toggleSpam()
       }]:[]),
-      {label:"Reportar",description:"Informa sobre Spam, estafa o acoso.",
+      {label:"Reportar",
        icon:"flag-outline" as const,onPress:()=>{setMenuError("");setMenuStep("report");}},
-      {label:"Bloquear",description:"Evita que esta cuenta vuelva a escribirte.",
+      {label:"Bloquear",
        icon:"ban-outline" as const,tone:"danger" as const,onPress:openBlockConfirmation}
      ]}/>
   <JobeenNoticeDialog visible={blockOpen} title="Bloquear usuario"

@@ -40,7 +40,10 @@ test("Notice tones are semantic; normal windows keep a neutral surface",()=>{
  const notice=src("src/components/JobeenNoticeDialog.tsx");
  assert.ok(notice.includes("jobeenModalTokens(theme,tone)"));
  assert.ok(notice.includes("backgroundColor:t.surface"));
- assert.ok(notice.includes('backgroundColor:destructive?t.background:t.accent'));
+ assert.ok(notice.includes('variant={destructive?"danger":"primary"}'));
+ const buttons=src("src/components/ui.tsx");
+ assert.ok(buttons.includes('dangerButton: { backgroundColor: danger.background }'));
+ assert.ok(buttons.includes('dangerButtonText: { color: danger.foreground }'));
  assert.ok(notice.includes("JOBEEN_TYPE.modalTitle"));
  const profile=src("src/components/ProfileCommunityActions.tsx");
  assert.ok(profile.includes('<JobeenNoticeDialog visible={confirm!==null}'));
