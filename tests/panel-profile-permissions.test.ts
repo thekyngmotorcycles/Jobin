@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
-import {panelAccess,panelSections,allowedPanelModule,panelPreview,assertPanelEngagement,type PanelIdentity} from "../src/lib/panel-workspace.ts";
+import {panelAccess,panelSections,allowedPanelModule,panelPreview,assertPanelEngagement,panelMediaMatches,panelPostsInPeriod,panelPostTotals,type PanelIdentity} from "../src/lib/panel-workspace.ts";
 const scope={owner:"a",session:"s"};
 const personal:PanelIdentity={card:{id:"a",accountType:"personal"},organization:null,reviewer:false};
 const company:PanelIdentity={card:{id:"a",accountType:"company"},organization:{profile_id:"a"},reviewer:false};
@@ -34,4 +34,27 @@ test("administrative statistics refuse missing and invalid counts rather than in
  assert.throws(()=>assertPanelEngagement(["p"],[{...row,likes:-1}]));
  assert.throws(()=>assertPanelEngagement(["p"],[{...row,likes:""}]));
  assert.throws(()=>assertPanelEngagement(["p"],[{...row,likes:"NaN"}]));
+});
+
+test("panel media filters keep all real statuses visible without calling held media published",()=>{
+ for(const status of ["pending","processing","moderating"])assert.equal(panelMediaMatches(status,"progress"),true);
+ for(const status of ["held","blocked","failed"]){assert.equal(panelMediaMatches(status,"review"),true);assert.equal(panelMediaMatches(status,"published"),false);}
+ assert.equal(panelMediaMatches("live","published"),true);
+ assert.equal(panelMediaMatches("published","published"),true);
+ assert.equal(panelMediaMatches("ended","ended"),true);
+ assert.equal(panelMediaMatches("unknown","all"),true);
+ assert.equal(panelMediaMatches("unknown","progress"),false);
+});
+test("panel statistics filter creation date and sum actual cumulative counts",()=>{
+ const now=Date.parse("2026-11-24T12:00:00Z");
+ const recent={createdAt:"2026-11-23T12:00:00Z",likes:2,comments:1,shares:0};
+ const old={createdAt:"2026-11-01T12:00:00Z",likes:4,comments:3,shares:2};
+ const future={createdAt:"2026-11-25T12:00:00Z",likes:10,comments:10,shares:10};
+ const rows=[recent,old,future];
+ assert.deepEqual(panelPostsInPeriod(rows,"7",now),[recent]);
+ assert.deepEqual(panelPostsInPeriod(rows,"30",now),[recent,old]);
+ assert.deepEqual(panelPostsInPeriod(rows,"all",now),rows);
+ assert.deepEqual(panelPostTotals([recent,old]),{posts:2,likes:6,comments:4,shares:2});
+ assert.deepEqual(panelPostTotals([]),{posts:0,likes:0,comments:0,shares:0});
+ assert.deepEqual(panelPostsInPeriod([{...recent,createdAt:"invalid"}],"7",now),[]);
 });

@@ -39,7 +39,7 @@ export const panelPreview:Partial<Record<PanelModuleId,readonly string[]>>={
  quotes:["Solicitudes","Presupuestos","Catálogo de servicios y precios","Presupuesto asistido por IA"],
  clients:["Expedientes de servicio","Solicitudes y presupuestos"],
  assistant:["Servicios y tarifas","Horarios y cobertura","Reglas de respuesta","Revisión humana"],
- highlights:["Candidatos de Highlights","Edición y publicación como Flash","Borradores de Highlights"],
+ highlights:["Candidatos pendientes de revisión","Highlights guardados","Publicados como Flash"],
  courses:["En curso","Completados","Certificados de cursos"],
  income:["Resumen de ingresos","Historial de movimientos"],
  gifts:["Regalos recibidos","Historial"],
@@ -55,4 +55,27 @@ export function assertPanelEngagement(ids:readonly string[],counts:readonly {pos
   const row=byId.get(id);
   if(!row||![row.likes,row.comments,row.shares].every(valid))throw Error("Estadísticas aún no disponibles para todas las publicaciones.");
  }
+}
+
+/** Filters operate on real records; unknown moderation states remain visible. */
+export const PANEL_MEDIA_FILTERS=["all","progress","published","review","ended"] as const;
+export type PanelMediaFilter=typeof PANEL_MEDIA_FILTERS[number];
+export const PANEL_MEDIA_LABELS:Record<PanelMediaFilter,string>={all:"Todos",progress:"En proceso",published:"Publicados",review:"En revisión",ended:"Finalizados"};
+export function panelMediaMatches(status:string,filter:PanelMediaFilter){
+ if(filter==="all")return true;
+ if(filter==="progress")return ["pending","processing","moderating"].includes(status);
+ if(filter==="published")return ["published","live"].includes(status);
+ if(filter==="review")return ["held","blocked","failed"].includes(status);
+ return status==="ended";
+}
+export const PANEL_PERIODS=["all","7","30"] as const;
+export type PanelPeriod=typeof PANEL_PERIODS[number];
+export const PANEL_PERIOD_LABELS:Record<PanelPeriod,string>={all:"Todo",7:"7 días",30:"30 días"};
+export function panelPostsInPeriod<T extends {createdAt:string}>(posts:readonly T[],period:PanelPeriod,now:number){
+ if(period==="all")return [...posts];
+ const cutoff=now-Number(period)*86400000;
+ return posts.filter(p=>{const at=Date.parse(p.createdAt);return Number.isFinite(at)&&at>=cutoff&&at<=now;});
+}
+export function panelPostTotals(posts:readonly {likes:number;comments:number;shares:number}[]){
+ return {posts:posts.length,likes:posts.reduce((n,p)=>n+p.likes,0),comments:posts.reduce((n,p)=>n+p.comments,0),shares:posts.reduce((n,p)=>n+p.shares,0)};
 }
