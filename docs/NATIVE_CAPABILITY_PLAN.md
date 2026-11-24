@@ -44,3 +44,6 @@ E. Comprobar la cobertura de todos los módulos locales y plugins del lote, incl
 
 ## Resolución técnica de pagos y dependencias (2026-11-24)
 Ver [JOBEEN_PAYMENTS_PLAN.md](JOBEEN_PAYMENTS_PLAN.md). Recomendación expo-iap para digital, incluidos anuncios destacados de JShop. Por decisión del propietario no hay checkout ni comisión de JShop, no Stripe/Mercado Pago/AdMob para esta función; JQuote presencial pendiente. Expo54 referencia oficial audio ~1.1.1, file-system ~19.0.24, keep-awake ~15.0.8; exactas de npm y compatibilidad final no resueltas. No instalar paquetes ni contratar proveedores por esta selección. El inventario anterior conserva su valor; este apartado sustituye recomendaciones abiertas de elección IAP, sin declarar un build probado.
+
+
+- **Identidad Jobin (aprobada 24-11):** incluir icono PNG 1024 y adaptive foreground del original alineado, fondo negro, textos visibles de permisos Jobin. Revisar configuración en siguiente lote nativo autorizado, sin cambiar paquete/IDs ni crear APK independiente. Ver `docs/wordmark.md`.

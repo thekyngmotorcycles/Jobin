@@ -543,7 +543,7 @@ export default function Profile() {
       </BottomSheet>
       <JobeenShareSheet visible={cvShareOpen&&!!ownHistory} onClose={()=>setCvShareOpen(false)} label="Currículum"
        theme={theme} contentTitle="Compartir CV"
-       contentMessage={["Historial profesional de Jobeen",...history.map(e=>`${e.role} · ${e.company} · ${e.from}/${e.fromMonth??1} - ${e.to??"Actualidad"}/${e.toMonth??12}`)].join("\n")}
+       contentMessage={["Historial profesional de Jobin",...history.map(e=>`${e.role} · ${e.company} · ${e.from}/${e.fromMonth??1} - ${e.to??"Actualidad"}/${e.toMonth??12}`)].join("\n")}
        onError={setNotice}/>
     </SafeAreaView>
   );

@@ -74,7 +74,7 @@ export default function Messages(){
       }
       return await Promise.all([...recent].sort((a,b)=>Date.parse(b[1].createdAt)-Date.parse(a[1].createdAt)).map(async([id,value])=>{
        const card=await loadPublicCard(id).catch(()=>null);
-       return {id,name:card?.name??"Usuario de Jobeen",text:value.body,createdAt:value.createdAt};
+       return {id,name:card?.name??"Usuario de Jobin",text:value.body,createdAt:value.createdAt};
       }));
      })(),
      loadJShopInbox(scope),
