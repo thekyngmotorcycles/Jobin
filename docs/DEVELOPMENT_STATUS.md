@@ -1,5 +1,8 @@
 # Jobeen — registro central de desarrollo
 
+## NAV-FADE — corrección de extensión visual (2026-11-24)
+El propietario confirma en capturas Android que el historial y la experiencia JCard vuelven a aparecer tras OTA 45490296008 success de b021d139 (#117/#118). SQL privado aplicado en JobIn, migración 20261124211524; 12 filas intactas, permisos y proyección CV comprobados. Validación física de sesión/edición completa pendiente. Solicita corregir exclusivamente la opacidad de la barra inferior: en 0f61f6c2 el punto opaco se adelantó del centro de iconos a la parte superior del row, aumentando visualmente el área cubierta pese a conservar dimensiones. Candidato preserva exactamente el degradado anterior por encima de la fila (09f4031f), eleva opacidad solo dentro de la fila, conserva 58dp+safe area, iconos, rutas, acordeón, touch targets y barra superior. Helper y regresión numérica para varios insets/opacidades; actualiza prueba del feed que fijaba el punto opaco prematuro. Sin rediseño, SDK, datos alojados, merge, OTA o APK. Tipografía y organización del historial quedan expresamente pospuestas. CI y validación física pendientes. Retomar STREAM-UI tras esta corrección y validación.
+
 ## AUTH-HISTORIAL — contrato privado de Supabase (2026-11-24)
 
 - Base `development` 0662d4b3 (#117), CI 45480177364 success. Catálogo de JobIn en solo lectura: 12 filas de historial, cero verificadas, clave única `(owner_id, client_id)` y RLS de titular. La tabla complementaria y el RPC de guardado existen únicamente como candidato de repositorio. El catálogo tampoco registra un despliegue de esos objetos.
