@@ -1,9 +1,11 @@
-# JOBEEN — Master Plan UI/UX v1.4
+# JOBEEN — Master Plan UI/UX v1.5
 **Fecha:** 23 de noviembre de 2026  
 **Estado:** v1.1 aprobada por el propietario el 23 de noviembre de 2026 como marco de diseño y planificación; v1.2 incorpora su nueva orden expresa de eliminar todas las apariencias globales salvo Royal Hive Light, Dark y selección Sistema. Registro documental autorizado; integración de este PR y ejecución de cada etapa requieren aprobación separada. Medidas candidatas y excepciones pendientes de revisión visual y validación física. No autoriza implementación, publicación ni gasto.  
 **Decisión v1.3:** el propietario aprueba la filosofía permanente de producto, el filtro de seis preguntas, la organización funcional sin proliferación de submarcas y la interoperabilidad complementaria con herramientas empresariales. Se mantiene íntegra la decisión visual v1.2 y el alcance autorizado de cada etapa. No autoriza implementación de conectores ni cambios de código.
 
 **Decisión v1.4:** el propietario aprueba un sistema propio de reputación basado en evidencia, independiente de IA. La IA es complementaria y futura; no es requisito, autoridad única ni dependencia del núcleo. Ver §1.6. Se conservan las decisiones v1.2 y v1.3.
+
+**Decisión v1.5 (2026-11-24):** incorporar JQuote AI al plan, con presupuestos privados por voz, fotografía y video, revisión humana y catálogo de precios propio. Consolidar el orden operativo en §10, manteniendo las decisiones anteriores y autorizaciones por entrega.
 
 **Repositorio de referencia:** `thekyngmotorcycles/Jobin`, rama `development`.
 
@@ -213,37 +215,55 @@ Fila propuesta: `[ Panel ] [ Editar JCard ] [ Compartir (icono) ]`. Panel toma l
 
 **JTeam:** reutilizar vínculos laborales confirmados. Roles de propietario, administrador, supervisor, ventas y técnico con permisos específicos del servidor; revocación de acceso al salir de la empresa. El trabajador conserva su cuenta, contenido y datos personales. Modalidad de Live personal/empresarial/colaborativa definida antes de iniciar; acuerdo bilateral, participación sobre importe distribuible, vigencia, derechos de contenido, versión fija por emisión, sin modificaciones retroactivas. No asignar ingresos por la simple aparición de una JCard empresarial. Revisar normas laborales y fiscales por jurisdicción antes de operar.
 
+### 7.1 JQuote AI — presupuestos inteligentes (concepto aprobado 2026-11-24)
+Extensión opcional de JQuote para profesional independiente o empresa autorizada. Desde el mismo expediente o Panel > Presupuestos, una acción de presupuesto rápido permite dictar voz, fotografiar etiquetas/equipos o grabar un recorrido privado con narración; después de seleccionar el cliente/destinatario y confirmar los datos, Jobeen AI extrae trabajos, cantidades, unidades, materiales, condiciones y preguntas pendientes. Ejemplo HVAC: dos mini splits de 12.000 BTU cada uno, tubería, soportes, drenaje, mano de obra. Distinguir observaciones de datos declarados y estimaciones. No inventar medidas, marcas, modelos, cantidades, precios, impuestos ni necesidades de instalación. La cámara convencional no certifica dimensiones; pedir medida manual o método de medición compatible validado cuando haga falta. No usar IA para afirmar conformidad técnica o de seguridad.
+Catálogo de servicios/materiales, tarifas, moneda, vigencia, unidades, mano de obra, márgenes, descuentos e impuestos definidos o autorizados por cada negocio; el servidor calcula importes deterministas y valida cantidades, permisos y versiones. IA propone partidas y preguntas, no determina precios sin fuente. Si falta un precio o dato esencial, marcarlo y pedir confirmación. El trabajador autorizado revisa, corrige y aprueba el borrador antes de enviarlo al cliente. No crear expedientes duplicados ni aceptar/contratar/cobrar automáticamente. Presupuesto manual plenamente funcional aun sin IA. JAssist reutiliza el mismo catálogo y expediente; la automatización comercial tiene límites y autorización expresa según §7.
+Usar el motor Jobeen AI común, OpenAI y Gemini como candidatos de voz, extracción estructurada, conversación e interpretación de video/imágenes, seleccionando según mediciones reales. Reutilizar componentes de cámara y archivos privados existentes. Grabación breve y análisis posterior inicialmente; cámara interactiva en tiempo real y medición avanzada solo tras validación de utilidad, coste y hardware. Grabaciones y fotos de clientes son privadas por defecto, no se convierten en Flashes/Lives ni se reutilizan para entrenamiento sin autorización. Aislar por cuenta/empresa/expediente, acceso de rol y plazos de conservación; minimizar datos personales y pedir autorización de grabación; credenciales de proveedor solo en servidor.
+Orden dentro de JQuote: (a) catálogo y presupuesto manual con expediente/versiones; (b) voz; (c) fotografías; (d) video breve; (e) cámara interactiva futura. JQuote AI es candidato de valor Business Premium, no precio ni plan comercial confirmado; no exige suscripción ni activa API en esta etapa. Esta aprobación es de incorporación al plan, no de desarrollo anticipado, gastos, dependencias, migraciones ni despliegue.
+
 ## 8. Regalos y monetización
 JGifts se activa únicamente en Live y Flash elegibles; mismo catálogo y saldo de regalos, hoja inferior con selección, precio, moneda y confirmación. No agregar botón global ni simular pagos. Panel muestra regalos recibidos, saldo disponible/pendiente, movimientos y acuerdos cuando estén integrados. Separar ingresos personales y empresariales. El ledger de pagos debe ser autoritativo en servidor, idempotente y auditable; considerar reembolsos, contracargos, comisiones, impuestos, límites, fraude, menores y políticas de tiendas. No fijar porcentajes, precios ni proveedor de pago sin aprobación. No mezclar estados de presupuesto con ingresos liquidados. Los pagos de cursos, servicios y regalos pueden tener reglas distintas.
 
 ## 9. Reutilización y estado real
 **Conservar:** cinco pestañas, perfiles y JCard, acordeón, iconos, Crear, feed, JShop, mensajería, búsqueda, notificaciones, reglas de diseño y seguridad. **Ampliar:** rutas de Streams/Live, FlashComposer, `company`, `employer-links`, `services`, certificados y tokens semánticos. **Nuevos módulos propuestos:** Panel, catálogo Academy, expediente de presupuesto, IA comercial, ledger/regalos y acuerdos. No asumir que ya están funcionales. En el repositorio se verificaron rutas de Live/Streams, FlashComposer, `services`, `company`, `employer-links`, certificados, perfil e inbox; el grado de integración de cada función debe comprobarse antes de programarla. Google login fue validado por el propietario en su dispositivo; no reabrir ese incidente sin evidencia nueva. Conservar bloqueos de seguridad pendientes según registro vigente; no repetir auditorías cerradas.
 
-## 10. Secuencia de trabajo y entregables
-| Etapa | Entregable | Criterio para pasar a la siguiente |
-|---|---|---|
-| 0 | Master Plan y registro de decisiones | Propietario aprueba arquitectura y cuestiones pendientes; sin código |
-| 1 | Especificación de tokens, navegación y componentes | Pantallas de referencia claras/oscuras, estados, contraste y Jelly; revisión visual previa |
-| 2 | Streaming | Flujos emisor/espectador, estado real, controles y seguridad; verificar capacidades existentes antes de cambios |
-| 3 | Creación | Flashes, historias, destacados y editor común según capacidades reales |
-| 4 | Panel y JCard | Fila de acciones y panel con destinos disponibles, sin botones falsos |
-| 5 | JAcademy | Catálogo, lecciones, progreso y gestión de instructor por alcance aprobado |
-| 6 | JQuote | Expediente único, presupuesto, mensajes comerciales y permisos |
-| 7 | JAssist y JTeam | IA controlada, miembros, permisos y acuerdos; pueden dividirse en entregables independientes |
-| 8 | Regalos y monetización real | Pagos, retiros, repartos, pruebas y requisitos legales/tiendas aprobados |
+## 10. Hoja de ruta operativa consolidada (2026-11-24)
+Numeración continua de fases de desarrollo usada por el propietario desde UI-01 y VIDEO-02; reemplaza la tabla de etapas de planificación 0–8, sin repetir trabajo ni cambiar la prioridad aprobada. Estado de referencia: development 4867fe9f, PR #109 candidato 2b466605 CI 45422582074 success; nueva revisión documental requiere CI de su propio SHA. El registro DEVELOPMENT_STATUS.md conserva evidencia y detalles.
 
-Este orden orientativo no obliga a retrasar trabajo independiente ni rehacer funciones existentes. Seguridad y bloqueos reales de release tienen precedencia. Antes de cada fase: leer normas y status, confirmar HEAD/PR/CI, verificar la tarea de Codex, definir alcance y aceptación, obtener aprobación, reutilizar código, probar y registrar evidencia. Una sola rama de trabajo/PR coherente cuando sea suficiente. Aprobaciones independientes para integración, OTA, APK, cambios de Supabase alojado, costes y producción. No iniciar nuevas dependencias o infraestructura por anticipado. La viabilidad OTA se verifica por cambio, no se promete de antemano.
+| Fase | Entregable | Estado / cierre |
+|---|---|---|
+| 01 | Royal Hive: tokens, componentes, menús, formularios, temas, navegación adaptable | Implementado e integrado; comprobar dos correcciones UI-01E y validación física restante en siguiente entrega, sin rediseño general |
+| 02 | Videos: Flashes inmersivo, En vivo inicial y preferencia por cuenta | Implementado e integrado; validación física pendiente en los recorridos registrados |
+| 03 | Streaming + base Jobeen AI de moderación | ACTUAL. Preparación Live integrada; LiveKit, política v2.0 y 60 s en PR #109. Completar 03A–03F debajo; no abrir público sin seguridad efectiva |
+| 04 | Creación multimedia | FlashComposer/editor común, historias, borradores, edición y publicación real, JHighlights de replay autorizado; conservar feed existente |
+| 05 | Panel y JCard | Fila Panel/Editar/Compartir, gestión de contenido y estadísticas reales, destinos disponibles por rol; preservar JCard y cinco pestañas |
+| 06 | JAcademy | Catálogo, cursos/lecciones, progreso, instructores, certificados; no simular acreditaciones |
+| 07 | JQuote y JQuote AI | Solicitud contextual, expediente/versiones, precios y presupuesto manual; voz, foto, video después; cámara interactiva pospuesta hasta viabilidad |
+| 08 | JAssist, JTeam y reputación propia | Respuestas comerciales autorizadas y borradores con intervención humana; equipo, permisos, trabajos y aptitudes, evidencias/estadísticas y asignación supervisada sin IA obligatoria; reutilizar vínculos y JCard |
+| 09 | Monetización | Business Premium, regalos/ingresos, acuerdos, pagos y retiros según proveedores, costes, normas de tienda y revisión legal aprobados; no simular cobros |
+| 10 | Beta y publicación | Pruebas integrales dirigidas, Android/web y después iOS según alcance aprobado, seguridad de las nuevas funciones, accesibilidad, fallos/red, límites de coste, revisión legal y tiendas, aprobación de release y lanzamiento gradual |
+
+### Fase 03 — orden inmediato
+- 03A preparación Live: integrada en PR #108; revisión física posterior.
+- 03B base LiveKit y política de moderación contextual: PR #109 en revisión, límite candidato 60 s, migración no aplicada. Cerrar CI del nuevo SHA y obtener autorización expresa de integración.
+- 03C transporte privado: verificar SDK/plugins/lockfile Expo 54, preparar entorno/proyecto LiveKit autorizado, tokens emitidos en servidor, cámara/micrófono y reproducción privada entre cuentas autorizadas. Conservar infraestructura probada; no activar servicios de pago ni generar APK sin autorización.
+- 03D Jobeen AI moderación: motor común con adaptadores OpenAI/Gemini, contratos de evidencia/contexto y niveles 0–3, protección infantil especializada, revisión humana, denuncias, apelación, presupuestos y privacidad. Actualizar reglas legadas, consentimiento y términos; validar pruebas representativas, salida protegida, corte inmediato por riesgo y máximo absoluto de 60 s sin supervisión, recuperación sin sanción por fallos técnicos. La IA no es fuente de autorización.
+- 03E experiencia emisor/espectador y catálogo real: cámara, micrófono, calidad/red, reconexión, controles a una mano, chat e interacciones reales, perfil y reportes. Se puede desarrollar en privado en paralelo con 03D si está autorizado. No mostrar demos como reales.
+- 03F consolidación: probar corte efectivo, aislamiento, reconexión, interacción y consumo; agrupar cambios nativos, solicitar APK y despliegue piloto autorizado, probar en teléfono y cerrar defectos de alcance. Resúmenes reales/replay cuando haya permiso y capacidad; destacados en 04. No habilitar público antes de superar controles esenciales.
+
+### Después del lanzamiento
+Medir coste, ingresos y uso para decidir migración progresiva a servidores alquilados/propios, modelos autoalojados, cámara interactiva avanzada, gafas Meta e integraciones empresariales autorizadas. No son requisitos del MVP, no comprar hardware ni contratar infraestructura por anticipado. Comunidades independientes, citas, ERP, nóminas y vigilancia laboral fuera del alcance vigente. No repetir auditorías ya aprobadas sin nueva evidencia; verificar solamente regresiones y funciones cambiadas. Los diseños de nuevas funciones necesitan aprobación visual según DESIGN_RULES.md; todos usan Royal Hive. Mantener autorización separada para merge, datos alojados, costes, OTA, APK y publicación. Esta hoja de ruta ordena trabajo, no autoriza todas las etapas de una vez.
 
 ## 11. Decisiones pendientes antes de implementación
-1. **RESUELTO 2026-11-24:** En vivo es el destino inicial de Videos; recordar después la última sección visitada por cuenta. Implementar en fase de navegación posterior al cierre de homologación UI-01. Ubicación definitiva de JAcademy y JHighlights aún pendiente.
+1. **RESUELTO E INTEGRADO 2026-11-24:** En vivo es el destino inicial de Videos; recordar después la última sección visitada por cuenta. VIDEO-02 integrado; validación física pendiente. Ubicación definitiva de JAcademy y JHighlights aún pendiente.
 2. RESUELTO v1.2: Royal Hive Light/Dark, selector Sistema y migración segura de preferencias obsoletas; validar comportamiento nativo y web antes de publicar.
 3. Apariencia final de la fila Panel/Editar/Compartir en Jelly, manteniendo opción B y área táctil.
 4. Referencias Mobbin específicas por pantalla: consultarlas e inspeccionar imágenes, sin copiar estilos externos. Las búsquedas previas devolvieron enlaces, pero no se verificaron sus imágenes; no se consideran aprobación visual. No generar bocetos sin solicitud/aprobación.
 5. Funciones visibles del Panel en cada etapa; roles comerciales, visibilidad, nombres y política de IA; detalles Academy, pagos/regalos y reparto según etapas.
 6. Pruebas de contraste completo (incluido video dinámico), accesibilidad, temas y dispositivos; verificar dependencias nativas y costes antes de comprometerlos.
 
-## 12. Próxima acción propuesta
-Revisar esta versión 1.1 con el propietario, incluyendo la sección 13. Si la aprueba, solicitar autorización específica para registrarlo en GitHub como documento de planificación, sin modificar código de la aplicación. Después, presentar las especificaciones visuales de la primera fase (tokens, componentes base, fila de JCard y jerarquía de Videos). Nada de este documento autoriza ejecución de código, publicación, cambios de base de datos, compra de servicios o compilación.
+## 12. Próxima acción
+Continuar fase 03B–03C según §10; confirmar CI del PR #109, solicitar integración y preparar la compatibilidad SDK/transportes privados LiveKit, sin iniciar JQuote ni otras fases anticipadamente. JQuote AI queda en fase 07. Revisión física restante de 01/02 acumulada en próxima entrega aprobada. No iniciar gastos, dependencias especulativas, cambios hospedados o compilaciones sin autorización.
 
 ## 13. Sistema universal de proporciones, tipografía y diseño adaptable
 

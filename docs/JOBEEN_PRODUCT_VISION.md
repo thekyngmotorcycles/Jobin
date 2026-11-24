@@ -64,3 +64,6 @@ Jobeen reúne evidencias de empleadores autorizados, trabajos reales confirmados
 
 ## Notas de traspaso
 El repositorio conserva el nombre histórico `Jobin` en rutas, componentes y Expo; la identidad actual del producto es **Jobeen**. No renombrar rutas, claves, bundle IDs ni base de datos solo por coherencia editorial. Las capacidades futuras (regalos, captura con gafas) son visión, **no funcionalidades existentes**.
+
+## JQuote AI — decisión aprobada 2026-11-24
+Presupuesto rápido privado por voz, fotos o video narrado dentro de JQuote, con catálogo de precios de empresa, datos pendientes explícitos, cálculos deterministas y revisión humana antes del envío. Jobeen AI compartida con JAssist y moderación, con adaptadores OpenAI/Gemini y sin reutilizar datos privados para publicaciones. Mantener alternativa manual y evitar CRM paralelo. Incorporar en fase 07 del Master Plan v1.5 §7.1 y §10; no desarrollar antes de cerrar los bloques prioritarios de streaming. La cámara interactiva/medición avanzada es posterior y condicional. Candidato Business Premium, sin fijar precios ni contratar servicios.

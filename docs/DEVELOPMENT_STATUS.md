@@ -1,5 +1,8 @@
 # Jobeen — registro central de desarrollo
 
+## Hoja de ruta consolidada y JQuote AI (2026-11-24)
+Propietario aprueba incorporar presupuestos rápidos por voz, foto y video, en JQuote (no app independiente). Master Plan v1.5 §7.1, §10 y §12 y visión de producto actualizados; catálogo/expediente/manual antes de IA, aprobación humana, privacidad y cálculo determinista, cámara interactiva futura. Orden operativo 01–10: diseño, Videos, Streaming+moderación, creación, Panel/JCard, Academy, JQuote, JAssist/JTeam/reputación, monetización, beta/publicación. Fases 01/02 integradas con validación física pendiente; 03 ACTUAL. Development 4867fe9f CI 45416378770 success; PR #109 candidato anterior 2b466605 CI 45422582074 success. Esta revisión documental produce un nuevo SHA que requiere su propio CI. Próximo paso 03B–03C (integración autorizada de #109 y compatibilidad/transportes privados LiveKit), no iniciar JQuote ahora. Sin contratación, SDK, migración alojada, merge, OTA ni APK.
+
 ## Política de Moderación v2.0 (2026-11-24)
 Propietario aprobó moderación contextual y sustitución del máximo sin supervisión de 15 por 60 s. Política permanente en docs/JOBEEN_MODERATION_POLICY_V2.md y AGENTS.md. PR #109 incorpora contrato/worker/gateway candidato, migración aditiva no aplicada y pruebas de vencimiento absoluto. No activar OpenAI/Gemini: falta adjudicación contextual, controles de protección infantil, revisión humana, textos de consentimiento, términos y pruebas de recuperación/corte reales. Las reglas categóricas antiguas continúan en el runtime hasta adaptar y autorizar despliegue. No se crea cuenta, coste, APK ni OTA.
 
