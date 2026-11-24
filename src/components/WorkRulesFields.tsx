@@ -4,8 +4,8 @@ import { Button,useUi } from "./ui";
 import { ProfessionalStatus } from "./ProfessionalStatus";
 import { loadWorkOptions,WORK_ACTIVITIES } from "../lib/safety-api";
 import { useProfessionalData } from "../state/useProfessionalData";
-export function useWorkDraft(){
- const options=useProfessionalData(loadWorkOptions);
+export function useWorkDraft(strict=false){
+ const options=useProfessionalData(loadWorkOptions,false,strict);
  const [profession,setProfession]=useState("");const [activity,setActivity]=useState("work");
  const [employer,setEmployer]=useState<string|undefined>();const [consent,setConsent]=useState(false);
  return {options,profession,setProfession,activity,setActivity,employer,setEmployer,consent,setConsent};
@@ -21,7 +21,7 @@ export function WorkRulesFields({draft,live}:{draft:ReturnType<typeof useWorkDra
   {WORK_ACTIVITIES.filter(a=>live||a.value!=="interview").map(a=><Button key={a.value} secondary title={(draft.activity===a.value?"✓ ":"")+a.label} onPress={()=>draft.setActivity(a.value)}/>)}
   <Text style={s.h3}>Empresa que representas</Text>
   <Button secondary title={!draft.employer?"✓ Trabajo independiente o de mi organización":"Trabajo independiente o de mi organización"} onPress={()=>draft.setEmployer(undefined)}/>
-  {o.data.employers.map(e=><Button key={e.id} secondary title={(draft.employer===e.id?"✓ ":"")+e.name+(!e.approved?" · Empleo pendiente":live&&!e.representative?" · Sin permiso de representación":"")} onPress={()=>draft.setEmployer(e.id)}/>)}
+  {o.data.employers.map(e=><Button key={e.id} secondary disabled={live&&(!e.approved||!e.representative)} selected={draft.employer===e.id} title={(draft.employer===e.id?"✓ ":"")+e.name+(!e.approved?" · Empleo pendiente":live&&!e.representative?" · Sin permiso de representación":"")} onPress={()=>draft.setEmployer(e.id)}/>)}
   <View style={[s.notice,{gap:10}]}>
    <Text style={s.text}>Solo puedes mostrar tu propio trabajo. No fiestas, vida cotidiana ni retransmisiones como espectador. Un guardia de un club transmite únicamente fuera del local.</Text>
    <Text style={s.muted}>No se permiten desnudos, material sexual, menores de edad, sangre ni violencia, aunque aparezcan durante un trabajo. Músicos y DJ muestran su labor artística; actores en academia necesitan matrícula confirmada.</Text>
