@@ -61,12 +61,12 @@ test("Existing drafts are retained; no automatic dropping once capacity is reach
  assert.ok(store.includes("const next=[{...draft,photos:draft.photos.map(photo=>checkedPhoto(photo,owner)),updatedAt:Date.now()},...previous.filter(x=>x.id!==draft.id)]"));
 });
 
-test("Preview has a floating feed-style card with real author info and photos above description",()=>{
+test("Preview has a floating feed-style card with real author info and caption before shared mosaic",()=>{
  assert.ok(sheets.includes('floatingCard("Vista previa"'));
  assert.ok(sheets.includes("<PublicProfileAvatar"));
  assert.ok(sheets.includes("p.authorHandle"));
- assert.ok(sheets.includes("p.photos.map((photo,i)="));
- assert.ok(sheets.indexOf("p.photos.map((photo,i)=")<sheets.indexOf('{!!p.body&&<Text'));
+ assert.ok(sheets.includes("<PostPhotoGallery photos={p.photos.map("));
+ assert.ok(sheets.indexOf("<PostCaption text={p.body}")<sheets.indexOf("<PostPhotoGallery photos="));
  assert.ok(sheets.includes("heart-outline"));
  assert.ok(sheets.includes("chatbubble-outline"));
  assert.ok(sheets.includes("bookmark-outline"));

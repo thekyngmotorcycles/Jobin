@@ -23,3 +23,11 @@ test("Android-only candidate uses nonexported per-owner keys and noBackup app st
  assert.ok(bridge.includes("createPrivateFileVault(crypto,files,assertMessageScope)"));
  assert.ok(!bridge.includes("AsyncStorage")&&!bridge.includes("Math.random"));
 });
+
+test("Native compression preserves bounded output and does not lower storage isolation",()=>{
+ const native=read("modules/jobeen-private-files/android/src/main/java/expo/modules/jobeenprivatefiles/JobeenPrivateFilesModule.kt");
+ assert.match(native,/val maximum = if \(normalize\) PHOTO_SOURCE_LIMIT else LIMIT/);
+ assert.match(native,/val prepared = if \(normalize\) ByteArray\(LIMIT\) else bytes/);
+ assert.match(native,/if \(written !in 1\.\.LIMIT\) return@use -1/);
+ assert.match(native,/pickerCopy\(uri\)/);
+});

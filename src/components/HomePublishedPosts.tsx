@@ -112,14 +112,14 @@ export function HomePostCard({post,viewer,onHide,savedByViewer}:{post:FeedPost;v
  </View>;
  return <View style={{gap:10}}>
   {authorRow}
-  {post.kind==="photos"&&<PhotoCarousel post={{author:post.authorName,photos:post.photoUrls,altTexts:post.photoAltTexts}}/>}
+  <PostCaption text={post.body} mentions={post.mentions}/>
+  {post.kind==="photos"&&<PhotoCarousel key={identity} active={ready} viewer={viewer} post={{author:post.authorName,photos:post.photoUrls,altTexts:post.photoAltTexts}}/>}
   {(post.kind==="video"||post.kind==="live")&&<Pressable accessibilityRole="button" accessibilityLabel="Ver contenido profesional"
    onPress={()=>post.mediaId&&router.push({pathname:"/work-media/[id]",params:{id:post.mediaId}})}
    style={{minHeight:210,backgroundColor:colors.accent,alignItems:"center",justifyContent:"center",gap:10}}>
    <Ionicons name={post.kind==="live"?"radio-outline":"play-circle-outline"} size={52} color={colors.ink}/>
    <Text style={[s.text,{fontWeight:"700"}]}>{post.kind==="live"?"Ver grabación de Live":"Ver video aprobado"}</Text>
   </Pressable>}
-  <PostCaption text={post.body} mentions={post.mentions}/>
   <PostEngagementRow likes={likes} comments={commentsCount} shares={shares} liked={liked}
    likeDisabled={pending||!ready} onLike={()=>void toggleLike()} onComments={()=>void openComments()} onShare={()=>void share()}
    saved={saved} onSave={()=>void toggleSaved()} saveDisabled={saving||!ready}/>

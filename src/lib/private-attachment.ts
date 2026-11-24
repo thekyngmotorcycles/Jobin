@@ -1,5 +1,6 @@
 import type {PrivateFileKind,PrivateFileRef} from "./private-file-vault";
 import type {MessageScope} from "./session-continuity";
+import {POST_PHOTO_LIMIT} from "./feed-photo-layout.ts";
 
 export const PRIVATE_ATTACHMENT_LIMIT=2*1024*1024;
 export type AttachmentMime="image/jpeg"|"image/png"|"image/webp"|"application/pdf";
@@ -39,16 +40,17 @@ type Storage={
 
 export function createPrivateAttachments(storage:Storage,verify:(scope:MessageScope)=>Promise<unknown>){
  return {
-  async protect(scope:MessageScope,kind:PrivateFileKind,assets:readonly {uri:string}[],source:"image"|"document",allowed?:readonly string[]){
+  async protect(scope:MessageScope,kind:PrivateFileKind,assets:readonly {uri:string}[],source:"image"|"document",allowed?:readonly string[],maxFiles=5){
    const secured:PrivateAttachment[]=[];
    try{
-    if(assets.length>5)throw Error("Puedes adjuntar hasta cinco archivos.");
+    const limit=kind==="draft-photo"&&source==="image"&&Number.isInteger(maxFiles)&&maxFiles>=1?Math.min(maxFiles,POST_PHOTO_LIMIT):5;
+    if(assets.length>limit)throw Error("Puedes adjuntar hasta "+limit+" archivos.");
     for(const asset of assets){
      await verify(scope);
      const memory=new Uint8Array(PRIVATE_ATTACHMENT_LIMIT);
      try{
       const count=storage.readPicked(asset.uri,memory,kind==="draft-photo");
-      if(!Number.isInteger(count)||count<1||count>PRIVATE_ATTACHMENT_LIMIT)throw Error("El archivo no puede superar 2 MiB.");
+      if(!Number.isInteger(count)||count<1||count>PRIVATE_ATTACHMENT_LIMIT)throw Error(kind==="draft-photo"?"No se pudo comprimir la fotografía. Selecciona otra imagen.":"El archivo no puede superar 2 MB.");
       const bytes=memory.subarray(0,count),mime=attachmentMime(bytes);
       if((source==="image"||kind==="draft-photo")&&mime==="application/pdf")throw Error("Selecciona una fotografía.");
       if(allowed&&!allowed.includes(mime))throw Error("El formato del archivo no coincide con la selección solicitada.");

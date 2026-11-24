@@ -11,6 +11,7 @@ import {captureMessageScope,assertMessageScope,type MessageScope} from "../../li
 import {publishHomePost,shareApprovedMedia,type FeedPostKind,type FeedAudience} from "../../lib/social-content";
 import {PostComposerSheets} from "../../components/PostComposerSheets";
 import {pickSecuredPhotos,previewSecuredPhoto,watchAttachmentScope} from "../../lib/private-attachment-android";
+import {POST_PHOTO_LIMIT} from "../../lib/feed-photo-layout";
 import {draftPhotoDisplayUri} from "../../lib/post-draft-photo";
 import {emptyPostDraft,hasDraftContent,readPostDrafts,savePostDraft,deletePostDraft,restorePostDraftPhotoUrls,type PostDraft,type PostDraftPhoto} from "../../lib/post-drafts";
 import {searchPostMentions,type PostMention,type PostBusinessMention} from "../../lib/post-mentions";
@@ -50,7 +51,7 @@ export default function PostCreate(){
  const [audienceAnchor,setAudienceAnchor]=useState({top:130,left:16});
  const [audienceFollowers,setAudienceFollowers]=useState(true);
  const [audienceContacts,setAudienceContacts]=useState(false);
- const [busy,setBusy]=useState(false);const [loading,setLoading]=useState(true);const [error,setError]=useState("");
+ const [busy,setBusy]=useState(false);const [photoProgress,setPhotoProgress]=useState<{done:number;total:number}|null>(null);const [loading,setLoading]=useState(true);const [error,setError]=useState("");
  const [draftId,setDraftId]=useState(()=>emptyPostDraft().id);
  const [drafts,setDrafts]=useState<PostDraft[]>([]);
  const [draftCount,setDraftCount]=useState(0);
@@ -110,7 +111,7 @@ export default function PostCreate(){
  }
  useEffect(()=>watchAttachmentScope(()=>scopeRef.current,()=>{
   scopeRef.current=null;autosaveEnabledRef.current=false;
-  setPhotos([]);setDrafts([]);setBody("");setAuthor("");setDraftCount(0);setHydrated(false);
+  setPhotos([]);setDrafts([]);setBody("");setAuthor("");setDraftCount(0);setHydrated(false);setPhotoProgress(null);setPreviewOpen(false);
  }),[]);
  useEffect(()=>{let active=true;void(async()=>{
   try{
@@ -274,11 +275,11 @@ export default function PostCreate(){
  }
  async function choosePhotos(){
   const scope=scopeRef.current,originalDraft=draftSnapshotRef.current.id;
-  if(!scope||scope.owner!==author||submitting.current||picking.current||photos.length>=5)return;
+  if(!scope||scope.owner!==author||submitting.current||picking.current||photos.length>=POST_PHOTO_LIMIT)return;
   picking.current=true;
   try{
    await captureMessageScope(scope);if(!liveScope(scope))return;
-   const files=await pickSecuredPhotos(scope,"draft-photo",{allowsMultipleSelection:true,selectionLimit:5-photos.length,quality:0.8});
+   const files=await pickSecuredPhotos(scope,"draft-photo",{allowsMultipleSelection:true,selectionLimit:POST_PHOTO_LIMIT-photos.length,quality:0.8},false,POST_PHOTO_LIMIT-photos.length);
    const fresh:PostDraftPhoto[]=[];
    for(const attachment of files){
     const previewUri=await previewSecuredPhoto(scope,"draft-photo",attachment);
@@ -286,7 +287,7 @@ export default function PostCreate(){
    }
    await assertMessageScope(scope);
    if(liveScope(scope)&&draftSnapshotRef.current.id===originalDraft){
-    setPhotos(current=>[...current,...fresh].slice(0,5));setError("");
+    setPhotos(current=>[...current,...fresh].slice(0,POST_PHOTO_LIMIT));setError("");
    }
   }catch(e){if(liveScope(scope))setError(e instanceof Error?e.message:"No se pudieron seleccionar fotos.");}
   finally{picking.current=false;}
@@ -316,7 +317,7 @@ export default function PostCreate(){
   const scope=scopeRef.current;if(!scope||scope.owner!==author||submitting.current||picking.current)return;
   if(!consent){setError("Confirma que la publicación cumple las normas de contenido profesional.");return;}
   if(audience==="private"&&!audienceFollowers&&!audienceContacts){setError("Selecciona seguidores, contactos o ambos.");return;}
-  submitting.current=true;setBusy(true);setError("");
+  submitting.current=true;setBusy(true);setError("");setPhotoProgress(kind==="photos"?{done:0,total:photos.length}:null);
   try{
    await captureMessageScope(scope);if(!liveScope(scope))return;
    await assertMessageScope(scope);if(!liveScope(scope))return;
@@ -331,7 +332,7 @@ export default function PostCreate(){
     mediaId:(kind==="video"||kind==="live")?mediaId:null,
     audience,audienceFollowers:audience==="private"&&audienceFollowers,
     audienceContacts:audience==="private"&&audienceContacts
-   },scope);await assertMessageScope(scope);if(!liveScope(scope))return;
+   },scope,(done,total)=>{if(liveScope(scope))setPhotoProgress({done,total});});await assertMessageScope(scope);if(!liveScope(scope))return;
    // The post now exists. Do not keep the editor busy while remote draft
    // photos are deleted: a slow Storage request must never block navigation.
    autosaveEnabledRef.current=false;
@@ -343,7 +344,7 @@ export default function PostCreate(){
    // Retain possibly shared backup references for owner-only reconciliation.
    void draftPaths;
   }catch(e){setError(e instanceof Error?e.message:"No se pudo publicar.");}
-  finally{submitting.current=false;if(liveScope(scope))setBusy(false);}
+  finally{submitting.current=false;if(liveScope(scope)){setBusy(false);setPhotoProgress(null);}}
  }
  const eligible=(kind==="text"?!!body.trim():kind==="photos"?photos.length>0:!!mediaId)&&(audience==="public"||audienceFollowers||audienceContacts);
  return <>
@@ -422,8 +423,8 @@ export default function PostCreate(){
     </ScrollView>
     {kind==="photos"&&<View style={{gap:11}}>
      <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
-      <Text style={{color:t.ink,fontWeight:"700"}}>Fotografías ({photos.length}/5)</Text>
-      {photos.length<5&&<Pressable accessibilityRole="button" accessibilityLabel="Añadir fotografías" onPress={()=>void choosePhotos()}
+      <Text style={{color:t.ink,fontWeight:"700"}}>Fotografías ({photos.length}/{POST_PHOTO_LIMIT})</Text>
+      {photos.length<POST_PHOTO_LIMIT&&<Pressable accessibilityRole="button" accessibilityLabel="Añadir fotografías" onPress={()=>void choosePhotos()}
        style={{paddingHorizontal:12,minHeight:44,backgroundColor:t.cream,borderRadius:14,flexDirection:"row",alignItems:"center",gap:6}}>
        <Ionicons name="add" size={17} color={t.ink}/><Text style={{color:t.ink,fontWeight:"700"}}>Añadir</Text>
       </Pressable>}
@@ -522,6 +523,7 @@ export default function PostCreate(){
     <View style={{backgroundColor:t.surface,borderRadius:20,paddingHorizontal:32,paddingVertical:23,alignItems:"center",gap:13}}>
      <ActivityIndicator color={t.ink} size="large"/>
      <Text style={{color:t.ink,fontSize:15,fontWeight:"700"}}>Publicando...</Text>
+     {!!photoProgress&&<Text style={{color:t.ink2}}>{photoProgress.done} de {photoProgress.total} fotografías</Text>}
     </View>
    </View>}
   </SafeAreaView>

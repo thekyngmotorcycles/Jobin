@@ -12,9 +12,9 @@ test("A single Publish press starts the upload without a second confirmation",()
  assert.ok(editor.includes("await publishHomePost("));
 });
 
-test("Real Home posts have a paginated photo gallery and working social controls",()=>{
+test("Real Home posts have an interactive photo gallery and working social controls",()=>{
  const card=source("src/components/HomePublishedPosts.tsx");
- assert.ok(card.includes("<PhotoCarousel post="));
+ assert.ok(card.includes("<PhotoCarousel key={identity} active={ready} viewer={viewer} post="));
  assert.ok(card.includes("<PostEngagementRow likes="));
  assert.ok(!card.includes("toLocaleDateString"));
  assert.ok(!card.includes("feedPhotoCounterBg"));
@@ -82,18 +82,21 @@ test("Saved posts can be revisited and shared links have a detail route",()=>{
  assert.ok(home.includes('Linking.createURL("post/"+post.id)'));
 });
 
-test("All Home post types use author-first structure and a single-line expandable caption",()=>{
+test("All Home post types use author-first structure and inline expandable captions",()=>{
  const demo=source("src/components/PostCard.tsx");
  const real=source("src/components/HomePublishedPosts.tsx");
  const caption=source("src/components/PostCaption.tsx");
  assert.ok(demo.indexOf('<Avatar uri={avatar}')<demo.indexOf('accessibilityLabel={"Abrir video de " + author}'));
- assert.ok(real.indexOf('{authorRow}')<real.indexOf('post.kind==="photos"&&<PhotoCarousel'));
+ assert.ok(real.indexOf('{authorRow}')<real.indexOf('<PostCaption text={post.body}')&&real.indexOf('<PostCaption text={post.body}')<real.indexOf('post.kind==="photos"&&<PhotoCarousel'));
  assert.ok(!real.includes('{media&&authorRow}'));
  assert.ok(demo.includes("<PostCaption text={caption}/>"));
  assert.ok(demo.includes("<PostCaption text={post.caption}/>"));
  assert.ok(real.includes("<PostCaption text={post.body} mentions={post.mentions}/>"));
- assert.ok(caption.includes("numberOfLines={1}"));
- assert.ok(caption.includes("<BottomSheet visible={expanded}"));
+ assert.ok(caption.includes("numberOfLines={expanded?undefined:3}"));
+ assert.ok(!caption.includes("<BottomSheet"));
+ assert.ok(caption.includes("setExpanded(value=>!value)"));
+ assert.ok(caption.includes('router.push({pathname:"/jcard"'));
+ assert.ok(caption.includes("Linking.openURL(part)"));
  assert.ok(demo.includes("onSave={()=>toggleSave(id)}"));
  assert.ok(demo.includes("onSave={()=>toggleSave(post.id)}"));
  assert.ok(real.includes("saved={saved} onSave={()=>void toggleSaved()}"));

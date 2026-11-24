@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
+import {PostPhotoGallery} from "./PostPhotoGallery";
 import {PostCaption} from "./PostCaption";
-import { FlatList, Image, Pressable, Text, View, useWindowDimensions, type ViewToken } from "react-native";
+import { Image, Pressable, Text, View, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Avatar } from "./social-ui";
 import { useUi } from "./ui";
@@ -38,23 +39,8 @@ export function PostEngagementRow({likes,comments,shares,liked,onLike,onComments
  </View>;
 }
 
-export function PhotoCarousel({ post }: { post: Pick<PhotoPost, "photos" | "author"> & {altTexts?:string[]} }) {
-  const { colors } = useUi();
-  const { width } = useWindowDimensions();
-  const [index, setIndex] = useState(0);
-  const onViewable = useRef(({ viewableItems }: { viewableItems: ViewToken<string>[] }) => {
-    if (viewableItems[0]?.index != null) setIndex(viewableItems[0].index);
-  }).current;
-  return (
-    <View>
-      <FlatList data={post.photos} horizontal pagingEnabled showsHorizontalScrollIndicator={false} keyExtractor={uri => uri}
-        onViewableItemsChanged={onViewable} viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
-        renderItem={({ item,index:photoIndex }) => <Image source={{ uri: item }} accessibilityLabel={post.altTexts?.[photoIndex]||"Foto de "+post.author} style={{ width, aspectRatio: 1, backgroundColor: colors.accent }} />} />
-      <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, paddingVertical: 8 }}>
-        {post.photos.map((_, i) => <View key={i} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: i === index ? colors.ink : colors.line }} />)}
-      </View>
-    </View>
-  );
+export function PhotoCarousel({post,active=true,viewer}:{post:Pick<PhotoPost,"photos"|"author">&{altTexts?:string[]};active?:boolean;viewer?:string}){
+ return <PostPhotoGallery photos={post.photos} altTexts={post.altTexts} author={post.author} active={active} viewer={viewer}/>;
 }
 
 export function VideoCard({ id, poster, author, handle, avatar, caption, likes, comments, shares = 0, onOpen }: {
@@ -97,8 +83,8 @@ export function PhotoPostCard({ post }: { post: PhotoPost }) {
         <Avatar uri={post.avatar || undefined} name={post.author} size={34} />
         <View style={{ flex: 1 }}><Text style={s.h3}>{post.author}</Text><Text style={s.muted}>@{post.handle}</Text></View>
       </View>
-      <PhotoCarousel post={post} />
       <PostCaption text={post.caption}/>
+      <PhotoCarousel post={post} />
       <PostEngagementRow likes={post.likes + (liked ? 1 : 0)} comments={(demoComments[post.id] || []).length} shares={demoShares[post.id] || 0}
         liked={liked} onLike={() => toggleLike(post.id)} onShare={() => void sharePhoto()}
          saved={savedPosts.includes(post.id)} onSave={()=>toggleSave(post.id)} />

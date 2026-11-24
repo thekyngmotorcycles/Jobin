@@ -31,11 +31,11 @@ test("Post text area begins as a single line and grows only when users write",()
  assert.ok(!composer.includes('minHeight:150'));
 });
 
-test("Up to five photo previews live in one horizontal scroll row",()=>{
- assert.ok(composer.includes('selectionLimit:5-photos.length'));
- assert.ok(composer.includes('if(!scope||scope.owner!==author||submitting.current||picking.current||photos.length>=5)return;'));
+test("Up to ten photo previews live in one horizontal scroll row",()=>{
+ assert.ok(composer.includes('selectionLimit:POST_PHOTO_LIMIT-photos.length'));
+ assert.ok(composer.includes('if(!scope||scope.owner!==author||submitting.current||picking.current||photos.length>=POST_PHOTO_LIMIT)return;'));
  assert.ok(composer.includes('await assertMessageScope(scope);if(!liveScope(scope))return;'));
- assert.ok(composer.includes('photos.length<5&&<Pressable'));
+ assert.ok(composer.includes('photos.length<POST_PHOTO_LIMIT&&<Pressable'));
  assert.ok(composer.includes('<ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled'));
  assert.ok(composer.includes('accessibilityLabel="Fotografías seleccionadas, deslizar horizontalmente"'));
  assert.ok(composer.includes('contentContainerStyle={{flexDirection:"row",gap:9,paddingVertical:2}}'));

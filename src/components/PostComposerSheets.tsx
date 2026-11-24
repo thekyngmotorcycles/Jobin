@@ -8,6 +8,8 @@ import {jobeenModalTokens} from "../theme/modals";
 import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {draftPhotoDisplayUri} from "../lib/post-draft-photo";
+import {PostPhotoGallery} from "./PostPhotoGallery";
+import {PostCaption} from "./PostCaption";
 import {MAX_POST_DRAFTS,type PostDraft,type PostDraftPhoto} from "../lib/post-drafts";
 import type {FeedAudience,FeedPostKind} from "../lib/social-content";
 
@@ -25,7 +27,6 @@ export function PostComposerSheets(p:Props){
  const {theme}=useTheme();const t=jobeenTokens(theme);const modal=jobeenModalTokens(theme);const danger=jobeenModalTokens(theme,"danger");
  const {width:screenWidth}=useWindowDimensions();const safe=useSafeAreaInsets();
  const cardWidth=Math.min(screenWidth-32,500);
- const photoWidth=cardWidth-2;
  const altPhoto=p.photos.find(x=>x.id===p.altPhotoId);
  const action=(label:string,icon:React.ComponentProps<typeof Ionicons>["name"],onPress:()=>void,primary=false)=>
   <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
@@ -138,20 +139,14 @@ export function PostComposerSheets(p:Props){
        </View>
        <Ionicons name="ellipsis-horizontal" size={20} color={t.ink2}/>
       </View>
-      {p.kind==="photos"&&!!p.photos.length&&<View style={{width:photoWidth,alignSelf:"center"}}>
-       <ScrollView horizontal pagingEnabled nestedScrollEnabled showsHorizontalScrollIndicator={false}>
-        {p.photos.map((photo,i)=><Image key={photo.id} source={{uri:draftPhotoDisplayUri(photo)}}
-         accessibilityLabel={photo.altText||"Fotografía "+(i+1)}
-         style={{width:photoWidth,height:photoWidth,backgroundColor:t.cream}} resizeMode="cover"/>)}
-       </ScrollView>
-       <Text style={{fontSize:11,textAlign:"center",color:t.ink2,paddingTop:5}}>{p.photos.length} fotografías</Text>
-      </View>}
+      <PostCaption text={p.body} interactive={false}/>
+      {p.kind==="photos"&&!!p.photos.length&&<PostPhotoGallery photos={p.photos.map(photo=>draftPhotoDisplayUri(photo)||"")}
+       altTexts={p.photos.map(photo=>photo.altText)} author={p.authorName} active={p.previewOpen} viewer={p.authorId} allowOpen={false}/>}
       {(p.kind==="video"||p.kind==="live")&&<View style={{height:170,backgroundColor:t.cream,
        alignItems:"center",justifyContent:"center",gap:8}}>
        <Ionicons name={p.kind==="live"?"radio-outline":"play-circle-outline"} size={44} color={t.ink}/>
        <Text style={{color:t.ink,fontWeight:"700",fontSize:13}}>{p.mediaTitle||"Contenido sin seleccionar"}</Text>
       </View>}
-      {!!p.body&&<Text style={{fontSize:14,lineHeight:21,color:t.ink,paddingHorizontal:14}}>{p.body}</Text>}
       <View style={{flexDirection:"row",gap:30,alignItems:"center",paddingHorizontal:14,paddingVertical:6}}>
        <Ionicons name="heart-outline" size={22} color={t.ink}/>
        <Ionicons name="chatbubble-outline" size={20} color={t.ink}/>
