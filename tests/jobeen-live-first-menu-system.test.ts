@@ -62,3 +62,34 @@ test("Create menu retains four routes with growable controls and safe scroll",()
  assert.ok(create.includes("<ScrollView style={{flexShrink:1}}"));
  assert.ok(create.includes("fontSize:JOBEEN_TYPE.body,lineHeight:JOBEEN_LINE_HEIGHT.body"));
 });
+
+test("Approved minimalist menus render titles only while keeping search metadata and critical confirmations",()=>{
+ const home=src("src/components/HomeSideMenu.tsx");
+ const settings=src("src/app/menu/[section].tsx");
+ const owned=src("src/app/(tabs)/profile.tsx");
+ const visitor=src("src/components/ProfileCommunityActions.tsx");
+ const account=src("src/app/settings/cuenta.tsx");
+ const row=src("src/components/SettingsMenuRow.tsx");
+ for(const source of [home,settings]){
+  assert.ok(source.includes('entry.title+" "+entry.description'),"Settings search retains keyword metadata");
+  assert.ok(!source.includes("description={entry.description}"));
+  assert.ok(!source.includes("{group.description}</Text>"));
+ }
+ assert.ok(!/<SettingsMenuRow[^>]*description=/.test(owned));
+ assert.ok(!/<SettingsMenuRow[^>]*description=/.test(visitor));
+ assert.ok(!account.includes("description={item.detail}"));
+ assert.ok(!account.includes("{group.description}</Text>"));
+ assert.ok(visitor.includes('description={confirm==="remove"?"La relación profesional se eliminará para ambos perfiles."'));
+ assert.ok(account.includes('description={exitError||"¿Quieres salir de tu cuenta de Jobeen?"}'));
+ assert.ok(row.includes("minHeight:JOBEEN_CONTROL.touchTarget"));
+ assert.ok(row.includes("borderRadius:JOBEEN_CONTROL.buttonRadius"));
+ assert.ok(row.includes("backgroundColor:pressed?chrome.selected:colors.transparent"));
+ assert.ok(row.includes("flex:1,minWidth:0"));
+ assert.ok(row.includes("!!description"),"Essential explanations remain possible");
+ assert.ok(owned.includes('width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget'));
+ assert.ok(visitor.includes("maxHeight:Math.max(0,height-insets.top-insets.bottom-81)"));
+ assert.ok(visitor.includes("<ScrollView"));
+ assert.ok(visitor.includes("await assertMessageScope(scope)"));
+ assert.ok(visitor.includes("await removeContactRequest(contact.id,scope)"));
+ assert.ok(account.includes("await endJobinSession(scope)"));
+});

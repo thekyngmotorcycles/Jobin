@@ -36,10 +36,9 @@ export default function AccountSecurity(){
  ];
  async function signOut(){const scope=exitScope.current;if(exitGuard.current||!scope)return;exitGuard.current=true;setSigningOut(true);setExitError("");try{await endJobinSession(scope);setExitOpen(false);}catch{setExitError("No se pudo cerrar sesión. Inténtalo de nuevo.");}finally{exitGuard.current=false;setSigningOut(false);}}
  return <SafeAreaView edges={["bottom"]} style={s.screen}><ScrollView contentContainerStyle={{padding:JOBEEN_CONTROL.pageHorizontalPadding,paddingBottom:48,gap:16,maxWidth:720,width:"100%",alignSelf:"center"}}>
-  <Text style={s.muted}>Tus datos, tu acceso y tu seguridad en un solo lugar.</Text>
   {groups.map(group=><View key={group.title} style={{gap:8}}>
-   <Text accessibilityRole="header" style={[s.h3,{fontSize:JOBEEN_TYPE.sectionTitle,fontWeight:"800"}]}>{group.title}</Text><Text style={s.muted}>{group.description}</Text>
-   <View style={{gap:7}}>{group.items.map(item=><SettingsMenuRow key={item.label} icon={item.icon} title={item.label} description={item.detail}
+   <Text accessibilityRole="header" style={[s.h3,{fontSize:JOBEEN_TYPE.sectionTitle,fontWeight:"800"}]}>{group.title}</Text>
+   <View style={{gap:2}}>{group.items.map(item=><SettingsMenuRow key={item.label} icon={item.icon} title={item.label}
     onPress={()=>{if(item.route)router.push(item.route as any);else item.action?.();}}/>)}</View>
   </View>)}
   <Pressable accessibilityRole="button" disabled={signingOut} onPress={()=>void requestExit()} style={{padding:17,borderRadius:18,borderWidth:1,borderColor:colors.line,alignItems:"center",flexDirection:"row",justifyContent:"center",gap:12}}>

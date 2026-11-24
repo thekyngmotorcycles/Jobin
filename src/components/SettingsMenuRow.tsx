@@ -7,7 +7,7 @@ import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {jobeenModalTokens} from "../theme/modals";
 import {JobinSettingsIcon} from "./JobinSettingsIcon";
 
-/** One settings row for the side drawer and full settings pages. */
+/** Compact shared settings/action row. Descriptions are opt-in only for essential consequences; search metadata is not rendered here. */
 export function SettingsMenuRow({
  title,description,onPress,settingId,icon,variant="navigation",tone="normal",disabled=false
 }:{
@@ -26,15 +26,14 @@ export function SettingsMenuRow({
   disabled={disabled}
   style={({pressed})=>({
    opacity:disabled?0.55:1,
-   flexDirection:"row",alignItems:"center",gap:12,minHeight:JOBEEN_CONTROL.settingsRowMinHeight,
-   paddingHorizontal:12,paddingVertical:9,borderRadius:18,
-   backgroundColor:pressed?chrome.selected:chrome.action,
-   borderWidth:1,borderColor:chrome.border
+   flexDirection:"row",alignItems:"center",gap:12,minHeight:JOBEEN_CONTROL.touchTarget,
+   paddingHorizontal:12,paddingVertical:10,borderRadius:JOBEEN_CONTROL.buttonRadius,
+   backgroundColor:pressed?chrome.selected:colors.transparent
   })}>
-  {(settingId||icon||variant==="navigation")&&<View style={{width:38,height:38,borderRadius:14,alignItems:"center",justifyContent:"center",backgroundColor:chrome.iconSurface}}>
-   {settingId?<JobinSettingsIcon id={settingId} size={21} color={iconColor}/>:<Ionicons name={icon??"settings-outline"} size={23} color={iconColor}/>}
+  {(settingId||icon||variant==="navigation")&&<View style={{width:JOBEEN_CONTROL.icon,height:JOBEEN_CONTROL.icon,alignItems:"center",justifyContent:"center"}}>
+   {settingId?<JobinSettingsIcon id={settingId} size={JOBEEN_CONTROL.icon} color={iconColor}/>:<Ionicons name={icon??"settings-outline"} size={JOBEEN_CONTROL.icon} color={iconColor}/>}
   </View>}
-  <View style={{flex:1,gap:3}}>
+  <View style={{flex:1,minWidth:0,gap:3}}>
    <Text style={{fontSize:JOBEEN_TYPE.body,lineHeight:JOBEEN_LINE_HEIGHT.body,fontWeight:"700",color:chrome.text}}>{title}</Text>
    {!!description&&<Text style={{fontSize:JOBEEN_TYPE.secondary,lineHeight:JOBEEN_LINE_HEIGHT.secondary,color:chrome.muted}}>{description}</Text>}
   </View>

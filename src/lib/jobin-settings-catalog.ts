@@ -15,7 +15,7 @@ export const JOBIN_SETTINGS_GROUPS:JobinSettingsGroup[]=[
   {id:"notificaciones",title:"Notificaciones",description:"Configura los avisos que recibes.",route:"/notifications"},
   {id:"accesibilidad",title:"Accesibilidad",description:"Opciones de lectura y visualización."},
   {id:"idioma",title:"Idioma",description:"Idioma de la aplicación.",route:"/menu/idioma"},
-  {id:"apariencia",title:"Apariencia",description:"Elige entre los cinco temas de Jobin.",route:"/menu/modo-oscuro"},
+  {id:"apariencia",title:"Apariencia",description:"Elige Royal Hive claro, oscuro o la configuración del sistema.",route:"/menu/modo-oscuro"},
   {id:"multimedia",title:"Fotos y videos",description:"Reproducción y uso de datos."},
   {id:"tiempo",title:"Tiempo en Jobin",description:"Herramientas de bienestar digital.",route:"/menu/administracion-tiempo"}]},
  {title:"Actividad y pagos",description:"Tus movimientos y transacciones.",items:[

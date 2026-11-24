@@ -59,10 +59,9 @@ export function HomeSideMenu({visible,onClose,onNavigate}:{visible:boolean;onClo
        <Ionicons name="search-outline" size={21} color={chrome.muted}/>
        <TextInput accessibilityLabel="Buscar configuración" value={query} onChangeText={setQuery} placeholder="Buscar configuración" placeholderTextColor={chrome.muted} style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,color:chrome.text,fontSize:JOBEEN_TYPE.input}}/>
       </View>
-      {filtered.map(group=><View key={group.title} style={{gap:7,marginBottom:12}}>
+      {filtered.map(group=><View key={group.title} style={{gap:2,marginBottom:12}}>
        <Text accessibilityRole="header" style={{color:chrome.text,fontWeight:"700",fontSize:JOBEEN_TYPE.sectionTitle}}>{group.title}</Text>
-       <Text style={{color:chrome.muted,fontSize:JOBEEN_TYPE.secondary,marginBottom:2}}>{group.description}</Text>
-       {group.items.map(entry=><SettingsMenuRow key={entry.id} settingId={entry.id} title={entry.title} description={entry.description}
+       {group.items.map(entry=><SettingsMenuRow key={entry.id} settingId={entry.id} title={entry.title}
         onPress={()=>{onNavigate?.();onClose();if(entry.route){router.push(entry.route as any);}else{router.push({pathname:"/settings/[item]",params:{item:entry.id}});}}}/>)}
       </View>)}
       {filtered.length===0&&<Text style={{color:chrome.muted}}>No encontramos opciones con ese nombre.</Text>}
