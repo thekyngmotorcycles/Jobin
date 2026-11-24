@@ -28,3 +28,14 @@ export function livePreflight(input:{
  if(!input.consent)return stop("Acepta las reglas de contenido profesional.");
  return {ready:true,reason:""};
 }
+
+/** A shortcut label is not a capability grant; the studio route revalidates access. */
+export function hasActiveOwnLive(input:{
+ ownerId:string|undefined;workspaceScope:Scope|null;mediaScope:Scope|null;error:boolean;
+ media:readonly {creator_id:string;kind:string;status:string;studioReady?:boolean}[]|null;
+}):boolean{
+ const {ownerId,workspaceScope,mediaScope,media}=input;
+ return !!ownerId&&!input.error&&!!workspaceScope&&!!mediaScope&&
+  workspaceScope.owner===ownerId&&mediaScope.owner===ownerId&&workspaceScope.session===mediaScope.session&&
+  !!media?.some(item=>item.creator_id===ownerId&&item.kind==="live"&&item.status==="live"&&item.studioReady===true);
+}

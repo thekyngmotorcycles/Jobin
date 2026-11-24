@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {router} from "expo-router";
+import {router,useLocalSearchParams} from "expo-router";
 import {Text,TextInput,View} from "react-native";
 import {Button,Chips,Notice,PageFrame,PageState,useUi} from "../components/ui";
 import {WorkRulesFields,useWorkDraft} from "../components/WorkRulesFields";
@@ -11,6 +11,7 @@ import {useScopedProfessionalAction,useProfessionalData} from "../state/useProfe
 export default function Live(){
  const {s,colors}=useUi();const [visibility,setVisibility]=useState<LiveVisibility>("public");const [title,setTitle]=useState("");
  const draft=useWorkDraft(true);
+ const {view}=useLocalSearchParams<{view?:string}>();
  const safety=useProfessionalData(loadSafety,false,true);const action=useScopedProfessionalAction(safety.reload,safety.scope);
  const interview=draft.activity==="interview";
  const selectedVisibility=liveVisibility(draft.activity,visibility);
@@ -29,6 +30,7 @@ export default function Live(){
  }
  return <PageFrame kind="form">
   {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
+  {view==="studio"&&<MyWorkMedia kind="live"/>}
   <View style={{gap:12}}>
    <Text accessibilityRole="header" style={s.h3}>Preparar transmisión</Text>
    {safety.loading?<PageState kind="loading" message="Comprobando disponibilidad…"/>:
@@ -47,6 +49,6 @@ export default function Live(){
    <Button title="Solicitar Live supervisado" busy={action.busy} busyLabel="Preparando…" disabled={!readiness.ready} onPress={requestLive}/>
    <Button variant="tertiary" title="Leer borrador de Términos" onPress={()=>router.push("/terms")}/>
   </View>
-  <MyWorkMedia kind="live"/>
+  {view!=="studio"&&<MyWorkMedia kind="live"/>}
  </PageFrame>;
 }

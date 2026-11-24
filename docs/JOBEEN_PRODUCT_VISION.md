@@ -64,3 +64,12 @@ Jobeen reúne evidencias de empleadores autorizados, trabajos reales confirmados
 
 ## Notas de traspaso
 El repositorio conserva el nombre histórico `Jobin` en rutas, componentes y Expo; la identidad actual del producto es **Jobeen**. No renombrar rutas, claves, bundle IDs ni base de datos solo por coherencia editorial. Las capacidades futuras (regalos, captura con gafas) son visión, **no funcionalidades existentes**.
+
+## JQuote AI — decisión aprobada 2026-11-24
+Presupuesto rápido privado por voz, fotos o video narrado dentro de JQuote, con catálogo de precios de empresa, datos pendientes explícitos, cálculos deterministas y revisión humana antes del envío. Jobeen AI compartida con JAssist y moderación, con adaptadores OpenAI/Gemini y sin reutilizar datos privados para publicaciones. Mantener alternativa manual y evitar CRM paralelo. Incorporar en fase 07 del Master Plan v1.5 §7.1 y §10; no desarrollar antes de cerrar los bloques prioritarios de streaming. La cámara interactiva/medición avanzada es posterior y condicional. Candidato Business Premium, sin fijar precios ni contratar servicios.
+
+## JShop — optimización incorporada al plan (2026-11-24)
+El propietario solicita revisar experiencia completa de compra/venta y mapa personalizado Mapbox. Fase 04B, posterior a streaming y creación multimedia, anterior a Panel. Consultar Master Plan §10 para hallazgos, alcance y criterios; mantener sistema Royal Hive y permisos, no introducir nuevos temas o renumerar fases. Diseño concreto y publicación de estilos pendientes de aprobación.
+
+## JShop — modelo comercial aprobado por el propietario (2026-11-24)
+JShop conecta compradores y vendedores mediante anuncios clasificados y chat. Publicación básica, búsqueda y contacto gratuitos; no comisión por vender, checkout del artículo, intermediación de fondos, pedidos, reparto de cobros, envíos, custodia, ni garantía de transacción. Comprador y vendedor acuerdan pago y entrega entre sí. Conservar mecanismos de reportes, bloqueo, anuncios prohibidos y prevención de fraude. Ingresos de JShop por publicidad y visibilidad opcional contratada, no por venta. No incorporar Stripe Connect, Mercado Pago ni SDK de redes de publicidad de terceros para este alcance. JQuote presencial y retiros de creadores son decisiones independientes, no autorizadas por esta regla. Consultar docs/JOBEEN_PAYMENTS_PLAN.md para modalidades pendientes de elección y uso de expo-iap en promociones digitales. No activar cobros, paquetes, precios o promoción sin aprobación específica.

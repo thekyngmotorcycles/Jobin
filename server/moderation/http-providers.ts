@@ -1,4 +1,4 @@
-import { parseCoverage,parseModerationResult,record,requiredText,secureUrl,type ModerationInput,type ModerationProvider,type VideoProvider,type PreparedVideo,type PreparedLive } from "./contracts.ts";
+import { LIVE_MAX_UNSUPERVISED_SECONDS,parseCoverage,parseModerationResult,record,requiredText,secureUrl,type ModerationInput,type ModerationProvider,type VideoProvider,type PreparedVideo,type PreparedLive } from "./contracts.ts";
 type Fetcher=typeof fetch;
 /** Adapter contract only. Configure a real vendor bridge; this class never invents findings. */
 class HttpProvider {
@@ -27,7 +27,7 @@ export class HttpVideoProvider extends HttpProvider implements VideoProvider {
   if(typeof r.durationMs!=="number"||!Number.isInteger(r.durationMs)||r.durationMs<1||r.durationMs>180000)throw new Error("Processed video exceeds the permitted duration or is not measured");
   return {assetId:requiredText(r.assetId,"asset ID"),playbackUrl:secureUrl(r.playbackUrl),durationMs:r.durationMs};
  }
- async prepareLive(input:{mediaId:string;visibility:string;staging:true;maximumUnsupervisedSeconds:15}):Promise<PreparedLive>{
+ async prepareLive(input:{mediaId:string;visibility:string;staging:true;maximumUnsupervisedSeconds:typeof LIVE_MAX_UNSUPERVISED_SECONDS}):Promise<PreparedLive>{
   const r=record(await this.call("/live/prepare",input));
   return {assetId:requiredText(r.assetId,"asset ID"),playbackUrl:secureUrl(r.playbackUrl),publisherUrl:secureUrl(r.publisherUrl)};
  }

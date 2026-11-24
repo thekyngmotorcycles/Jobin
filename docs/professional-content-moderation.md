@@ -30,3 +30,6 @@ Jobin **does not verify, certify, or hire professionals to review the technical 
 Educational uploads may carry `disclosure.educationalDisclaimer: true`, displayed as the brief, subtle **“Contenido educativo no verificado”** notice. This is a disclaimer, **not** evidence that the content was reviewed, nor a guarantee of safety or accuracy. Show it consistently for educational content, not based on claimed credentials. AI-generated status is a separate disclosure.
 
 At scale, prioritize automated relevance and safety checks, rate limits, duplicate detection, user reports and risk-based escalation; do not promise universal human review. Escalation for dangerous material is safety moderation, not professional certification. Keep processing budgets and model costs measurable.
+
+## Política contextual aprobada v2.0 (2026-11-24)
+Usar docs/JOBEEN_MODERATION_POLICY_V2.md como requisito de la futura IA. Mantener la educación sustantiva general, humor y conversaciones informales dentro del contexto de trabajo; no usar detecciones aisladas de sangre, menores, objetos o palabras como infracción definitiva. Los controles actuales son legado y no deben habilitarse como si cumplieran v2.0.

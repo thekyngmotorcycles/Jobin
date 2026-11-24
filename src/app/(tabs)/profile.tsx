@@ -26,6 +26,8 @@ import {NotificationBell} from "../../components/NotificationBell";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import {JCardLoadState,JCardOfflineNotice,isJCardConnectivityError} from "../../components/JCardConnectionState";
 import { loadCatalog,loadWorkspace } from "../../lib/professional-api";
+import {loadMyMedia} from "../../lib/safety-api";
+import {hasActiveOwnLive} from "../../lib/live-preflight";
 import { ProfessionPicker } from "../../components/ProfessionPicker";
 import { useProfessionalData } from "../../state/useProfessionalData";
 import { useCallback,useEffect,useState } from "react";
@@ -57,6 +59,8 @@ function validPhoneLabel(value:string):boolean{
 export default function Profile() {
   const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme);const {contentBottom}=useTabClearance();const {view,card}=useLocalSearchParams<{view?:string;card?:string}>();
   const [mode,setMode]=useState<Mode>("grid");
+  const activeCardSide=useRef<"personal"|"business">(card==="business"?"business":"personal");
+  const rememberCardSide=useCallback((side:"personal"|"business")=>{activeCardSide.current=side;},[]);
   const profileScroll=useRef<ScrollView|null>(null);
   const profileScrollY=useRef(new Animated.Value(0)).current;
   const [tabOffset,setTabOffset]=useState(0);
@@ -89,7 +93,7 @@ export default function Profile() {
   const openProfileMenu=()=>setProfileToolsOpen(true);
   const closeProfileMenu=()=>setProfileToolsOpen(false);
   const {width:screenWidth,height:screenHeight}=useWindowDimensions();
-  useEffect(()=>{if(view==="cv")setMode("cv");},[view]);
+  useEffect(()=>{if(view==="cv"||view==="grid"||view==="videos")setMode(view);},[view]);
   const [cvShareOpen,setCvShareOpen]=useState(false);
   const cvScope=useRef<MessageScope|null>(null),cvRevision=useRef(0);
   const [incomingCV,setIncomingCV]=useState<CVRequest[]>([]);
@@ -171,6 +175,13 @@ export default function Profile() {
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace,true);
   const ownerId=workspace.data?.card.id;
+  const media=useProfessionalData(loadMyMedia,false,true);
+  const currentLive=hasActiveOwnLive({ownerId,workspaceScope:workspace.scope,mediaScope:media.scope,error:!!media.error||media.loading,media:media.data});
+  function openOwnEditor(){
+    if(!ownerId||workspace.scope?.owner!==ownerId)return;
+    closeProfileMenu();
+    if(activeCardSide.current==="business")editBusiness();else router.push("/professional");
+  }
   useEffect(()=>{if(!profileToolsOpen&&contactsRequested){setContactsRequested(null);if(contactsRequested===ownerId)contactsMenuRef.current?.openContacts(contactsRequested);}},[profileToolsOpen,contactsRequested,ownerId]);
   const [historyState,setHistoryState]=useState<{owner:string;rows:EmploymentEntry[]}|null>(null);
   const history=historyState&&historyState.owner===ownerId?historyState.rows:[];
@@ -355,6 +366,8 @@ export default function Profile() {
            style={{flex:1,backgroundColor:modal.surface,borderTopLeftRadius:modal.radius.dialog,borderBottomLeftRadius:modal.radius.dialog,overflow:"hidden"}}>
             <ScrollView contentContainerStyle={{paddingHorizontal:JOBEEN_CONTROL.modalHorizontalPadding,paddingTop:16,paddingBottom:30,gap:2}}>
               <SettingsDrawerHeader title="Mi perfil" onClose={closeProfileMenu}/>
+              {!!ownerId&&workspace.scope?.owner===ownerId&&<><Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,color:modal.muted,fontWeight:"700",marginTop:8}}>JCard</Text>
+              <SettingsMenuRow title="Editar JCard" icon="create-outline" onPress={openOwnEditor}/></>}
               <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,color:modal.muted,fontWeight:"700",marginTop:8}}>Mi actividad</Text>
               {!!ownerId&&<SettingsMenuRow title="Mis contactos" icon="people-outline" variant="action" onPress={()=>{setContactsRequested(ownerId);closeProfileMenu();}}/>}
               <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,color:modal.muted,fontWeight:"700",marginTop:12}}>Desarrollo profesional</Text>
@@ -385,7 +398,7 @@ export default function Profile() {
         <Animated.View style={{gap:16,paddingHorizontal:16,paddingBottom:20,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         <ProfileIdentityHeader
-          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink?.owner===ownerId?employerLink:null}/>
+          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} onActiveSideChange={rememberCardSide} ownerQuickActions={{onPanel:()=>router.push("/panel"),onLive:()=>currentLive?router.push({pathname:"/live",params:{view:"studio"}}):router.push("/live"),liveLabel:currentLive?"Volver al Live":"En vivo"}} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink?.owner===ownerId?employerLink:null}/>
             {!!workspace.error&&isJCardConnectivityError(workspace.error)&&<View style={{marginTop:12}}>
               <JCardOfflineNotice retry={workspace.reload} cached/>
             </View>}
