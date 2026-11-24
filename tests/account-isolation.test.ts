@@ -11,7 +11,7 @@ test("Professional history never reads or migrates legacy storage and preserves 
  assert.ok(!page.includes("AsyncStorage"));
  assert.ok(page.includes("historyState.owner===ownerId&&historyState.session===workspaceSession"));
  assert.ok(page.includes("await loadCloudHistory(owner,scope)"));
- assert.ok(page.includes("await writeCloudHistory(updated,owner,scope)"));
+ assert.ok(page.includes("changeHistory((owner,scope)=>writeCloudHistory(updated,owner,scope)"));
  assert.ok(page.includes("historyFormScope.current=scope"));
  assert.ok(page.includes("historyScope.current===scope&&historyFormScope.current===scope"));
  assert.ok(page.includes("historyRevision.current===generation"));

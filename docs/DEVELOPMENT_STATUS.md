@@ -1,5 +1,11 @@
 # Jobeen — registro central de desarrollo
 
+## AUTH-HISTORIAL — contrato privado de Supabase (2026-11-24)
+
+- Base `development` 0662d4b3 (#117), CI 45480177364 success. Catálogo de JobIn en solo lectura: 12 filas de historial, cero verificadas, clave única `(owner_id, client_id)` y RLS de titular. La tabla complementaria y el RPC de guardado existen únicamente como candidato de repositorio. El catálogo tampoco registra un despliegue de esos objetos.
+- Se corrige el SQL candidato existente. Se conservan las filas y la proyección de CV. La operación de escritura sigue siendo invoker y transaccional. Las ACL del historial se limitan a lo necesario y las políticas impiden autoacreditar, editar o borrar historial verificado. El perfil mantiene el mecanismo de recuperación de #117, conserva profesiones heredadas al editar otros campos y permite confirmar el borrado de una experiencia propia pendiente.
+- Reproducción local PostgreSQL 17: el candidato anterior sobrescribía una verificación sintética. El corregido conserva esa fila, permite editar dirección y contacto propios y elimina solo la fila seleccionada por el titular con su contacto asociado. Pendientes autorización específica del SQL, integración, OTA para exponer la eliminación en la APK y validación física. [Aplicación y reversión](SECURITY_DEPLOYMENT.md#contrato-de-historial-profesional-privado).
+
 ## AUTH-PERFIL — historial privado y recuperación de sesión (2026-11-24)
 
 - Base verificada de `development` 7b2036a4, CI 45473691475. OTA Android de esa base publicada en run 45475128906, grupo d9b3d9c1-1624-4ff7-8b09-4a6fc3bc3944, runtime `jobeen-native-20261123-feed-4425bdf1`, APK 4497923f-9f26-47ae-bfd9-92864b677028. El candidato de corrección solo cambia JS/TS, pruebas y este registro.

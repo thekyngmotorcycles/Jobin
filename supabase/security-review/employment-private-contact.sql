@@ -1,4 +1,28 @@
--- Additive candidate; apply only after employment-privacy.sql in an isolated schema.
+-- Private employment contract candidate. Requires the existing owner policies and
+-- unique (owner_id, client_id) on public.jcard_employment_history.
+-- The approved-CV RPCs and their permissions are independent of this change.
+alter table public.jcard_employment_history enable row level security;
+revoke all on public.jcard_employment_history from public,anon,authenticated;
+grant select,delete on public.jcard_employment_history to authenticated;
+grant insert (owner_id,client_id,company,role,professions,from_year,from_month,to_year,to_month,updated_at),
+ update (company,role,professions,from_year,from_month,to_year,to_month,updated_at)
+ on public.jcard_employment_history to authenticated;
+
+-- Restrictive rules also cover legacy permissive policies.
+drop policy if exists jobeen_history_owner_boundary on public.jcard_employment_history;
+create policy jobeen_history_owner_boundary on public.jcard_employment_history
+ as restrictive for all to authenticated using(owner_id=(select auth.uid()))
+ with check(owner_id=(select auth.uid()));
+drop policy if exists jobeen_history_no_self_verify_insert on public.jcard_employment_history;
+create policy jobeen_history_no_self_verify_insert on public.jcard_employment_history
+ as restrictive for insert to authenticated with check(verified_by is null);
+drop policy if exists jobeen_history_protect_verified_update on public.jcard_employment_history;
+create policy jobeen_history_protect_verified_update on public.jcard_employment_history
+ as restrictive for update to authenticated using(verified_by is null) with check(verified_by is null);
+drop policy if exists jobeen_history_protect_verified_delete on public.jcard_employment_history;
+create policy jobeen_history_protect_verified_delete on public.jcard_employment_history
+ as restrictive for delete to authenticated using(verified_by is null);
+
 -- Separate owner-only contact data from the history used by approved-CV readers.
 create table if not exists public.jobeen_employment_private_contact(
  owner_id uuid not null,
@@ -27,11 +51,11 @@ create or replace function public.jobeen_save_private_employment(
 declare uid uuid:=auth.uid();
 begin
  if uid is null or p_expected_owner is distinct from uid then raise insufficient_privilege using message='Employment unavailable'; end if;
- insert into public.jcard_employment_history(owner_id,client_id,company,role,professions,from_year,from_month,to_year,to_month,verified_by,updated_at)
- values(uid,p_client_id,p_company,p_role,coalesce(p_professions,'{}'),p_from_year,p_from_month,p_to_year,p_to_month,null,now())
+ insert into public.jcard_employment_history(owner_id,client_id,company,role,professions,from_year,from_month,to_year,to_month,updated_at)
+ values(uid,p_client_id,p_company,p_role,coalesce(p_professions,'{}'),p_from_year,p_from_month,p_to_year,p_to_month,now())
  on conflict(owner_id,client_id) do update set company=excluded.company,role=excluded.role,
  professions=excluded.professions,from_year=excluded.from_year,from_month=excluded.from_month,
- to_year=excluded.to_year,to_month=excluded.to_month,verified_by=null,updated_at=now();
+ to_year=excluded.to_year,to_month=excluded.to_month,updated_at=now();
  insert into public.jobeen_employment_private_contact(owner_id,client_id,address,contact)
  values(uid,p_client_id,coalesce(p_address,''),coalesce(p_contact,''))
  on conflict(owner_id,client_id) do update set address=excluded.address,contact=excluded.contact;

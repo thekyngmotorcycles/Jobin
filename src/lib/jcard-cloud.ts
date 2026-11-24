@@ -36,6 +36,17 @@ export async function writeCloudHistory(entry:EmploymentEntry,expectedOwner:stri
  if(error)throw error;
  await assertMessageScope(scope);
 }
+export async function deleteCloudHistory(entryId:string,expectedOwner:string,expectedScope:MessageScope){
+ const db=requireSupabase(),scope=await captureMessageScope(expectedScope),owner=scope.owner;
+ if(expectedOwner!==owner)throw Error("La sesión cambió.");
+ await assertMessageScope(scope);
+ const {data,error}=await db.from("jcard_employment_history" as never).delete()
+  .eq("owner_id",owner).eq("client_id",entryId).is("verified_by",null)
+  .select("client_id").maybeSingle();
+ if(error)throw error;
+ await assertMessageScope(scope);
+ if(!data)throw Error("Esta experiencia ya no se puede eliminar. Actualiza el historial.");
+}
 export async function readCloudBusiness(expectedOwner?:string,expectedScope?:MessageScope):Promise<Partial<BusinessCardData>|null>{const db=requireSupabase(),scope=await captureMessageScope(expectedScope),owner=scope.owner;if(expectedOwner&&expectedOwner!==owner)throw new Error("La sesión cambió.");const {data,error}=await (db as any).from("jcard_business_details").select("name,business_handle,opened,closed,services,location,category,email,email_secondary,phone,phone_secondary,phone_label,phone_secondary_label,banner_url,avatar_url").eq("owner_id",owner).maybeSingle();if(error)throw error;await assertMessageScope(scope);return data?{...data,businessHandle:data.business_handle??"",emailSecondary:data.email_secondary,phoneSecondary:data.phone_secondary,phoneLabel:data.phone_label,phoneSecondaryLabel:data.phone_secondary_label,bannerUrl:data.banner_url,avatarUrl:data.avatar_url}:null;}
 export async function writeCloudBusiness(b:BusinessCardData,expectedOwner?:string,expectedScope?:MessageScope){const db=requireSupabase(),scope=await captureMessageScope(expectedScope),owner=scope.owner;if(expectedOwner&&expectedOwner!==owner)throw new Error("La sesión cambió. Vuelve a abrir la JCard antes de guardar.");await assertMessageScope(scope);const {error}=await (db as any).from("jcard_business_details").upsert({owner_id:owner,name:b.name,...(b.businessHandle!==undefined?{business_handle:b.businessHandle?.trim().toLowerCase()||null}:{}),opened:b.opened,closed:b.closed,services:b.services,location:b.location,category:b.category??null,email:b.email??null,email_secondary:b.emailSecondary??null,phone:b.phone??null,phone_secondary:b.phoneSecondary??null,phone_label:b.phoneLabel??null,phone_secondary_label:b.phoneSecondaryLabel??null,banner_url:b.bannerUrl??null,avatar_url:b.avatarUrl??null,updated_at:new Date().toISOString()},{onConflict:"owner_id"});if(error)throw error;await assertMessageScope(scope);}
 export async function readBusinessRating(ownerId:string){const db=requireSupabase();const {data,error}=await (db as any).from("jcard_business_ratings").select("average_rating,review_count").eq("business_owner_id",ownerId).maybeSingle();if(error)throw error;return {rating:data?.average_rating??null,count:data?.review_count??0};}
