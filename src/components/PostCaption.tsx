@@ -1,8 +1,7 @@
-import {useState} from "react";
+import {useEffect,useState} from "react";
 import {router} from "expo-router";
 import {Pressable,Text,View} from "react-native";
 import * as Linking from "expo-linking";
-import {BottomSheet} from "./social-ui";
 import {useUi} from "./ui";
 
 type CaptionMention={id:string;label:string;card?:"personal"|"business"};
@@ -29,38 +28,32 @@ export function captionPieces(text:string,mentions:CaptionMention[]):CaptionPiec
  return result;
 }
 
-/** Shared caption for actual social feed posts, including typed business links. */
-export function PostCaption({text,mentions=[]}:{text:string;mentions?:CaptionMention[]}){
+/** Expand in place; keep exact mention destinations and HTTP(S) links. */
+export function PostCaption({text,mentions=[],interactive=true}:{text:string;mentions?:CaptionMention[];interactive?:boolean}){
  const [expanded,setExpanded]=useState(false);
+ const [overflow,setOverflow]=useState(false);
  const {s,colors}=useUi();
- const link=text.match(/https?:\/\/[^\s]+/i)?.[0];
+ useEffect(()=>{setExpanded(false);setOverflow(false);},[text]);
  if(!text.trim())return null;
  function openMention(mention:CaptionMention){
-  setExpanded(false);
   router.push({pathname:"/jcard",params:{user:mention.id,...(mention.card==="business"?{card:"business"}:{})}});
  }
- const pieces=captionPieces(text,mentions);
- const tagged=pieces.map((piece,i)=>piece.mention?
-  <Text key={i} accessibilityRole="link" onPress={()=>openMention(piece.mention!)}
+ const tagged=captionPieces(text,mentions).map((piece,i)=>piece.mention?
+  <Text key={i} accessibilityRole={interactive?"link":undefined} onPress={interactive?()=>openMention(piece.mention!):undefined}
    style={{fontWeight:"700",textDecorationLine:"underline",color:colors.ink}}>{piece.value}</Text>:
-  piece.value);
- return <View>
-  <Pressable accessibilityRole="button" accessibilityLabel={"Ver descripción completa: "+text}
-   accessibilityState={{expanded}} onPress={()=>setExpanded(true)}
-   style={{minHeight:36,justifyContent:"center",paddingHorizontal:16}}>
-   <Text style={s.text} numberOfLines={1} ellipsizeMode="tail">{tagged}</Text>
-  </Pressable>
-  <BottomSheet visible={expanded} onClose={()=>setExpanded(false)} title="Descripción">
-   <Text selectable style={[s.text,{color:colors.ink,paddingVertical:12}]}>{tagged}</Text>
-   {!!mentions.length&&<View style={{gap:5,paddingVertical:8}}>
-    <Text style={[s.text,{fontWeight:"700"}]}>Profesionales y empresas etiquetados</Text>
-    {mentions.map((mention,i)=><Pressable key={mention.card+":"+mention.id+":"+i} accessibilityRole="link"
-     accessibilityLabel={"Ver "+(mention.card==="business"?"JCard de negocio de ":"perfil de ")+mention.label}
-     onPress={()=>openMention(mention)} style={{minHeight:40,justifyContent:"center"}}>
-     <Text style={[s.text,{textDecorationLine:"underline",color:colors.ink}]}>{mention.label}</Text>
-    </Pressable>)}
-   </View>}
-   {!!link&&<Pressable accessibilityRole="link" accessibilityLabel="Abrir enlace de la descripción" onPress={()=>void Linking.openURL(link)} style={{paddingVertical:12,minHeight:44}}><Text style={[s.text,{color:colors.ink,textDecorationLine:"underline"}]}>{link}</Text></Pressable>}
-  </BottomSheet>
+  piece.value.split(/(https?:\/\/[^\s]+)/gi).map((part,j)=>/^https?:\/\//i.test(part)?
+   <Text key={i+":"+j} accessibilityRole={interactive?"link":undefined} onPress={interactive?()=>void Linking.openURL(part).catch(()=>{}):undefined}
+    style={{textDecorationLine:"underline",color:colors.ink}}>{part}</Text>:part));
+ return <View style={{paddingHorizontal:16,gap:3}}>
+  <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+   style={{position:"absolute",left:16,right:16,opacity:0}}>
+   <Text style={s.text} onTextLayout={event=>setOverflow(event.nativeEvent.lines.length>3)}>{tagged}</Text>
+  </View>
+  <Text style={s.text} numberOfLines={expanded?undefined:3} ellipsizeMode="tail" selectable={expanded}>{tagged}</Text>
+  {(overflow||expanded)&&<Pressable accessibilityRole="button" accessibilityLabel={expanded?"Ver menos descripción":"Ver descripción completa"}
+   accessibilityState={{expanded}} onPress={()=>setExpanded(value=>!value)}
+   style={{alignSelf:"flex-start",minHeight:48,justifyContent:"center"}}>
+   <Text style={[s.muted,{fontWeight:"600"}]}>{expanded?"Ver menos":"Ver más"}</Text>
+  </Pressable>}
  </View>;
 }

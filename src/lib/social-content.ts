@@ -1,4 +1,5 @@
 import {uploadSecuredFile} from "./private-attachment-android";
+import {POST_PHOTO_LIMIT} from "./feed-photo-layout";
 import type {PrivateAttachment} from "./private-attachment";
 import {validBusinessMentions,type PostBusinessMention} from "./post-mentions";
 import {requireSupabase} from "./supabase";
@@ -130,12 +131,12 @@ export async function shareApprovedMedia(kind:"video"|"live",owner:string):Promi
  const entries=await loadPublishedMedia();
  return entries.filter(x=>x.creator_id===owner&&x.kind===kind);
 }
-export async function publishHomePost(payload:{body:string;kind:FeedPostKind;mediaId?:string|null;audience?:FeedAudience;audienceFollowers?:boolean;audienceContacts?:boolean;privatePhotos?:(PrivateAttachment|null)[];photoDraftPaths?:(string|null)[];photoAltTexts?:string[];mentionedProfileIds?:string[];businessMentions?:PostBusinessMention[]},expectedScope?:MessageScope):Promise<string>{
+export async function publishHomePost(payload:{body:string;kind:FeedPostKind;mediaId?:string|null;audience?:FeedAudience;audienceFollowers?:boolean;audienceContacts?:boolean;privatePhotos?:(PrivateAttachment|null)[];photoDraftPaths?:(string|null)[];photoAltTexts?:string[];mentionedProfileIds?:string[];businessMentions?:PostBusinessMention[]},expectedScope?:MessageScope,onPhotoProgress?:(completed:number,total:number)=>void):Promise<string>{
  const scope=await captureMessageScope(expectedScope),db=requireSupabase(),owner=scope.owner,uploaded:string[]=[];
  let insertStarted=false;
  if(payload.kind==="text"&&!payload.body.trim())throw Error("Escribe un mensaje para publicar.");
  const photoCount=Math.max(payload.privatePhotos?.length??0,payload.photoDraftPaths?.length??0);
- if(payload.kind==="photos"&&(!photoCount||photoCount>5))throw Error("Añade entre 1 y 5 fotografías.");
+ if(payload.kind==="photos"&&(!photoCount||photoCount>POST_PHOTO_LIMIT))throw Error("Añade entre 1 y "+POST_PHOTO_LIMIT+" fotografías.");
  if((payload.kind==="video"||payload.kind==="live")&&!payload.mediaId)throw Error("Selecciona un video o Live publicado y aprobado.");
  const privatePost=payload.audience==="private";
  if(privatePost&&!payload.audienceFollowers&&!payload.audienceContacts)throw Error("Selecciona seguidores, contactos o ambos.");
@@ -156,6 +157,7 @@ export async function publishHomePost(payload:{body:string;kind:FeedPostKind;med
     if(copyError)throw copyError;
     uploaded.push(path);await assertMessageScope(scope);
    }else throw Error("Vuelve a seleccionar la fotografía para continuar.");
+   await assertMessageScope(scope);onPhotoProgress?.(i+1,photoCount);
   }
   await assertMessageScope(scope);insertStarted=true;
   const {data:created,error}=await db.from("jobeen_feed_posts" as never).insert({

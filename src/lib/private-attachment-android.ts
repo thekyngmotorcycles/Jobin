@@ -11,12 +11,12 @@ import {sessionMarkerKey} from "./session-lifetime";
 function attachments(){
  return createPrivateAttachments(createAndroidPrivateFileStorage(),assertMessageScope);
 }
-export async function pickSecuredPhotos(scope:MessageScope,kind:PrivateFileKind,options:ImagePicker.ImagePickerOptions,camera=false){
+export async function pickSecuredPhotos(scope:MessageScope,kind:PrivateFileKind,options:ImagePicker.ImagePickerOptions,camera=false,maxFiles=5){
  await assertMessageScope(scope);
  const store=attachments();
  const settings={...options,mediaTypes:["images"] as ImagePicker.MediaType[],base64:false,exif:false};
  const result=camera?await ImagePicker.launchCameraAsync(settings):await ImagePicker.launchImageLibraryAsync(settings);
- return result.canceled?[]:store.protect(scope,kind,result.assets,"image");
+ return result.canceled?[]:store.protect(scope,kind,result.assets,"image",undefined,maxFiles);
 }
 export async function pickSecuredEvidence(scope:MessageScope,categories:string[],multiple=false):Promise<PendingEvidence[]>{
  await assertMessageScope(scope);

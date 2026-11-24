@@ -155,6 +155,9 @@ La sección 13 amplía estas reglas con la referencia visual, escala tipográfic
 
 Mantener nombre, iconos, rutas y acordeón. Se propone que Videos priorice En vivo como destino de entrada; actualmente la ruta Videos conduce a Flashes y existe una ruta Streams separada. Antes de cambiarlo, validar con el propietario si prefiere En vivo predeterminado, recordar última sección o mantener Flashes predeterminado. No alterar la navegación desde una transmisión ni crear una sexta pestaña. El buscador conserva filtros y origen preseleccionado (Casa=Todo, Flashes=Flashes, Lives=Streams); ampliar con Cursos y Servicios cuando sus catálogos existan. Historial de búsqueda privado por cuenta. JHighlights no es Reels ni requiere pestaña global.
 
+### 3.1 Casa: espacio de conversación profesional (opción híbrida aprobada)
+Casa prioriza consultas, ideas, debates y trabajos compartidos; Videos mantiene la experiencia audiovisual. Autor y descripción primero, hasta tres líneas y expansión en sitio; menciones y enlaces accesibles. Mosaico con márgenes 12–16 dp, radios del sistema y altura acotada; máximo cuatro fotos visibles y contador +N; hasta diez fotos por publicación, compresión automática conservando proporciones, visor a pantalla completa con zoom y navegación. Vista previa reutiliza el mosaico; no crear otro flujo. Barra inferior sólida bajo los iconos y degradada por encima, conservando acordeón y cinco destinos. Comentarios con respuestas anidadas en fase posterior. No agregar dependencias ni desplegar sin aprobación.
+
 ## 4. Mapa de pantallas y acciones
 | Pantalla / destino | Acceso primario | Acción principal | Reutilizar / cambiar |
 |---|---|---|---|
