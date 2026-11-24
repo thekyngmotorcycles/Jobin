@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import { Text, TextInput, View } from "react-native";
-import { Button, Notice, Screen, useUi } from "../components/ui";
+import { Button, Notice, PageFrame, PageState, useUi } from "../components/ui";
 import { ProfessionPicker } from "../components/ProfessionPicker";
 import { ProfessionalStatus } from "../components/ProfessionalStatus";
 import { loadCatalog, loadWorkspace, professionalMutation, searchCareers } from "../lib/professional-api";
@@ -13,11 +13,11 @@ export default function Opportunities(){
  const [results,setResults]=useState<CareerResult[]>([]);const [searched,setSearched]=useState(false);
  const w=workspace.data;const company=w?.organization?.kind==="company";const allowed=!!w&&(!w.organization||company);
  useEffect(()=>{if(w)setCity(w.profile.city??"");},[w]);
- const input={color:colors.ink,borderColor:colors.line,borderWidth:1,padding:12,borderRadius:10};
- return <Screen title="Tu próximo paso profesional." subtitle="Estudiantes y empresas afines por ciudad y profesión.">
+ const input=s.formInput;
+ return <PageFrame kind="management">
  {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:!allowed?<Text style={s.text}>Esta búsqueda está disponible para estudiantes con cuenta personal y para empresas.</Text>:<>
   {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
-  <View style={s.panel}><Text style={s.h2}>{company?"Conoce estudiantes de tu zona":"Postúlate antes de graduarte"}</Text>
+  <View style={s.panel}><Text accessibilityRole="header" style={s.h3}>{company?"Conoce estudiantes de tu zona":"Postúlate antes de graduarte"}</Text>
    <Text style={s.muted}>{company?"La matrícula puede estar confirmada o sin confirmar. Para invitar, tu empresa necesita el rubro preaprobado.":"Selecciona una profesión que tengas registrada como In academy. Para postularte, tu ciudad debe coincidir con la empresa."}</Text>
    {!!catalog.error&&<Text style={s.muted}>{catalog.error}</Text>}
    <ProfessionPicker catalog={catalog.data} value={profession} onChange={value=>{setProfession(value);setResults([]);setSearched(false);}}/>
@@ -30,9 +30,9 @@ export default function Opportunities(){
    {!company&&<Button secondary title="Ver empresa" onPress={()=>router.push({pathname:"/company",params:{id:result.id}})}/>}
    <Button title={company?"Enviar invitación profesional":"Postularme"} onPress={()=>void action.run(()=>professionalMutation("jobin_contact_career",{target:result.id,profession,kind:company?"invitation":"application",message}),company?"Invitación enviada.":"Postulación enviada.")}/>
   </View>)}
-  {searched&&results.length===0&&<Text style={s.muted}>Sin resultados para esta profesión y ciudad.</Text>}
-  <View style={s.panel}><Text style={s.h2}>Mis contactos profesionales</Text>
-   {!w.contacts.length&&<Text style={s.muted}>Todavía no hay invitaciones ni postulaciones.</Text>}
+  {searched&&results.length===0&&<PageState kind="empty" message="Sin resultados para esta profesión y ciudad."/>}
+  <View style={s.panel}><Text accessibilityRole="header" style={s.h3}>Mis contactos profesionales</Text>
+   {!w.contacts.length&&<PageState kind="empty" message="Todavía no hay invitaciones ni postulaciones."/>}
    {w.contacts.map(contact=>{
     const sender=contact.kind==="application"?contact.student_id:contact.organization_id;
     return <View key={contact.id} style={{gap:8}}>
@@ -46,5 +46,5 @@ export default function Opportunities(){
    <Text style={s.muted}>Aceptar un contacto no crea un contrato ni modifica el historial laboral.</Text>
   </View>
  </>}
- </Screen>;
+ </PageFrame>;
 }

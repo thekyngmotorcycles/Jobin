@@ -95,3 +95,13 @@ test("Stack settings and management pages reuse shared responsive page geometry"
  assert.ok(ui.includes('kind==="error"?"alert"'));
  assert.ok(src("src/components/ProfessionalStatus.tsx").includes('actionLabel="Reintentar" onAction={retry}'));
 });
+
+test("Form and results pages reuse page templates while retaining custom search navigation",()=>{
+ for(const file of ["src/app/professional.tsx","src/app/jcard-business-edit.tsx"])assert.ok(src(file).includes('<PageFrame kind="form"'),file);
+ for(const file of ["src/app/opportunities.tsx","src/app/certificates.tsx"])assert.ok(src(file).includes('<PageFrame kind="management"'),file);
+ const search=src("src/app/search.tsx");
+ assert.ok(search.includes('usePageLayout("list")'));
+ assert.ok(search.includes('ProfessionalMapExplorer'));
+ assert.ok(search.includes('<PageState kind="error" message={error}'));
+ assert.ok(src("src/app/certificates.tsx").includes("Documentos privados. Ningún archivo concede un sello sin revisión."));
+});
