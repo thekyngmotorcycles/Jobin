@@ -1,5 +1,8 @@
 # Jobeen — registro central de desarrollo
 
+## UI-01C — formularios y acordeones JCard (2026-11-24)
+PR #102 integrado con aprobación expresa en ad5e6fcb; CI candidato 45336644633 success. Fase 01C candidata: campos y etiquetas compartidos (48dp, 15sp, radio 12dp), selección y botones accesibles, confirmación de profesión no verificada ligada a sesión, aviso Royal Hive de última JCard activa, guardar ocupado y descartar con componentes comunes. Conservar restricciones de privacidad, avisos necesarios, protección de cambios sin guardar, catálogos, datos y arte JCard. No cambiar RPC, backend ni dependencias. CI y revisión física pendientes; siguiente bloque plantillas de páginas. No merge/OTA/APK sin autorización separada.
+
 ## UI-01B — botones, cuadros y acciones contextuales (2026-11-24)
 Propietario autorizó integrar PR #101 (08dca6cd, CI candidato 45334699334 success) y continuar fase 01 sin OTA. Candidato: Button compartido con variantes primaria/secundaria/terciaria/destructiva, estados ocupado/deshabilitado, misma geometría y tipografía; confirmaciones reutilizan Button y preservan avisos críticos. Menú chat sin descripciones redundantes; publicación conserva explicación a demanda. Mi red utiliza confirmación Royal Hive en lugar de alerta nativa, guarda sesión original, evita reenvío y limpia al perder foco; áreas táctiles y búsqueda homologadas. JShop reutiliza filas comunes, valores actuales breves, selector moneda con protección durante guardado y aviso necesario. No alterar backend, privacidad, JCard, transporte video, dependencias ni configuración nativa. CI/validación física pendientes; siguiente bloque formularios, acordeones y plantillas. No merge/OTA/APK sin autorización independiente.
 

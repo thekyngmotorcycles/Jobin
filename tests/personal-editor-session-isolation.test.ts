@@ -22,3 +22,14 @@ test("Multi-step professional and contact updates retain the original editor sco
  assert.ok(contact.includes("await assertMessageScope(scope)"));
  assert.ok(visibility.includes("captureMessageScope(expectedScope)"));
 });
+
+test("Profession removal confirmation retains the captured editor and unverified target",()=>{
+ const editor=read("src/app/professional.tsx");
+ assert.ok(editor.includes("setRemoveRequest({code,primary,origin})"));
+ assert.ok(editor.includes("editorScopeRef.current!==origin||editorScope!==origin"));
+ assert.ok(editor.includes("p.profession_code===code&&!p.verified"));
+ assert.ok(editor.includes("await verifyEditor(origin)"));
+ assert.ok(editor.includes("current=>current===request?null:current"));
+ assert.ok(editor.includes("visible={!!w&&!!removeRequest&&!unsavedDialogOpen}"));
+ assert.ok(editor.includes("busy={action.busy}"));
+});

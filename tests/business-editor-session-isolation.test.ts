@@ -26,3 +26,11 @@ test("Business editor keeps originating session across handle checks, fresh read
   assert.ok(section.includes("await assertMessageScope(scope)"),name);
  }
 });
+
+test("Business editor visibility notice cannot disable the last active JCard",()=>{
+ const editor=read("src/app/jcard-business-edit.tsx");
+ assert.ok(editor.includes('if(item.key==="business_enabled"&&visibility.business_enabled&&!visibility.personal_enabled){setVisibilityWarning(true);return;}'));
+ assert.ok(editor.includes("visible={!!editorScope&&visibilityWarning}"));
+ assert.ok(editor.includes("await saveJCardVisibility(visibility,editorOwner,origin)"));
+ assert.ok(editor.includes('busy={saving} busyLabel="Guardando…"'));
+});

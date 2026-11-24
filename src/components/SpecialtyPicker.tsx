@@ -32,7 +32,7 @@ export function SpecialtyPicker({options,selected,onChange,loading=false}:{optio
   <Text style={s.muted}>{selected.length}/20 especialidades seleccionadas</Text>
   {selected.length>=20&&<Text accessibilityRole="alert" style={{color:colors.ink,fontSize:12}}>Alcanzaste el máximo de 20 especialidades. Quitá una para agregar otra.</Text>}
   {!!selected.length&&<View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}>
-   {selected.map(item=><Pressable key={item} accessibilityRole="checkbox" accessibilityState={{checked:true}} accessibilityLabel={"Quitar "+item} onPress={()=>toggle(item)} style={{borderRadius:14,borderWidth:1,borderColor:colors.line,padding:8,backgroundColor:colors.accent}}><Text style={{color:colors.ink,fontSize:12}}>✓ {item} ×</Text></Pressable>)}
+   {selected.map(item=><Pressable key={item} accessibilityRole="checkbox" accessibilityState={{checked:true}} accessibilityLabel={"Quitar "+item} onPress={()=>toggle(item)} style={{borderRadius:JOBEEN_CONTROL.buttonRadius,minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center",borderWidth:1,borderColor:colors.line,padding:8,backgroundColor:colors.accent}}><Text style={{color:colors.ink,fontSize:12}}>✓ {item} ×</Text></Pressable>)}
   </View>}
   {options.length>8&&<View style={{flexDirection:"row",alignItems:"center",borderWidth:1,borderColor:colors.outline,borderRadius:JOBEEN_CONTROL.inputRadius,paddingHorizontal:10,minHeight:JOBEEN_CONTROL.inputHeight}}>
    <Ionicons name="search-outline" size={18} color={colors.muted}/>
@@ -42,11 +42,11 @@ export function SpecialtyPicker({options,selected,onChange,loading=false}:{optio
   {!options.length?<Text style={s.muted}>{loading?"Cargando especialidades…":"Sin especialidades disponibles para esta profesión."}</Text>:
    <ScrollView style={{maxHeight:300}} nestedScrollEnabled keyboardShouldPersistTaps="handled">
     <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>
-     {visible.map(item=><Pressable key={item} accessibilityRole="checkbox" accessibilityState={{checked:selected.includes(item),disabled:!selected.includes(item)&&selected.length>=20}} onPress={()=>toggle(item)} disabled={!selected.includes(item)&&selected.length>=20} style={{borderWidth:1,borderColor:colors.line,borderRadius:12,paddingHorizontal:10,paddingVertical:10,minHeight:JOBEEN_CONTROL.touchTarget,backgroundColor:selected.includes(item)?colors.accent:colors.paper}}><Text style={{color:colors.ink,fontSize:13}}>{selected.includes(item)?"✓ ":""}{item}</Text></Pressable>)}
+     {visible.map(item=><Pressable key={item} accessibilityRole="checkbox" accessibilityState={{checked:selected.includes(item),disabled:!selected.includes(item)&&selected.length>=20}} onPress={()=>toggle(item)} disabled={!selected.includes(item)&&selected.length>=20} style={{borderWidth:1,borderColor:colors.line,borderRadius:12,paddingHorizontal:10,paddingVertical:10,minHeight:JOBEEN_CONTROL.touchTarget,backgroundColor:selected.includes(item)?colors.accent:colors.paper}}><Text style={{color:colors.ink,fontSize:JOBEEN_TYPE.body}}>{selected.includes(item)?"✓ ":""}{item}</Text></Pressable>)}
     </View>
     {!visible.length&&<Text style={s.muted}>No encontramos esa especialidad. Prueba con otra palabra.</Text>}
-    {!q&&!showAll&&filtered.length>12&&<Pressable accessibilityRole="button" onPress={()=>setShowAll(true)} style={{padding:12,alignItems:"center"}}><Text style={{color:colors.ink,textDecorationLine:"underline"}}>Ver todas ({filtered.length})</Text></Pressable>}
-    {!q&&showAll&&filtered.length>12&&<Pressable accessibilityRole="button" onPress={()=>setShowAll(false)} style={{padding:12,alignItems:"center"}}><Text style={{color:colors.ink,textDecorationLine:"underline"}}>Mostrar menos</Text></Pressable>}
+    {!q&&!showAll&&filtered.length>12&&<Pressable accessibilityRole="button" onPress={()=>setShowAll(true)} style={{padding:12,minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}><Text style={{color:colors.ink,textDecorationLine:"underline"}}>Ver todas ({filtered.length})</Text></Pressable>}
+    {!q&&showAll&&filtered.length>12&&<Pressable accessibilityRole="button" onPress={()=>setShowAll(false)} style={{padding:12,minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}><Text style={{color:colors.ink,textDecorationLine:"underline"}}>Mostrar menos</Text></Pressable>}
    </ScrollView>}
  </View>;
 }

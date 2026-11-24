@@ -26,6 +26,8 @@ export function useUi() { const { colors,theme } = useTheme(); const chrome=menu
   h3: { fontSize: fs(JOBEEN_TYPE.sectionTitle), fontWeight: "700", color: colors.ink },
   text: { fontSize: fs(JOBEEN_TYPE.body), lineHeight: fs(JOBEEN_LINE_HEIGHT.body), color: colors.ink },
   muted: { fontSize: fs(JOBEEN_TYPE.secondary), lineHeight: fs(JOBEEN_LINE_HEIGHT.secondary), color: colors.muted },
+  formInput: { color: colors.ink, fontSize: JOBEEN_TYPE.input, lineHeight: JOBEEN_LINE_HEIGHT.input, borderColor: colors.outline, borderWidth: 1, borderRadius: JOBEEN_CONTROL.inputRadius, padding: 12, minHeight: JOBEEN_CONTROL.inputHeight },
+  formLabel: { color: colors.ink, fontSize: JOBEEN_TYPE.body, lineHeight: JOBEEN_LINE_HEIGHT.body, fontWeight: "600" },
   row: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" },
   panel: { backgroundColor: jt.surface, borderWidth: 1, borderColor: jt.line, borderRadius: JOBEEN_CONTROL.cardRadius, padding: JOBEEN_CONTROL.panelPadding, gap: JOBEEN_CONTROL.panelGap },
   button: { minHeight: JOBEEN_CONTROL.touchTarget, borderRadius: JOBEEN_CONTROL.buttonRadius, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", maxWidth: "100%" },
