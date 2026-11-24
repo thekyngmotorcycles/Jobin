@@ -138,3 +138,22 @@ test("Story and JCard portraits keep one frame, while all ordinary avatars stay 
  assert.ok(business.includes('shape="portrait" framed={false}'));
  assert.ok(src("src/components/HomePublishedPosts.tsx").includes('<PublicProfileAvatar userId={comment.authorId}'));
 });
+
+test("Royal Hive editor warnings preserve private contact defaults and prevent hiding the last active JCard",()=>{
+ const personal=src("src/app/professional.tsx");
+ const businessEditor=src("src/app/jcard-business-edit.tsx");
+ const dialog=src("src/components/JobeenNoticeDialog.tsx");
+ assert.ok(personal.includes('useState({show_email:false,show_phone:false})'));
+ assert.ok(personal.includes('if(visibility.personal_enabled&&!visibility.business_enabled){setVisibilityWarning(true);return;}'));
+ assert.ok(businessEditor.includes('if(item.key==="business_enabled"&&visibility.business_enabled&&!visibility.personal_enabled){setVisibilityWarning(true);return;}'));
+ assert.ok(personal.includes('visible={!!w&&visibilityWarning&&!unsavedDialogOpen&&!removeRequest}'));
+ assert.ok(businessEditor.includes('visible={!!editorScope&&visibilityWarning}'));
+ for(const screen of [personal,businessEditor]){
+  assert.ok(screen.includes('tone="warning" singleAction onConfirm={()=>setVisibilityWarning(false)}'));
+  assert.ok(!screen.includes('Alert.alert('));
+ }
+ assert.ok(dialog.includes('{!singleAction&&<Button title={cancelLabel}'));
+ assert.ok(personal.includes('await saveContactPreferences({show_email:showEmail,show_phone:showPhone},owner,origin)'));
+ assert.ok(personal.includes('await saveJCardVisibility(visibility,owner,origin)'));
+ assert.ok(businessEditor.includes('await saveJCardVisibility(visibility,editorOwner,origin)'));
+});

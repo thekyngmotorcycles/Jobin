@@ -4,7 +4,8 @@ import {readJCardVisibility,saveJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "
 import { useCallback, useEffect, useRef, useState } from "react";
 import {router,Stack,useFocusEffect,useNavigation} from "expo-router";
 import {usePreventRemove} from "@react-navigation/native";
-import { Alert, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import {JobeenNoticeDialog} from "../components/JobeenNoticeDialog";
 import { Button, Chips, Notice, Screen, useUi } from "../components/ui";
 import { ProfessionPicker } from "../components/ProfessionPicker";
 import { SpecialtyPicker } from "../components/SpecialtyPicker";
@@ -19,7 +20,7 @@ import {Ionicons} from "@expo/vector-icons";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
-import {JOBEEN_TYPE} from "../theme/typography";
+import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {ProfessionGlyph} from "../components/ProfessionGlyph";
@@ -46,6 +47,8 @@ export default function Professional() {
  const [editorError,setEditorError]=useState(""),[editorRevision,setEditorRevision]=useState(0);
  const [settingsReady,setSettingsReady]=useState(false);
  const [unsavedDialogOpen,setUnsavedDialogOpen]=useState(false);
+ const [removeRequest,setRemoveRequest]=useState<{code:string;primary:boolean;origin:MessageScope}|null>(null);
+ const [visibilityWarning,setVisibilityWarning]=useState(false);
  const pendingExitRef=useRef<null|(()=>void)>(null);
  const keepEditing=()=>{pendingExitRef.current=null;setUnsavedDialogOpen(false);};
  const discardChanges=()=>{const exit=pendingExitRef.current;pendingExitRef.current=null;setUnsavedDialogOpen(false);exit?.();};
@@ -127,20 +130,25 @@ export default function Professional() {
  }
  function removeProfession(code:string,primary:boolean){
   const origin=editorScope;
-  if(!origin||!w)return;
-  Alert.alert("Eliminar profesión",primary?"¿Eliminar tu profesión principal? Puedes seleccionar otra después.":"¿Eliminar esta profesión?",[
-   {text:"Cancelar",style:"cancel"},
-   {text:"Eliminar",style:"destructive",onPress:()=>void action.run(async()=>{
-    await verifyEditor(origin);
-    await professionalMutation("jobin_remove_unverified_profession",{profession:code},origin);
-    await verifyEditor(origin);
-   },"Profesión eliminada.")}
-  ]);
+  if(!origin||!w||action.busy||!w.professions.some(p=>p.profession_code===code&&!p.verified))return;
+  action.setNotice("");setRemoveRequest({code,primary,origin});
  }
+ async function confirmRemoveProfession(){
+  const request=removeRequest;if(!request||action.busy||!w)return;
+  const {code,origin}=request;
+  if(editorScopeRef.current!==origin||editorScope!==origin||!w.professions.some(p=>p.profession_code===code&&!p.verified))return;
+  const ok=await action.run(async()=>{
+   await verifyEditor(origin);
+   await professionalMutation("jobin_remove_unverified_profession",{profession:code},origin);
+   await verifyEditor(origin);
+  },"Profesión eliminada.");
+  if(ok&&activeRef.current&&editorScopeRef.current===origin)setRemoveRequest(current=>current===request?null:current);
+ }
+ useEffect(()=>{setRemoveRequest(null);setVisibilityWarning(false);},[editorScope]);
 
 
  useEffect(()=>{if(!w)return;setName(w.card.name);setHandle(w.card.handle);setCity(w.profile.city||"");setRegion(w.profile.region||"");setAvailability(w.card.status);setLanguages(w.card.languages.map(l=>({name:l.name,fluency:String(l.fluency)})));},[w]);
- const input={color:colors.ink,fontSize:JOBEEN_TYPE.input,borderColor:colors.outline,borderWidth:1,borderRadius:JOBEEN_CONTROL.inputRadius,padding:12,minHeight:JOBEEN_CONTROL.touchTarget};
+ const input=s.formInput;
  function choose(code:string){setProfession(code);setSpecialties(w?.professions.find(p=>p.profession_code===code)?.specialties??[]);const pp=w?.professions.find(p=>p.profession_code===code);setTraining(pp?.training_status??"graduado");setInstitution(pp?.institution_id??null);}
  const sectionRow=(id:Section,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=><Pressable accessibilityRole="button" accessibilityState={{expanded:section===id}} onPress={()=>openSection(id)} style={{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:JOBEEN_CONTROL.accordionRowVerticalPadding,minHeight:JOBEEN_CONTROL.touchTarget}}>
   <Ionicons name={icon} size={23} color={colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined,color:colors.ink}]}>{title}</Text></View><Ionicons name={section===id?"chevron-up":"chevron-down"} size={20} color={colors.muted}/>
@@ -222,74 +230,72 @@ export default function Professional() {
     accessibilityState={{disabled:action.busy}} disabled={action.busy}
     onPress={()=>saveSections(pendingTargets)}
     style={{minWidth:72,minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center",alignItems:"center"}}>
-    <Text style={{fontSize:15,fontWeight:"700",color:colors.ink}}>{action.busy?"Guardando…":"Guardar"}</Text>
+    <Text style={{fontSize:JOBEEN_TYPE.action,lineHeight:JOBEEN_LINE_HEIGHT.action,fontWeight:"700",color:colors.ink}}>{action.busy?"Guardando…":"Guardar"}</Text>
    </Pressable>
   ):undefined}}/>
   <Screen demo={false} hideHeader hideFooter scrollRef={scrollRef} title="Editar mi JCard" subtitle="">
   {!w?<ProfessionalStatus loading={workspace.loading||(!settingsReady&&!editorError)} error={editorError||workspace.error} retry={retryEditor}/>:<>
-   {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
+   {!!action.notice&&!removeRequest&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
    <View style={{gap:6,paddingTop:0,paddingBottom:8}}>
     <View onLayout={e=>{positions.current.identity=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap}]}>
      {sectionRow("identity","Datos principales","person-outline")}
      {section==="identity"&&<View style={{gap:12,paddingBottom:12}}>
       <Button secondary title={"Cambiar foto de JCard personal"} onPress={changePhoto}/>
-      <Text style={s.muted}>Nombre legal</Text><TextInput accessibilityLabel="Nombre legal" value={name} maxLength={30} onChangeText={value=>setName(value.replace(/[^\p{L}\p{M} \u0027\u2019-]/gu,"").slice(0,30))} style={input}/>
-      <Text style={s.muted}>Nombre de usuario</Text><TextInput accessibilityLabel="Nombre de usuario" value={handle} onChangeText={setHandle} autoCapitalize="none" style={input}/>
-      <Text style={s.muted}>Ciudad</Text><TextInput accessibilityLabel="Ciudad" value={city} onChangeText={setCity} style={input}/>
-      <Text style={s.muted}>Estado o región</Text><TextInput accessibilityLabel="Estado o región" value={region} onChangeText={setRegion} style={input}/>
-      {(["email_primary","email_secondary","phone_primary","phone_secondary"] as const).map(key=><View key={key} style={{gap:5}}><Text style={s.muted}>{{email_primary:"Correo electrónico principal (opcional)",email_secondary:"Correo electrónico secundario (opcional)",phone_primary:"Teléfono principal (opcional)",phone_secondary:"Teléfono secundario (opcional)"}[key]}</Text><TextInput accessibilityLabel={key} value={personalContacts[key]} onChangeText={value=>setPersonalContacts(p=>({...p,[key]:value}))} keyboardType={key.startsWith("email")?"email-address":"phone-pad"} autoCapitalize="none" maxLength={key.startsWith("email")?254:40} style={input}/></View>)}
-      <Text style={s.muted}>Disponibilidad profesional</Text><Chips values={["AVAILABLE","ACTIVE"] as const} value={availability} onChange={setAvailability} getLabel={v=>v==="AVAILABLE"?"Disponible para trabajar":"Trabajando actualmente"} label="Disponibilidad profesional"/>
+      <Text style={s.formLabel}>Nombre legal</Text><TextInput accessibilityLabel="Nombre legal" value={name} maxLength={30} onChangeText={value=>setName(value.replace(/[^\p{L}\p{M} \u0027\u2019-]/gu,"").slice(0,30))} style={input}/>
+      <Text style={s.formLabel}>Nombre de usuario</Text><TextInput accessibilityLabel="Nombre de usuario" value={handle} onChangeText={setHandle} autoCapitalize="none" style={input}/>
+      <Text style={s.formLabel}>Ciudad</Text><TextInput accessibilityLabel="Ciudad" value={city} onChangeText={setCity} style={input}/>
+      <Text style={s.formLabel}>Estado o región</Text><TextInput accessibilityLabel="Estado o región" value={region} onChangeText={setRegion} style={input}/>
+      {(["email_primary","email_secondary","phone_primary","phone_secondary"] as const).map(key=><View key={key} style={{gap:5}}><Text style={s.formLabel}>{{email_primary:"Correo electrónico principal (opcional)",email_secondary:"Correo electrónico secundario (opcional)",phone_primary:"Teléfono principal (opcional)",phone_secondary:"Teléfono secundario (opcional)"}[key]}</Text><TextInput accessibilityLabel={key} value={personalContacts[key]} onChangeText={value=>setPersonalContacts(p=>({...p,[key]:value}))} keyboardType={key.startsWith("email")?"email-address":"phone-pad"} autoCapitalize="none" maxLength={key.startsWith("email")?254:40} style={input}/></View>)}
+      <Text style={s.formLabel}>Disponibilidad profesional</Text><Chips values={["AVAILABLE","ACTIVE"] as const} value={availability} onChange={setAvailability} getLabel={v=>v==="AVAILABLE"?"Disponible para trabajar":"Trabajando actualmente"} label="Disponibilidad profesional"/>
       <View style={{gap:8,padding:12,borderWidth:1,borderColor:colors.line,borderRadius:12}}><Text style={s.muted}>{availability==="ACTIVE"?"Para mostrar una empresa en tu JCard, envíale una solicitud. Solo aparecerá después de que la empresa la apruebe.":"Puedes administrar o finalizar vínculos laborales anteriores. El nombre de la empresa solo se muestra mientras indiques que estás trabajando."}</Text><Button secondary title="Gestionar vínculos laborales" onPress={()=>router.push("/employer-links")}/></View>
-      <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("identity")}/>
+      <Button title="Guardar cambios" busy={action.busy} busyLabel="Guardando…" onPress={()=>saveSection("identity")}/>
      </View>}
     </View>
     <View onLayout={e=>{positions.current.languages=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap}]}>
      {sectionRow("languages","Idiomas","globe-outline")}
      {section==="languages"&&<View style={{gap:16,paddingBottom:12}}>
-      <Text style={s.muted}>El aro indica visualmente tu nivel. Se guarda como una puntuación compatible con tu JCard actual.</Text>
       {languages.map((l,index)=><View key={index} style={{gap:12,padding:14,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
        <View style={{flexDirection:"row",alignItems:"center",gap:12}}>
         <LanguageRing name={l.name} value={Number(l.fluency)||0} color={colors.ink} track={colors.line}/>
         <View style={{flex:1,gap:5}}><LanguagePicker value={l.name} selected={languages.filter((_,i)=>i!==index).map(item=>item.name)} onChange={value=>setLanguages(items=>items.map((item,i)=>i===index?{...item,name:value}:item))}/><Text style={s.muted}>{languageLabel(Number(l.fluency)||0)}</Text></View>
        </View>
-       <Text style={[s.text,{fontWeight:"600"}]}>¿Qué tan bien lo dominas?</Text>
-       <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{LANGUAGE_LEVELS.map(level=><Pressable key={level.value} accessibilityRole="radio" accessibilityState={{checked:Number(l.fluency)===level.value}} onPress={()=>setLanguages(items=>items.map((item,i)=>i===index?{...item,fluency:String(level.value)}:item))} style={{borderWidth:1,borderColor:colors.line,borderRadius:22,paddingHorizontal:12,paddingVertical:9,backgroundColor:Number(l.fluency)===level.value?colors.accent:colors.paper}}>
-        <Text style={{color:colors.ink,fontSize:13,fontWeight:Number(l.fluency)===level.value?"700":"400"}}>{level.label}</Text>
+       <Text style={[s.text,{fontWeight:"600"}]}>Nivel</Text>
+       <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{LANGUAGE_LEVELS.map(level=><Pressable key={level.value} accessibilityRole="radio" accessibilityState={{checked:Number(l.fluency)===level.value}} onPress={()=>setLanguages(items=>items.map((item,i)=>i===index?{...item,fluency:String(level.value)}:item))} style={{borderWidth:1,borderColor:colors.line,borderRadius:JOBEEN_CONTROL.buttonRadius,minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center",paddingHorizontal:12,paddingVertical:9,backgroundColor:Number(l.fluency)===level.value?colors.accent:colors.paper}}>
+        <Text style={{color:colors.ink,fontSize:JOBEEN_TYPE.action,fontWeight:Number(l.fluency)===level.value?"700":"400"}}>{level.label}</Text>
        </Pressable>)}</View>
        <Button secondary title="Quitar idioma" onPress={()=>setLanguages(items=>items.filter((_,i)=>i!==index))}/>
       </View>)}
       <Button secondary title="+ Agregar idioma" onPress={()=>setLanguages(items=>[...items,{name:"",fluency:"45"}])}/>
-      <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("languages")}/>
+      <Button title="Guardar cambios" busy={action.busy} busyLabel="Guardando…" onPress={()=>saveSection("languages")}/>
      </View>}
     </View>
     {w.card.accountType==="personal"&&<View onLayout={e=>{positions.current.professions=e.nativeEvent.layout.y;}} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap}]}>
      {sectionRow("professions","Profesiones y formación","school-outline")}
      {section==="professions"&&<View style={{gap:14,paddingBottom:12}}>
-      <Text style={s.muted}>Puedes declarar tus profesiones sin un límite global. Una es principal y las demás secundarias. Declarar una profesión no verifica tus credenciales: los certificados se revisan por separado.</Text>
+      <Text style={s.muted}>Una profesión declarada no equivale a una credencial verificada.</Text>
       {w.professions.map(p=><View key={p.id} style={{gap:10,borderWidth:1,borderColor:colors.line,borderRadius:12,padding:12}}>
        <View style={{flexDirection:"row",alignItems:"flex-start",gap:12}}>
-        <View style={{flex:1,gap:5}}><Text style={[s.h3,{fontSize:17}]}><ProfessionGlyph profession={p.profession_code} size={20} color={colors.ink}/>  {p.label}{p.primary_profession?" · Principal":""}</Text><Text style={s.muted}>{p.training_status==="in_academy"?"En formación":p.training_status==="practica"?"Aprendido en la práctica":"Graduado"} · {p.verified?"Verificado":"Sin verificar"}{p.school?" · "+p.school:""}</Text></View>
-        <Pressable accessibilityRole="button" accessibilityLabel={"Editar "+p.label} onPress={()=>openProfession(p.profession_code,p.primary_profession)} style={{padding:8,borderRadius:8,borderWidth:1,borderColor:colors.line}}><Ionicons name="create-outline" size={23} color={colors.ink}/></Pressable>
-        {!p.verified&&<Pressable accessibilityRole="button" accessibilityLabel={"Eliminar "+p.label} onPress={()=>removeProfession(p.profession_code,p.primary_profession)} style={{padding:8,borderRadius:8,borderWidth:1,borderColor:colors.line}}><Ionicons name="trash-outline" size={23} color={colors.ink}/></Pressable>}
+        <View style={{flex:1,gap:5}}><Text style={[s.h3,{fontSize:JOBEEN_TYPE.sectionTitle}]}><ProfessionGlyph profession={p.profession_code} size={20} color={colors.ink}/>  {p.label}{p.primary_profession?" · Principal":""}</Text><Text style={s.muted}>{p.training_status==="in_academy"?"En formación":p.training_status==="practica"?"Aprendido en la práctica":"Graduado"} · {p.verified?"Verificado":"Sin verificar"}{p.school?" · "+p.school:""}</Text></View>
+        <Pressable accessibilityRole="button" accessibilityLabel={"Editar "+p.label} onPress={()=>openProfession(p.profession_code,p.primary_profession)} style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center",borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:colors.outline}}><Ionicons name="create-outline" size={23} color={colors.ink}/></Pressable>
+        {!p.verified&&<Pressable accessibilityRole="button" accessibilityLabel={"Eliminar "+p.label} onPress={()=>removeProfession(p.profession_code,p.primary_profession)} style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center",borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:colors.outline}}><Ionicons name="trash-outline" size={23} color={colors.ink}/></Pressable>}
        </View>
       </View>)}
       {!professionFormOpen&&<Button secondary title="+ Agregar profesión" onPress={addProfession}/>}
       {professionFormOpen&&<View ref={professionFormRef} onLayout={()=>{if(professionFormOpen)requestAnimationFrame(scrollToProfessionForm);}} style={{gap:12,borderWidth:1,borderColor:colors.line,borderRadius:12,padding:12}}>
-       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}><Text style={[s.h3,{fontSize:17,flex:1}]}>{formMode==="edit"?"Editar profesión":"Agregar profesión"}</Text><Pressable accessibilityRole="button" accessibilityLabel="Cerrar formulario de profesión" onPress={()=>{setProfessionFormOpen(false);setEditingProfession(null);}} style={{padding:7}}><Ionicons name="close-circle-outline" size={25} color={colors.ink}/></Pressable></View>
-       {formMode==="edit"&&<Text style={s.muted}>Selecciona otra profesión de la lista para reemplazar la actual, o modifica sus datos de formación.</Text>}
+       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}><Text style={[s.h3,{fontSize:JOBEEN_TYPE.sectionTitle,flex:1}]}>{formMode==="edit"?"Editar profesión":"Agregar profesión"}</Text><Pressable accessibilityRole="button" accessibilityLabel="Cerrar formulario de profesión" onPress={()=>{setProfessionFormOpen(false);setEditingProfession(null);}} style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}><Ionicons name="close-circle-outline" size={25} color={colors.ink}/></Pressable></View>
        {!!catalog.error&&<Notice text={catalog.error} onClose={catalog.reload}/>}
        <ProfessionPicker catalog={catalog.data} value={profession} onChange={choose}/>
-       <Text style={[s.h3,{fontSize:15}]}>Especialidades (opcional)</Text>
-       <Text style={s.muted}>Selecciona las áreas en las que trabajas. Aparecerán en la información de tu profesión, no como una lista en la JCard. Son declaradas por el usuario.</Text>
+       <Text style={[s.h3,{fontSize:JOBEEN_TYPE.body}]}>Especialidades (opcional)</Text>
+       <Text style={s.muted}>Las especialidades son declaradas por el usuario.</Text>
        <SpecialtyPicker key={profession} options={specialtyCatalog.data?.[profession]??[]} selected={specialties} onChange={setSpecialties} loading={specialtyCatalog.loading}/>
        <Chips values={["graduado","in_academy","practica"] as const} value={training} onChange={v=>{setTraining(v);if(v==="practica")setInstitution(null);}} getLabel={v=>v==="graduado"?"Graduado":v==="in_academy"?"En formación":"Aprendido en la práctica"} label="Formación"/>
-       {training!=="practica"&&<Text style={s.muted}>Institución educativa (opcional)</Text>}
+       {training!=="practica"&&<Text style={s.formLabel}>Institución educativa (opcional)</Text>}
        {training!=="practica"&&<Button secondary title={institution?"Quitar institución":"Sin institución seleccionada"} onPress={()=>setInstitution(null)}/>}
        {training!=="practica"&&(education.loading?<Text style={s.muted}>Buscando instituciones…</Text>:education.error?<Text style={s.muted}>{education.error}</Text>:education.data?.map(school=><Button key={school.id} secondary title={(institution===school.id?"✓ ":"")+school.name} onPress={()=>setInstitution(school.id)}/>))}
        {training!=="practica"&&!education.loading&&!education.error&&education.data?.length===0&&<Text style={s.muted}>No hay instituciones preaprobadas para esta profesión. Puedes continuar sin seleccionar una.</Text>}
-       {formMode==="edit"?<Button title="Guardar" onPress={()=>void saveProfession(editedPrimary)}/>:<>
-        <Button secondary title="Guardar como secundaria" onPress={()=>void saveProfession(false)}/>
-        <Button title="Guardar como principal" onPress={()=>void saveProfession(true)}/>
+       {formMode==="edit"?<Button title="Guardar" busy={action.busy} busyLabel="Guardando…" onPress={()=>void saveProfession(editedPrimary)}/>:<>
+        <Button secondary title="Guardar como secundaria" disabled={action.busy} onPress={()=>void saveProfession(false)}/>
+        <Button title="Guardar como principal" busy={action.busy} busyLabel="Guardando…" onPress={()=>void saveProfession(true)}/>
        </>}
       </View>}
      </View>}
@@ -300,8 +306,8 @@ export default function Professional() {
       <Text style={s.muted}>Ambos datos permanecen ocultos por defecto.</Text>
       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showEmail}} onPress={()=>setShowEmail(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name={showEmail?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar correo en mi JCard</Text></Pressable>
       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showPhone}} onPress={()=>setShowPhone(v=>!v)} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name={showPhone?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar teléfono en mi JCard</Text></Pressable>
-       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:visibility.personal_enabled}} onPress={()=>{if(visibility.personal_enabled&&!visibility.business_enabled){Alert.alert("Al menos una JCard activa","Debes conservar activa la JCard personal o la de negocio.");return;}setVisibility(v=>({...v,personal_enabled:!v.personal_enabled}));}} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name={visibility.personal_enabled?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar mi JCard personal en el perfil</Text></Pressable>
-      <Button title={action.busy?"Guardando…":"Guardar cambios"} onPress={()=>saveSection("privacy")}/>
+       <Pressable accessibilityRole="checkbox" accessibilityState={{checked:visibility.personal_enabled}} onPress={()=>{if(visibility.personal_enabled&&!visibility.business_enabled){setVisibilityWarning(true);return;}setVisibility(v=>({...v,personal_enabled:!v.personal_enabled}));}} style={{flexDirection:"row",gap:12,alignItems:"center",paddingVertical:8,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name={visibility.personal_enabled?"checkbox":"square-outline"} size={26} color={colors.ink}/><Text style={[s.text,{flex:1}]}>Mostrar mi JCard personal en el perfil</Text></Pressable>
+      <Button title="Guardar cambios" busy={action.busy} busyLabel="Guardando…" onPress={()=>saveSection("privacy")}/>
      </View>}
     </View>
     <View style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap}]}><Pressable accessibilityRole="button" onPress={()=>router.push("/jcard-backgrounds")} style={{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:JOBEEN_CONTROL.accordionRowVerticalPadding,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name="color-palette-outline" size={23} color={colors.ink}/><View style={{flex:1,gap:3}}><Text style={[s.h3,{fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined,color:colors.ink}]}>Apariencia</Text></View><Ionicons name="chevron-forward" size={20} color={colors.muted}/></Pressable></View>
@@ -309,6 +315,11 @@ export default function Professional() {
    </View>
   </>}
   </Screen>
+  <JobeenNoticeDialog visible={!!w&&!!removeRequest&&!unsavedDialogOpen} title="Eliminar profesión"
+   description={action.notice||(removeRequest?.primary?"¿Eliminar tu profesión principal? Puedes seleccionar otra después.":"¿Eliminar esta profesión?")} tone="danger" confirmLabel="Eliminar" busy={action.busy}
+   onCancel={()=>{if(!action.busy){setRemoveRequest(null);action.setNotice("");}}} onConfirm={()=>void confirmRemoveProfession()}/>
+  <JobeenNoticeDialog visible={!!w&&visibilityWarning&&!unsavedDialogOpen&&!removeRequest} title="Al menos una JCard activa"
+   description="Debes conservar activa la JCard personal o la de negocio." tone="warning" singleAction onConfirm={()=>setVisibilityWarning(false)} onCancel={()=>setVisibilityWarning(false)}/>
   <Modal visible={unsavedDialogOpen} transparent animationType="slide" onRequestClose={keepEditing} statusBarTranslucent={false}>
    <View style={{flex:1,justifyContent:"flex-end"}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar aviso de cambios sin guardar"
@@ -327,16 +338,8 @@ export default function Professional() {
       Los cambios de tu JCard que no guardaste se perderán.
      </Text>
      <View style={{gap:10}}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Descartar cambios sin guardar"
-       onPress={discardChanges} style={{minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:modal.radius.control,backgroundColor:modal.accent,
-        alignItems:"center",justifyContent:"center",paddingHorizontal:14}}>
-       <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"700",color:modal.onAccent}}>Descartar cambios</Text>
-      </Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel="Seguir editando"
-       onPress={keepEditing} style={{minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:modal.radius.control,borderWidth:1,borderColor:modal.border,
-        backgroundColor:modal.inner,alignItems:"center",justifyContent:"center",paddingHorizontal:14}}>
-       <Text style={{fontSize:JOBEEN_TYPE.modalAction,fontWeight:"600",color:modal.text}}>Seguir editando</Text>
-      </Pressable>
+      <Button title="Descartar cambios" label="Descartar cambios sin guardar" variant="danger" disabled={action.busy} onPress={discardChanges}/>
+      <Button title="Seguir editando" secondary onPress={keepEditing}/>
      </View>
     </View>
    </View>

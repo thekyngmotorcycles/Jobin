@@ -54,7 +54,11 @@ test("Personal and business JCard editors use compact accessible accordion secti
  assert.ok(business.includes('paddingVertical:8,minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name={visibility[item.key]'),"Business privacy toggles keep accessible touch height");
  assert.ok(personal.includes("pendingExitRef"),"Unsaved-change confirmation retained");
  assert.ok(personal.includes("minHeight:JOBEEN_CONTROL.touchTarget"),"Personal editor keeps accessible tap targets");
- assert.ok(personal.includes("padding:12,minHeight:JOBEEN_CONTROL.touchTarget"),"Personal form inputs use 48dp minimum height");
+ assert.ok(personal.includes("const input=s.formInput"),"Personal fields reuse universal input style");
+ const ui=src("src/components/ui.tsx");
+ assert.ok(ui.includes("formInput: { color: colors.ink, fontSize: JOBEEN_TYPE.input"));
+ assert.ok(ui.includes("minHeight: JOBEEN_CONTROL.inputHeight"));
+ assert.ok(business.includes("style={s.formInput}"));
  assert.ok(personal.includes("minWidth:72,minHeight:JOBEEN_CONTROL.touchTarget"),"Personal editor compact actions remain accessible");
  assert.ok(business.includes("minHeight:JOBEEN_CONTROL.touchTarget"),"Business editor controls use accessible tap targets");
  assert.ok(personal.includes('fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined,color:colors.ink}]}>Apariencia'),"Personal appearance row uses section typography");
@@ -63,4 +67,20 @@ test("Personal and business JCard editors use compact accessible accordion secti
  assert.ok(business.includes("saveJCardVisibility(visibility,editorOwner,origin)"),"Business privacy persistence retains the originating session");
  assert.ok(business.includes('minHeight:JOBEEN_CONTROL.touchTarget}}><Ionicons name="lock-closed-outline" size={23}'),"Business privacy row matches the other accessible editor sections");
  assert.ok(business.includes('fontSize:JOBEEN_TYPE.sectionTitle,fontStyle:"normal",fontFamily:undefined}]}>Privacidad'),"Privacy section matches editor typography");
+});
+
+test("JCard editors reuse accessible fields, actions and Royal Hive notices",()=>{
+ const personal=src("src/app/professional.tsx"),business=src("src/app/jcard-business-edit.tsx"),ui=src("src/components/ui.tsx");
+ for(const editor of [personal,business]){
+  assert.ok(!editor.includes("Alert.alert("));
+  assert.ok(editor.includes("s.formLabel"));
+  assert.ok(editor.includes('title="Al menos una JCard activa"'));
+  assert.ok(editor.includes('tone="warning" singleAction'));
+  assert.ok(editor.includes('title="Guardar cambios" busy='));
+ }
+ assert.ok(ui.includes("lineHeight: JOBEEN_LINE_HEIGHT.input"));
+ assert.ok(ui.includes("borderRadius: JOBEEN_CONTROL.inputRadius"));
+ assert.ok(personal.includes('variant="danger" disabled={action.busy} onPress={discardChanges}'));
+ assert.ok(personal.includes("Una profesión declarada no equivale a una credencial verificada."));
+ assert.ok(!personal.includes("El aro indica visualmente tu nivel."));
 });

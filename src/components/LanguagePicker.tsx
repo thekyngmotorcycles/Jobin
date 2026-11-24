@@ -24,7 +24,7 @@ export function LanguagePicker({value,onChange,selected=[]}:{value:string;onChan
     <View style={{width:Math.min(width-36,360),maxHeight:Math.min(height*0.6,430),backgroundColor:modal.surface,borderRadius:modal.radius.dialog,borderWidth:1,borderColor:modal.border,padding:16,gap:12}}>
      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
       <Text style={[s.h3,{fontSize:JOBEEN_TYPE.modalTitle}]}>Seleccionar idioma</Text>
-      <Pressable accessibilityRole="button" accessibilityLabel="Cerrar lista" onPress={()=>setOpen(false)} style={{padding:5}}><Ionicons name="close" size={24} color={colors.ink}/></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Cerrar lista" onPress={()=>setOpen(false)} style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}><Ionicons name="close" size={24} color={colors.ink}/></Pressable>
      </View>
      <TextInput autoCapitalize="sentences" autoCorrect={false} value={query} onChangeText={setQuery} placeholder="Buscar idioma…" placeholderTextColor={colors.muted} accessibilityLabel="Buscar idioma" style={[s.text,{borderWidth:1,borderColor:colors.outline,borderRadius:JOBEEN_CONTROL.inputRadius,paddingHorizontal:12,minHeight:JOBEEN_CONTROL.inputHeight,fontSize:JOBEEN_TYPE.input,color:colors.ink}]}/>
      <FlatList data={options} keyExtractor={item=>item} keyboardShouldPersistTaps="handled" style={{flexGrow:0}} ListEmptyComponent={<Text style={[s.muted,{paddingVertical:18,textAlign:"center"}]}>No se encontraron idiomas.</Text>} renderItem={({item})=>{

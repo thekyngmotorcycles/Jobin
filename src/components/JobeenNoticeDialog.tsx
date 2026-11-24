@@ -10,9 +10,9 @@ import {Button} from "./ui";
 /** Branded, accessible confirmation for ordinary and important notices.
  * Royal Hive surfaces stay neutral; only icons/actions carry severity.
  */
-export function JobeenNoticeDialog({visible,title,description,tone="neutral",confirmLabel="Aceptar",cancelLabel="Cancelar",onConfirm,onCancel,busy=false}:{
+export function JobeenNoticeDialog({visible,title,description,tone="neutral",confirmLabel="Aceptar",cancelLabel="Cancelar",onConfirm,onCancel,busy=false,singleAction=false}:{
  visible:boolean;title:string;description:string;tone?:JobeenNoticeTone;confirmLabel?:string;cancelLabel?:string;
- onConfirm:()=>void;onCancel:()=>void;busy?:boolean;
+ onConfirm:()=>void;onCancel:()=>void;busy?:boolean;singleAction?:boolean;
 }){
  const {theme}=useTheme();
  const t=jobeenModalTokens(theme,tone);
@@ -39,8 +39,8 @@ export function JobeenNoticeDialog({visible,title,description,tone="neutral",con
     </View>
     {!!description&&<Text style={{color:t.muted,fontSize:JOBEEN_TYPE.body,lineHeight:JOBEEN_LINE_HEIGHT.body}}>{description}</Text>}
     <View style={{flexDirection:stacked?"column":"row",gap:8,marginTop:4}}>
-     <Button title={cancelLabel} variant="secondary" disabled={busy} onPress={onCancel}
-      style={{flexGrow:1,flexBasis:stacked?"auto":0,minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:8}}/>
+     {!singleAction&&<Button title={cancelLabel} variant="secondary" disabled={busy} onPress={onCancel}
+      style={{flexGrow:1,flexBasis:stacked?"auto":0,minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:8}}/>}
      <Button title={confirmLabel} variant={destructive?"danger":"primary"} busy={busy} onPress={onConfirm}
       style={{flexGrow:1,flexBasis:stacked?"auto":0,minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:8}}/>
     </View>

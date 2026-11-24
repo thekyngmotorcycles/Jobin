@@ -54,19 +54,19 @@ export function ProfessionPicker({catalog,value,onChange}:{catalog:ProfessionalC
  const displayed=visible.slice(0,35);
  return <View style={{gap:10}}>
   <Text style={[s.eyebrow,{fontSize:12}]}>1. Elige una categoría</Text>
-  <Pressable accessibilityRole="button" accessibilityState={{expanded:categoriesOpen}} onPress={()=>setCategoriesOpen(open=>!open)} style={{minHeight:48,paddingHorizontal:12,borderWidth:1,borderColor:colors.line,borderRadius:10,flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
+  <Pressable accessibilityRole="button" accessibilityState={{expanded:categoriesOpen}} onPress={()=>setCategoriesOpen(open=>!open)} style={{minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:12,borderWidth:1,borderColor:colors.line,borderRadius:JOBEEN_CONTROL.inputRadius,flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
    <Ionicons name={category?categoryGlyph(category):"grid-outline"} size={20} color={colors.ink}/><Text style={{color:colors.ink,flex:1,marginLeft:8}}>{category?categories.find(c=>c.code===category)?.label??"Categoría":"Todas las categorías"}</Text>
    <Ionicons name={categoriesOpen?"chevron-up":"chevron-down"} size={20} color={colors.ink}/>
   </Pressable>
-  {categoriesOpen&&<View style={{gap:8,borderWidth:1,borderColor:colors.line,borderRadius:10,padding:10}}>
+  {categoriesOpen&&<View style={{gap:8,borderWidth:1,borderColor:colors.line,borderRadius:JOBEEN_CONTROL.inputRadius,padding:10}}>
    <TextInput accessibilityLabel="Buscar categoría" placeholder="Filtrar categorías…" placeholderTextColor={colors.muted} value={categoryQuery} onChangeText={setCategoryQuery} style={{color:colors.ink,borderWidth:1,borderColor:colors.outline,borderRadius:JOBEEN_CONTROL.inputRadius,padding:10,minHeight:JOBEEN_CONTROL.inputHeight,fontSize:JOBEEN_TYPE.input}}/>
    <ScrollView style={{maxHeight:220}} nestedScrollEnabled keyboardShouldPersistTaps="handled">
-    {[{code:"",label:"Todas las categorías"},...categories].filter(item=>normalize(item.label).includes(normalize(categoryQuery))).map(item=><Pressable key={item.code||"all"} accessibilityRole="button" accessibilityState={{selected:(category??"")===item.code}} onPress={()=>{setCategory(item.code||null);setCategoriesOpen(false);setCategoryQuery("");}} style={{padding:12,minHeight:44,borderRadius:8,backgroundColor:(category??"")===item.code?colors.ink:colors.paper}}>
+    {[{code:"",label:"Todas las categorías"},...categories].filter(item=>normalize(item.label).includes(normalize(categoryQuery))).map(item=><Pressable key={item.code||"all"} accessibilityRole="button" accessibilityState={{selected:(category??"")===item.code}} onPress={()=>{setCategory(item.code||null);setCategoriesOpen(false);setCategoryQuery("");}} style={{padding:12,minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:JOBEEN_CONTROL.buttonRadius,backgroundColor:(category??"")===item.code?colors.ink:colors.paper}}>
      <View style={{flexDirection:"row",alignItems:"center",gap:10}}><Ionicons name={item.code?categoryGlyph(item.code):"grid-outline"} size={20} color={(category??"")===item.code?colors.inverse:colors.ink}/><Text style={{color:(category??"")===item.code?colors.inverse:colors.ink}}>{item.label}</Text></View>
     </Pressable>)}
    </ScrollView>
   </View>}
-  <Pressable accessibilityRole="button" accessibilityState={{expanded:professionListOpen}} onPress={()=>setProfessionListOpen(v=>!v)} style={{minHeight:48,flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:12,borderWidth:1,borderColor:colors.line,borderRadius:10}}><Text style={{color:colors.ink,flex:1}}>{selected?"Profesión: "+professionLabel(selected.code,selected.label):"2. Busca y selecciona tu profesión"}</Text><Ionicons name={professionListOpen?"chevron-up":"chevron-down"} size={20} color={colors.ink}/></Pressable>
+  <Pressable accessibilityRole="button" accessibilityState={{expanded:professionListOpen}} onPress={()=>setProfessionListOpen(v=>!v)} style={{minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:12,borderWidth:1,borderColor:colors.line,borderRadius:JOBEEN_CONTROL.inputRadius}}><Text style={{color:colors.ink,flex:1}}>{selected?"Profesión: "+professionLabel(selected.code,selected.label):"2. Busca y selecciona tu profesión"}</Text><Ionicons name={professionListOpen?"chevron-up":"chevron-down"} size={20} color={colors.ink}/></Pressable>
   {professionListOpen&&<>
   <View style={{flexDirection:"row",alignItems:"center",borderColor:colors.outline,borderWidth:1,borderRadius:JOBEEN_CONTROL.inputRadius,paddingHorizontal:10,minHeight:JOBEEN_CONTROL.inputHeight}}>
    <Ionicons name="search-outline" size={19} color={colors.muted}/>
@@ -77,10 +77,10 @@ export function ProfessionPicker({catalog,value,onChange}:{catalog:ProfessionalC
   {!catalog?<Text style={s.muted}>El catálogo todavía no está disponible.</Text>:<>
    <Text style={s.muted}>{visible.length} {visible.length===1?"profesión encontrada":"profesiones encontradas"}{visible.length>35?" · Mostrando las primeras 35; escribí para precisar":""}</Text>
    <ScrollView style={{maxHeight:270}} nestedScrollEnabled keyboardShouldPersistTaps="handled">
-    {displayed.map(({profession:p})=><Pressable key={p.code} accessibilityRole="button" accessibilityState={{selected:value===p.code}} onPress={()=>{onChange(p.code);setProfessionListOpen(false);setCategoriesOpen(false);setQuery("");setCategoryQuery("");}} style={{padding:12,minHeight:48,borderRadius:8,marginBottom:5,backgroundColor:value===p.code?colors.ink:colors.accent}}>
+    {displayed.map(({profession:p})=><Pressable key={p.code} accessibilityRole="button" accessibilityState={{selected:value===p.code}} onPress={()=>{onChange(p.code);setProfessionListOpen(false);setCategoriesOpen(false);setQuery("");setCategoryQuery("");}} style={{padding:12,minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:JOBEEN_CONTROL.buttonRadius,marginBottom:5,backgroundColor:value===p.code?colors.ink:colors.accent}}>
      <View style={{flexDirection:"row",alignItems:"center",gap:12}}>
       <ProfessionGlyph profession={p.code} fallback={p.icon as ComponentProps<typeof Ionicons>["name"]} size={22} color={value===p.code?colors.inverse:colors.ink}/>
-      <View style={{flex:1,gap:2}}><Text style={{color:value===p.code?colors.inverse:colors.ink,fontSize:14}}>{professionLabel(p.code,p.label)}</Text>{!category&&<Text style={{color:value===p.code?colors.inverse:colors.muted,fontSize:11}}>{categories.find(c=>c.code===p.category)?.label??p.category}</Text>}</View>
+      <View style={{flex:1,gap:2}}><Text style={{color:value===p.code?colors.inverse:colors.ink,fontSize:JOBEEN_TYPE.body}}>{professionLabel(p.code,p.label)}</Text>{!category&&<Text style={{color:value===p.code?colors.inverse:colors.muted,fontSize:JOBEEN_TYPE.secondary}}>{categories.find(c=>c.code===p.category)?.label??p.category}</Text>}</View>
       {value===p.code&&<Ionicons name="checkmark-circle" size={21} color={colors.inverse}/>}
      </View>
     </Pressable>)}
