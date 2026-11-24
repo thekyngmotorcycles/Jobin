@@ -67,3 +67,6 @@ El repositorio conserva el nombre histórico `Jobin` en rutas, componentes y Exp
 
 ## JQuote AI — decisión aprobada 2026-11-24
 Presupuesto rápido privado por voz, fotos o video narrado dentro de JQuote, con catálogo de precios de empresa, datos pendientes explícitos, cálculos deterministas y revisión humana antes del envío. Jobeen AI compartida con JAssist y moderación, con adaptadores OpenAI/Gemini y sin reutilizar datos privados para publicaciones. Mantener alternativa manual y evitar CRM paralelo. Incorporar en fase 07 del Master Plan v1.5 §7.1 y §10; no desarrollar antes de cerrar los bloques prioritarios de streaming. La cámara interactiva/medición avanzada es posterior y condicional. Candidato Business Premium, sin fijar precios ni contratar servicios.
+
+## JShop — optimización incorporada al plan (2026-11-24)
+El propietario solicita revisar experiencia completa de compra/venta y mapa personalizado Mapbox. Fase 04B, posterior a streaming y creación multimedia, anterior a Panel. Consultar Master Plan §10 para hallazgos, alcance y criterios; mantener sistema Royal Hive y permisos, no introducir nuevos temas o renumerar fases. Diseño concreto y publicación de estilos pendientes de aprobación.
