@@ -4,6 +4,7 @@ import type {PrivateAttachment} from "./private-attachment";
 import {validBusinessMentions,type PostBusinessMention} from "./post-mentions";
 import {requireSupabase} from "./supabase";
 import {captureMessageScope,assertMessageScope,type MessageScope} from "./message-session";
+import {assertPanelEngagement} from "./panel-workspace";
 import {loadPublishedMedia,type PublishedMedia} from "./safety-api";
 
 const POSTS_BUCKET="photo-posts";
@@ -43,7 +44,7 @@ export async function currentSocialUser():Promise<string>{
  if(error||!data.user)throw new Error("Inicia sesión para crear contenido.");
  return data.user.id;
 }
-export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,postIds?:string[],offset=0,expectedScope?:MessageScope):Promise<FeedPost[]>{
+export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,postIds?:string[],offset=0,expectedScope?:MessageScope,requireEngagement=false):Promise<FeedPost[]>{
  const scope=await captureMessageScope(expectedScope),db=requireSupabase();
  if(viewerId&&viewerId!==scope.owner)throw Error("La cuenta cambió.");
  viewerId=scope.owner;
@@ -61,6 +62,11 @@ export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,
   db.from("jobeen_feed_engagement" as never).select("post_id,likes,comments,shares").in("post_id",ids),
   viewerId?db.from("jobeen_feed_likes" as never).select("post_id").in("post_id",ids).eq("profile_id",viewerId):Promise.resolve({data:[],error:null})
  ]):[{data:[],error:null},{data:[],error:null}];
+ // Feed remains resilient; administrative statistics must never substitute missing counts.
+ if(requireEngagement){
+  if(summary.error)throw Error("No se pudieron verificar las estadísticas de publicaciones.");
+  assertPanelEngagement(ids,(summary.data??[]) as unknown as CountRow[]);
+ }
  // Posts must remain visible during an additive backend migration.
  const counts=new Map(((summary.error?[]:summary.data??[]) as unknown as CountRow[]).map(x=>[x.post_id,x]));
  const viewerLikes=new Set(((liked.error?[]:liked.data??[]) as unknown as {post_id:string}[]).map(x=>x.post_id));
@@ -94,12 +100,12 @@ export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,
  });
 }
 /** Load the owner's complete feed history in pages so profiles are not limited to 80 posts. */
-export async function loadAllProfilePosts(viewerId:string,authorId:string,expectedScope?:MessageScope):Promise<FeedPost[]>{
+export async function loadAllProfilePosts(viewerId:string,authorId:string,expectedScope?:MessageScope,requireEngagement=false):Promise<FeedPost[]>{
  const scope=await captureMessageScope(expectedScope);
  if(viewerId&&viewerId!==scope.owner)throw Error("La cuenta cambió.");
  const all:FeedPost[]=[];
  for(let offset=0;;offset+=80){
-  const batch=await loadHomePosts(viewerId,authorId,undefined,undefined,offset,scope);
+  const batch=await loadHomePosts(viewerId,authorId,undefined,undefined,offset,scope,requireEngagement);
   all.push(...batch);
   if(batch.length<80)break;
  }

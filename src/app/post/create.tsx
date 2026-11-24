@@ -29,8 +29,9 @@ const kinds=[
 ] as const;
 
 export default function PostCreate(){
- const {kind:requested}=useLocalSearchParams<{kind?:string}>();
+ const {kind:requested,view}=useLocalSearchParams<{kind?:string;view?:string}>();
  const navigation=useNavigation();
+ const openInitialDrafts=useRef(view==="drafts");
  const {theme}=useTheme();const t=jobeenTokens(theme);const modal=jobeenModalTokens(theme);
  const {width:windowWidth,height:windowHeight}=useWindowDimensions();
  const [kind,setKind]=useState<FeedPostKind>(requested==="photo"?"photos":requested==="video"?"video":requested==="live"?"live":"text");
@@ -123,7 +124,8 @@ export default function PostCreate(){
    if(!active||!liveScope(scope))return;
    setAuthor(uid);setDrafts(saved);
    setDraftCount(saved.length);
-   // New publication always starts empty; drafts are opened explicitly from Borradores.
+   if(openInitialDrafts.current)setDraftsOpen(true);
+   // New publication always starts empty; only explicit Borradores entry opens the list.
    void Promise.all([
     requireSupabase().from("profiles").select("display_name").eq("id",uid).maybeSingle(),
     requireSupabase().from("jcard_profiles").select("handle").eq("profile_id",uid).maybeSingle()
