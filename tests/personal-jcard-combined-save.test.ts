@@ -11,7 +11,12 @@ test("Personal JCard accordion sections have working save actions",()=>{
  }
  assert.ok(editor.includes('const saveSection=(target:SaveTarget)=>saveSections('));
  assert.ok(editor.includes("const pendingTargets:SaveTarget[]="),"The Save button must include hidden dirty sections");
- assert.ok(editor.includes('title={action.busy?"Guardando…":"Guardar cambios"}'));
+ const button=readFileSync("src/components/ui.tsx","utf8");
+ for(const section of ["identity","languages","privacy"])
+  assert.ok(editor.includes('<Button title="Guardar cambios" busy={action.busy} busyLabel="Guardando…" onPress={()=>saveSection("'+section+'")}/>'),"Shared save action must retain its target and busy state: "+section);
+ assert.ok(button.includes("const locked=disabled||busy"));
+ assert.ok(button.includes("disabled={locked}"));
+ assert.ok(button.includes("{busy?busyLabel:title}"));
  assert.ok(editor.includes("const saveSections=(targets:SaveTarget[])=>{"));
  assert.ok(editor.includes('professionalMutation("jobin_save_jcard"'));
  assert.ok(editor.includes("savePersonalContactDetails(personalContacts,owner,origin)"));
@@ -40,8 +45,11 @@ test("Leaving the JCard with unsaved changes asks before discarding",()=>{
  assert.ok(editor.includes('backgroundColor:modal.scrim'),"The page behind must be visibly dimmed");
  assert.ok(editor.includes('Math.max(insets.bottom,20)'),"Sheet buttons should clear Android navigation insets");
  assert.ok(editor.includes('statusBarTranslucent={false}'));
- assert.ok(editor.includes('accessibilityLabel="Seguir editando"'));
- assert.ok(editor.includes('accessibilityLabel="Descartar cambios sin guardar"'));
+ const button=readFileSync("src/components/ui.tsx","utf8");
+ assert.ok(editor.includes('<Button title="Seguir editando" secondary onPress={keepEditing}/>'));
+ assert.ok(editor.includes('<Button title="Descartar cambios" label="Descartar cambios sin guardar" variant="danger" disabled={action.busy} onPress={discardChanges}/>'));
+ assert.ok(button.includes('accessibilityLabel={label??title}'),"Shared buttons preserve both explicit and title-derived accessible labels");
+ assert.ok(button.includes('disabled={locked}'),"Discard remains disabled while saving");
  assert.ok(editor.includes("pendingExitRef.current=()=>navigation.dispatch(data.action)"));
  assert.ok(editor.includes("onPress={keepEditing}"));
  assert.ok(editor.includes("onPress={discardChanges}"));
