@@ -1,6 +1,8 @@
-# JOBEEN — Master Plan UI/UX v1.2
+# JOBEEN — Master Plan UI/UX v1.3
 **Fecha:** 23 de noviembre de 2026  
 **Estado:** v1.1 aprobada por el propietario el 23 de noviembre de 2026 como marco de diseño y planificación; v1.2 incorpora su nueva orden expresa de eliminar todas las apariencias globales salvo Royal Hive Light, Dark y selección Sistema. Registro documental autorizado; integración de este PR y ejecución de cada etapa requieren aprobación separada. Medidas candidatas y excepciones pendientes de revisión visual y validación física. No autoriza implementación, publicación ni gasto.  
+**Decisión v1.3:** el propietario aprueba la filosofía permanente de producto, el filtro de seis preguntas, la organización funcional sin proliferación de submarcas y la interoperabilidad complementaria con herramientas empresariales. Se mantiene íntegra la decisión visual v1.2 y el alcance autorizado de cada etapa. No autoriza implementación de conectores ni cambios de código.
+
 **Repositorio de referencia:** `thekyngmotorcycles/Jobin`, rama `development`.
 
 ## 1. Propósito y decisiones
@@ -9,6 +11,63 @@ Jobeen es una plataforma mobile-first de streaming de trabajo real. Descubrir, e
 **Decisiones expresas:** dirección cromática Royal Hive; opción B para Compartir JCard (icono compacto junto a Panel y Editar JCard); solo diseño y planificación. Se conservan las normas previas de navegación, diseño, privacidad y trabajo. La ubicación propuesta del resto de funcionalidades, el detalle de tokens y los flujos de este documento requieren aprobación antes de implementarse. Los nombres JCenter, JQuote, JAssist, JTeam, JGifts y JStudio son denominaciones de trabajo; no implican nuevas pestañas ni aprobación comercial.
 
 **Fuentes internas consultadas:** `AGENTS.md`, `DESIGN_RULES.md`, `docs/JOBEEN_PRODUCT_VISION.md`, `docs/DEVELOPMENT_STATUS.md`, rutas `src/app`, `src/theme/palettes.ts`, `src/theme/jobeen.ts`, `src/theme/modals.ts`, `src/theme/navigation.ts`, `src/components/JobinCard.tsx`, `src/components/JCardShareSheet.tsx` y decisiones previas. Las rutas existentes no demuestran por sí solas que una función esté lista en producción.
+
+### 1.1 Filosofía permanente de producto — aprobada por el propietario (2026-11-23)
+
+**Jobeen es un ecosistema profesional, potente por dentro y sencillo por fuera.** Su propósito es que las personas muestren su trabajo real, acrediten lo que saben hacer, construyan reputación profesional y generen oportunidades e ingresos. Para los negocios es un canal complementario de descubrimiento, captación de clientes, promoción de sus equipos y coordinación profesional selectiva. No pretende sustituir las herramientas empresariales especializadas ni convertirse en una superapp. El valor se mide por resultados útiles y recorridos fluidos, no por la cantidad de funciones.
+
+**Ciclo de valor:** Live/Flash → descubrir profesional o empresa → consultar JCard y aptitudes acreditadas → contactar o solicitar presupuesto → asignar un trabajo cuando corresponda → completar el servicio y acreditar experiencia → fortalecer reputación y generar nuevas oportunidades. Cada función debe contribuir de forma demostrable a este ciclo o al aprendizaje y la conexión que lo sostienen.
+
+### 1.2 Filtro obligatorio de nuevas funcionalidades
+
+Antes de aprobar, diseñar o programar una función, responder estas seis preguntas:
+1. ¿Refuerza la identidad profesional de Jobeen?
+2. ¿Se conecta naturalmente con alguna función existente?
+3. ¿Resuelve una necesidad real del usuario?
+4. ¿Podemos incorporarla sin agregar otra pestaña principal?
+5. ¿Podemos reutilizar una pantalla o herramienta existente?
+6. ¿Podemos mantenerla fuera de la vista de quien no la necesita?
+
+Las seis respuestas deben estar justificadas brevemente en la propuesta. Si alguna falla, simplificar, fusionar, replantear o posponer la función antes de invertir recursos; cualquier excepción exige aprobación explícita del propietario. Priorizar terminar y validar las funciones centrales; no copiar funciones de competidores solo porque existan. Evaluar recorridos, facilidad de descubrimiento, utilidad, retención y captación real de clientes, sin inventar métricas. Evitar pantallas, controles, nombres, flujos y registros duplicados. Cada vista tendrá una acción principal clara y acciones secundarias contextuales; mostrar capacidades progresivamente según rol, permisos, necesidad y plan contratado. Mantener la navegación global aprobada de cinco pestañas. No ocultar controles imprescindibles ni reducir accesibilidad. No usar estos principios para omitir privacidad, seguridad o moderación.
+
+### 1.3 Límites y organización funcional
+
+| Área | Dirección permanente |
+|---|---|
+| Lives, Flashes y JCard | Núcleo diferencial; potenciar streaming laboral, contenido y reputación profesional. |
+| Casa, Mensajes, JShop | Conservar y enfocar en descubrimiento, relaciones, comercio útil y oportunidades profesionales; no crear feeds o bandejas redundantes. |
+| Panel (JCenter) | Una entrada privada, contextual y progresiva; no una nueva pestaña. Adaptar a persona, profesional y empresa. |
+| Equipo (JTeam) | Gestión complementaria de vínculos laborales, aptitudes, rendimiento y asignación; reutilizar roles y permisos existentes. |
+| Rendimiento (JStats) | Capacidad dentro de Equipo y acreditaciones en JCard; no un producto o pestaña independiente. |
+| Asignar trabajo (JDispatch) | Capacidad contextual de Trabajos/Equipo; recomendación explicable y supervisor confirma; no un producto independiente. |
+| Presupuestos (JQuote) | Una solicitud/expediente compartido entre Mensajes > Servicios, Panel y accesos contextuales desde contenido y perfil. |
+| Asistente (JAssist) | Ayuda contextual, optativa, identificada, con límites y revisión humana; no un chatbot global que compita por atención. |
+| Destacados y regalos | Dentro de contenido y Videos; sin pestañas globales ni pagos simulados. |
+| Formación (JAcademy) | Complementar aptitudes y reputación; desarrollar posteriormente sin desplazar Live. |
+| Historias | Conservar sin expansión desproporcionada. |
+| Comunidades independientes | Posponer; cualquier reconsideración debe superar el filtro de seis preguntas. |
+| Citas | Fuera del roadmap de producto; no desarrollar. |
+
+Los nombres internos no obligan a inventar submarcas visibles. Usar etiquetas claras: Panel, Equipo, Rendimiento, Asignar trabajo, Presupuestos, Asistente, Destacados y Regalos. Los accesos múltiples deben llevar al mismo objeto y respetar su contexto. Esta decisión fija la dirección, no autoriza eliminar rutas o datos ya existentes sin revisión y aprobación del alcance.
+
+**Fuera del producto:** contabilidad general, nómina, impuestos, inventario industrial, ERP completo, vigilancia de empleados, rastreo laboral permanente, evaluaciones invasivas y videoconferencias corporativas genéricas. No reconstruir software especializado como ServiceTitan. Una funcionalidad complementaria y limitada de cotización, órdenes, coordinación y asignación es válida si refuerza el ciclo profesional. Las empresas deciden qué capacidades usan; no exigir reemplazar sus herramientas ni migrar todos sus datos.
+
+### 1.4 Interoperabilidad empresarial: complementar, no sustituir
+
+**Ejemplo de dirección, no integración existente:** una empresa que trabaja con ServiceTitan u otro sistema puede conservarlo como su sistema principal de clientes, órdenes, facturación e inventario. Jobeen puede aportar streaming laboral, visibilidad de marca/equipo, clientes potenciales, identidad profesional acreditada, aptitudes, recomendaciones de asignación y presupuestos propios cuando la empresa los necesite. El negocio puede usar solo descubrimiento y contacto, activar únicamente rendimiento/asignación, o utilizar el flujo propio de Jobeen sin depender de otro sistema. Business Premium debe aportar valor modular, sin obligar a contratar o configurar capacidades innecesarias. No fijar precios ni derechos de plan todavía.
+
+- Diseñar contratos de integración desacoplados, adaptadores por proveedor solo cuando exista demanda y aprobación, y usar APIs oficiales y autorizadas, enlaces profundos cuando procedan, webhooks o importación/exportación controlada. Verificar disponibilidad real, permisos, términos, costes, límites y requisitos de asociación antes de prometer compatibilidad con un proveedor. No scraping ni accesos no autorizados.
+- Configuración y consentimiento por organización; ámbitos mínimos y revocables, autenticación segura del servidor, secretos fuera del cliente, roles y separación de cuentas. La empresa elige si comparte solicitudes, órdenes, estados, identificadores, disponibilidad u otros campos necesarios. No transferir evaluaciones confidenciales o datos personales por defecto. Ninguna sincronización global automática.
+- Definir explícitamente el sistema fuente de verdad para cada entidad/campo. Mantener identificadores externos, procedencia y trazabilidad, evitar dobles clientes, presupuestos, órdenes y asignaciones; sincronización idempotente, manejo de errores, conflictos y reintentos. No sobrescribir registros ni disparar órdenes/cobros/contratos en otro sistema sin autorización. Permitir desconexión y exportación según derechos y obligaciones, sin borrar datos ajenos.
+- Preferir inicialmente el recorrido interno y conexiones simples de valor probado. Incorporar conectores de forma incremental sin cambiar el producto para ajustarlo a un único proveedor. Si una integración falla, preservar el trabajo local autorizado y explicar su estado. No crear infraestructura, SDK, conectores ni servicios de pago sin aprobación.
+
+### 1.5 Aptitudes, trayectoria y recomendaciones responsables
+
+JTeam puede registrar trabajos completados, especialidades, certificaciones, aptitudes demostradas, resultados verificables y observaciones internas proporcionales a la actividad. Separar estrictamente datos operativos confidenciales de la empresa y credenciales profesionales portables. Las acreditaciones de JCard deben identificar emisor, periodo, evidencia, nivel de verificación y vigencia; pueden conservar la experiencia histórica incluso tras cambiar de empresa, sin afirmar que una aptitud antigua demuestra capacidad actual. Las acreditaciones históricas previas a Jobeen requieren verificación, no inventar datos. El trabajador controla la visibilidad de sus credenciales compartibles; ofrecer acceso, corrección, impugnación, revocación justificada y tratamiento de información desactualizada. No publicar evaluaciones internas, rankings negativos permanentes ni datos de clientes. Salir de una empresa revoca accesos empresariales y no borra por defecto las acreditaciones legítimas del trabajador.
+
+La recomendación de asignación se basará en requisitos del servicio, aptitudes acreditadas pertinentes, certificaciones vigentes, disponibilidad autorizada, experiencia reciente, distancia aproximada cuando necesaria y carga de trabajo. Explicar motivos, incertidumbre y datos faltantes. No usar rasgos protegidos ni proxies discriminatorios; no puntuar universalmente a todas las profesiones, ni vigilar a trabajadores, ni tomar decisiones automáticas de contratación, despido, sanción, remuneración o acceso al trabajo. El supervisor elige y confirma. Validar legalidad laboral, privacidad, sesgos y obligaciones aplicables antes de implementación real. Comenzar con reglas transparentes; IA solo si demuestra valor adicional y con supervisión humana. No convertir reputación en una sentencia permanente.
+
+**Prioridad de ejecución:** mantener el roadmap vigente de seguridad, streaming, Royal Hive y funciones centrales. Este marco no inicia desarrollo de JStats, JDispatch, conectores, monetización o cambios de navegación; cada entrega requiere alcance, viabilidad y aprobación según AGENTS.md.
 
 ## 2. Design System: Royal Hive
 ### 2.1 Tokens cromáticos
