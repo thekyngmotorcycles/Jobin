@@ -72,3 +72,19 @@ test("immersive Flash progress does not compete with comments, creator and share
  assert.ok(videos.includes('current=>dragging?id:current===id?null:current'));
  assert.ok(videos.includes('active={focused && active === index}'));
 });
+
+test("Generic Videos entry remembers a section while direct Flash and Live links remain direct",()=>{
+ const nav=load("src/app/(tabs)/_layout.tsx"),persistent=load("src/components/PersistentBottomTabs.tsx"),provider=load("src/state/VideoSectionNavigation.tsx");
+ assert.ok(nav.includes('initialRouteName="streams"'));
+ assert.ok(nav.includes('tabPress:event=>{event.preventDefault();openVideos();}'));
+ assert.ok(nav.includes('name==="/(tabs)/videos"?openVideos():router.push'));
+ assert.ok(persistent.includes('item.id==="videos"?openVideos():router.navigate(item.path)'));
+ assert.ok(provider.includes("videoSectionForPath(path)"));
+ assert.ok(provider.includes("preference.write(scope,section)"));
+ assert.ok(provider.includes("request.current!==ticket||currentPath.current!==from"));
+ assert.ok(provider.includes("sessionMarkerKey(session.user.id,session.access_token)!==authKey"));
+ assert.ok(provider.includes("await assertAccountOwner(scope.owner,scope.session)"));
+ assert.ok(load("src/app/(tabs)/videos.tsx").includes('onLeading={() => router.navigate("/(tabs)/streams")}'));
+ assert.ok(load("src/app/(tabs)/streams.tsx").includes('onLeading={()=>router.navigate("/(tabs)/videos")}'));
+ assert.ok(load("src/app/(tabs)/videos.tsx").includes('useLocalSearchParams<{ post?: string }>()'));
+});

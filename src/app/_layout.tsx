@@ -6,6 +6,7 @@ import { SafetyAccountGate } from "../components/SafetyAccountGate";
 import { JobinWordmark } from "../components/JobinWordmark";
 import { Stack,usePathname } from "expo-router";
 import {useEffect} from "react";
+import {VideoSectionNavigationProvider} from "../state/VideoSectionNavigation";
 import {PersistentBottomTabs} from "../components/PersistentBottomTabs";
 import {ScrollNavigationProvider,useScrollNavigation} from "../state/ScrollNavigation";
 import { Ionicons } from "@expo/vector-icons";
@@ -105,5 +106,5 @@ function Navigation() {
  </Stack>{phase==="signed-in"&&isBrowserPage&&<PersistentBottomTabs/>}</>;
 }
 export default function RootLayout() {
- return <GestureHandlerRootView style={{flex:1}}><SafeAreaProvider><ThemeProvider><IconFontGate><AuthGate><AppProvider><SocialProvider><NoticeProvider><SafetyAccountGate><ScrollNavigationProvider><Navigation/></ScrollNavigationProvider></SafetyAccountGate></NoticeProvider></SocialProvider></AppProvider></AuthGate></IconFontGate></ThemeProvider></SafeAreaProvider></GestureHandlerRootView>;
+ return <GestureHandlerRootView style={{flex:1}}><SafeAreaProvider><ThemeProvider><IconFontGate><AuthGate><AppProvider><SocialProvider><NoticeProvider><SafetyAccountGate><ScrollNavigationProvider><VideoSectionNavigationProvider><Navigation/></VideoSectionNavigationProvider></ScrollNavigationProvider></SafetyAccountGate></NoticeProvider></SocialProvider></AppProvider></AuthGate></IconFontGate></ThemeProvider></SafeAreaProvider></GestureHandlerRootView>;
 }

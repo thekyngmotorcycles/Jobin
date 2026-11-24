@@ -2,6 +2,7 @@ import {useEffect,useRef,useState} from "react";
 import {useReducedMotion} from "react-native-reanimated";
 import { Animated,Platform, Pressable, Text, View, useWindowDimensions } from "react-native";
 import {BottomTabBar} from "@react-navigation/bottom-tabs";
+import {useVideoSectionNavigation} from "../../state/VideoSectionNavigation";
 import {useScrollNavigation} from "../../state/ScrollNavigation";
 import { router, usePathname } from "expo-router";
 import { JobinWordmark } from "../../components/JobinWordmark";
@@ -22,7 +23,7 @@ const routes=[
 ] as const;
 export default function TabLayout(){
  const {colors}=useTheme();const inset=useSafeAreaInsets();const {unreadInbox}=useJobinNotices();
- const {progress,hidden}=useScrollNavigation();
+ const {progress,hidden}=useScrollNavigation();const {openVideos}=useVideoSectionNavigation();
  const {width}=useWindowDimensions();const desktop=Platform.OS==="web"&&width>=1100;const pathname=usePathname();
  // Home keeps its scroll accordion. Only mobile Flashes uses the manual immersive handle.
  const homeFeed=pathname==="/"||pathname==="/index"||pathname==="/(tabs)/index";
@@ -37,8 +38,8 @@ export default function TabLayout(){
  },[flashExpanded,flashMode,flashOffset,reducedMotion]);
  const fullBar=NAVIGATION_ROW_HEIGHT+inset.bottom;
  const flashClearance=FLASH_NAV_HANDLE_HEIGHT+inset.bottom+(flashExpanded?NAVIGATION_ROW_HEIGHT:0);
- const nav=(name:string,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=> <Pressable key={name} accessibilityRole="link" onPress={()=>router.push(name as never)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:14,paddingHorizontal:16,borderRadius:12,backgroundColor:pathname===name?colors.line:colors.transparent}}><Ionicons name={icon} size={22} color={colors.ink}/><Text style={{fontSize:15,color:colors.ink,fontWeight:pathname===name?"700":"500"}}>{title}</Text></Pressable>;
- const tabs=<Tabs initialRouteName="videos" tabBar={props=>flashMode?<Animated.View pointerEvents="box-none" style={{position:"absolute",bottom:0,left:0,right:0,height:fullBar+FLASH_NAV_HANDLE_HEIGHT,transform:[{translateY:flashOffset.interpolate({inputRange:[0,1],outputRange:[0,NAVIGATION_ROW_HEIGHT]})}]}}>
+ const nav=(name:string,title:string,icon:React.ComponentProps<typeof Ionicons>["name"])=> <Pressable key={name} accessibilityRole="link" onPress={()=>name==="/(tabs)/videos"?openVideos():router.push(name as never)} style={{flexDirection:"row",alignItems:"center",gap:13,paddingVertical:14,paddingHorizontal:16,borderRadius:12,backgroundColor:pathname===name?colors.line:colors.transparent}}><Ionicons name={icon} size={22} color={colors.ink}/><Text style={{fontSize:15,color:colors.ink,fontWeight:pathname===name?"700":"500"}}>{title}</Text></Pressable>;
+ const tabs=<Tabs initialRouteName="streams" tabBar={props=>flashMode?<Animated.View pointerEvents="box-none" style={{position:"absolute",bottom:0,left:0,right:0,height:fullBar+FLASH_NAV_HANDLE_HEIGHT,transform:[{translateY:flashOffset.interpolate({inputRange:[0,1],outputRange:[0,NAVIGATION_ROW_HEIGHT]})}]}}>
   <Pressable accessibilityRole="button" accessibilityLabel={flashExpanded?"Contraer navegación":"Mostrar navegación"} accessibilityState={{expanded:flashExpanded}}
    onPress={()=>setFlashExpanded(value=>!value)} style={{position:"absolute",top:0,left:0,right:0,height:FLASH_NAV_HANDLE_HEIGHT,alignItems:"center",justifyContent:"center"}}>
    <View pointerEvents="none" style={{width:34,height:4,borderRadius:2,backgroundColor:colors.mediaNavigationHandle,shadowColor:colors.mediaShadow,shadowOpacity:1,shadowRadius:2,shadowOffset:{width:0,height:1}}}/>
@@ -55,7 +56,7 @@ export default function TabLayout(){
  }}>
   <Tabs.Screen name="create" options={{href:null}}/>
   <Tabs.Screen name="streams" options={{href:null}}/>
-  {routes.map(route=><Tabs.Screen key={route.name} name={route.name} options={{
+  {routes.map(route=><Tabs.Screen key={route.name} name={route.name} listeners={route.name==="videos"?{tabPress:event=>{event.preventDefault();openVideos();}}:undefined} options={{
    title:route.title,tabBarAccessibilityLabel:route.title,tabBarButtonTestID:"tab-"+route.name,
    tabBarIcon:({color,focused})=>{const selected=focused||(route.name==="videos"&&(pathname==="/streams"||pathname.endsWith("/streams")));return <View style={{width:48,height:48,alignItems:"center",justifyContent:"center"}}><JobinTabIcon name={route.name} focused={selected} size={route.name==="videos"?(width<375?28:30)*1.15:(width<375?23:25)} color={selected?colors.ink:color}/>{route.name==="inbox"&&unreadInbox>0&&<View style={{position:"absolute",top:-3,right:-4}}><Ionicons name="heart" size={12} color={colors.reaction}/></View>}</View>},
   }}/>)}
