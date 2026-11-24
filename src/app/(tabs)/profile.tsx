@@ -27,6 +27,7 @@ import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
 import {JCardLoadState,JCardOfflineNotice,isJCardConnectivityError} from "../../components/JCardConnectionState";
 import { loadCatalog,loadWorkspace } from "../../lib/professional-api";
 import {loadMyMedia} from "../../lib/safety-api";
+import {hasActiveOwnLive} from "../../lib/live-preflight";
 import { ProfessionPicker } from "../../components/ProfessionPicker";
 import { useProfessionalData } from "../../state/useProfessionalData";
 import { useCallback,useEffect,useState } from "react";
@@ -175,7 +176,7 @@ export default function Profile() {
   const workspace = useProfessionalData(loadWorkspace,true);
   const ownerId=workspace.data?.card.id;
   const media=useProfessionalData(loadMyMedia,false,true);
-  const currentLive=!!ownerId&&!!workspace.scope&&media.scope?.owner===ownerId&&media.scope.session===workspace.scope.session&&!media.error&&media.data?.some(item=>item.creator_id===ownerId&&item.kind==="live"&&item.status==="live"&&item.studioReady===true);
+  const currentLive=hasActiveOwnLive({ownerId,workspaceScope:workspace.scope,mediaScope:media.scope,error:!!media.error||media.loading,media:media.data});
   function openOwnEditor(){
     if(!ownerId||workspace.scope?.owner!==ownerId)return;
     closeProfileMenu();
