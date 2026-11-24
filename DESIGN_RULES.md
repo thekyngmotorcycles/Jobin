@@ -52,3 +52,6 @@ Consultar [Master Plan UI/UX v1.2](docs/JOBEEN_MASTER_PLAN_UIUX.md) antes de dis
 
 ### Plantillas reutilizables de página (UI-01D, 2026-11-24)
 - Usar PageFrame en ui.tsx para páginas de stack con encabezado nativo visible; usePageLayout en listas con encabezado personalizado. Tipos settings/form (máx.720dp), list/management (máx.980dp); márgenes 12/16/24dp, gap16, safe areas y scroll. Evitar repetir título, marca y eslogan. PageState para carga, error, vacío e información; acciones solo conectadas. Conservar avisos esenciales y estado real del servicio. Reutilizar Button, SettingsMenuRow, formInput y formLabel. No imponer plantilla a JCard artística, vídeo inmersivo, mapas ni navegación especial. Validación física pendiente.
+
+- Encabezados de los paneles laterales Configuración y Mi perfil: centrar el título respecto al ancho completo del panel con reservas iguales a ambos lados (cierre de 48dp), no respecto al espacio restante. Permitir crecimiento y salto de línea, sin reducir fuente. Usar SettingsDrawerHeader compartido.
+- Perfil propio conserva barra global visible y operable sobre el contenido, independiente de la animación del encabezado/JCard; separar su host fijo de los modos animados de Casa y Flashes. No duplicar barras ni modificar el acordeón superior.

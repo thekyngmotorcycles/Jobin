@@ -125,3 +125,18 @@ test("Approved Home/Profile separation uses existing destinations and reserves u
  assert.ok(owned.includes('!!workspace.data?.reviewer&&<SettingsMenuRow'));
  assert.ok(!owned.includes('title="Guardados"')&&!owned.includes('title="Registro de actividad"'));
 });
+
+test("Home and profile drawers center the title in the full window with equal side reservations",()=>{
+ const header=src("src/components/SettingsDrawerHeader.tsx");
+ const home=src("src/components/HomeSideMenu.tsx"),owned=src("src/app/(tabs)/profile.tsx");
+ assert.ok(home.includes('<SettingsDrawerHeader title="Configuración" onClose={onClose}/>'));
+ assert.ok(owned.includes('<SettingsDrawerHeader title="Mi perfil" onClose={closeProfileMenu}/>'));
+ assert.equal((header.match(/width:JOBEEN_CONTROL\.touchTarget/g)??[]).length,2);
+ assert.ok(header.includes('flex:1,minWidth:0,textAlign:"center"'));
+ assert.ok(header.includes('alignItems:"center"'));
+ assert.ok(header.includes('fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle'));
+ assert.ok(!header.includes("numberOfLines")&&!header.includes("adjustsFontSizeToFit"));
+ assert.ok(header.includes('accessibilityLabel="Cerrar menú" onPress={onClose}'));
+ assert.ok(owned.includes('setContactsRequested(ownerId);closeProfileMenu();'));
+ assert.ok(home.includes('onNavigate?.();onClose();'));
+});
