@@ -35,11 +35,18 @@ insert into public.jcard_employment_history(owner_id,client_id,company,role,from
  ('b2222222-2222-4222-8222-222222222222','b-own','Company B','Role B',2021,1);
 insert into public.employment_access_requests(owner_id,requester_id,status) values
  ('a1111111-1111-4111-8111-111111111111','b2222222-2222-4222-8222-222222222222','approved');
-\ir ../supabase/security-review/employment-privacy.sql
-\ir ../supabase/security-review/employment-private-contact.sql
 create function pg_temp.cv_assert(ok boolean,label text) returns void language plpgsql as $assert$
 begin if not coalesce(ok,false) then raise exception 'CV PRIVACY TEST: %',label; end if; end
 $assert$;
+savepoint standalone_contract;
+\ir ../supabase/security-review/employment-private-contact.sql
+select pg_temp.cv_assert((select count(*)=2 from public.jcard_employment_history),'standalone install preserves existing history');
+select pg_temp.cv_assert(not has_table_privilege('anon','public.jcard_employment_history','SELECT'),'standalone install denies anonymous history');
+select pg_temp.cv_assert(not has_table_privilege('authenticated','public.jcard_employment_history','TRUNCATE'),'standalone install removes truncate');
+select pg_temp.cv_assert(not has_column_privilege('authenticated','public.jcard_employment_history','verified_by','UPDATE'),'standalone install restricts verification');
+rollback to standalone_contract;
+\ir ../supabase/security-review/employment-privacy.sql
+\ir ../supabase/security-review/employment-private-contact.sql
 select pg_temp.cv_assert(not has_table_privilege('anon','public.jcard_employment_history','SELECT'),'anonymous table read denied');
 select pg_temp.cv_assert(not has_function_privilege('anon','public.read_approved_employment(uuid)','EXECUTE'),'anonymous RPC denied');
 select pg_temp.cv_assert(not has_column_privilege('authenticated','public.employment_access_requests','status','UPDATE'),'legacy column grant revoked');
@@ -226,4 +233,37 @@ end
 $assert$;
 select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
 select pg_temp.cv_assert((select contact='synthetic A contact' from public.jobeen_employment_private_contact where client_id='a-own'),'A contact unchanged by B');
+reset role;
+insert into public.jcard_employment_history(owner_id,client_id,company,role,from_year,from_month,verified_by)
+ values('a1111111-1111-4111-8111-111111111111','verified-a','Verified original','Role',2018,1,'fixture employer');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+do $assert$
+begin
+ begin
+  perform public.jobeen_save_private_employment(auth.uid(),'verified-a','Edited','Role','{}',2020,1,null,12,'','');
+  raise exception 'verified record overwritten';
+ exception when insufficient_privilege then null;
+ end;
+ update public.jcard_employment_history set company='Edited' where client_id='verified-a';
+ if found then raise exception 'verified record edited by direct update'; end if;
+ delete from public.jcard_employment_history where client_id='verified-a';
+ if found then raise exception 'verified record deleted'; end if;
+end
+$assert$;
+select pg_temp.cv_assert((select company='Verified original' and verified_by='fixture employer' from public.jcard_employment_history where client_id='verified-a'),'employer verification preserved');
+select public.jobeen_save_private_employment(auth.uid(),'a-own','Company A','Role A',array['fixture-profession'],2020,1,2021,12,'updated synthetic address','updated synthetic contact');
+select pg_temp.cv_assert((select from_year=2020 and to_year=2021 and verified_by is null from public.jcard_employment_history where client_id='a-own'),'A can edit own unverified history');
+select pg_temp.cv_assert((select address='updated synthetic address' and contact='updated synthetic contact' from public.jobeen_employment_private_contact where client_id='a-own'),'A can edit own private details');
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+with deleted as (
+ delete from public.jcard_employment_history where owner_id='a1111111-1111-4111-8111-111111111111' and client_id='a-own' returning client_id
+) select pg_temp.cv_assert(not exists(select * from deleted),'B cannot delete A history');
+with deleted as (
+ delete from public.jcard_employment_history where owner_id=auth.uid() and client_id='a-own' returning client_id
+) select pg_temp.cv_assert((select count(*)=1 from deleted),'B can delete own matching history');
+select pg_temp.cv_assert(not exists(select 1 from public.jobeen_employment_private_contact where client_id='a-own'),'private contact cascades only for B');
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+select pg_temp.cv_assert((select contact='updated synthetic contact' from public.jobeen_employment_private_contact where client_id='a-own'),'A contact survived B deletion');
+select pg_temp.cv_assert((select count(*)=2 from public.jcard_employment_history),'A history survived B deletion');
 rollback;

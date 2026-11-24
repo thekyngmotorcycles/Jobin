@@ -120,3 +120,40 @@ Los defaults históricos de contacto empresarial eran `true`. El corte cambia el
 - En Storage local, A/B/C quedaron sin lectura directa, pública, firma individual y por lote, copia o listado de la bóveda. El endpoint S3 con JWT y la ruta de transformación de imágenes tuvieron controles positivos sobre archivos autorizados y denegaron la lectura en la bóveda. Se retiraron del origen las direcciones sintéticas de enlaces originales y transformados. El backend de transformación de prueba devuelve una imagen fija después de que Storage autoriza la ruta. No se movieron documentos reales. [S3 con sesión](https://supabase.com/docs/guides/storage/s3/authentication)
 - **Smart CDN sigue sin verificación empírica.** El único proyecto alojado disponible es el compartido. El ensayo local carece de la red de Smart CDN, documentada para planes Pro y superiores. Supabase indica hasta 60 s de propagación para la invalidación tras actualizar o retirar un objeto. Una respuesta ya entregada, descargada o guardada por un navegador queda fuera de la revocación. Las rutas sensibles nuevas deben servir únicamente por el proxy, sin autorización cacheada ni URLs directas, y evitar persistencia del cliente. La decisión se comprueba por solicitud. No puede deshacer bytes ya enviados.
 - Para aceptar una transición real, solicitar un proyecto aislado con Smart CDN habilitado. Precalentar exactamente las mismas URLs sintéticas, una original y otra transformada, desde dos ubicaciones. Registrar `cf-cache-status`, `Age` si se emite, estado HTTP y tiempos sin guardar el token. Revocar el permiso, aislar la dirección antigua y comprobar tanto aciertos de caché como consultas a origen hasta que la ruta anterior deje de responder en ambos sitios. Cerrar cualquier ruta alternativa habilitada, incluidas claves S3 de servicio, antes de habilitar el proxy. Tratar enlaces antiguos aún servidos como exposición pendiente. [Smart CDN](https://supabase.com/docs/guides/storage/cdn/smart-cdn)
+
+## Contrato de historial profesional privado
+
+La propuesta de corte se limita a [employment-private-contact.sql](../supabase/security-review/employment-private-contact.sql). El candidato de CV `employment-privacy.sql` tiene su propio alcance y su propia aprobación. Probar primero en PostgreSQL descartable. Ejecutar en JobIn solamente con aprobación expresa del propietario para el SHA revisado.
+
+1. Revalidar el destino y el catálogo. Se espera `jcard_employment_history` con RLS, políticas permisivas de titular para lectura, creación, edición y eliminación, clave única `(owner_id, client_id)`, identificador generado y `verified_by` anulable con valor por defecto nulo. Al preparar el corte, JobIn tenía 12 filas, cero verificadas y ningún objeto de contacto desplegado. Registrar solo totales agregados y definiciones, incluidos permisos de columna. Si cambia el esquema previsto, reconciliar el delta antes de ejecutar.
+2. Aplicar el archivo del commit aprobado en una sola transacción con una conexión administrativa existente. El límite de espera evita retener la operación si hay otra transacción larga. Si el DDL falla, la transacción revierte por completo. Usar un servicio de conexión configurado mediante un mecanismo seguro.
+
+   ```sh
+   psql --no-psqlrc --set=ON_ERROR_STOP=1 --single-transaction \
+     --command="SET LOCAL lock_timeout='5s'" \
+     --file=supabase/security-review/employment-private-contact.sql \
+     --command="NOTIFY pgrst, 'reload schema'"
+   ```
+
+3. Verificar por catálogo la tabla, la clave foránea, RLS, los permisos y la firma invoker del RPC. Confirmar los totales del historial y que la proyección de `read_approved_employment(uuid)` conserva sus campos. Comprobar la lectura del titular al reabrir Jobeen. Para validar escrituras por HTTP, usar solo cuentas y registros de prueba autorizados. La edición del perfil de #117 se habilita al recuperar los contactos. La acción de eliminación del candidato requiere una OTA compatible autorizada.
+4. El DDL toma bloqueos breves y reduce permisos históricos. Clientes anteriores que intenten escribir columnas de propiedad o verificación directamente podrían perder esa escritura. La eliminación confirmada de una experiencia pendiente elimina su contacto asociado. Las verificaciones de empleadores y los datos heredados quedan sujetos a sus reglas de conservación.
+
+### Reversión del contrato
+
+Si el corte ya confirmó y hay que suspenderlo, conservar tabla, filas, RLS y protecciones de verificación. Retirar el guardado y la edición hasta revisar el problema. El perfil vuelve al modo de lectura de #117. Aplicar este SQL solo tras autorización de reversión.
+
+```sql
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+REVOKE EXECUTE ON FUNCTION public.jobeen_save_private_employment(uuid,text,text,text,text[],integer,integer,integer,integer,text,text)
+ FROM public,anon,authenticated;
+REVOKE ALL ON public.jobeen_employment_private_contact FROM public,anon,authenticated;
+REVOKE DELETE ON public.jcard_employment_history FROM public,anon,authenticated;
+REVOKE INSERT (owner_id,client_id,company,role,professions,from_year,from_month,to_year,to_month,updated_at),
+ UPDATE (company,role,professions,from_year,from_month,to_year,to_month,updated_at)
+ ON public.jcard_employment_history FROM public,anon,authenticated;
+NOTIFY pgrst, 'reload schema';
+COMMIT;
+```
+
+Volver a aplicar el mismo candidato restaura los permisos previstos y conserva los contactos guardados.

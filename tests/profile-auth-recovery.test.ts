@@ -54,6 +54,41 @@ test("a missing private contact table leaves the verified employment history rea
  await assert.rejects(cloud.loadCloudHistory(owner,scope),/session changed/);
 });
 
+test("employment deletion stays bound to its originating account and session",async()=>{
+ const calls:unknown[]=[];
+ let current=scope;
+ let returnedRow=true;
+ let switchAfterDelete=false;
+ const nextSession={owner:other,session:lifetime.sessionMarkerKey(other,marker(other))};
+ const query={
+  delete:()=>{calls.push(["delete"]);return query;},
+  eq:(column:string,value:string)=>{calls.push([column,value]);return query;},
+  is:(column:string,value:null)=>{calls.push([column,value]);return query;},
+  select:(columns:string)=>{assert.equal(columns,"client_id");return query;},
+  maybeSingle:async()=>{
+   if(switchAfterDelete)current=nextSession;
+   return {data:returnedRow?{client_id:"work"}:null,error:null};
+  }
+ };
+ const assertCurrent=async(expected:typeof scope)=>{
+  if(expected.owner!==current.owner||expected.session!==current.session)throw Error("session changed");
+ };
+ const cloud=load<typeof import("../src/lib/jcard-cloud")>("src/lib/jcard-cloud.ts",{
+  "./supabase":{requireSupabase:()=>({from:(table:string)=>{assert.equal(table,"jcard_employment_history");return query;}})},
+  "./message-session":{captureMessageScope:async(expected:typeof scope)=>{await assertCurrent(expected);return current;},assertMessageScope:assertCurrent}
+ });
+ current=nextSession;
+ await assert.rejects(cloud.deleteCloudHistory("work",owner,scope),/session changed/);
+ assert.deepEqual(calls,[]);
+ current=scope;
+ await cloud.deleteCloudHistory("work",owner,scope);
+ assert.deepEqual(calls,[["delete"],["owner_id",owner],["client_id","work"],["verified_by",null]]);
+ returnedRow=false;
+ await assert.rejects(cloud.deleteCloudHistory("work",owner,scope),/no se puede eliminar/);
+ returnedRow=true;switchAfterDelete=true;
+ await assert.rejects(cloud.deleteCloudHistory("work",owner,scope),/session changed/);
+});
+
 test("AuthGate fails closed while offline and restores the session on foreground; sign-out is distinct",async()=>{
  const states:unknown[]=[];
  let cursor=0;
