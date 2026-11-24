@@ -243,6 +243,9 @@ Numeración continua de fases de desarrollo usada por el propietario desde UI-01
 | 09 | Monetización | Business Premium, regalos/ingresos, acuerdos, pagos y retiros según proveedores, costes, normas de tienda y revisión legal aprobados; no simular cobros |
 | 10 | Beta y publicación | Pruebas integrales dirigidas, Android/web y después iOS según alcance aprobado, seguridad de las nuevas funciones, accesibilidad, fallos/red, límites de coste, revisión legal y tiendas, aprobación de release y lanzamiento gradual |
 
+### Requisito transversal de compilación nativa
+Antes de otra APK, aplicar AGENTS.md §0.3 y [NATIVE_CAPABILITY_PLAN.md](NATIVE_CAPABILITY_PLAN.md): revisar todas las fases 01–10 y confirmar el lote completo. LiveKit imprescindible, audio dedicado candidato para JQuote, compras digitales pendientes de elección con propietario; no anticipar pantallas ni activar proveedores. Conservar SDKs existentes y reutilizar procesamiento servidor/OTA. Si una capacidad se aplaza, documentar y aprobar el impacto de una eventual nueva compilación. No confundir capacidad de cámara con transporte en tiempo real.
+
 ### Fase 03 — orden inmediato
 - 03A preparación Live: integrada en PR #108; revisión física posterior.
 - 03B base LiveKit y política de moderación contextual: PR #109 en revisión, límite candidato 60 s, migración no aplicada. Cerrar CI del nuevo SHA y obtener autorización expresa de integración.
