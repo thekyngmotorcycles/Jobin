@@ -1,6 +1,6 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
-import {useCallback,useEffect,useRef,useState} from "react";
+import {useCallback,useEffect,useImperativeHandle,useRef,useState,type Ref} from "react";
 import {ActivityIndicator,Alert,Pressable,Text,TextInput,View} from "react-native";
 import {requireSupabase} from "../lib/supabase";
 import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
@@ -13,7 +13,8 @@ import {useTheme} from "../state/ThemeProvider";
 
 type ListType="followers"|"following"|"contacts";
 type Connection={id:string;name:string;following:boolean};
-export function ProfileFollowCounts({userId,refreshKey=0}:{userId:string;refreshKey?:number}){
+export type ProfileContactsHandle={openContacts:(expectedOwner:string)=>void};
+export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userId:string;refreshKey?:number;contactsMenuRef?:Ref<ProfileContactsHandle>}){
  const {colors,s}=useUi();const {theme}=useTheme();const jt=jobeenTokens(theme);
  const scopeRef=useRef<MessageScope|null>(null),countRevision=useRef(0),listRevision=useRef(0);
  const [viewer,setViewer]=useState("");
@@ -84,6 +85,7 @@ export function ProfileFollowCounts({userId,refreshKey=0}:{userId:string;refresh
   if(!isOwner)return;
   setTab(kind);setQuery("");setSheet(true);void loadConnections(kind);
  }
+ useImperativeHandle(contactsMenuRef,()=>({openContacts(expectedOwner){if(expectedOwner===userId&&isOwner&&scopeRef.current?.owner===expectedOwner)openList("contacts");}}));
  async function toggleFollow(person:Connection){
   const scope=scopeRef.current;if(!scope||scope.owner!==viewer||scope.owner!==userId)return;
   setError("");

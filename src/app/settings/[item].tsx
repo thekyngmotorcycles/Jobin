@@ -3,12 +3,12 @@ import {router,useLocalSearchParams} from "expo-router";
 import {useMemo,useState} from "react";
 import {Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
-import {JOBIN_SETTINGS_GROUPS} from "../../lib/jobin-settings-catalog";
+import {LEGACY_SETTINGS_GROUPS} from "../../lib/jobin-settings-catalog";
 import {JobinSettingsIcon} from "../../components/JobinSettingsIcon";
 import {useUi} from "../../components/ui";
 export default function JobinSettings(){
  const {item}=useLocalSearchParams<{item:string}>();const {s,colors}=useUi();
- const found=useMemo(()=>JOBIN_SETTINGS_GROUPS.flatMap(group=>group.items).find(entry=>entry.id===item),[item]);
+ const found=useMemo(()=>LEGACY_SETTINGS_GROUPS.flatMap(group=>group.items).find(entry=>entry.id===item),[item]);
  return <SafeAreaView edges={["bottom"]} style={s.screen}><ScrollView contentContainerStyle={{padding:22,gap:20,maxWidth:760,width:"100%",alignSelf:"center"}}>
   <View style={{flexDirection:"row",alignItems:"center",gap:16}}><JobinSettingsIcon id={item??""} size={35} color={colors.ink}/><Text accessibilityRole="header" style={[s.h2,{flex:1}]}>{found?.title??"Configuración"}</Text></View>
   <Text style={s.muted}>{found?.description??"Esta sección todavía no está disponible."}</Text>

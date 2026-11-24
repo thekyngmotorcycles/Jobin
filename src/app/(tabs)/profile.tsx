@@ -15,6 +15,7 @@ import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness
 import { useTabClearance } from "../../theme/navigation";
 import {opacity} from "../../theme/color";
 import {useRef} from "react";
+import type {ProfileContactsHandle} from "../../components/ProfileFollowCounts";
 import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../../components/ProfileSharedSections";
 import {SavedJCardsGallery} from "../../components/SavedJCardsGallery";
 import {useReducedMotion} from "react-native-reanimated";
@@ -82,6 +83,8 @@ export default function Profile() {
   };
   const [verifiedIdentity,setVerifiedIdentity]=useState(false);
   const [profileToolsOpen,setProfileToolsOpen]=useState(false);
+  const contactsMenuRef=useRef<ProfileContactsHandle>(null);
+  const [contactsRequested,setContactsRequested]=useState<string|null>(null);
   const openProfileMenu=()=>setProfileToolsOpen(true);
   const closeProfileMenu=()=>setProfileToolsOpen(false);
   const {width:screenWidth,height:screenHeight}=useWindowDimensions();
@@ -167,6 +170,7 @@ export default function Profile() {
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace,true);
   const ownerId=workspace.data?.card.id;
+  useEffect(()=>{if(!profileToolsOpen&&contactsRequested){setContactsRequested(null);if(contactsRequested===ownerId)contactsMenuRef.current?.openContacts(contactsRequested);}},[profileToolsOpen,contactsRequested,ownerId]);
   const [historyState,setHistoryState]=useState<{owner:string;rows:EmploymentEntry[]}|null>(null);
   const history=historyState&&historyState.owner===ownerId?historyState.rows:[];
   useFocusEffect(useCallback(()=>{
@@ -350,24 +354,23 @@ export default function Profile() {
            style={{flex:1,backgroundColor:modal.surface,borderTopLeftRadius:modal.radius.dialog,borderBottomLeftRadius:modal.radius.dialog,overflow:"hidden"}}>
             <ScrollView contentContainerStyle={{paddingHorizontal:JOBEEN_CONTROL.modalHorizontalPadding,paddingTop:16,paddingBottom:30,gap:2}}>
               <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingBottom:8,gap:8}}>
-                <Text accessibilityRole="header" style={{flex:1,color:modal.text,fontWeight:"700",fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle}}>Opciones del perfil</Text>
+                <Text accessibilityRole="header" style={{flex:1,color:modal.text,fontWeight:"700",fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle}}>Mi perfil</Text>
                 <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={closeProfileMenu}
                  style={{width:48,height:48,alignItems:"center",justifyContent:"center"}}>
                  <Ionicons name="close" size={24} color={modal.text}/>
                 </Pressable>
               </View>
-              <SettingsMenuRow title="Reseñas de empresas"
-               icon="star-outline" onPress={()=>{closeProfileMenu();router.push("/reviews");}}/>
-              <SettingsMenuRow title="Certificados y sellos"
-               icon="ribbon-outline" onPress={()=>{closeProfileMenu();router.push("/certificates");}}/>
-              <SettingsMenuRow title="Oportunidades laborales"
-               icon="briefcase-outline" onPress={()=>{closeProfileMenu();router.push("/opportunities");}}/>
-              {!!workspace.data?.organization&&<SettingsMenuRow title="Mi empresa o institución"
-               icon="business-outline" onPress={()=>{closeProfileMenu();router.push("/company");}}/>}
-              {!!workspace.data?.reviewer&&<SettingsMenuRow title="Revisar acreditaciones"
-               icon="shield-checkmark-outline" onPress={()=>{closeProfileMenu();router.push("/credential-review");}}/>}
-              <SettingsMenuRow title="Ver perfil ficticio (demo)"
-               icon="eye-outline" onPress={()=>{closeProfileMenu();router.push("/demo-profile");}}/>
+              <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,color:modal.muted,fontWeight:"700",marginTop:8}}>Mi actividad</Text>
+              {!!ownerId&&<SettingsMenuRow title="Mis contactos" icon="people-outline" variant="action" onPress={()=>{setContactsRequested(ownerId);closeProfileMenu();}}/>}
+              <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,color:modal.muted,fontWeight:"700",marginTop:12}}>Desarrollo profesional</Text>
+              <SettingsMenuRow title="Certificados y sellos" icon="ribbon-outline" onPress={()=>{closeProfileMenu();router.push("/certificates");}}/>
+              <SettingsMenuRow title="Oportunidades laborales" icon="briefcase-outline" onPress={()=>{closeProfileMenu();router.push("/opportunities");}}/>
+              <SettingsMenuRow title="Reseñas de empresas" icon="star-outline" onPress={()=>{closeProfileMenu();router.push("/reviews");}}/>
+              <SettingsMenuRow title="Mi zona profesional" icon="location-outline" onPress={()=>{closeProfileMenu();router.push("/map-presence");}}/>
+              {(!!workspace.data?.organization||!!workspace.data?.reviewer)&&<Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,color:modal.muted,fontWeight:"700",marginTop:12}}>Gestión profesional</Text>}
+              {!!workspace.data?.organization&&<SettingsMenuRow title="Mi empresa o institución" icon="business-outline" onPress={()=>{closeProfileMenu();router.push("/company");}}/>}
+              {!!workspace.data?.reviewer&&<SettingsMenuRow title="Revisar acreditaciones" icon="shield-checkmark-outline" onPress={()=>{closeProfileMenu();router.push("/credential-review");}}/>}
+              {__DEV__&&<SettingsMenuRow title="Ver perfil ficticio (demo)" icon="eye-outline" onPress={()=>{closeProfileMenu();router.push("/demo-profile");}}/>}
             </ScrollView>
           </SafeAreaView></View>
         </View>
@@ -393,7 +396,7 @@ export default function Profile() {
             </View>}
            </> : <JCardLoadState loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>} 
           trust={workspace.data?.card ? <ProfessionalTrustMark worker={workspace.data.card.id}/> : null}
-          profileUserId={workspace.data?.card?.id}
+          profileUserId={workspace.data?.card?.id} contactsMenuRef={contactsMenuRef}
         />
         </Animated.View>
         <View onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}

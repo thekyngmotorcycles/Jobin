@@ -2,8 +2,8 @@ import {Ionicons} from "@expo/vector-icons";
 import {Image,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {useReducedMotion} from "react-native-reanimated";
-import type {ReactNode,ComponentProps} from "react";
-import {ProfileFollowCounts} from "./ProfileFollowCounts";
+import type {ReactNode,ComponentProps,Ref} from "react";
+import {ProfileFollowCounts,type ProfileContactsHandle} from "./ProfileFollowCounts";
 import {MediaThumbnail} from "./MediaThumbnail";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
@@ -90,12 +90,12 @@ export function ProfileMediaGrid({items,emptyMessage}:{items:ProfileTile[];empty
 }
 
 /** Hero moves out of view while ProfileSectionTabs remain pinned. */
-export function ProfileIdentityHeader({card,actions,trust,profileUserId}:{
- card:ReactNode;actions?:ReactNode;trust?:ReactNode;profileUserId?:string;
+export function ProfileIdentityHeader({card,actions,trust,profileUserId,contactsMenuRef}:{
+ card:ReactNode;actions?:ReactNode;trust?:ReactNode;profileUserId?:string;contactsMenuRef?:Ref<ProfileContactsHandle>;
 }){
  return <View style={{gap:14}}>
   {card}
-  {!!profileUserId&&<ProfileFollowCounts userId={profileUserId}/>}
+  {!!profileUserId&&<ProfileFollowCounts userId={profileUserId} contactsMenuRef={contactsMenuRef}/>}
   {actions}
   {trust}
  </View>;
