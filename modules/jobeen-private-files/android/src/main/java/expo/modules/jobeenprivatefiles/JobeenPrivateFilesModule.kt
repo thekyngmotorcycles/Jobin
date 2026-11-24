@@ -28,6 +28,8 @@ import javax.crypto.spec.GCMParameterSpec
  */
 class JobeenPrivateFilesModule : Module() {
   companion object {
+    // Input photographs may be much larger than the final encrypted attachment.
+    private const val PHOTO_SOURCE_LIMIT = 32 * 1024 * 1024
     private const val LIMIT = 2 * 1024 * 1024
     private const val NONCE = 12
     private const val TAG = 16
@@ -80,60 +82,84 @@ class JobeenPrivateFilesModule : Module() {
   private fun readPicked(value: String, output: Uint8Array, normalize: Boolean): Int {
     require(output.byteLength == LIMIT)
     val uri = Uri.parse(value)
-    val stream = when (uri.scheme) {
-      "file" -> FileInputStream(checkNotNull(pickerCopy(uri)))
-      "content" -> checkNotNull(checkNotNull(appContext.reactContext).contentResolver.openInputStream(uri))
-      else -> error("Unsupported selection")
-    }
-    val bytes = ByteArray(LIMIT)
+    // Only publication photos may exceed LIMIT before re-encoding. Evidence
+    // documents keep the original bound and are never silently transformed.
+    val maximum = if (normalize) PHOTO_SOURCE_LIMIT else LIMIT
+    val picked = if (uri.scheme == "file") checkNotNull(pickerCopy(uri)) else null
+    val capacity = if (picked != null) {
+      val length = picked.length()
+      if (length > maximum.toLong()) return -1
+      require(length > 0)
+      length.toInt()
+    } else maximum
+    val bytes = ByteArray(capacity)
+    // A separate bounded destination prevents the encoder overwriting its input.
+    val prepared = if (normalize) ByteArray(LIMIT) else bytes
     try {
+      val stream = when (uri.scheme) {
+        "file" -> FileInputStream(checkNotNull(picked))
+        "content" -> checkNotNull(checkNotNull(appContext.reactContext).contentResolver.openInputStream(uri))
+        else -> error("Unsupported selection")
+      }
       return stream.use {
         var count = 0
-        while (count < LIMIT) {
-          val read = it.read(bytes, count, LIMIT - count)
+        while (count < capacity) {
+          val read = it.read(bytes, count, capacity - count)
           if (read == -1) break
           check(read > 0)
           count += read
         }
-        // Do not return partial bytes for a file larger than the pilot limit.
-        if (count == LIMIT && it.read() != -1) return@use -1
+        // Reject oversize/truncated input, never publish a partial original.
+        if (count == capacity && it.read() != -1) return@use -1
         check(count > 0)
-        val written = if (normalize) normalizePhoto(bytes, count) else count
-        output.write(bytes, output.byteOffset, written)
+        val written = if (normalize) normalizePhoto(bytes, count, prepared) else count
+        if (written !in 1..LIMIT) return@use -1
+        output.write(prepared, output.byteOffset, written)
         written
       }
     } finally {
       bytes.fill(0)
+      if (normalize) prepared.fill(0)
     }
   }
 
   // The picker can copy GPS/EXIF even with exif:false. Re-encode shareable
   // photos in memory so publication never sends those original metadata.
-  private fun normalizePhoto(bytes: ByteArray, count: Int): Int {
+  private fun normalizePhoto(source: ByteArray, count: Int, target: ByteArray): Int {
     val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    BitmapFactory.decodeByteArray(bytes, 0, count, options)
+    BitmapFactory.decodeByteArray(source, 0, count, options)
     require(options.outWidth in 1..16384 && options.outHeight in 1..16384)
     require(options.outMimeType in setOf("image/jpeg", "image/png", "image/webp"))
     var sample = 1
     while (maxOf(options.outWidth, options.outHeight) > 1440 * sample) sample *= 2
     options.inJustDecodeBounds = false
     options.inSampleSize = sample
-    val bitmap = checkNotNull(BitmapFactory.decodeByteArray(bytes, 0, count, options))
-    var written = 0
-    val bounded = object : OutputStream() {
-      override fun write(value: Int) {
-        check(written < LIMIT)
-        bytes[written++] = value.toByte()
+    val bitmap = checkNotNull(BitmapFactory.decodeByteArray(source, 0, count, options))
+    try {
+      // Retry within the same bounded in-memory destination, without a new
+      // picker selection, temporary plaintext file, or larger encrypted limit.
+      for (quality in intArrayOf(76, 64, 50)) {
+        var written = 0
+        var overflow = false
+        val bounded = object : OutputStream() {
+          override fun write(value: Int) {
+            if (written == LIMIT) { overflow = true; return }
+            target[written++] = value.toByte()
+          }
+          override fun write(buffer: ByteArray, offset: Int, length: Int) {
+            require(offset >= 0 && length >= 0 && offset <= buffer.size - length)
+            val available = LIMIT - written
+            val accepted = minOf(length, available)
+            buffer.copyInto(target, written, offset, offset + accepted)
+            written += accepted
+            if (accepted != length) overflow = true
+          }
+        }
+        val compressed = bitmap.compress(Bitmap.CompressFormat.JPEG, quality, bounded)
+        if (compressed && !overflow && written in 1..LIMIT) return written
       }
-      override fun write(buffer: ByteArray, offset: Int, length: Int) {
-        check(length <= LIMIT - written)
-        buffer.copyInto(bytes, written, offset, offset + length)
-        written += length
-      }
-    }
-    try { check(bitmap.compress(Bitmap.CompressFormat.JPEG, 76, bounded) && written > 0) }
-    finally { bitmap.recycle() }
-    return written
+      return -1
+    } finally { bitmap.recycle() }
   }
 
   private fun <T> safe(block: () -> T): T {
