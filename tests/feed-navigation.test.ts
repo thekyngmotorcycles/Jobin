@@ -54,3 +54,21 @@ test("Live and Flashes category menu uses Royal Hive and scrollable accessible r
  assert.ok(header.includes("maxHeight:Math.max(0,height-insets.bottom-8-menuTop)"));
  assert.ok(header.includes("<ScrollView style={{flexShrink:1}}"));
 });
+
+test("immersive Flash progress does not compete with comments, creator and share sheets or retarget social actions",()=>{
+ const feed=load("src/components/FeedVideo.tsx");
+ const controls=load("src/components/VideoPlaybackControls.tsx");
+ const videos=load("src/app/(tabs)/videos.tsx");
+ assert.ok(feed.includes('{active&&!error&&!sheet&&!shareOpen&&<FlashProgress player={player} clipId={clip.id} active={active}'));
+ assert.ok(feed.includes('const playing=active&&!paused&&!error&&!sheet;'));
+ assert.ok(feed.includes('bindPlaybackLifecycle(player,playing,AppState.currentState'));
+ assert.ok(feed.includes('social.addComment(clip.postId,name||"You",draft)'));
+ assert.ok(feed.includes('social.toggleLike(clip.postId)'));
+ assert.ok(feed.includes('social.toggleSave(clip.postId)'));
+ assert.ok(feed.includes('social.toggleFollow(clip.creatorId)'));
+ assert.ok(feed.includes('onShared={()=>social.addShare(clip.postId)}'));
+ assert.ok(controls.includes('onScrubbingChange?.(clipId,false)'));
+ assert.ok(controls.includes('onResponderTerminate={()=>finish()}'));
+ assert.ok(videos.includes('current=>dragging?id:current===id?null:current'));
+ assert.ok(videos.includes('active={focused && active === index}'));
+});
