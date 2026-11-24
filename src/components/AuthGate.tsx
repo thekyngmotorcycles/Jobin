@@ -11,6 +11,9 @@ import {isGoogleCallbackUrl} from "../lib/auth-entry-boundary";
 import { sessionMarkerKey,sessionLifetimeState } from "../lib/session-lifetime";
 
 const AuthNavigationContext=createContext<AuthNavigationPhase>("checking");
+const AuthSessionKeyContext=createContext<string|null>(null);
+/** Local navigation preferences must bind to the session authorized by AuthGate. */
+export function useAuthSessionKey(){return useContext(AuthSessionKeyContext);}
 const OAuthErrorContext=createContext({message:"",clear:()=>{}});
 export function useOAuthError(){return useContext(OAuthErrorContext);}
 export function useAuthNavigationPhase(){return useContext(AuthNavigationContext);}
@@ -182,5 +185,5 @@ export function AuthGate({ children }: { children: ReactNode }) {
  }, []);
  // Protected routes are absent from the navigator until authorized.
  const phase=classifyAuthNavigation(ready,handlingOAuth,sessionScope,needsUsername);
- return <AuthNavigationContext.Provider value={phase}><OAuthErrorContext.Provider value={{message:oauthError,clear:()=>setOAuthError("")}}><Fragment key={sessionScope??"signed-out"}>{children}</Fragment></OAuthErrorContext.Provider></AuthNavigationContext.Provider>;
+ return <AuthNavigationContext.Provider value={phase}><OAuthErrorContext.Provider value={{message:oauthError,clear:()=>setOAuthError("")}}><Fragment key={sessionScope??"signed-out"}><AuthSessionKeyContext.Provider value={phase==="signed-in"?sessionScope:null}>{children}</AuthSessionKeyContext.Provider></Fragment></OAuthErrorContext.Provider></AuthNavigationContext.Provider>;
 }
