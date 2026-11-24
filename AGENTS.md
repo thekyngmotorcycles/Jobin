@@ -104,6 +104,7 @@ Estados exclusivos: PENDIENTE, EN DESARROLLO, IMPLEMENTADO, PENDIENTE DE INTEGRA
 
 ## Seguridad y aislamiento de cuentas — regla permanente no negociable
 ### Arquitectura aprobada: opción 2, aislamiento reforzado
+- **Excepción OTA aprobada 2026-11-24:** cuando el conector carezca de workflow_dispatch, reutilizar el mecanismo temporal de #107/#110, etiqueta exacta del propietario y SHA de development aprobado individualmente, CI post-merge verde, comprobación de APK/runtime/proyecto/entorno y rama de entrega separada. No fusionar el publicador temporal, no disparar automáticamente al hacer push, no reutilizar etiquetas ni autorizar futuras publicaciones por anticipado. No solicitar de nuevo aprobación del método; sí de cada SHA y plataforma.
 - **Compilación APK (orden expresa del propietario):** antes de crear cualquier APK nuevo, informar qué cambio nativo lo requiere y solicitar aprobación. No iniciar EAS Build, GitHub workflows de compilación Android ni instalar un APK nuevo sin autorización expresa. Los cambios de código y verificaciones sin compilación pueden continuar.
 - Una sola identidad autenticada activa por instancia/dispositivo, sin selector multicuenta persistente ni unión automática de perfiles. No limitar arbitrariamente las sesiones legítimas en otros dispositivos.
 - Separar el estado de todos los proveedores, navegación, cachés, borradores y eventos por UUID; cerrar la sesión anterior y desechar respuestas asíncronas antiguas. Verificar identidad antes y después de operaciones que esperen red o disco.
