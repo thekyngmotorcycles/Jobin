@@ -10,7 +10,10 @@ test("Stack navigation has one compact title and duplicate in-page headings are 
  assert.ok(nav.includes("headerTitleStyle:{fontSize:JOBEEN_TYPE.navigationTitle"));
  const security=src("src/app/settings/cuenta.tsx");
  assert.ok(!security.includes('fontFamily:undefined}]}>Cuenta y seguridad</Text>'));
- assert.ok(security.includes("Tus datos, tu acceso y tu seguridad en un solo lugar."));
+ assert.ok(!security.includes("Tus datos, tu acceso y tu seguridad en un solo lugar."),"Approved minimalist settings must omit redundant introductory copy");
+ assert.ok(security.includes("Información de tu cuenta"));
+ assert.ok(security.includes("Acceso y protección"));
+ assert.ok(security.includes("Administrar cuenta"));
  const requests=src("src/app/message-requests.tsx");
  assert.ok(requests.includes('<Stack.Screen options={{title:"Solicitudes de mensajes"}}/>'));
  assert.ok(!requests.includes('fontSize:20,fontWeight:"800",color:t.ink}}>Solicitudes de mensajes'));
@@ -19,7 +22,7 @@ test("Settings list and side menu reuse one proportional row and section typogra
  const row=src("src/components/SettingsMenuRow.tsx");
  const side=src("src/components/HomeSideMenu.tsx");
  const settings=src("src/app/settings/cuenta.tsx");
- assert.ok(row.includes("minHeight:JOBEEN_CONTROL.settingsRowMinHeight"));
+ assert.ok(row.includes("minHeight:JOBEEN_CONTROL.touchTarget"));
  assert.ok(row.includes("fontSize:JOBEEN_TYPE.body"));
  assert.ok(side.includes("minHeight:JOBEEN_CONTROL.touchTarget"),"Settings search should use the 48dp shared touch target");
  assert.ok(settings.includes("fontSize:JOBEEN_TYPE.sectionTitle"));

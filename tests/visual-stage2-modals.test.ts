@@ -60,7 +60,7 @@ test("Destructive public profile action uses the shared premium menu row with re
  assert.ok(s.includes('icon="ban-outline" onPress={block}'));
  assert.ok(s.includes("Denunciar perfil"));
  assert.ok(row.includes('const danger=jobeenModalTokens(theme,"danger")'));
- assert.ok(row.includes('minHeight:JOBEEN_CONTROL.settingsRowMinHeight'));
+ assert.ok(row.includes('minHeight:JOBEEN_CONTROL.touchTarget'));
  assert.ok(row.includes('variant==="navigation"&&<Ionicons name="chevron-forward"'),"Contextual actions omit navigation chevrons");
 });
 test("Composer keeps draft and media preview behavior while using compact action heights",()=>{
