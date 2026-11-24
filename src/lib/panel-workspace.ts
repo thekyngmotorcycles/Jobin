@@ -27,7 +27,7 @@ export function panelSections(access:NonNullable<ReturnType<typeof panelAccess>>
    entry("statistics","Estadísticas","stats-chart-outline",true)
   ]},
   {title:"JAcademy",items:[entry("courses","Mis cursos","school-outline")]},
-  {title:"Monetización",items:[entry("income","Ingresos","wallet-outline"),entry("gifts","Regalos","gift-outline"),entry("agreements","Acuerdos comerciales","handshake-outline"),entry("withdrawals","Retiros","arrow-down-outline")]}
+  {title:"Monetización",items:[entry("income","Ingresos","wallet-outline"),entry("gifts","Regalos","gift-outline"),entry("agreements","Acuerdos comerciales","document-outline"),entry("withdrawals","Retiros","arrow-down-outline")]}
  ];
 }
 export function allowedPanelModule(data:PanelIdentity|null,scope:PanelScope|null,id:unknown):PanelEntry|null{
@@ -46,3 +46,13 @@ export const panelPreview:Partial<Record<PanelModuleId,readonly string[]>>={
  agreements:["Acuerdos de colaboración","Participación en ingresos"],
  withdrawals:["Métodos de retiro","Historial de retiros"]
 };
+
+/** Counts used for administration must be present and nonnegative; never infer zero from absence. */
+export function assertPanelEngagement(ids:readonly string[],counts:readonly {post_id:string;likes:number|string;comments:number|string;shares:number|string}[]){
+ const byId=new Map(counts.map(row=>[row.post_id,row]));
+ const valid=(value:unknown)=>((typeof value==="number")||(typeof value==="string"&&value.trim()!==""))&&Number.isSafeInteger(Number(value))&&Number(value)>=0;
+ for(const id of ids){
+  const row=byId.get(id);
+  if(!row||![row.likes,row.comments,row.shares].every(valid))throw Error("Estadísticas aún no disponibles para todas las publicaciones.");
+ }
+}

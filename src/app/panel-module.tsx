@@ -9,16 +9,18 @@ import {captureMessageScope,assertMessageScope} from "../lib/message-session";
 import {loadAllProfilePosts,deleteHomePost,type FeedPost} from "../lib/social-content";
 import {useProfessionalData,useScopedProfessionalAction} from "../state/useProfessionalData";
 
-async function loadOwnedPosts(){
+async function loadOwnedPosts(requireEngagement=false){
  const scope=await captureMessageScope();
- const posts=await loadAllProfilePosts(scope.owner,scope.owner,scope);
+ const posts=await loadAllProfilePosts(scope.owner,scope.owner,scope,requireEngagement);
  await assertMessageScope(scope);
  if(posts.some(post=>post.authorId!==scope.owner))throw Error("No se pudo verificar la titularidad de las publicaciones.");
  return posts;
 }
+const loadOwnedStatistics=()=>loadOwnedPosts(true);
+const loadOwnedContent=()=>loadOwnedPosts();
 function ContentManager({statistics,owner,session}:{statistics:boolean;owner:string;session:string}){
  const {s}=useUi();
- const resource=useProfessionalData(loadOwnedPosts,false,true);
+ const resource=useProfessionalData(statistics?loadOwnedStatistics:loadOwnedContent,false,true);
  const action=useScopedProfessionalAction(resource.reload,resource.scope);
  if(resource.loading&&!resource.data)return <PageState kind="loading"/>;
  if(resource.error)return <PageState kind="error" message={resource.error} actionLabel="Reintentar" onAction={resource.reload}/>;
@@ -42,7 +44,7 @@ function ContentManager({statistics,owner,session}:{statistics:boolean;owner:str
    <Text accessibilityRole="header" style={s.h3}>Publicaciones</Text>
    {!posts.length?<PageState kind="empty" message="Todavía no tienes publicaciones."/>:posts.map(post=><View key={post.id} style={{gap:8,paddingVertical:8}}>
     <Text style={s.text} numberOfLines={3}>{post.body.trim()||({text:"Publicación",photos:"Fotos",video:"Video",live:"Live"}[post.kind])}</Text>
-    <Text style={s.muted}>{new Date(post.createdAt).toLocaleDateString()} · {post.likes} Me gusta · {post.comments} comentarios</Text>
+    <Text style={s.muted}>{new Date(post.createdAt).toLocaleDateString()}</Text>
     <View style={s.row}>
      <Button secondary title="Ver" onPress={()=>router.push({pathname:"/post/[id]",params:{id:post.id}})}/>
      <Button variant="danger" title="Eliminar" disabled={action.busy} onPress={()=>confirmDelete(post)}/>

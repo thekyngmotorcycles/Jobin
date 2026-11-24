@@ -30,7 +30,7 @@ export default function Panel(){
   {panelSections(access).map(section=><View style={s.panel} key={section.title}>
    <Text accessibilityRole="header" style={s.h3}>{section.title}</Text>
    {section.items.map(item=><SettingsMenuRow key={item.id} title={item.title}
-    icon={(item.icon==="handshake-outline"?"document-outline":item.icon) as keyof typeof Ionicons.glyphMap}
+    icon={item.icon as keyof typeof Ionicons.glyphMap}
     value={item.ready?undefined:"En preparación"} onPress={()=>open(item.id)}/>)}
   </View>)}
  </PageFrame>;
