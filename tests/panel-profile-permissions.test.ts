@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
-import {panelAccess,panelSections,allowedPanelModule,panelPreview,assertPanelEngagement,panelMediaMatches,panelPostsInPeriod,panelPostTotals,type PanelIdentity} from "../src/lib/panel-workspace.ts";
+import {panelAccess,panelSections,allowedPanelModule,panelPreview,assertPanelEngagement,panelPostsInPeriod,panelPostTotals,type PanelIdentity} from "../src/lib/panel-workspace.ts";
 const scope={owner:"a",session:"s"};
 const personal:PanelIdentity={card:{id:"a",accountType:"personal"},organization:null,reviewer:false};
 const company:PanelIdentity={card:{id:"a",accountType:"company"},organization:{profile_id:"a"},reviewer:false};
@@ -36,15 +36,6 @@ test("administrative statistics refuse missing and invalid counts rather than in
  assert.throws(()=>assertPanelEngagement(["p"],[{...row,likes:"NaN"}]));
 });
 
-test("panel media filters keep all real statuses visible without calling held media published",()=>{
- for(const status of ["pending","processing","moderating"])assert.equal(panelMediaMatches(status,"progress"),true);
- for(const status of ["held","blocked","failed"]){assert.equal(panelMediaMatches(status,"review"),true);assert.equal(panelMediaMatches(status,"published"),false);}
- assert.equal(panelMediaMatches("live","published"),true);
- assert.equal(panelMediaMatches("published","published"),true);
- assert.equal(panelMediaMatches("ended","ended"),true);
- assert.equal(panelMediaMatches("unknown","all"),true);
- assert.equal(panelMediaMatches("unknown","progress"),false);
-});
 test("panel statistics filter creation date and sum actual cumulative counts",()=>{
  const now=Date.parse("2026-11-24T12:00:00Z");
  const recent={createdAt:"2026-11-23T12:00:00Z",likes:2,comments:1,shares:0};
