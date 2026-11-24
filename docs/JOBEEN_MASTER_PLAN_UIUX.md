@@ -292,7 +292,7 @@ Medir coste, ingresos y uso para decidir migración progresiva a servidores alqu
 6. Pruebas de contraste completo (incluido video dinámico), accesibilidad, temas y dispositivos; verificar dependencias nativas y costes antes de comprometerlos.
 
 ## 12. Próxima acción
-Etapa 1, PANEL-03: PANEL-01/02 integrados y publicados en OTA Android; revisión física restante. Completar administrador de contenido y estadísticas reales, preservar borradores existentes y preparar Highlights sin IA ni replay completo; validar CI, integración y OTA por separado. Después STREAM-UI. Conservar base técnica LiveKit de #109 ya integrada sin activar proveedor. No avanzar a SDK, servicios externos ni APK; mantener comprobación de viabilidad. Revisión física restante de 01/02 se acumula en siguiente entrega compatible aprobada.
+Etapa 1, STREAM-UI: PANEL-01/02/03 integrados y publicados en OTA Android; revisión física restante. Continuar preparación Live existente STREAM-01A sin rediseñar: vista previa local con cámara existente, permisos intencionales, micrófono sin captura, Highlights opt-in en preparación. Catálogo/espectador y estudio pendientes; sin activar proveedores ni simular Live. Validar CI, integración y OTA por separado. Conservar base técnica LiveKit de #109 ya integrada sin activar proveedor. No avanzar a SDK, servicios externos ni APK; mantener comprobación de viabilidad. Revisión física restante de 01/02 se acumula en siguiente entrega compatible aprobada.
 
 ## 13. Sistema universal de proporciones, tipografía y diseño adaptable
 
