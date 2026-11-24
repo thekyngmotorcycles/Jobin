@@ -157,9 +157,16 @@ test("Only Home feed retracts navigation; all other pages keep bottom bar static
  assert.ok(home.includes("useScrollNavigation"));
  assert.ok(home.includes("if(focused)reportScroll(e.nativeEvent.contentOffset.y)"));
  assert.ok(tabLayout.includes('const homeFeed=pathname==="/"||pathname==="/index"||pathname==="/(tabs)/index"'));
- assert.ok(tabLayout.includes('pointerEvents={homeFeed&&hidden?"none":"auto"}'));
- assert.ok(tabLayout.includes('opacity:homeFeed?progress.interpolate('));
- assert.ok(tabLayout.includes('translateY:homeFeed?progress.interpolate('));
+ assert.ok(tabLayout.includes('homeFeed?<Animated.View key="home-navigation" pointerEvents={hidden?"none":"auto"}'));
+ assert.ok(tabLayout.includes('opacity:progress.interpolate('));
+ assert.ok(tabLayout.includes('translateY:progress.interpolate('));
+ const fixed=tabLayout.slice(tabLayout.indexOf('<View key="fixed-navigation"'),tabLayout.indexOf('screenOptions={{'));
+ assert.ok(fixed.includes('pointerEvents="auto"'));
+ assert.ok(fixed.includes('zIndex:50'));
+ assert.ok(fixed.includes('height:NAVIGATION_ROW_HEIGHT+inset.bottom'));
+ assert.ok(fixed.includes('<BottomTabBar {...props}/>'));
+ assert.ok(!/opacity:|transform:|progress\.interpolate|flashOffset/.test(fixed),"Fixed routes must not inherit native animations from the previous tab");
+ assert.ok(tabLayout.includes('key="flash-navigation"'),"Immersive and fixed bars must not share a native animated host");
  assert.ok(global.includes('<View pointerEvents="auto"'));
  assert.ok(!global.includes("useScrollNavigation"));
  for(const path of ["src/app/jshop.tsx","src/app/(tabs)/inbox.tsx","src/app/(tabs)/videos.tsx","src/app/search.tsx","src/app/(tabs)/profile.tsx","src/app/jcard.tsx"]){

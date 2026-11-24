@@ -20,6 +20,7 @@ import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../.
 import {SavedJCardsGallery} from "../../components/SavedJCardsGallery";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfileOwnedPosts} from "../../components/ProfileOwnedPosts";
+import {SettingsDrawerHeader} from "../../components/SettingsDrawerHeader";
 import {SettingsMenuRow} from "../../components/SettingsMenuRow";
 import {NotificationBell} from "../../components/NotificationBell";
 import { ProfessionalTrustMark } from "../../components/ProfessionalTrustMark";
@@ -353,13 +354,7 @@ export default function Profile() {
           <View style={{width:Math.min(screenWidth*0.88,410)}}><SafeAreaView edges={["top","bottom"]}
            style={{flex:1,backgroundColor:modal.surface,borderTopLeftRadius:modal.radius.dialog,borderBottomLeftRadius:modal.radius.dialog,overflow:"hidden"}}>
             <ScrollView contentContainerStyle={{paddingHorizontal:JOBEEN_CONTROL.modalHorizontalPadding,paddingTop:16,paddingBottom:30,gap:2}}>
-              <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingBottom:8,gap:8}}>
-                <Text accessibilityRole="header" style={{flex:1,color:modal.text,fontWeight:"700",fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle}}>Mi perfil</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={closeProfileMenu}
-                 style={{width:48,height:48,alignItems:"center",justifyContent:"center"}}>
-                 <Ionicons name="close" size={24} color={modal.text}/>
-                </Pressable>
-              </View>
+              <SettingsDrawerHeader title="Mi perfil" onClose={closeProfileMenu}/>
               <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,color:modal.muted,fontWeight:"700",marginTop:8}}>Mi actividad</Text>
               {!!ownerId&&<SettingsMenuRow title="Mis contactos" icon="people-outline" variant="action" onPress={()=>{setContactsRequested(ownerId);closeProfileMenu();}}/>}
               <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,color:modal.muted,fontWeight:"700",marginTop:12}}>Desarrollo profesional</Text>
