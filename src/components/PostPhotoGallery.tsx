@@ -12,6 +12,7 @@ import {useUi} from "./ui";
 type Props={photos:string[];altTexts?:string[];author:string;active?:boolean;viewer?:string;allowOpen?:boolean};
 
 function ZoomPhoto({uri,label,onStep}:{uri:string;label:string;onStep:(direction:number)=>void}){
+ const {colors}=useUi();
  const [bounds,setBounds]=useState({width:1,height:1});
  const scale=useSharedValue(1),origin=useSharedValue(1),x=useSharedValue(0),y=useSharedValue(0),startX=useSharedValue(0),startY=useSharedValue(0);
  const clamp=(value:number,min:number,max:number)=>{"worklet";return Math.max(min,Math.min(max,value));};
@@ -28,7 +29,7 @@ function ZoomPhoto({uri,label,onStep}:{uri:string;label:string;onStep:(direction
  return <View onLayout={e=>setBounds(e.nativeEvent.layout)} style={{flex:1,overflow:"hidden",justifyContent:"center"}}>
   <GestureDetector gesture={Gesture.Simultaneous(pinch,pan,doubleTap)}>
    <Animated.View collapsable={false} style={[{width:"100%",height:"100%"},style]}>
-    {uri?<Image source={{uri}} accessibilityLabel={label} resizeMode="contain" style={{width:"100%",height:"100%"}}/>:<Text style={{color:"white",textAlign:"center"}}>Fotografía no disponible</Text>}
+    {uri?<Image source={{uri}} accessibilityLabel={label} resizeMode="contain" style={{width:"100%",height:"100%"}}/>:<Text style={{color:colors.mediaText,textAlign:"center"}}>Fotografía no disponible</Text>}
    </Animated.View>
   </GestureDetector>
  </View>;
@@ -65,22 +66,22 @@ export function PostPhotoGallery({photos,altTexts=[],author,active=true,viewer,a
      accessibilityLabel={label(tile.index)+(extra?", "+extra+" fotografías adicionales":"")} onPress={()=>void open(tile.index)}
      style={{position:"absolute",left:tile.x,top:tile.y,width:tile.width,height:tile.height,overflow:"hidden",borderRadius:8,backgroundColor:colors.accent}}>
      {photos[tile.index]?<Image source={{uri:photos[tile.index]}} resizeMode="cover" resizeMethod="resize" style={{width:"100%",height:"100%"}} accessibilityIgnoresInvertColors/>:<View style={{flex:1,justifyContent:"center",alignItems:"center"}}><Ionicons name="image-outline" size={28} color={colors.muted}/></View>}
-     {extra>0&&<View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:"rgba(0,0,0,0.5)",justifyContent:"center",alignItems:"center"}}><Text style={{color:"white",fontSize:28,fontWeight:"700"}}>+{extra}</Text></View>}
+     {extra>0&&<View pointerEvents="none" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:colors.mediaSoftSurface,justifyContent:"center",alignItems:"center"}}><Text style={{color:colors.mediaText,fontSize:28,fontWeight:"700"}}>+{extra}</Text></View>}
     </Pressable>;
    })}
   </View>
   {allowOpen&&active&&selected!==null&&selected<photos.length&&<Modal visible animationType="fade" presentationStyle="fullScreen" onRequestClose={close} statusBarTranslucent={false}>
-   <GestureHandlerRootView style={{flex:1,backgroundColor:"#0B1422",paddingTop:safe.top,paddingBottom:Math.max(safe.bottom,12)}}>
+   <GestureHandlerRootView style={{flex:1,backgroundColor:colors.mediaDisc,paddingTop:safe.top,paddingBottom:Math.max(safe.bottom,12)}}>
     <View style={{flexDirection:"row",alignItems:"center",paddingHorizontal:12}}>
-     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar fotografías" onPress={close} style={{width:48,height:48,alignItems:"center",justifyContent:"center"}}><Ionicons name="close" color="#F4F6FA" size={26}/></Pressable>
-     <Text style={{flex:1,textAlign:"center",color:"#F4F6FA",fontWeight:"600"}}>{selected+1} / {photos.length}</Text>
+     <Pressable accessibilityRole="button" accessibilityLabel="Cerrar fotografías" onPress={close} style={{width:48,height:48,alignItems:"center",justifyContent:"center"}}><Ionicons name="close" color={colors.mediaText} size={26}/></Pressable>
+     <Text style={{flex:1,textAlign:"center",color:colors.mediaText,fontWeight:"600"}}>{selected+1} / {photos.length}</Text>
      <View style={{width:48}}/>
     </View>
     <ZoomPhoto key={selected} uri={photos[selected]} label={label(selected)} onStep={step}/>
     <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:16}}>
-     <Pressable accessibilityRole="button" accessibilityLabel="Fotografía anterior" disabled={selected===0} onPress={()=>step(-1)} style={{width:48,height:48,alignItems:"center",justifyContent:"center",opacity:selected===0?.35:1}}><Ionicons name="chevron-back" size={24} color="#F4F6FA"/></Pressable>
-     <Text style={{flex:1,textAlign:"center",color:"#ADB9C8",fontSize:12}}>Desliza · Pellizca para ampliar</Text>
-     <Pressable accessibilityRole="button" accessibilityLabel="Fotografía siguiente" disabled={selected===photos.length-1} onPress={()=>step(1)} style={{width:48,height:48,alignItems:"center",justifyContent:"center",opacity:selected===photos.length-1?.35:1}}><Ionicons name="chevron-forward" size={24} color="#F4F6FA"/></Pressable>
+     <Pressable accessibilityRole="button" accessibilityLabel="Fotografía anterior" disabled={selected===0} onPress={()=>step(-1)} style={{width:48,height:48,alignItems:"center",justifyContent:"center",opacity:selected===0?.35:1}}><Ionicons name="chevron-back" size={24} color={colors.mediaText}/></Pressable>
+     <Text style={{flex:1,textAlign:"center",color:colors.mediaQuiet,fontSize:12}}>Desliza · Pellizca para ampliar</Text>
+     <Pressable accessibilityRole="button" accessibilityLabel="Fotografía siguiente" disabled={selected===photos.length-1} onPress={()=>step(1)} style={{width:48,height:48,alignItems:"center",justifyContent:"center",opacity:selected===photos.length-1?.35:1}}><Ionicons name="chevron-forward" size={24} color={colors.mediaText}/></Pressable>
     </View>
    </GestureHandlerRootView>
   </Modal>}

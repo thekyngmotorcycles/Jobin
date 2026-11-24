@@ -12,7 +12,7 @@ insert into public.profile_follows(follower_id, followed_id) values
  ('b2222222-2222-4222-8222-222222222222', 'a1111111-1111-4111-8111-111111111111');
 
 -- The new count constraint is checked before relaxing legacy ownership checks.
-do $
+do $photo_count$
 declare owner_id uuid := 'a1111111-1111-4111-8111-111111111111';
  ten text[]; eleven text[];
 begin
@@ -33,7 +33,7 @@ begin
  exception when check_violation then null;
  end;
  delete from public.jobeen_feed_posts where author_id=owner_id and body='Ten photo regression';
-end $;
+end $photo_count$;
 
 -- Model legacy rows with unverified references. The surrounding rollback
 -- restores the constraints and fixtures, including the deliberately bad rows.

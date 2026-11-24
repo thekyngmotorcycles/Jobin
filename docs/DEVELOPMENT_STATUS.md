@@ -1,6 +1,7 @@
 # Jobeen — registro central de desarrollo
 
 ## FEED-01 — Casa conversacional, fotos híbridas (opción 3 aprobada)
+CI 45318708068: 432 pruebas aprobadas, 2 fallos (lista de menciones antiguas y colores literales del visor), y prueba SQL interrumpida por delimitador de bloque incorrecto. Corrección dirigida: lista accesible dentro de descripción expandida, tokens multimedia existentes y delimitador etiquetado en prueba SQL. No modificar políticas, límites ni el diseño aprobado. Nueva CI pendiente.
 Consolidar con PR #98 sin APK intermedia: descripción arriba (3 líneas y expansión en sitio, menciones/enlaces), mosaico de 1–4 fotos con márgenes y radios, +N y visor completo sin recorte con zoom y navegación, vista previa del mismo mosaico, barra inferior opaca detrás de iconos conservando degradado y acordeón, hasta diez fotos solo en publicaciones, progreso de carga y mensajes en MB. Conservar cinco pestañas, seguridad de medios y audiencias; no confundir Cancelar desplazado detrás de la barra con error de posición. Migración aditiva del límite 1–10 preparada en código, no ejecutar en Supabase alojado sin aprobación; conservar las demás restricciones. Respuestas anidadas se posponen. CI y validación real de fotos, pantalla pequeña, temas, proporciones, zoom y aislamiento pendientes. No compilar hasta cerrar el bloque y obtener aprobación explícita. Sin dependencias nuevas ni cambios Meta.
 
 ## SEC-07 — Segundo fallo físico del selector: fotografía original > 2 MiB

@@ -50,10 +50,18 @@ export function PostCaption({text,mentions=[],interactive=true}:{text:string;men
    <Text style={s.text} onTextLayout={event=>setOverflow(event.nativeEvent.lines.length>3)}>{tagged}</Text>
   </View>
   <Text style={s.text} numberOfLines={expanded?undefined:3} ellipsizeMode="tail" selectable={expanded}>{tagged}</Text>
-  {(overflow||expanded)&&<Pressable accessibilityRole="button" accessibilityLabel={expanded?"Ver menos descripción":"Ver descripción completa"}
+  {(overflow||expanded||mentions.length>0)&&<Pressable accessibilityRole="button" accessibilityLabel={expanded?"Ver menos descripción":"Ver descripción completa"}
    accessibilityState={{expanded}} onPress={()=>setExpanded(value=>!value)}
    style={{alignSelf:"flex-start",minHeight:48,justifyContent:"center"}}>
    <Text style={[s.muted,{fontWeight:"600"}]}>{expanded?"Ver menos":"Ver más"}</Text>
   </Pressable>}
+  {expanded&&mentions.length>0&&<View style={{gap:4,paddingBottom:6}}>
+   <Text style={[s.muted,{fontWeight:"600"}]}>Profesionales y empresas etiquetados</Text>
+   {mentions.map((mention,i)=><Pressable key={mention.card+":"+mention.id+":"+i} disabled={!interactive}
+    accessibilityRole="link" accessibilityLabel={"Ver "+(mention.card==="business"?"JCard de negocio de ":"perfil de ")+mention.label}
+    onPress={()=>openMention(mention)} style={{minHeight:48,justifyContent:"center"}}>
+    <Text style={[s.text,{textDecorationLine:"underline",color:colors.ink}]}>{mention.label}</Text>
+   </Pressable>)}
+  </View>}
  </View>;
 }

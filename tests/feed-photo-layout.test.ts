@@ -34,3 +34,14 @@ test("Photo limit and per-photo progress agree in client, picker and schema",()=
  assert.ok(migration.includes("cardinality(photo_paths) between 1 and 10"));
  assert.ok(!/drop policy|disable row level security|drop constraint jobeen_feed_paths/i.test(migration));
 });
+
+test("Photo viewer uses centralized media palette and legacy mentions remain reachable inline",()=>{
+ const gallery=read("src/components/PostPhotoGallery.tsx"),caption=read("src/components/PostCaption.tsx");
+ assert.ok(gallery.includes("backgroundColor:colors.mediaDisc"));
+ assert.ok(gallery.includes("backgroundColor:colors.mediaSoftSurface"));
+ assert.ok(gallery.includes("color:colors.mediaText"));
+ assert.ok(caption.includes("overflow||expanded||mentions.length>0"));
+ assert.ok(caption.includes("expanded&&mentions.length>0"));
+ assert.ok(caption.includes("Profesionales y empresas etiquetados"));
+ assert.ok(!caption.includes("<BottomSheet"));
+});
