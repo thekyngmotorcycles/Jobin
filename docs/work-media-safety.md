@@ -55,3 +55,6 @@ The legal draft is docs/terms-and-conditions-draft.es.md and /terms. It cites th
 SQL authorization and sanction tests run only in CI's disposable PostgreSQL service. tests/media-safety.test.sql uses clearly named synthetic fixtures to test the real backend; those results are not a production detector and are never inserted in the hosted project. Node tests cover signed-webhook tampering/expiry, incomplete outputs, provider failures, duration checks and the legal catalogue.
 
 Deployment: migration 20261031070000 applied to nwiimdmtddjquwxtjxmw. All new provider readiness flags remain false until the real services and worker are configured. No production detection fixtures or sanction incidents were inserted. Public SDK types were regenerated from the deployed schema; raw identity hashes and secrets are not exposed by the client schema.
+
+## Decisión LiveKit (2026-11-24)
+El propietario aprobó LiveKit como transporte. Consultar `docs/LIVEKIT_INTEGRATION.md` para la integración incremental y sus límites; no sustituye los contratos, condiciones de supervisión ni pruebas de corte de este documento. La integración real todavía no está conectada.
