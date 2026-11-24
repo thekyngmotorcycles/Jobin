@@ -1,12 +1,12 @@
 import {menuChrome} from "../theme/menu-chrome";
-import {JOBEEN_CONTROL,royalHiveLayout} from "../theme/control-metrics";
+import {JOBEEN_CONTROL,royalHiveLayout,jobeenPageLayout,type JobeenPageKind} from "../theme/control-metrics";
 import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT,jobeenTypeWidthScale} from "../theme/typography";
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
 import { JobinWordmark } from "./JobinWordmark";
 import { useCallback, useMemo, type ReactNode, type RefObject } from "react";
 import { useTheme } from "../state/ThemeProvider";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle } from "react-native";
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useApp } from "../state/AppProvider";
 
@@ -108,4 +108,31 @@ export function Notice({ text, onClose }: { text: string; onClose: () => void })
   const {s,colors} = useUi();const {theme}=useTheme();const colorsNotice=menuChrome(theme,colors);
   return <View style={s.notice} accessibilityLiveRegion="polite"><Text style={[s.text,{color:colorsNotice.text}]}>{text}</Text>
     <Button title="Cerrar aviso" secondary onPress={onClose} /></View>;
+}
+
+export function usePageLayout(kind:JobeenPageKind){
+ const {width}=useWindowDimensions();
+ return jobeenPageLayout(width,kind);
+}
+/** Standard stack page: the stack owns the title, back action and top inset. */
+export function PageFrame({kind="settings",children,backgroundColor,scrollRef,bottomPadding}:{
+ kind?:JobeenPageKind;children:ReactNode;backgroundColor?:string;scrollRef?:RefObject<ScrollView|null>;bottomPadding?:number;
+}){
+ const {s}=useUi();const layout=usePageLayout(kind);
+ return <SafeAreaView edges={["bottom","left","right"]} style={[s.screen,backgroundColor?{backgroundColor}:undefined]}>
+  <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" contentContainerStyle={[layout,bottomPadding!==undefined&&{paddingBottom:bottomPadding}]}>
+   {children}
+  </ScrollView>
+ </SafeAreaView>;
+}
+export function PageState({kind,title,message,actionLabel,onAction}:{
+ kind:"loading"|"empty"|"error"|"info";title?:string;message?:string;actionLabel?:string;onAction?:()=>void;
+}){
+ const {s,colors}=useUi();
+ return <View accessibilityLiveRegion="polite" style={{paddingVertical:16,gap:12,alignItems:"stretch"}}>
+  {kind==="loading"&&<ActivityIndicator accessibilityLabel="Cargando" color={colors.ink}/>}
+  {!!title&&<Text accessibilityRole="header" style={[s.h3,{textAlign:"center"}]}>{title}</Text>}
+  {!!message&&<Text accessibilityRole={kind==="error"?"alert":undefined} style={[s.text,{textAlign:"center"}]}>{message}</Text>}
+  {!!actionLabel&&!!onAction&&kind!=="loading"&&<Button title={actionLabel} secondary onPress={onAction}/>}
+ </View>;
 }

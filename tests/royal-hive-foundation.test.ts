@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {ROYAL_HIVE_PALETTE,ROYAL_HIVE_BRAND,ROYAL_HIVE_STATES,THEMES,themeTokens} from "../src/theme/palettes.ts";
 import {ROYAL_HIVE_TYPE,ROYAL_HIVE_LINE_HEIGHT,JOBEEN_TYPE,JOBEEN_LINE_HEIGHT,jobeenTypeWidthScale} from "../src/theme/typography.ts";
-import {ROYAL_HIVE_CONTROL,royalHiveLayout,JOBEEN_CONTROL} from "../src/theme/control-metrics.ts";
+import {ROYAL_HIVE_CONTROL,royalHiveLayout,JOBEEN_CONTROL,jobeenPageLayout} from "../src/theme/control-metrics.ts";
 import {readFileSync} from "node:fs";
 import {contrastRatio} from "../src/theme/color.ts";
 test("Royal Hive contrast meets AA on declared opaque surfaces and states",()=>{
@@ -67,4 +67,16 @@ test("Only two Royal Hive palettes and one shared active type/control system",()
  assert.equal(JOBEEN_TYPE,ROYAL_HIVE_TYPE);
  assert.equal(JOBEEN_LINE_HEIGHT,ROYAL_HIVE_LINE_HEIGHT);
  assert.equal(JOBEEN_CONTROL,ROYAL_HIVE_CONTROL);
+});
+
+test("Universal page layouts preserve responsive margins and readable content widths",()=>{
+ for(const w of [280,320,359,360,399,400,430,768,1024,1440])for(const kind of ["settings","form","list","management"] as const){
+  const page=jobeenPageLayout(w,kind);
+  assert.equal(page.padding,royalHiveLayout(w).margin);
+  assert.equal(page.maxWidth,kind==="settings"||kind==="form"?720:980);
+  assert.equal(page.width,"100%");
+  assert.equal(page.alignSelf,"center");
+  assert.equal(page.gap,16);
+  assert.ok(page.paddingBottom>=page.padding);
+ }
 });

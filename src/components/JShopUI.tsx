@@ -1,10 +1,10 @@
 import {Ionicons} from "@expo/vector-icons";
 import type {ComponentProps,ReactNode} from "react";
 import {Image,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
-import {SafeAreaView} from "react-native-safe-area-context";
+import {PageFrame} from "./ui";
 import {useTheme} from "../state/ThemeProvider";
 import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
-import {JOBEEN_CONTROL,royalHiveLayout} from "../theme/control-metrics";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {jobeenTokens} from "../theme/jobeen";
 import {JSHOP_CATEGORIES,formatJShopPrice,type JShopDraft,type JShopListing} from "../lib/jshop-model";
 
@@ -30,12 +30,7 @@ export function JShopIconButton({icon,label,onPress,selected=false,disabled=fals
  </Pressable>;
 }
 export function JShopPage({children}:{children:ReactNode}){
- const {theme}=useTheme();const t=jobeenTokens(theme);const {width}=useWindowDimensions();const layout=royalHiveLayout(width);
- return <SafeAreaView edges={["bottom","left","right"]} style={{flex:1,backgroundColor:t.bg}}>
-  <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{padding:layout.margin,paddingBottom:42,maxWidth:980,width:"100%",alignSelf:"center",gap:18}}>
-   {children}
-  </ScrollView>
- </SafeAreaView>;
+ return <PageFrame kind="management" bottomPadding={42}>{children}</PageFrame>;
 }
 export function JShopTitle({title,subtitle,right}:{
  title:string;subtitle?:string;right?:ReactNode;
