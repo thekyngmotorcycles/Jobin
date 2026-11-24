@@ -1,5 +1,8 @@
 # Jobeen — registro central de desarrollo
 
+## Política de Moderación v2.0 (2026-11-24)
+Propietario aprobó moderación contextual y sustitución del máximo sin supervisión de 15 por 60 s. Política permanente en docs/JOBEEN_MODERATION_POLICY_V2.md y AGENTS.md. PR #109 incorpora contrato/worker/gateway candidato, migración aditiva no aplicada y pruebas de vencimiento absoluto. No activar OpenAI/Gemini: falta adjudicación contextual, controles de protección infantil, revisión humana, textos de consentimiento, términos y pruebas de recuperación/corte reales. Las reglas categóricas antiguas continúan en el runtime hasta adaptar y autorizar despliegue. No se crea cuenta, coste, APK ni OTA.
+
 ## STREAM-01B — LiveKit aprobado (2026-11-24)
 PR #108 integrado por aprobación del propietario en 4867fe9f (CI candidato 45413257538 success). UI-01E y STREAM-01A integrados; pendientes de revisión física en siguiente entrega. Adoptar LiveKit Cloud Build gratuito, migrable a autoalojamiento; sin contratación ni nuevo servicio activo. Candidato de arquitectura y política pura de permisos/lease en docs/LIVEKIT_INTEGRATION.md, server/moderation/livekit-access.ts y tests/livekit-access.test.ts. El JWT no interrumpe conexiones activas al vencer; la salida necesita corte efectivo e independiente del worker, mantener lease máximo 15 s y moderación real. Código de política NO es gateway ni emisor de tokens. Siguiente: resolver versiones SDK nativo con lockfile, probar integración privada y transporte protegido; no SDK especulativo ni afirmar proveedor listo. Conector LiveKit no disponible en la sesión; no se provisionó cuenta/proyecto. CI pendiente; sin merge, OTA, APK ni cambios hospedados sin autorización.
 

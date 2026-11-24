@@ -190,3 +190,6 @@ Este archivo es la fuente de referencia para asistentes y desarrolladores que co
 2. No asumir que la última modificación se publicó; comprobar Actions/Expo.
 3. Consultar `docs/CHAT_HANDOFF.md` para contexto funcional, tareas pendientes y prompt de continuidad.
 4. Recuperar la tarea activa desde el traspaso, ramas, PR y verificaciones; continuar sin pedir contexto repetido cuando sea inequívoco. Consultar `DESIGN_RULES.md` antes de tareas UI/UX. Preguntar solo si falta una decisión imprescindible o autorización; nunca fusionar `main` por iniciativa propia.
+
+## Política de Moderación Jobeen v2.0 (aprobada 2026-11-24)
+Aplicar `docs/JOBEEN_MODERATION_POLICY_V2.md` como fuente obligatoria de decisiones y requisitos de la futura IA. Moderación contextual y proporcional; no sancionar una imagen/objeto/palabra aislada, proteger privacidad/menores, separar suspensión preventiva de sanción definitiva humana y permitir apelaciones. Máximo de supervisión de Live aprobado: 60 s desde observación válida, corte inmediato por riesgo grave o revocación; nunca tratar un error como aprobación. No activar proveedor hasta adaptar adjudicación, términos y pruebas al nuevo contrato. No cambia permisos ni autoriza despliegue o gastos.

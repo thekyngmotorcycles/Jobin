@@ -11,12 +11,12 @@ LiveKit privado para ingestión, identidad y permisos emitidos exclusivamente po
 
 Salida privada de LiveKit/Egress a un punto de entrega compatible con el contrato HTTPS y el reproductor existente, donde se autorice cada solicitud y se interrumpa la entrega en curso al vencer el lease. Revisar latencia y costo antes de seleccionar implementación definitiva. Separar fuente privada de moderación y salida para audiencia; ni manifest ni segmentos ni origen de almacenamiento podrán eludir el corte. No persistir ni distribuir grabaciones sin autorización. Contenido ya recibido/buffered no puede revocarse retroactivamente; medir latencia y contenido residual del cliente.
 
-LiveKit no desconecta conexiones activas por expiración del JWT; Cloud puede revocar tokens al quitar participantes con matices de revocación; el autoalojado no ofrece esa revocación de tokens existente. Por eso ni TTL ni RemoveParticipant aislados constituyen la garantía de 15 s del contrato actual. No declarar failClosedLeases=true hasta probar la interrupción efectiva de salida, también ante fallo del worker/control plane y con conexiones abiertas. La política de fecha límite es una pieza de prueba, no un gateway activo.
+LiveKit no desconecta conexiones activas por expiración del JWT; Cloud puede revocar tokens al quitar participantes con matices de revocación; el autoalojado no ofrece esa revocación de tokens existente. Por eso ni TTL ni RemoveParticipant aislados constituyen la garantía de 60 s del contrato actual. No declarar failClosedLeases=true hasta probar la interrupción efectiva de salida, también ante fallo del worker/control plane y con conexiones abiertas. La política de fecha límite es una pieza de prueba, no un gateway activo.
 
 ## Aceptación incremental
 1. Validar compatibilidad SDK/plugins y build local sin publicar. Seleccionar versiones y lockfile; conservar identidad de Expo/Android, firma y native private-files. APK únicamente tras aprobación expresa y consolidación de cambios nativos.
 2. Probar sala privada A/B con permisos mínimos y tokens de servidor; revalidar sesión y autorización antes de cada emisión. Sin cámaras/micrófonos activados por defecto al entrar. Probar salida/segundo plano/red.
-3. Probar entrega privada y lease absoluto <=15 s con expiración, terminal, solicitud retrasada, acceso a origen/segmentos, caída de worker, cache y streams abiertos. Medir latencia de extremo a extremo. Ninguna exposición pública hasta pasar estas pruebas y moderación real de cinco categorías con evidencia y callbacks firmados.
+3. Probar entrega privada y lease absoluto <=60 s con expiración, terminal, solicitud retrasada, acceso a origen/segmentos, caída de worker, cache y streams abiertos. Medir latencia de extremo a extremo. Ninguna exposición pública hasta pasar estas pruebas y moderación real de cinco categorías con evidencia y callbacks firmados.
 4. Solo después habilitar integración hospedada previa autorización del propietario. Cloud Build no equivale a servicio de moderación ni presupuesto de egress; verificar cuotas y consumo antes de pruebas largas. Mantener visibilidad de costo, no contratar automáticamente.
 
 ## Referencias oficiales revisadas 2026-11-24
@@ -24,3 +24,6 @@ LiveKit no desconecta conexiones activas por expiración del JWT; Cloud puede re
 - https://docs.livekit.io/frontends/reference/tokens-grants/
 - https://docs.livekit.io/transport/self-hosting/
 - https://docs.livekit.io/transport/media/ingress-egress/egress/outputs/
+
+## Política contextual aprobada
+Aplicar docs/JOBEEN_MODERATION_POLICY_V2.md. Los 60 s son el máximo desde observación válida, no desde recepción/reintento; no retrasar cortes por riesgo grave o revocación. Pausa y recuperación privada pendientes de implementación/pruebas. No usar contrato de categorías legado para sancionar automáticamente casos contextuales.

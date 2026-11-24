@@ -1,3 +1,4 @@
+export const LIVE_MAX_UNSUPERVISED_SECONDS=60 as const;
 export const SAFETY_CATEGORIES = ["nudity","sexual_content","minors","blood","violence"] as const;
 export type SafetyCategory=typeof SAFETY_CATEGORIES[number];
 export interface Finding { category:SafetyCategory; confidence:number }
@@ -14,7 +15,7 @@ export interface ModerationProvider {
 export interface VideoProvider {
  health():Promise<{ready:boolean;failClosedLeases:boolean}>;
  prepareVideo(input:{sourceUrl:string;startMs:number;endMs:number;mediaId:string}):Promise<PreparedVideo>;
- prepareLive(input:{mediaId:string;visibility:string;staging:true;maximumUnsupervisedSeconds:15}):Promise<PreparedLive>;
+ prepareLive(input:{mediaId:string;visibility:string;staging:true;maximumUnsupervisedSeconds:typeof LIVE_MAX_UNSUPERVISED_SECONDS}):Promise<PreparedLive>;
  renewLiveLease(assetId:string,expiresAt:string):Promise<void>;
  stopLive(assetId:string):Promise<void>;
  reviewUrl(assetId:string,expiresIn:number):Promise<string>;

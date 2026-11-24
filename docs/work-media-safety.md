@@ -58,3 +58,6 @@ Deployment: migration 20261031070000 applied to nwiimdmtddjquwxtjxmw. All new pr
 
 ## Decisión LiveKit (2026-11-24)
 El propietario aprobó LiveKit como transporte. Consultar `docs/LIVEKIT_INTEGRATION.md` para la integración incremental y sus límites; no sustituye los contratos, condiciones de supervisión ni pruebas de corte de este documento. La integración real todavía no está conectada.
+
+## Actualización de política v2.0 (2026-11-24)
+La descripción anterior conserva el historial del sistema legado. El nuevo objetivo aprobado es docs/JOBEEN_MODERATION_POLICY_V2.md: moderación contextual, intervención proporcional, sanción definitiva revisada por humano y máximo de 60 segundos sin supervisión válida. La migración aditiva 20261124020000_jobeen_live_lease_sixty_seconds.sql actualiza únicamente el límite de lease candidato; NO aplica aún la adjudicación contextual ni la recuperación del estudio. Los proveedores permanecen deshabilitados hasta adaptar y probar el contrato completo, los textos de consentimiento y el corte real. No se modifica la migración histórica ya aplicada.

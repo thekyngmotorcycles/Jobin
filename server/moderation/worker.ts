@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
 import { SafetyBackend } from "./backend.ts";
 import { HttpModerationProvider,HttpVideoProvider } from "./http-providers.ts";
-import { record,requiredText,secureUrl,type ModerationResult } from "./contracts.ts";
+import { LIVE_MAX_UNSUPERVISED_SECONDS,record,requiredText,secureUrl,type ModerationResult } from "./contracts.ts";
 import { verifyWebhook } from "./webhook.ts";
 
 interface Job {id:string;lease_token:string;kind:string;media:{id:string;kind:string;status:string;storage_path:string;trim_start_ms:number;trim_end_ms:number;provider_asset_id:string;playback_url:string;visibility:string}}
@@ -54,7 +54,7 @@ export async function startSafetyWorker(env:NodeJS.ProcessEnv=process.env){
    catch(cause){await video.disableVideo(prepared.assetId).catch(()=>{});throw cause;}return;
   }
   if(j.kind==="prepare_live"){
-   const prepared=await video.prepareLive({mediaId:m.id,visibility:m.visibility,staging:true,maximumUnsupervisedSeconds:15});
+   const prepared=await video.prepareLive({mediaId:m.id,visibility:m.visibility,staging:true,maximumUnsupervisedSeconds:LIVE_MAX_UNSUPERVISED_SECONDS});
    try {
     const watch=await moderation.watchLive({jobId:j.id,mediaId:m.id,assetId:prepared.assetId,kind:"live",sourceUrl:prepared.playbackUrl,callbackUrl:callback});
     await backend.rpc("jobin_complete_media_preparation",{job:j.id,token:j.lease_token,asset:prepared.assetId,playback:prepared.playbackUrl,publisher_url:prepared.publisherUrl,watch_id:watch.watchId});

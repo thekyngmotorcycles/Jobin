@@ -11,8 +11,10 @@ test("LiveKit private ingress grants have only the rights needed by owner and tr
  for(const status of ["pending","processing","held","blocked","ended","failed"] as const)assert.equal(privateIngressGrant({...source,status},{kind:"publisher",id:"A",authorized:true}),null);
 });
 test("Delivery authorization keeps the original absolute lease deadline and fails closed",()=>{
- const valid={status:"live" as const,providersReady:true,viewerAuthorized:true,nowMs:100000,leaseUntilMs:115000};
- assert.equal(deliveryDeadline(valid),115000);
- assert.equal(deliveryDeadline({...valid,nowMs:114999}),115000);
- for(const change of [{nowMs:115000},{nowMs:115001},{leaseUntilMs:115001},{leaseUntilMs:NaN},{leaseUntilMs:Infinity},{nowMs:NaN},{viewerAuthorized:false},{providersReady:false},{status:"moderating" as const},{status:"ended" as const},{status:"blocked" as const}])assert.equal(deliveryDeadline({...valid,...change}),null);
+ const valid={status:"live" as const,providersReady:true,viewerAuthorized:true,nowMs:100000,leaseUntilMs:160000};
+ assert.equal(deliveryDeadline(valid),160000);
+ assert.equal(deliveryDeadline({...valid,nowMs:159999}),160000);
+ assert.equal(deliveryDeadline({...valid,nowMs:120000}),160000);
+ assert.equal(deliveryDeadline({...valid,status:"held"}),null);
+ for(const change of [{nowMs:160000},{nowMs:160001},{leaseUntilMs:160001},{leaseUntilMs:NaN},{leaseUntilMs:Infinity},{nowMs:NaN},{viewerAuthorized:false},{providersReady:false},{status:"moderating" as const},{status:"ended" as const},{status:"blocked" as const}])assert.equal(deliveryDeadline({...valid,...change}),null);
 });
