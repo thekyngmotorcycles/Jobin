@@ -12,7 +12,7 @@
 ## 1. Propósito y decisiones
 Jobeen es una plataforma mobile-first de streaming de trabajo real. Descubrir, emitir y participar en Lives es su prioridad; los Flashes amplían el alcance del creador, la identidad profesional genera confianza y las herramientas laborales convierten ese contenido en oportunidades. No es un CRM con video ni una superapp.
 
-**Decisiones expresas:** dirección cromática Royal Hive; opción B para Compartir JCard (icono compacto junto a Panel y Editar JCard); solo diseño y planificación. Se conservan las normas previas de navegación, diseño, privacidad y trabajo. La ubicación propuesta del resto de funcionalidades, el detalle de tokens y los flujos de este documento requieren aprobación antes de implementarse. Los nombres JCenter, JQuote, JAssist, JTeam, JGifts y JStudio son denominaciones de trabajo; no implican nuevas pestañas ni aprobación comercial.
+**Decisiones expresas:** dirección cromática Royal Hive; opción 1 aprobada el 24/11: Panel, En vivo e icono compacto Compartir; Editar JCard en menú Mi perfil; solo diseño y planificación. Se conservan las normas previas de navegación, diseño, privacidad y trabajo. La ubicación propuesta del resto de funcionalidades, el detalle de tokens y los flujos de este documento requieren aprobación antes de implementarse. Los nombres JCenter, JQuote, JAssist, JTeam, JGifts y JStudio son denominaciones de trabajo; no implican nuevas pestañas ni aprobación comercial.
 
 **Fuentes internas consultadas:** `AGENTS.md`, `DESIGN_RULES.md`, `docs/JOBEEN_PRODUCT_VISION.md`, `docs/DEVELOPMENT_STATUS.md`, rutas `src/app`, `src/theme/palettes.ts`, `src/theme/jobeen.ts`, `src/theme/modals.ts`, `src/theme/navigation.ts`, `src/components/JobinCard.tsx`, `src/components/JCardShareSheet.tsx` y decisiones previas. Las rutas existentes no demuestran por sí solas que una función esté lista en producción.
 
@@ -153,7 +153,7 @@ La sección 13 amplía estas reglas con la referencia visual, escala tipográfic
 | JShop | Productos, compras y ventas | Vender, Mis anuncios, ubicación, favoritos; enlace al chat JShop |
 | Videos (centro, mayor tamaño) | En vivo, Flashes, JAcademy (propuesta de acceso) | Buscar por formato, Crear; JHighlights como destacados de Lives |
 | Mensajes | Chats, JShop, Servicios (tercera bandeja propuesta) | Solicitudes, conversación, presupuesto, asistencia comercial |
-| Perfil | JCard personal/empresa, contenido, CV | Panel, Editar JCard, Compartir, opciones del perfil |
+| Perfil | JCard personal/empresa, contenido, CV | Panel, En vivo, Compartir, Editar JCard en Mi perfil |
 
 Mantener nombre, iconos, rutas y acordeón. Se propone que Videos priorice En vivo como destino de entrada; actualmente la ruta Videos conduce a Flashes y existe una ruta Streams separada. El propietario aprobó En vivo inicial y recordar la última sección por cuenta (2026-11-24); implementación pendiente tras UI-01. No alterar la navegación desde una transmisión ni crear una sexta pestaña. El buscador conserva filtros y origen preseleccionado (Casa=Todo, Flashes=Flashes, Lives=Streams); ampliar con Cursos y Servicios cuando sus catálogos existan. Historial de búsqueda privado por cuenta. JHighlights no es Reels ni requiere pestaña global.
 
@@ -161,7 +161,7 @@ Mantener nombre, iconos, rutas y acordeón. Se propone que Videos priorice En vi
 Casa prioriza consultas, ideas, debates y trabajos compartidos; Videos mantiene la experiencia audiovisual. Autor y descripción primero, hasta tres líneas y expansión en sitio; menciones y enlaces accesibles. Mosaico con márgenes 12–16 dp, radios del sistema y altura acotada; máximo cuatro fotos visibles y contador +N; hasta diez fotos por publicación, compresión automática conservando proporciones, visor a pantalla completa con zoom y navegación. Vista previa reutiliza el mosaico; no crear otro flujo. Barra inferior sólida bajo los iconos y degradada por encima, conservando acordeón y cinco destinos. Comentarios con respuestas anidadas en fase posterior. No agregar dependencias ni desplegar sin aprobación.
 
 ### 3.2 Organización permanente de menús (aprobada 2026-11-24)
-Casa: Cuenta y privacidad (Cuenta y seguridad, Privacidad, Cuentas bloqueadas cuando disponible); Preferencias (Apariencia, Idioma, Notificaciones, Contenido, Fotos/videos/datos, Accesibilidad); Información y soporte (Normas y políticas, Ayuda y soporte); Cerrar sesión con confirmación existente. Perfil propio: Mi actividad (Guardados generales cuando disponibles, Registro de actividad cuando disponible, Mis contactos), Desarrollo profesional (Certificados y sellos, Oportunidades laborales, Reseñas de empresas, Mi zona profesional). Mantener galería JCards privada en su pestaña, Editar JCard y Compartir en sus accesos propios. Panel: Contenido, Estadísticas, Mi empresa, Equipo, Presupuestos, Cursos, Ingresos, Asistente, revisión de acreditaciones según rol. Mantener accesos empresa/revisor actuales hasta que Panel los sustituya; demo solo desarrollo. Dispositivos/sesiones y verificación en Cuenta y seguridad; permisos en Privacidad; pedidos/pagos en JShop cuando disponible; suscripciones y tiempo pospuestos. Ocultar entradas sin destino funcional, conservar rutas históricas y metadatos de búsqueda. No duplicar datos ni crear funciones nuevas para rellenar menús. Mantener perfiles visitante y permisos independientes.
+Casa: Cuenta y privacidad (Cuenta y seguridad, Privacidad, Cuentas bloqueadas cuando disponible); Preferencias (Apariencia, Idioma, Notificaciones, Contenido, Fotos/videos/datos, Accesibilidad); Información y soporte (Normas y políticas, Ayuda y soporte); Cerrar sesión con confirmación existente. Perfil propio: Mi actividad (Guardados generales cuando disponibles, Registro de actividad cuando disponible, Mis contactos), Desarrollo profesional (Certificados y sellos, Oportunidades laborales, Reseñas de empresas, Mi zona profesional). Mantener galería JCards privada en su pestaña, Editar JCard en menú Mi perfil y Compartir como icono bajo JCard. Panel: Contenido, Estadísticas, Mi empresa, Equipo, Presupuestos, Cursos, Ingresos, Asistente, revisión de acreditaciones según rol. Mantener accesos empresa/revisor actuales hasta que Panel los sustituya; demo solo desarrollo. Dispositivos/sesiones y verificación en Cuenta y seguridad; permisos en Privacidad; pedidos/pagos en JShop cuando disponible; suscripciones y tiempo pospuestos. Ocultar entradas sin destino funcional, conservar rutas históricas y metadatos de búsqueda. No duplicar datos ni crear funciones nuevas para rellenar menús. Mantener perfiles visitante y permisos independientes.
 
 ## 4. Mapa de pantallas y acciones
 | Pantalla / destino | Acceso primario | Acción principal | Reutilizar / cambiar |
@@ -180,9 +180,9 @@ Casa: Cuenta y privacidad (Cuenta y seguridad, Privacidad, Cuentas bloqueadas cu
 | JAcademy | Videos > JAcademy | Explorar / continuar curso | Catálogo nuevo con reproductor compartido cuando proceda |
 | Curso / lección | Catálogo Academy | Continuar aprendizaje | Módulos, progreso; cursos gratuitos/premium cuando estén disponibles |
 | Mis cursos | Academy; Panel > Cursos | Retomar aprendizaje o gestionar cursos | Separar alumno e instructor; conectar certificados existentes |
-| Perfil propio | Perfil | Panel / Editar JCard | `JobinCard`, acordeón y galería JCards |
+| Perfil propio | Perfil | Panel / En vivo / Compartir | `JobinCard`, acordeón y galería JCards |
 | Perfil visitante | Autor, buscador, contacto | Seguir / Mensaje / presupuesto si ofrece servicios | Conservar perfil público y acciones actuales; no mostrar Panel ni galería privada |
-| Compartir JCard | Icono junto a Editar JCard | Elegir método / QR | `JCardShareSheet`; cara visible, permisos y enlace correcto |
+| Compartir JCard | Icono junto a En vivo | Elegir método / QR | `JCardShareSheet`; cara visible, permisos y enlace correcto |
 | JShop | JShop | Comprar / vender | Rutas y bandeja existentes; no mover productos a Servicios |
 | Solicitar presupuesto | Perfil, Live o Flash elegible | Enviar solicitud | Mismo formulario y expediente; origen registrado |
 | Servicios | Mensajes > Servicios | Leer y responder solicitud | Mensajería compartida con ámbito comercial separado |
@@ -197,7 +197,7 @@ Casa: Cuenta y privacidad (Cuenta y seguridad, Privacidad, Cuentas bloqueadas cu
 | Configuración | Menú existente | Gestionar preferencias, seguridad, privacidad | No mezclar tareas comerciales con ajustes de cuenta |
 
 ## 5. JCard y Panel (JCenter)
-Fila propuesta: `[ Panel ] [ Editar JCard ] [ Compartir (icono) ]`. Panel toma la posición izquierda del antiguo Compartir. Compartir conserva área táctil mínima de 48 dp y abre el menú existente sobre la cara visible. Editar conserva el destino personal/negocio. No cambiar arte, flip, sellos, QR ni gestos internos. En Jelly verificar los tres controles sin truncar etiquetas; adaptar ancho/espaciado antes de reducir áreas táctiles; aprobar alternativa de dos filas si no caben. El perfil visitante conserva Seguir, Mensaje, Guardar contacto y acciones permitidas; añadir presupuesto de modo contextual, no sustituir estas acciones sin aprobación.
+Fila aprobada 2026-11-24 (opción 1, sustituye opción B): `[ Panel ] [ En vivo ] [ Compartir (icono) ]`. Panel toma la posición izquierda del antiguo Compartir. En vivo abre la preparación existente y, solo con Live propio verificado y estudio disponible, muestra Volver al Live y abre gestión existente; Reanudar queda pendiente de contrato de pausa recuperable. Compartir conserva área táctil mínima de 48 dp y abre el menú existente sobre la cara visible. Editar JCard se traslada a sección JCard del menú Mi perfil y conserva el destino personal/negocio según cara visible. No cambiar arte, flip, sellos, QR ni gestos internos. En Jelly verificar los tres controles sin truncar etiquetas; adaptar ancho/espaciado antes de reducir áreas táctiles; aprobar alternativa de dos filas si no caben. El perfil visitante conserva Seguir, Mensaje, Guardar contacto y acciones permitidas; añadir presupuesto de modo contextual, no sustituir estas acciones sin aprobación.
 
 **Panel privado (una entrada, no una pestaña global):** encabezado con contexto de actuación personal/empresa y permisos; secciones progresivas: Contenido (publicaciones, borradores, Flashes, Lives, destacados, estadísticas); Cursos (aprendizaje y, para instructores, creación); Negocio (solicitudes/presupuestos, clientes como expedientes, configuración de JAssist y Equipo si corresponde); Monetización (regalos, ingresos, acuerdos y retiros cuando estén disponibles). Mostrar solo módulos habilitados. El selector de organización cambia el ámbito de los datos, no la identidad de login. Empresas no acceden a información personal del trabajador. No crear un segundo perfil ni un CRM paralelo.
 
@@ -248,7 +248,7 @@ Orden nuevo aprobado expresamente por el propietario. Se preservan identificador
 | 5 | Pruebas y lanzamiento | Validación física y de extremo a extremo, concurrencia, costes, accesibilidad, seguridad, revisión legal/tiendas y beta gradual |
 
 ### Etapa 1 — entregas visuales por partes (prioridad aprobada)
-1. PANEL-01: botón Panel en perfil propio (opción B: Panel, Editar JCard, icono Compartir); acceso privado real a un destino básico, conservar JCard y visitantes sin acceso. Revisar código/Mobbin y proponer 2–3 disposiciones concretas antes de programar; no crear enlaces muertos.
+1. PANEL-01: fila Panel/En vivo/icono Compartir (opción 1 aprobada), Editar JCard en Mi perfil; acceso privado a destino básico con rutas reales, conservar JCard y visitantes sin acceso; no reabrir diseño aprobado ni crear enlaces muertos.
 2. PANEL-02: estructura personal/empresarial y roles; navegación y ventanas de Contenido, Cursos, Negocio y Monetización según capacidades. 
 3. PANEL-03: gestión de contenido y estados de datos; estadísticas reales cuando disponibles, no cifras inventadas.
 4. STREAM-UI: estudio/creación Live, emisor y espectador, catálogo y estados de cámara/red/disponibilidad; preservar STREAM-01A integrado y candidato privado.
@@ -286,13 +286,13 @@ Medir coste, ingresos y uso para decidir migración progresiva a servidores alqu
 ## 11. Decisiones pendientes antes de implementación
 1. **RESUELTO E INTEGRADO 2026-11-24:** En vivo es el destino inicial de Videos; recordar después la última sección visitada por cuenta. VIDEO-02 integrado; validación física pendiente. Ubicación definitiva de JAcademy y JHighlights aún pendiente.
 2. RESUELTO v1.2: Royal Hive Light/Dark, selector Sistema y migración segura de preferencias obsoletas; validar comportamiento nativo y web antes de publicar.
-3. Apariencia final de la fila Panel/Editar/Compartir en Jelly, manteniendo opción B y área táctil.
+3. Validación física de fila Panel/En vivo/Compartir en Jelly, manteniendo opción 1 y área táctil.
 4. Referencias Mobbin específicas por pantalla: consultarlas e inspeccionar imágenes, sin copiar estilos externos. Las búsquedas previas devolvieron enlaces, pero no se verificaron sus imágenes; no se consideran aprobación visual. No generar bocetos sin solicitud/aprobación.
 5. Funciones visibles del Panel en cada etapa; roles comerciales, visibilidad, nombres y política de IA; detalles Academy, pagos/regalos y reparto según etapas.
 6. Pruebas de contraste completo (incluido video dinámico), accesibilidad, temas y dispositivos; verificar dependencias nativas y costes antes de comprometerlos.
 
 ## 12. Próxima acción
-Etapa 1, PANEL-01: inspeccionar perfil actual, rutas y componentes compartidos; consultar Mobbin y presentar 2–3 variantes concretas de la opción B para aprobación visual. Conservar PR #109 (CI anterior verde), promover documentación y base candidata solo con autorización separada. No avanzar a SDK, servicios externos ni APK; mantener comprobación de viabilidad. Revisión física restante de 01/02 se acumula en siguiente entrega compatible aprobada.
+Etapa 1, PANEL-01: implementar opción 1 ya aprobada, verificar CI y revisión física; después PANEL-02/03. Conservar PR #109 (CI anterior verde), promover documentación y base candidata solo con autorización separada. No avanzar a SDK, servicios externos ni APK; mantener comprobación de viabilidad. Revisión física restante de 01/02 se acumula en siguiente entrega compatible aprobada.
 
 ## 13. Sistema universal de proporciones, tipografía y diseño adaptable
 
@@ -342,7 +342,7 @@ Para la primera muestra candidata usar el extremo inferior de cada intervalo (p.
 | Separación | Escala 4, 8, 12, 16, 24, 32 dp; margen lateral habitual 16 dp |
 | Barra inferior | 58 dp + safe area, con objetivos táctiles y acordeón existentes |
 
-Aplicar la jerarquía visual de la referencia y los tokens Royal Hive de la sección 2. Un único botón primario por contexto cuando corresponda. En la fila Panel / Editar JCard / Compartir conservar el icono de 48 dp, etiquetas completas y orden aprobado; si no caben, proponer dos filas antes de reducir objetivos táctiles. La alternativa de dos filas requiere aprobación visual. No alterar acciones de visitante, flip ni arte de JCard.
+Aplicar la jerarquía visual de la referencia y los tokens Royal Hive de la sección 2. Un único botón primario por contexto cuando corresponda. En la fila Panel / En vivo / Compartir conservar el icono de 48 dp, etiquetas completas y orden aprobado; si no caben, proponer dos filas antes de reducir objetivos táctiles. La alternativa de dos filas requiere aprobación visual. No alterar acciones de visitante, flip ni arte de JCard.
 
 ### 13.4 Composición adaptable por ancho disponible
 Los intervalos siguientes son perfiles de prueba de ancho lógico de la ventana, no especificaciones de hardware. Medir en tiempo de ejecución (React Native `useWindowDimensions`, safe areas, escala de fuente, teclado); Android dp y unidades lógicas iOS no se obtienen de la resolución física en píxeles. Los modelos Jelly, Galaxy S22 e iPhone 17 son objetivos de validación, no resultados ya verificados.
@@ -358,7 +358,7 @@ Mantener mismo orden, número de columnas lógicas, acciones y jerarquía. En la
 ### 13.5 Matriz de validación antes de aprobar el sistema
 | Prueba | Criterio de aceptación |
 |---|---|
-| Jelly físico o dispositivo compacto equivalente | Panel/Editar/Compartir alcanzables; hoja sin cortes ni superposiciones; controles utilizables con una mano |
+| Jelly físico o dispositivo compacto equivalente | Panel/En vivo/Compartir alcanzables; hoja sin cortes ni superposiciones; controles utilizables con una mano |
 | Galaxy S22 físico o perfil Android equivalente | Misma estructura, proporciones y orden; teclado, scroll, safe areas y navegación correctos |
 | iPhone 17 físico o simulador equivalente | Misma jerarquía, márgenes, escala y comportamiento; safe areas y gestos iOS correctos |
 | Escala tipográfica | Normal y ampliada, incluyendo 130 % y 200 % donde el sistema permita; texto esencial completo, scroll cuando corresponda |
@@ -371,4 +371,4 @@ Mantener mismo orden, número de columnas lógicas, acciones y jerarquía. En la
 La prueba en emulador/simulador se identifica como tal; no equivale a validación física. Si un dispositivo no está disponible, registrar pendiente en lugar de afirmar compatibilidad verificada. Cerrar la especificación solo tras aprobación de muestras y criterios aplicables. Antes de implementar, comparar los tokens existentes (`src/theme/typography.ts`, `src/theme/control-metrics.ts`, `src/theme/modals.ts`) y componentes; reutilizar y consolidar, no duplicar. Consultar referencias Mobbin específicas cuando se diseñe cada flujo y aplicar `DESIGN_RULES.md`.
 
 ### 13.6 Aplicación transversal y control de cambios
-La escala, tamaños táctiles, estructura de hojas y jerarquía se aplican a Casa, JShop, Videos, Lives, Flashes, JStudio, JAcademy, Mensajes, JQuote, JAssist, JTeam, Panel, regalos y configuración. Los editores y superficies audiovisuales pueden necesitar variantes contextuales justificadas, no un sistema visual paralelo. No se añade un SDK, tema nuevo, pantalla o permiso por incluir esta especificación. Royal Hive y opción B mantienen su aprobación; tamaños candidatos, excepciones y ajustes finales siguen sujetos a validación y autorización. Esta revisión es exclusivamente documental. No modifica código, Supabase, OTA, APK ni gastos; el registro en GitHub requiere promoción separada.
+La escala, tamaños táctiles, estructura de hojas y jerarquía se aplican a Casa, JShop, Videos, Lives, Flashes, JStudio, JAcademy, Mensajes, JQuote, JAssist, JTeam, Panel, regalos y configuración. Los editores y superficies audiovisuales pueden necesitar variantes contextuales justificadas, no un sistema visual paralelo. No se añade un SDK, tema nuevo, pantalla o permiso por incluir esta especificación. Royal Hive y opción 1 mantienen su aprobación; tamaños candidatos, excepciones y ajustes finales siguen sujetos a validación y autorización. Esta revisión es exclusivamente documental. No modifica código, Supabase, OTA, APK ni gastos; el registro en GitHub requiere promoción separada.
