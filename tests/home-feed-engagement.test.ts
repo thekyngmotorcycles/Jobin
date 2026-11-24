@@ -119,8 +119,8 @@ test("Creator profiles show Todo, Videos, En vivo and Acerca de; private JCards 
  assert.ok(sections.includes("<ScrollView horizontal"));
  assert.ok(own.includes("stickyHeaderIndices={[1]}"));
  assert.ok(visitor.includes("stickyHeaderIndices={resource.data?[1]:undefined}"));
- assert.ok(grid.includes("loadAllProfilePosts(viewer,target)"));
- assert.ok(grid.includes("loadPublishedMedia()"));
+ assert.ok(grid.includes("loadAllProfilePosts(viewer,target,scope)"));
+ assert.ok(grid.includes("loadPublishedMedia(scope)"));
  assert.ok(grid.includes('filter==="videos"?"video":"live"'));
  assert.ok(grid.includes("onOptions:editable?"));
  assert.ok(api.includes("for(let offset=0;;offset+=80)"));

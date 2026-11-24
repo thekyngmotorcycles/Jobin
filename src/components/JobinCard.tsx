@@ -113,6 +113,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
   const lastNameLine=nameBreakAt>5?visibleName.slice(nameBreakAt+1):null;
   const primaryProfession=card.role.trim().replace(/^Técnico HVAC\s*\/\s*climatización y aire acondicionado$/i,"Técnico HVAC").replace(/\s*[-–/]\s*aire acondicionado\s*$/i,"").trim();
   const primarySeal=card.seals.find(seal=>/hvac/i.test(primaryProfession)?/hvac|aire acondicionado/i.test(seal.profession):seal.profession.trim().toLocaleLowerCase()===primaryProfession.toLocaleLowerCase());
+  const primarySealMonths=card.primaryExperienceMonths??primarySeal?.months;
   const secondarySeals=card.seals.filter(seal=>!(/hvac/i.test(primaryProfession)&&/hvac|aire acondicionado/i.test(seal.profession))&&seal.profession.trim().toLocaleLowerCase()!==primaryProfession.toLocaleLowerCase());
   const sealCount = Math.max(card.languages.length, Math.min(secondarySeals.length, 5));
   const sealColumns = sealCount > 8 ? 4 : sealCount > 4 ? 3 : 2;
@@ -165,7 +166,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         <View style={{flex:1,minHeight:0,justifyContent:theme==="light"?"flex-start":"center",gap:4,paddingTop:theme==="light"?12:0}}>
         {theme!=="light"&&<View style={{flexDirection:"row",alignItems:"center",gap:7,width:"100%"}}>
           <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[lineStyle,{fontWeight:"600",flexShrink:1,flexGrow:0}]}>{primaryProfession}{!!card.primarySpecialties?.length?" / Especializado":""}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="Detalles de la profesión principal" onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nEspecialidades: "+(card.primarySpecialties?.length?card.primarySpecialties.join(", "):"No declaradas")+"\nExperiencia en esta profesión: "+(primarySeal&&primarySeal.months?experienceLabel(primarySeal.months):"Sin experiencia registrada")+".\n"+(primarySeal?.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:undefined,height:undefined,alignItems:"center",justifyContent:"center",padding:3,borderWidth:1,borderColor:finish.line,borderRadius:22,flexShrink:0}}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Detalles de la profesión principal" onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nEspecialidades: "+(card.primarySpecialties?.length?card.primarySpecialties.join(", "):"No declaradas")+"\nExperiencia en esta profesión: "+(primarySealMonths===undefined?"No disponible":experienceLabel(primarySealMonths))+".\n"+(primarySeal?.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:undefined,height:undefined,alignItems:"center",justifyContent:"center",padding:3,borderWidth:1,borderColor:finish.line,borderRadius:22,flexShrink:0}}>
             <ProfessionGlyph profession={card.role} fallback={primarySeal?.icon??"briefcase-outline"} size={19} color={finish.text}/>
           </Pressable>
         </View>}
@@ -196,7 +197,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         {secondarySeals.length>0&&theme!=="light"&&<View style={{minHeight:62,justifyContent:"center",gap:7,marginTop:4,paddingTop:7,borderTopWidth:1,borderTopColor:finish.line}}>
           <Text style={{fontSize:11,color:finish.secondary,textAlign:"center",letterSpacing:0.8}}>Otras profesiones</Text>
           <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:sealGap}}>
-            {secondarySeals.slice(0,5).map(seal=><Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\nEspecialidades: "+(seal.specialties?.length?seal.specialties.join(", "):"No declaradas")+"\nExperiencia registrada: "+experienceLabel(seal.months??0)+".\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:sealDiameter+4,height:sealDiameter+4,alignItems:"center",justifyContent:"center"}}>
+            {secondarySeals.slice(0,5).map(seal=><Pressable key={seal.id} accessibilityRole="button" accessibilityLabel={"Información del sello "+seal.profession} onPress={()=>setInfo(seal.profession+"\nEspecialidades: "+(seal.specialties?.length?seal.specialties.join(", "):"No declaradas")+"\nExperiencia registrada: "+(seal.months===undefined?"No disponible":experienceLabel(seal.months))+".\n"+(seal.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:sealDiameter+4,height:sealDiameter+4,alignItems:"center",justifyContent:"center"}}>
               <View style={{width:sealDiameter,height:sealDiameter,borderRadius:sealDiameter/2,borderWidth:2,borderColor:seal.verified?finish.sealFill:finish.line,backgroundColor:finish.pendingFill,alignItems:"center",justifyContent:"center",elevation:4,shadowColor:finish.text,shadowOpacity:0.15,shadowRadius:5}}>
                 <View style={{width:sealDiameter-8,height:sealDiameter-8,borderRadius:(sealDiameter-8)/2,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center",gap:0}}>
                   <ProfessionGlyph profession={seal.profession} fallback={seal.icon} size={Math.max(12,sealDiameter*0.48)} color={finish.text}/>
@@ -204,25 +205,25 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
               </View>
             </Pressable>)}
           </View>
-          {secondarySeals.length>5&&<Pressable accessibilityRole="button" accessibilityLabel="Ver todas las profesiones secundarias" onPress={()=>setInfo("Profesiones secundarias ("+secondarySeals.length+"):\n"+secondarySeals.map((seal,index)=>(index+1)+". "+seal.profession+"\n   Especialidades: "+(seal.specialties?.length?seal.specialties.join(", "):"No declaradas")+"\n   Experiencia: "+experienceLabel(seal.months??0)+(seal.verified?" · Acreditación verificada":" · Sin acreditación verificada")).join("\n\n"))}><Text style={{fontSize:11,color:finish.text,textAlign:"center",textDecorationLine:"underline"}}>Ver todas ({secondarySeals.length})</Text></Pressable>}
+          {secondarySeals.length>5&&<Pressable accessibilityRole="button" accessibilityLabel="Ver todas las profesiones secundarias" onPress={()=>setInfo("Profesiones secundarias ("+secondarySeals.length+"):\n"+secondarySeals.map((seal,index)=>(index+1)+". "+seal.profession+"\n   Especialidades: "+(seal.specialties?.length?seal.specialties.join(", "):"No declaradas")+"\n   Experiencia: "+(seal.months===undefined?"No disponible":experienceLabel(seal.months))+(seal.verified?" · Acreditación verificada":" · Sin acreditación verificada")).join("\n\n"))}><Text style={{fontSize:11,color:finish.text,textAlign:"center",textDecorationLine:"underline"}}>Ver todas ({secondarySeals.length})</Text></Pressable>}
         </View>}
       </View>
     </View>
-    <Modal visible={experienceOpen} transparent animationType="fade" onRequestClose={()=>setExperienceOpen(false)}>
+    <Modal visible={experienceOpen&&card.primaryExperienceMonths!==undefined} transparent animationType="fade" onRequestClose={()=>setExperienceOpen(false)}>
       <View style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}>
         <View style={{backgroundColor:jcardCommon.qrPaper,borderRadius:18,padding:20,gap:12}}>
           <Text style={{fontSize:17,fontWeight:"700",color:jcardCommon.qrInk}}>Experiencia profesional</Text>
           <Text style={{fontSize:12,color:jcardCommon.qrInk}}>La burbuja de la JCard muestra únicamente el tiempo del currículum correspondiente a la profesión principal.</Text>
           <View style={{flexDirection:"row",alignItems:"center",gap:9}}>
             <ProfessionGlyph profession={primaryProfession} fallback={primarySeal?.icon??"briefcase-outline"} size={22} color={jcardCommon.qrInk}/>
-            <View style={{flex:1}}><Text numberOfLines={2} style={{fontWeight:"700",color:jcardCommon.qrInk}}>{primaryProfession}</Text><Text style={{fontSize:12,color:jcardCommon.qrInk}}>{card.primaryExperienceMonths?experienceLabel(card.primaryExperienceMonths):"Sin experiencia registrada"}</Text></View>
+            <View style={{flex:1}}><Text numberOfLines={2} style={{fontWeight:"700",color:jcardCommon.qrInk}}>{primaryProfession}</Text><Text style={{fontSize:12,color:jcardCommon.qrInk}}>{card.primaryExperienceMonths===undefined?"No disponible":experienceLabel(card.primaryExperienceMonths)}</Text></View>
           </View>
           {!!card.secondaryProfessions?.length&&<><View style={{height:1,backgroundColor:finish.line,marginVertical:2}}/>
             <ScrollView style={{maxHeight:220}} contentContainerStyle={{gap:10}}>
               {card.secondaryProfessions?.map(profession=><View key={profession.code} style={{flexDirection:"row",alignItems:"center",gap:9}}>
                 <View style={{width:28,height:28,borderRadius:14,borderWidth:1,borderColor:finish.line,alignItems:"center",justifyContent:"center"}}><ProfessionGlyph profession={profession.name} fallback={profession.icon} size={17} color={jcardCommon.qrInk}/></View>
                 <Text numberOfLines={2} style={{flex:1,fontSize:12,color:jcardCommon.qrInk}}>{profession.name}</Text>
-                <Text style={{fontSize:12,fontWeight:"600",color:jcardCommon.qrInk}}>{profession.months?experienceLabel(profession.months):"Sin registrar"}</Text>
+                <Text style={{fontSize:12,fontWeight:"600",color:jcardCommon.qrInk}}>{profession.months===undefined?"No disponible":experienceLabel(profession.months)}</Text>
               </View>)}
             </ScrollView></>}
           <Button title="Cerrar" onPress={()=>setExperienceOpen(false)}/>

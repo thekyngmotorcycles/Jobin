@@ -50,7 +50,8 @@ export async function loadCatalog():Promise<ProfessionalCatalog> {
  return {...catalog,professions:catalog.professions.map(p=>({...p,label:professionDisplayName(p.code,p.label)}))};
 }
 export async function loadWorkspace(expectedScope?:MessageScope):Promise<ProfessionalWorkspace|null> {
- const client=requireSupabase();const {data:{session}}=await client.auth.getSession();
+ const client=requireSupabase();const {data:{session},error:sessionError}=await client.auth.getSession();
+ if(sessionError)throw sessionError;
  if(!session&&!expectedScope)return null;
  const scope=await captureMessageScope(expectedScope);
  const user={id:scope.owner};

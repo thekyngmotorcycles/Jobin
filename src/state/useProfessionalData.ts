@@ -30,9 +30,15 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
  const [loading,setLoading]=useState(true);
  const [version,setVersion]=useState(0);
  const generation=useRef(0);
+ const observedScope=useRef<MessageScope|null>(null);
  const reload=useCallback(()=>setVersion(value=>value+1),[]);
  useEffect(()=>{
-  const subscription=supabase?.auth.onAuthStateChange(()=>{
+  const subscription=supabase?.auth.onAuthStateChange((event,session)=>{
+   let nextScope:MessageScope|null=null;
+   try{if(session)nextScope={owner:session.user.id,session:sessionMarkerKey(session.user.id,session.access_token)};}catch{/* Invalid metadata cannot retain a private scope. */}
+   if(cacheWorkspace&&nextScope&&sameScope(observedScope.current,nextScope)&&
+      (event==="TOKEN_REFRESHED"||event==="SIGNED_IN"||event==="INITIAL_SESSION"))return;
+   observedScope.current=nextScope;
    generation.current++;
    workspaceMemory.clear();
    setData(null);setScope(null);
@@ -40,31 +46,36 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
    reload();
   });
   return ()=>subscription?.data.subscription.unsubscribe();
- },[reload]);
+ },[cacheWorkspace,reload]);
  useFocusEffect(useCallback(()=>{
   let current=true;
   const requestGeneration=generation.current;
   const valid=()=>current&&generation.current===requestGeneration;
-  setError("");
+  setError("");setLoading(true);
+  const timeout=cacheWorkspace?setTimeout(()=>{
+   if(!valid())return;
+   current=false;workspaceMemory.clear();setData(null);setScope(null);
+   setError("No se pudo recuperar la JCard. Vuelve a intentarlo.");setLoading(false);
+  },20_000):undefined;
   void (async()=>{
    const initial=await readScope();
    if(!valid())return;
    const sameOwner=async()=>valid()&&sameScope(initial,await readScope())&&valid();
-   if(cacheWorkspace){
-    if(!await sameOwner())return;
-    const memory=initial?workspaceMemory.read(initial):null;
-    setData(memory as T|null);
-    if(memory)setLoading(false);
-   }
-   if(!valid())return;
    try{
+    if(cacheWorkspace){
+     if(!initial||!await sameOwner())throw Error("No se pudo verificar la sesión del perfil. Vuelve a intentarlo.");
+     const memory=workspaceMemory.read(initial);
+     setData(memory as T|null);setScope(memory?initial:null);
+     if(memory)setLoading(false);
+    }
+    if(!valid())return;
     const value=await loader();
     if(!await sameOwner()){
      if(valid()){workspaceMemory.clear();setData(null);setScope(null);setError("La sesión cambió. Vuelve a cargar el perfil.");}
      return;
     }
     if(cacheWorkspace){
-     if(!initial||!value){workspaceMemory.clear();setData(null);return;}
+     if(!initial||!value)throw Error("No se pudo recuperar la JCard. Vuelve a intentarlo.");
      if(!workspaceMemory.write(initial,value)){
       setData(null);
       throw new Error("La sesión cambió. Vuelve a cargar el perfil.");
@@ -80,8 +91,8 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
      setError(cause instanceof Error?cause.message:String(cause));
     }
    }finally{if(valid())setLoading(false);}
-  })().catch(cause=>{if(valid()){workspaceMemory.clear();setData(null);setScope(null);setError(cause instanceof Error?cause.message:String(cause));setLoading(false);}});
-  return ()=>{current=false;};
+  })().catch(cause=>{if(valid()){workspaceMemory.clear();setData(null);setScope(null);setError(cause instanceof Error?cause.message:String(cause));setLoading(false);}}).finally(()=>clearTimeout(timeout));
+  return ()=>{current=false;clearTimeout(timeout);};
  },[loader,version,cacheWorkspace,strict]));
  return {data,error,loading,reload,scope};
 }

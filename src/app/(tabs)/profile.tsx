@@ -11,7 +11,7 @@ import {pickBusinessGalleryPhoto,uploadBusinessPhoto} from "../../lib/business-m
 import {assertAccountOwner} from "../../lib/account-scope";
 import {EMPTY_BUSINESS_CARD,readScopedBusinessCard,writeScopedBusinessCard,clearBusinessCardMemory} from "../../lib/business-card-cache";
 import { employmentMonths,experienceLabel } from "../../lib/employment";
-import { readCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness,readBusinessRating,readBusinessExcellence } from "../../lib/jcard-cloud";
+import { loadCloudHistory,readCloudBusiness,writeCloudHistory,writeCloudBusiness,readBusinessRating,readBusinessExcellence } from "../../lib/jcard-cloud";
 import { useTabClearance } from "../../theme/navigation";
 import {opacity} from "../../theme/color";
 import {useRef} from "react";
@@ -45,7 +45,7 @@ import { JobinCard } from "../../components/JobinCard";
 import {JobeenShareSheet} from "../../components/JCardShareSheet";
 
 import type { BusinessCardData, JCardSeal } from "../../lib/jcard";
-import { Button, Notice, useUi } from "../../components/ui";
+import { Button, Notice, PageState, useUi } from "../../components/ui";
 import { canSendHistory } from "../../lib/rules";
 import { DEMO_PROFILE, DEMO_REQUESTING_COMPANIES, type EmploymentEntry } from "../../lib/me";
 
@@ -118,7 +118,7 @@ export default function Profile() {
    if(!scope||scope.owner!==ownerId||!incomingCV.some(r=>r.id===id&&r.owner_id===scope.owner&&r.status==="approved"))return;
    try{await revokeCV(id,scope);if(cvScope.current===scope)await refreshCV(scope);}catch(e){setNotice(String(e));}
   }
-  function shareCV(){setCvShareOpen(true);}
+  function shareCV(){if(ownHistory)setCvShareOpen(true);}
   
   const [employerLink,setEmployerLink]=useState<{owner:string;id:string;name:string;handle:string}|null>(null);
   const [businessRating,setBusinessRating]=useState<{rating:number|null;count:number}>({rating:null,count:0});
@@ -161,10 +161,11 @@ export default function Profile() {
   const [editingId,setEditingId] = useState<string|null>(null);
   const [formError,setFormError] = useState("");
   const historyScope=useRef<MessageScope|null>(null),historyRevision=useRef(0),historyFormScope=useRef<MessageScope|null>(null),historySaving=useRef(false),historyEntryId=useRef<string|null>(null);
-  const [historyReady,setHistoryReady]=useState(false),[historyBusy,setHistoryBusy]=useState(false),[historyRetry,setHistoryRetry]=useState(0);
+  const [historyBusy,setHistoryBusy]=useState(false),[historyRetry,setHistoryRetry]=useState(0);
+  const [historyError,setHistoryError]=useState(false);
   function openEmployment(entry?:EmploymentEntry){
     const scope=historyScope.current;
-    if(!historyReady||!scope||scope.owner!==ownerId||historySaving.current|| (entry&&!history.some(row=>row.id===entry.id)))return;
+    if(!historyEditable||!scope||scope.owner!==ownerId||historySaving.current|| (entry&&!history.some(row=>row.id===entry.id)))return;
     historyFormScope.current=scope;
     historyEntryId.current=entry?.id??(Date.now()+"-"+Math.random().toString(36).slice(2));
     setEditingId(entry?.id??null);
@@ -175,6 +176,7 @@ export default function Profile() {
   const [notice, setNotice] = useState("");
   const workspace = useProfessionalData(loadWorkspace,true);
   const ownerId=workspace.data?.card.id;
+  const workspaceSession=workspace.scope?.session;
   const media=useProfessionalData(loadMyMedia,false,true);
   const currentLive=hasActiveOwnLive({ownerId,workspaceScope:workspace.scope,mediaScope:media.scope,error:!!media.error||media.loading,media:media.data});
   function openOwnEditor(){
@@ -183,27 +185,31 @@ export default function Profile() {
     if(activeCardSide.current==="business")editBusiness();else router.push("/professional");
   }
   useEffect(()=>{if(!profileToolsOpen&&contactsRequested){setContactsRequested(null);if(contactsRequested===ownerId)contactsMenuRef.current?.openContacts(contactsRequested);}},[profileToolsOpen,contactsRequested,ownerId]);
-  const [historyState,setHistoryState]=useState<{owner:string;rows:EmploymentEntry[]}|null>(null);
-  const history=historyState&&historyState.owner===ownerId?historyState.rows:[];
+  const [historyState,setHistoryState]=useState<({owner:string;session:string}&Awaited<ReturnType<typeof loadCloudHistory>>)|null>(null);
+  const ownHistory=historyState&&historyState.owner===ownerId&&historyState.session===workspaceSession?historyState:null;
+  const history=ownHistory?.rows??[];
+  const historyEditable=ownHistory?.contactsAvailable===true;
+  const retryHistory=()=>setHistoryRetry(v=>v+1);
   useFocusEffect(useCallback(()=>{
    let active=true;const generation=++historyRevision.current;
    const valid=()=>active&&historyRevision.current===generation;
    historyScope.current=null;historyFormScope.current=null;
-   setHistoryState(null);setHistoryReady(false);setAddOpen(false);setEditingId(null);
-   if(!ownerId)return()=>{active=false;};
+   setHistoryState(null);setHistoryError(false);setAddOpen(false);setEditingId(null);
+   if(!ownerId||!workspaceSession)return()=>{active=false;};
    const owner=ownerId;
+   const timeout=setTimeout(()=>{if(valid()){active=false;setHistoryError(true);}},20_000);
    void(async()=>{
     try{
-     const scope=await captureMessageScope();
-     if(scope.owner!==owner||!valid())return;
-     const rows=await readCloudHistory(owner,scope);
-     await assertMessageScope(scope);
+     const scope=await captureMessageScope({owner,session:workspaceSession});
      if(!valid())return;
-     historyScope.current=scope;setHistoryState({owner,rows});setHistoryReady(true);
-    }catch{if(valid())setNotice("No se pudo recuperar el historial privado. Vuelve a intentarlo.");}
+     const result=await loadCloudHistory(owner,scope);
+     if(!valid())return;
+     historyScope.current=scope;setHistoryState({...scope,...result});
+    }catch{if(valid())setHistoryError(true);}
+    finally{clearTimeout(timeout);}
    })();
-   return()=>{active=false;historyRevision.current++;historyScope.current=null;historyFormScope.current=null;};
-  },[ownerId,historyRetry]));
+   return()=>{active=false;clearTimeout(timeout);historyRevision.current++;historyScope.current=null;historyFormScope.current=null;};
+  },[ownerId,workspaceSession,historyRetry]));
   useEffect(()=>{setHistoryState(null);setAddOpen(false);setEditingId(null);setCvShareOpen(false);setBusinessOpen(false);setBusinessRating({rating:null,count:0});setBusinessExcellence({});setEmployerLink(null);setVerifiedIdentity(false);setIncomingCV([]);},[ownerId]);
 
  useFocusEffect(useCallback(()=>{
@@ -275,7 +281,7 @@ export default function Profile() {
 
   async function add() {
     const scope=historyFormScope.current,owner=scope?.owner;
-    if(!scope||!owner||owner!==ownerId||historyScope.current!==scope||!historyReady||historySaving.current||!historyEntryId.current)return;
+    if(!scope||!owner||owner!==ownerId||historyScope.current!==scope||!historyEditable||historySaving.current||!historyEntryId.current)return;
     const from = Number(draft.from), to = draft.to ? Number(draft.to) : null;
     const currentYear=new Date().getFullYear();
     const fromMonth=Number(draft.fromMonth),toMonth=Number(draft.toMonth);
@@ -297,9 +303,9 @@ export default function Profile() {
      await writeCloudHistory(updated,owner,scope);
      await assertMessageScope(scope);
      if(!valid())return;
-     const rows=await readCloudHistory(owner,scope);
+     const result=await loadCloudHistory(owner,scope);
      if(!valid())return;
-     setHistoryState({owner,rows});
+     setHistoryState({...scope,...result});
     }catch(e){if(valid())setFormError(e instanceof Error?e.message:"No se pudo guardar la experiencia.");return;}
     finally{historySaving.current=false;setHistoryBusy(false);}
     historyFormScope.current=null;historyEntryId.current=null;
@@ -310,26 +316,27 @@ export default function Profile() {
 
   // The JCard owns the seals. Work history contributes elapsed time only.
   // Match canonical catalog codes and legacy labels without merging distinct trades.
-  const normalizeProfession=(value:string)=>value.toLocaleLowerCase("es").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]/g,"").trim();
+  const normalizeProfession=(value:string)=>value.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");
   const professionKey=(value:string)=>{
     const normalized=normalizeProfession(value);
-    return catalogProfessions.find(p=>p.code===value||normalizeProfession(p.label)===normalized)?.code??normalized;
+    const declared=workspace.data?.professions.find(p=>p.profession_code===value||normalizeProfession(p.label)===normalized);
+    return declared?.profession_code??catalogProfessions.find(p=>p.code===value||normalizeProfession(p.label)===normalized)?.code??normalized;
   };
   const seals: JCardSeal[] = workspace.data?.card.seals.map(seal=>{
     const key=professionKey(seal.profession);
     const matchingHistory=history.filter(entry=>(entry.professions?.length?entry.professions:[entry.role]).some(value=>professionKey(value)===key));
-    const months=employmentMonths(matchingHistory);
+    const months=ownHistory?employmentMonths(matchingHistory):undefined;
     return {...seal,months};
   })??[];
   const uniqueSeals=seals.filter((seal,index)=>seals.findIndex(other=>professionKey(other.profession)===professionKey(seal.profession))===index);
-  const primaryProfessionKey=professionKey(workspace.data?.card.role??"");
+  const primaryProfessionKey=workspace.data?.professions.find(p=>p.primary_profession)?.profession_code??professionKey(workspace.data?.card.role??"");
   const primaryEntries=history.filter(entry=>(entry.professions?.length?entry.professions:[entry.role]).some(value=>professionKey(value)===primaryProfessionKey));
-  const primaryExperienceMonths=employmentMonths(primaryEntries);
+  const primaryExperienceMonths=ownHistory?employmentMonths(primaryEntries):undefined;
   const secondaryProfessions=(workspace.data?.professions??[]).filter(profession=>!profession.primary_profession).map(profession=>{
     const catalog=catalogProfessions.find(item=>item.code===profession.profession_code);
     const matchingHistory=history.filter(entry=>(entry.professions?.length?entry.professions:[entry.role]).some(value=>professionKey(value)===profession.profession_code));
     const matchedSeal=uniqueSeals.find(seal=>professionKey(seal.profession)===profession.profession_code);
-    return {code:profession.profession_code,name:profession.label,icon:(matchedSeal?.icon??catalog?.icon??"briefcase-outline") as JCardSeal["icon"],months:employmentMonths(matchingHistory),verified:matchedSeal?.verified??false};
+    return {code:profession.profession_code,name:profession.label,icon:(matchedSeal?.icon??catalog?.icon??"briefcase-outline") as JCardSeal["icon"],months:ownHistory?employmentMonths(matchingHistory):undefined,verified:matchedSeal?.verified??false};
   });
 
   return (
@@ -397,12 +404,13 @@ export default function Profile() {
         showsVerticalScrollIndicator={false}>
         <Animated.View style={{gap:16,paddingHorizontal:16,paddingBottom:20,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
+        {historyError&&ownerId&&<PageState kind="error" message="No se pudo recuperar el historial privado. Vuelve a intentarlo." actionLabel="Reintentar" onAction={retryHistory}/>}
         <ProfileIdentityHeader
-          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} onActiveSideChange={rememberCardSide} ownerQuickActions={{onPanel:()=>router.push("/panel"),onLive:()=>currentLive?router.push({pathname:"/live",params:{view:"studio"}}):router.push("/live"),liveLabel:currentLive?"Volver al Live":"En vivo"}} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink?.owner===ownerId?employerLink:null}/>
+          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:primaryExperienceMonths===undefined?workspace.data.card.years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} onActiveSideChange={rememberCardSide} ownerQuickActions={{onPanel:()=>router.push("/panel"),onLive:()=>currentLive?router.push({pathname:"/live",params:{view:"studio"}}):router.push("/live"),liveLabel:currentLive?"Volver al Live":"En vivo"}} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink?.owner===ownerId?employerLink:null}/>
             {!!workspace.error&&isJCardConnectivityError(workspace.error)&&<View style={{marginTop:12}}>
               <JCardOfflineNotice retry={workspace.reload} cached/>
             </View>}
-           </> : <JCardLoadState loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>} 
+           </> : <JCardLoadState loading={workspace.loading} error={workspace.error||"No se pudo recuperar la JCard. Vuelve a intentarlo."} retry={workspace.reload}/>}
           trust={workspace.data?.card ? <ProfessionalTrustMark worker={workspace.data.card.id}/> : null}
           profileUserId={workspace.data?.card?.id} contactsMenuRef={contactsMenuRef}
         />
@@ -424,15 +432,17 @@ export default function Profile() {
         {mode === "cv" && (
           <View style={{ gap: 14 }}>
             <Text style={s.h2}>Historial profesional</Text>
-            <Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}. Agrega cada empresa, el cargo y los años trabajados. El historial y los contactos privados se guardan en tu cuenta. La verificación por la empresa aún no está conectada.</Text>
-            {!historyReady?<Button secondary title="Volver a cargar historial" onPress={()=>setHistoryRetry(v=>v+1)}/>:history.length===0&&<Text style={s.muted}>Todavía no agregaste empleos. Pulsa Agregar para comenzar.</Text>}
+            {ownHistory&&<Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}.</Text>}
+            {ownerId&&!ownHistory&&!historyError&&<PageState kind="loading" message="Cargando historial profesional…"/>}
+            {ownHistory&&!historyEditable&&<PageState kind="error" message="Los contactos privados y la edición del historial no están disponibles." actionLabel="Reintentar" onAction={retryHistory}/>}
+            {ownHistory&&history.length===0&&<Text style={s.muted}>Todavía no agregaste empleos.</Text>}
             {history.map(entry => (
               <View key={entry.id} style={[s.panel, { flexDirection: "row", gap: 12, alignItems: "center" }]}>
                 <View style={{ flex: 1, gap: 4 }}>
                   <Text style={s.h3}>{entry.company} ({entry.from}–{entry.to ?? "actual"})</Text>
                   <Text style={s.muted}>{entry.role}</Text>
                 </View>
-                <Pressable accessibilityRole="button" accessibilityLabel={"Editar empleo en "+entry.company} onPress={()=>openEmployment(entry)} style={{padding:8}}><Ionicons name="create-outline" size={22} color={colors.ink}/></Pressable>
+                {historyEditable&&<Pressable accessibilityRole="button" accessibilityLabel={"Editar empleo en "+entry.company} onPress={()=>openEmployment(entry)} style={{padding:8}}><Ionicons name="create-outline" size={22} color={colors.ink}/></Pressable>}
                 <View accessibilityLabel={entry.verifiedBy ? "Verificado por " + entry.verifiedBy : "No verificada"} style={{ alignItems: "center", gap: 2 }}>
                   <Ionicons name={entry.verifiedBy ? "checkmark-circle" : "ellipse-outline"} size={22} color={colors.ink} />
                   <Text style={[s.muted, { fontSize: 9 }]}>{entry.verifiedBy ? "Verificado" : "No verificada"}</Text>
@@ -441,8 +451,8 @@ export default function Profile() {
             ))}
             <View style={{gap:8}}><Button secondary title="Actualizar solicitudes de CV" onPress={()=>void refreshCV()}/>{incomingCV.filter(req=>req.owner_id===ownerId).map(req=><View key={req.id} style={{gap:6,padding:10,borderWidth:1,borderColor:colors.line,borderRadius:10}}><Text style={s.text}>Solicitud {req.requester_id.slice(0,8)} · {req.status}</Text>{req.status==="pending"&&<View style={s.row}><Button title="Autorizar" onPress={()=>void answerCV(req.id,true)}/><Button secondary title="Rechazar" onPress={()=>void answerCV(req.id,false)}/></View>}{req.status==="approved"&&<Button secondary title="Revocar acceso" onPress={()=>void cancelCV(req.id)}/>}</View>)}</View>
             <View style={s.row}>
-              <Button secondary title="Compartir CV" onPress={() => void shareCV()} />
-              {historyReady&&<Button title="Agregar" onPress={() => openEmployment()} />}
+              <Button secondary title="Compartir CV" disabled={!ownHistory} onPress={() => void shareCV()} />
+              {historyEditable&&<Button title="Agregar" onPress={() => openEmployment()} />}
             </View>
           </View>
         )}
@@ -473,7 +483,7 @@ export default function Profile() {
         </View>
       </BottomSheet>
 
-      <BottomSheet visible={addOpen&&historyReady} onClose={() => {if(!historySaving.current){historyFormScope.current=null;setAddOpen(false);}}} title={editingId?"Editar experiencia":"Agregar experiencia"}>
+      <BottomSheet visible={addOpen&&historyEditable} onClose={() => {if(!historySaving.current){historyFormScope.current=null;setAddOpen(false);}}} title={editingId?"Editar experiencia":"Agregar experiencia"}>
         <View style={{ gap: 12, paddingVertical: 16 }}>
           <View style={{gap:6}}><Text style={s.muted}>Empresa</Text>
            <TextInput accessibilityLabel="Empresa" placeholder="Empresa" placeholderTextColor={colors.muted} value={draft.company} onChangeText={v=>setDraft(d=>({...d,company:v}))} style={{color:colors.ink,borderColor:colors.line,borderWidth:1,padding:14,borderRadius:10}}/>
@@ -508,7 +518,7 @@ export default function Profile() {
           <Button title={historyBusy?"Guardando…":"Guardar"} onPress={add} />
         </View>
       </BottomSheet>
-      <JobeenShareSheet visible={cvShareOpen} onClose={()=>setCvShareOpen(false)} label="Currículum"
+      <JobeenShareSheet visible={cvShareOpen&&!!ownHistory} onClose={()=>setCvShareOpen(false)} label="Currículum"
        theme={theme} contentTitle="Compartir CV"
        contentMessage={["Historial profesional de Jobeen",...history.map(e=>`${e.role} · ${e.company} · ${e.from}/${e.fromMonth??1} - ${e.to??"Actualidad"}/${e.toMonth??12}`)].join("\n")}
        onError={setNotice}/>
