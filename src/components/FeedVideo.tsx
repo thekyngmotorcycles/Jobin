@@ -1,4 +1,4 @@
-import { useTabClearance } from "../theme/navigation";
+import { useFlashNavigationClearance } from "../theme/navigation";
 import { useEffect,useRef,useState } from "react";
 import { AccessibilityInfo,Animated,AppState,Pressable,ScrollView,Text,TextInput,View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,6 +14,7 @@ import { useTheme } from "../state/ThemeProvider";
 import {JobeenShareSheet} from "./JCardShareSheet";
 import { Avatar,BottomSheet,IconButton,useOverlayStyles,type IconName } from "./social-ui";
 import { Button,useUi } from "./ui";
+import {FlashProgress,PlaybackGlyph,FLASH_PROGRESS_HEIGHT} from "./VideoPlaybackControls";
 function SoundLine({text,active}:{text:string;active:boolean}){
  const {colors}=useTheme();
  const x=useRef(new Animated.Value(0)).current;const [width,setWidth]=useState(0);const [textWidth,setTextWidth]=useState(0);const [reduce,setReduce]=useState(false);
@@ -34,9 +35,12 @@ function RailAction({icon,label,count,onPress,selected=false,color}:{icon:IconNa
  {count!==undefined&&<Text style={[overlayStyles.shadowText,{color:colors.mediaText,fontSize:11,fontWeight:"700",marginTop:2}]}>{formatCount(count)}</Text>}
  </Pressable>;
 }
-export function FeedVideo({active,height,clip}:{active:boolean;height:number;clip:FeedClip}){
- const {colors,theme}=useTheme();const overlayStyles=useOverlayStyles();const {barHeight}=useTabClearance();const {s}=useUi();const {name}=useApp();const social=useSocial();
+export function FeedVideo({active,height,clip,onScrubbingChange}:{active:boolean;height:number;clip:FeedClip;onScrubbingChange?:(id:string,dragging:boolean)=>void}){
+ const {colors,theme}=useTheme();const overlayStyles=useOverlayStyles();const navClearance=useFlashNavigationClearance();const barHeight=navClearance+FLASH_PROGRESS_HEIGHT;const {s}=useUi();const {name}=useApp();const social=useSocial();
  const [error,setError]=useState("");const [muted,setMuted]=useState(true);const [paused,setPaused]=useState(false);
+ const [playFeedback,setPlayFeedback]=useState(false);const feedbackTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+ useEffect(()=>{if(!active){setPlayFeedback(false);if(feedbackTimer.current)clearTimeout(feedbackTimer.current);}return()=>{if(feedbackTimer.current)clearTimeout(feedbackTimer.current);};},[active]);
+ function togglePlayback(){if(!active)return;if(feedbackTimer.current)clearTimeout(feedbackTimer.current);if(paused){setPlayFeedback(true);feedbackTimer.current=setTimeout(()=>setPlayFeedback(false),420);}else setPlayFeedback(false);setPaused(!paused);}
  const [sheet,setSheet]=useState<"comments"|"creator"|null>(null);const [draft,setDraft]=useState("");const [shareError,setShareError]=useState("");const [shareOpen,setShareOpen]=useState(false);
  const [expanded,setExpanded]=useState(false);
  const [disclosureVisible,setDisclosureVisible]=useState(true);
@@ -61,8 +65,8 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  function sendComment(){if(!draft.trim())return;social.addComment(clip.postId,name||"You",draft);setDraft("");}
  return <View style={{height,width:"100%",backgroundColor:colors.paper,overflow:"hidden"}}>
  <VideoView player={player} style={{position:"absolute",inset:0}} contentFit="cover" nativeControls={false} surfaceType="textureView" pointerEvents="none"/>
- <Pressable style={{position:"absolute",inset:0}} accessibilityRole="button" accessibilityLabel={paused?"Play video":"Pause video"} onPress={()=>setPaused(!paused)}>
- {paused&&<View style={{flex:1,justifyContent:"center",alignItems:"center"}}><Ionicons name="play" size={56} color={colors.mediaPlay}/></View>}
+ <Pressable style={{position:"absolute",inset:0}} accessibilityRole="button" accessibilityLabel={paused?"Reproducir video":"Pausar video"} onPress={togglePlayback}>
+ {active&&(paused||playFeedback)&&<View pointerEvents="none" style={{flex:1,justifyContent:"center",alignItems:"center"}}><PlaybackGlyph paused={paused}/></View>}
  </Pressable>
  <View pointerEvents="none" style={{position:"absolute",left:0,right:0,bottom:0,height:170+barHeight,backgroundColor:colors.mediaTint}}/>
  {disclosureLabels.length>0&&<View style={{position:"absolute",top:112,left:12,right:70,alignItems:"flex-start"}}>
@@ -100,6 +104,7 @@ export function FeedVideo({active,height,clip}:{active:boolean;height:number;cli
  <SoundLine text={clip.audio} active={playing}/>
  <Text style={{color:colors.mediaQuiet,fontSize:9,letterSpacing:1}}>DEMO · SAMPLE ENGAGEMENT</Text>
  </View>
+ {active&&!error&&!sheet&&!shareOpen&&<FlashProgress player={player} clipId={clip.id} active={active} bottom={navClearance} onScrubbingChange={onScrubbingChange}/>}
  <BottomSheet visible={sheet==="comments"} title={formatCount(clip.comments+comments.length)+" comments"} onClose={()=>setSheet(null)}>
  <Text style={s.muted}>Sample discussion · your comments stay in this demo session.</Text>
  <ScrollView style={{flex:1}} keyboardShouldPersistTaps="handled" contentContainerStyle={{gap:20,paddingVertical:20}}>
