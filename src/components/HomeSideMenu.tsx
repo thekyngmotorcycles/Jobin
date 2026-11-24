@@ -4,7 +4,7 @@ import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {useTheme} from "../state/ThemeProvider";
 import {SettingsMenuRow} from "./SettingsMenuRow";
-import {JOBIN_SETTINGS_GROUPS} from "../lib/jobin-settings-catalog";
+import {JOBIN_SETTINGS_GROUPS,SETTINGS_LOGOUT_ROUTE,matchesLogout} from "../lib/jobin-settings-catalog";
 import {Ionicons} from "@expo/vector-icons";
 import {router} from "expo-router";
 import {useEffect,useMemo,useRef,useState} from "react";
@@ -13,6 +13,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {useUi} from "./ui";
 export const HOME_MENU_ITEMS=[
  {slug:"configuracion",label:"Configuración",icon:"person-circle-outline",description:"Preferencias generales de tu cuenta."},
+ {slug:"normas-politicas",label:"Normas y políticas",icon:"shield-checkmark-outline",description:"Términos y seguridad."},
  {slug:"centro-privacidad",label:"Centro de privacidad",icon:"lock-closed-outline",description:"Controla quién puede ver tu información."},
  {slug:"administracion-tiempo",label:"Administración del tiempo",icon:"time-outline",description:"Gestiona cuánto tiempo utilizas Jobin."},
  {slug:"solicitudes-dispositivos",label:"Solicitudes de dispositivos",icon:"shield-checkmark-outline",description:"Revisa solicitudes y sesiones de dispositivos."},
@@ -59,13 +60,13 @@ export function HomeSideMenu({visible,onClose,onNavigate}:{visible:boolean;onClo
        <Ionicons name="search-outline" size={21} color={chrome.muted}/>
        <TextInput accessibilityLabel="Buscar configuración" value={query} onChangeText={setQuery} placeholder="Buscar configuración" placeholderTextColor={chrome.muted} style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,color:chrome.text,fontSize:JOBEEN_TYPE.input}}/>
       </View>
-      {filtered.map(group=><View key={group.title} style={{gap:7,marginBottom:12}}>
+      {filtered.map(group=><View key={group.title} style={{gap:2,marginBottom:12}}>
        <Text accessibilityRole="header" style={{color:chrome.text,fontWeight:"700",fontSize:JOBEEN_TYPE.sectionTitle}}>{group.title}</Text>
-       <Text style={{color:chrome.muted,fontSize:JOBEEN_TYPE.secondary,marginBottom:2}}>{group.description}</Text>
-       {group.items.map(entry=><SettingsMenuRow key={entry.id} settingId={entry.id} title={entry.title} description={entry.description}
+       {group.items.map(entry=><SettingsMenuRow key={entry.id} icon={entry.icon} title={entry.title}
         onPress={()=>{onNavigate?.();onClose();if(entry.route){router.push(entry.route as any);}else{router.push({pathname:"/settings/[item]",params:{item:entry.id}});}}}/>)}
       </View>)}
-      {filtered.length===0&&<Text style={{color:chrome.muted}}>No encontramos opciones con ese nombre.</Text>}
+      {matchesLogout(query)&&<SettingsMenuRow variant="action" tone="danger" icon="log-out-outline" title="Cerrar sesión" onPress={()=>{onClose();router.push(SETTINGS_LOGOUT_ROUTE as never);}}/>}
+      {filtered.length===0&&!matchesLogout(query)&&<Text style={{color:chrome.muted}}>No encontramos opciones con ese nombre.</Text>}
      </ScrollView>
     </SafeAreaView>
    </Animated.View>

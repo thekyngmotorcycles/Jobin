@@ -20,6 +20,8 @@ Para cada creación o mejora de una pantalla, flujo o componente:
 - Aplicar a TODAS las pantallas: una acción primaria clara cuando corresponda, agrupación lógica, jerarquía visual evidente, textos concisos, divulgación progresiva de opciones secundarias y eliminación de duplicidades. La densidad visual no debe sacrificar áreas táctiles mínimas de 48 × 48 dp, contraste, etiquetas para lectores de pantalla ni legibilidad. Mantener la paleta, tipografía y componentes de Jobeen.
 - Criterio de aceptación: cada elemento visible debe cumplir una función necesaria; si suprimirlo mantiene comprensión, seguridad y facilidad de uso, proponer su eliminación. No ejecutar rediseños sin la aprobación habitual ni levantar el bloqueo de UX vigente.
 
+- **Organización permanente aprobada (2026-11-24):** Casa gestiona cuenta, seguridad, privacidad y preferencias globales; Perfil reúne actividad personal y desarrollo profesional; Panel reúne gestión de contenido, trabajo, negocio e ingresos según rol. Aplicar Master Plan §3.2. No duplicar destinos ni mostrar opciones sin capacidad funcional; conservar accesos autorizados hasta que su sustituto exista. El menú visitante contiene solo acciones contextuales sobre ese perfil. No trasladar datos ni alterar permisos.
+
 ## Material Design 3 e identidad visual
 - Seguir las guías oficiales de MD3 para elevación, radios de borde consistentes, jerarquía tipográfica, espaciado y accesibilidad. Referencia: https://m3.material.io/ y https://developer.android.com/design/ui/mobile/guides .
 - Áreas táctiles de al menos 48 × 48 dp, incluso cuando el icono visible sea menor. Evitar superposiciones entre áreas táctiles. Mantener safe areas, contraste legible, escalado de texto, foco y etiquetas accesibles.

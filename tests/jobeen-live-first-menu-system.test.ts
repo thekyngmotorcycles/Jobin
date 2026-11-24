@@ -26,7 +26,7 @@ test("Home settings, owned profile, and visitor profile reuse the same menu-row 
  assert.ok(owned.includes('<SettingsMenuRow title="Reseñas de empresas"'));
  assert.ok(owned.includes('<SettingsMenuRow title="Certificados y sellos"'));
  assert.ok(owned.includes('<SettingsMenuRow title="Oportunidades laborales"'));
- assert.ok(owned.includes('router.push("/demo-profile")'),"Owned profile demo navigation stays available");
+ assert.ok(owned.includes('{__DEV__&&<SettingsMenuRow title="Ver perfil ficticio (demo)"'),"Demo remains available only in development");
  assert.ok(visitor.includes('<SettingsMenuRow variant="action" title="Compartir perfil"'));
  assert.ok(visitor.includes('<SettingsMenuRow variant="action" tone="danger" title="Bloquear perfil"'));
  assert.ok(visitor.includes('<SettingsMenuRow variant="action" title="Denunciar perfil"'));
@@ -61,4 +61,67 @@ test("Create menu retains four routes with growable controls and safe scroll",()
  assert.ok(create.includes("maxHeight:Math.max(0,bottomMax-menuTop)"));
  assert.ok(create.includes("<ScrollView style={{flexShrink:1}}"));
  assert.ok(create.includes("fontSize:JOBEEN_TYPE.body,lineHeight:JOBEEN_LINE_HEIGHT.body"));
+});
+
+test("Approved minimalist menus render titles only while keeping search metadata and critical confirmations",()=>{
+ const home=src("src/components/HomeSideMenu.tsx");
+ const settings=src("src/app/menu/[section].tsx");
+ const owned=src("src/app/(tabs)/profile.tsx");
+ const visitor=src("src/components/ProfileCommunityActions.tsx");
+ const account=src("src/app/settings/cuenta.tsx");
+ const row=src("src/components/SettingsMenuRow.tsx");
+ for(const source of [home,settings]){
+  assert.ok(source.includes('entry.title+" "+entry.description'),"Settings search retains keyword metadata");
+  assert.ok(!source.includes("description={entry.description}"));
+  assert.ok(!source.includes("{group.description}</Text>"));
+ }
+ assert.ok(!/<SettingsMenuRow[^>]*description=/.test(owned));
+ assert.ok(!/<SettingsMenuRow[^>]*description=/.test(visitor));
+ assert.ok(!account.includes("description={item.detail}"));
+ assert.ok(!account.includes("{group.description}</Text>"));
+ assert.ok(visitor.includes('description={confirm==="remove"?"La relación profesional se eliminará para ambos perfiles."'));
+ assert.ok(account.includes('description={exitError||"¿Quieres salir de tu cuenta de Jobeen?"}'));
+ assert.ok(row.includes("minHeight:JOBEEN_CONTROL.touchTarget"));
+ assert.ok(row.includes("borderRadius:JOBEEN_CONTROL.buttonRadius"));
+ assert.ok(row.includes("backgroundColor:pressed?chrome.selected:colors.transparent"));
+ assert.ok(row.includes("flex:1,minWidth:0"));
+ assert.ok(row.includes("!!description"),"Essential explanations remain possible");
+ assert.ok(owned.includes('width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget'));
+ assert.ok(visitor.includes("maxHeight:Math.max(0,height-insets.top-insets.bottom-81)"));
+ assert.ok(visitor.includes("<ScrollView"));
+ assert.ok(visitor.includes("await assertMessageScope(scope)"));
+ assert.ok(visitor.includes("await removeContactRequest(contact.id,scope)"));
+ assert.ok(account.includes("await endJobinSession(scope)"));
+});
+
+test("Approved Home/Profile separation uses existing destinations and reserves unavailable functions",()=>{
+ const catalog=src("src/lib/jobin-settings-catalog.ts");
+ const active=catalog.slice(catalog.indexOf("export const JOBIN_SETTINGS_GROUPS:"));
+ const home=src("src/components/HomeSideMenu.tsx");
+ const menu=src("src/app/menu/[section].tsx");
+ const owned=src("src/app/(tabs)/profile.tsx");
+ const counts=src("src/components/ProfileFollowCounts.tsx");
+ const account=src("src/app/settings/cuenta.tsx");
+ for(const title of ["Cuenta y privacidad","Preferencias","Información y soporte"])assert.ok(active.includes(title));
+ for(const id of ["zona-profesional","actividad","pagos","suscripciones","tiempo","idioma","bloqueos","sesiones","verificacion"])
+  assert.ok(!active.includes('id:"'+id+'"'),"Unavailable or moved items must not be visible in Home");
+ assert.ok(active.includes('route:"/menu/centro-privacidad"'));
+ assert.ok(active.includes('route:"/menu/normas-politicas"'));
+ assert.ok(menu.includes('router.push("/terms")')&&menu.includes('router.push("/safety")'));
+ assert.ok(menu.includes('router.push("/professional")')&&menu.includes('router.push("/message-requests")'));
+ assert.ok(home.includes('variant="action" tone="danger" icon="log-out-outline" title="Cerrar sesión"'));
+ assert.ok(account.includes('confirmExit==="1"&&!consumedExitLink.current'));
+ assert.ok(account.includes("exitScope.current=await captureMessageScope()"));
+ assert.ok(account.includes("await endJobinSession(scope)"));
+ assert.ok(owned.includes('title="Mi zona profesional"'));
+ assert.ok(owned.includes('router.push("/map-presence")'));
+ assert.ok(owned.includes('title="Mis contactos"'));
+ assert.ok(owned.includes("contactsMenuRef.current?.openContacts(contactsRequested)"));
+ assert.ok(counts.includes('expectedOwner===userId&&isOwner&&scopeRef.current?.owner===expectedOwner'));
+ assert.ok(counts.includes('openList("contacts")'));
+ assert.ok(counts.includes("await myContacts(scope)"));
+ assert.ok(counts.includes("await captureMessageScope(scope)"));
+ assert.ok(owned.includes('!!workspace.data?.organization&&<SettingsMenuRow'));
+ assert.ok(owned.includes('!!workspace.data?.reviewer&&<SettingsMenuRow'));
+ assert.ok(!owned.includes('title="Guardados"')&&!owned.includes('title="Registro de actividad"'));
 });

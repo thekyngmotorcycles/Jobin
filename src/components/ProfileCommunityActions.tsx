@@ -1,7 +1,7 @@
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
 import {useCallback,useEffect,useRef,useState} from "react";
-import {Modal,Pressable,StyleSheet,Text,View,useWindowDimensions} from "react-native";
+import {Modal,Pressable,ScrollView,StyleSheet,Text,View,useWindowDimensions} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
@@ -14,7 +14,7 @@ import {JobeenShareSheet} from "./JCardShareSheet";
 import {JobeenNoticeDialog} from "./JobeenNoticeDialog";
 import {SettingsMenuRow} from "./SettingsMenuRow";
 export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose,onToggleSaved,savedJCard=false,savingJCard=false,visibleCardSide="personal"}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void;onToggleSaved?:()=>void;savedJCard?:boolean;savingJCard?:boolean;visibleCardSide?:"personal"|"business"}){
- const {s,colors}=useUi();const {theme}=useTheme();const modal=jobeenModalTokens(theme);const insets=useSafeAreaInsets();const {width}=useWindowDimensions();const jobeen=jobeenTokens("light");const [shareOpen,setShareOpen]=useState(false);const [confirm,setConfirm]=useState<"remove"|"block"|null>(null);const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
+ const {s,colors}=useUi();const {theme}=useTheme();const modal=jobeenModalTokens(theme);const insets=useSafeAreaInsets();const {width,height}=useWindowDimensions();const jobeen=jobeenTokens("light");const [shareOpen,setShareOpen]=useState(false);const [confirm,setConfirm]=useState<"remove"|"block"|null>(null);const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
  const scopeRef=useRef<MessageScope|null>(null);
  const [contact,setContact]=useState<ContactRequest|null>(null),[viewer,setViewer]=useState("");
  useFocusEffect(useCallback(()=>{
@@ -96,16 +96,18 @@ export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClos
    <View style={{flex:1,backgroundColor:modal.scrim,paddingTop:insets.top+65,paddingHorizontal:16,alignItems:"flex-end"}}>
     <Pressable accessibilityLabel="Cerrar opciones del perfil" onPress={()=>onMenuClose?.()} style={StyleSheet.absoluteFill}/>
     <View style={{width:Math.min(330,width-32),padding:8,borderWidth:1,borderColor:modal.border,
-     backgroundColor:modal.surface,borderRadius:modal.radius.popover,gap:6}}>
-     {onToggleSaved&&<SettingsMenuRow variant="action" title={savingJCard?"Actualizando…":savedJCard?"Quitar de mis JCards":visibleCardSide==="business"?"Guardar JCard empresarial":"Guardar JCard personal"} description="Añade o elimina esta tarjeta de tu colección privada." icon={savedJCard?"bookmark":"bookmark-outline"} disabled={savingJCard} onPress={()=>{onMenuClose?.();onToggleSaved();}}/>}
+     backgroundColor:modal.surface,borderRadius:modal.radius.popover,maxHeight:Math.max(0,height-insets.top-insets.bottom-81)}}>
+     <ScrollView keyboardShouldPersistTaps="handled" style={{flexShrink:1}} contentContainerStyle={{gap:2}}>
+     {onToggleSaved&&<SettingsMenuRow variant="action" title={savingJCard?"Actualizando…":savedJCard?"Quitar de mis JCards":visibleCardSide==="business"?"Guardar JCard empresarial":"Guardar JCard personal"} icon={savedJCard?"bookmark":"bookmark-outline"} disabled={savingJCard} onPress={()=>{onMenuClose?.();onToggleSaved();}}/>}
      <SettingsMenuRow variant="action" title="Compartir perfil"
-      description="Envía la JCard de este profesional." icon="share-social-outline"
+      icon="share-social-outline"
       onPress={()=>{onMenuClose?.();setTimeout(()=>setShareOpen(true),350);}}/>
      <SettingsMenuRow variant="action" tone="danger" title="Bloquear perfil"
-      description="Evita nuevas interacciones con esta cuenta." icon="ban-outline" onPress={block}/>
+      icon="ban-outline" onPress={block}/>
      <SettingsMenuRow variant="action" title="Denunciar perfil"
-      description="Informa sobre contenido o conductas indebidas." icon="flag-outline"
+      icon="flag-outline"
       onPress={()=>{onMenuClose?.();router.push({pathname:"/report-profile",params:{user}});}}/>
+     </ScrollView>
     </View>
    </View>
   </Modal>
