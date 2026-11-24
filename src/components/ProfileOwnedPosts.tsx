@@ -1,13 +1,14 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
-import {useCallback,useState} from "react";
+import {useCallback,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Pressable,Text,View} from "react-native";
-import {deleteHomePost,currentSocialUser,loadAllProfilePosts,loadHomePosts,type FeedPost} from "../lib/social-content";
+import {deleteHomePost,loadAllProfilePosts,loadHomePosts,type FeedPost} from "../lib/social-content";
 import {loadPublishedMedia,type PublishedMedia} from "../lib/safety-api";
 import {getSavedPostIds,setSavedPost} from "../lib/feed-preferences";
+import {assertMessageScope,captureMessageScope} from "../lib/message-session";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
-import {useUi} from "./ui";
+import {PageState,useUi} from "./ui";
 import {ProfileMediaGrid,type ProfileTile} from "./ProfileSharedSections";
 import {BottomSheet} from "./social-ui";
 
@@ -26,29 +27,40 @@ function ProfilePublicationGrid({userId,editable,filter,limit,heading,onSeeAll}:
  const [owner,setOwner]=useState("");
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
+ const [request,setRequest]=useState(0);
+ const retryRevision=useRef(0);
  const reload=useCallback(()=>{
-  let active=true;setLoading(true);
+  let active=true;setLoading(true);setError("");setSelected(null);
+  const valid=()=>active&&request===retryRevision.current;
+  const timeout=setTimeout(()=>{
+   if(!valid())return;
+   active=false;setLoading(false);setError("No se pudieron cargar las publicaciones. Vuelve a intentarlo.");
+  },20_000);
   void(async()=>{
    try{
-    const viewer=await currentSocialUser().catch(()=>"");
+    const scope=await captureMessageScope();
+    if(!valid())return;
+    const viewer=scope.owner;
     const target=editable?viewer:userId??"";
     if(!target)throw Error("No se pudo identificar el perfil.");
     const ids=editable&&viewer?await getSavedPostIds(viewer):[];
+    if(!valid())return;
     const [all,media,marked]=await Promise.all([
-     loadAllProfilePosts(viewer,target),
-     loadPublishedMedia().catch(()=>[] as PublishedMedia[]),
-     editable&&ids.length?loadHomePosts(viewer,undefined,undefined,ids.slice(0,80)):Promise.resolve([] as FeedPost[])
+     loadAllProfilePosts(viewer,target,scope),
+     loadPublishedMedia(scope).catch(()=>[] as PublishedMedia[]),
+     editable&&ids.length?loadHomePosts(viewer,undefined,undefined,ids.slice(0,80),0,scope):Promise.resolve([] as FeedPost[])
     ]);
-    if(active){
+    await assertMessageScope(scope);
+    if(valid()){
      setOwner(target);setPosts(all);
      setWorkMedia(media.filter(m=>m.creator_id===target));
      setSavedPosts(marked);setError("");
     }
-   }catch(e){if(active)setError(e instanceof Error?e.message:"No se pudieron cargar las publicaciones.");}
-   finally{if(active)setLoading(false);}
+   }catch{if(valid())setError("No se pudieron cargar las publicaciones. Vuelve a intentarlo.");}
+   finally{clearTimeout(timeout);if(valid())setLoading(false);}
   })();
-  return()=>{active=false;};
- },[editable,userId]);
+  return()=>{active=false;clearTimeout(timeout);};
+ },[editable,userId,request]);
  useFocusEffect(reload);
  function openPost(post:FeedPost){
   router.push({pathname:"/post/[id]",params:{id:post.id}});
@@ -106,7 +118,7 @@ function ProfilePublicationGrid({userId,editable,filter,limit,heading,onSeeAll}:
    </Pressable>}
   </View>
   {loading&&<ActivityIndicator color={t.ink}/>}
-  {!!error&&<Text accessibilityLiveRegion="polite" style={s.muted}>{error}</Text>}
+  {!!error&&<PageState kind="error" message={error} actionLabel="Reintentar" onAction={()=>setRequest(++retryRevision.current)}/>}
   {!loading&&!error&&<ProfileMediaGrid items={visibleTiles} emptyMessage={emptyMessage}/>}
   <BottomSheet visible={!!selected} onClose={()=>setSelected(null)} title="Opciones de publicación">
    {!!selected&&<View style={{gap:5,paddingVertical:8}}>

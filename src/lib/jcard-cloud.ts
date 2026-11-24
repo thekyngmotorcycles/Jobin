@@ -5,6 +5,9 @@ import type {BusinessCardData} from "./jcard";
 export const BUSINESS_HANDLE_PATTERN=/^[a-z][a-z0-9_.]{2,29}$/;
 export async function cloudOwner(){const db=requireSupabase();const {data,error}=await db.auth.getUser();if(error)throw error;if(!data.user)throw new Error("Inicia sesión para sincronizar.");return data.user.id;}
 export async function readCloudHistory(expectedOwner?:string,expectedScope?:MessageScope):Promise<EmploymentEntry[]>{
+ return (await loadCloudHistory(expectedOwner,expectedScope)).rows;
+}
+export async function loadCloudHistory(expectedOwner?:string,expectedScope?:MessageScope):Promise<{rows:EmploymentEntry[];contactsAvailable:boolean}>{
  const db=requireSupabase(),scope=await captureMessageScope(expectedScope),owner=scope.owner;
  if(expectedOwner&&expectedOwner!==owner)throw Error("La sesión cambió.");
  const [history,details]=await Promise.all([
@@ -12,10 +15,14 @@ export async function readCloudHistory(expectedOwner?:string,expectedScope?:Mess
   (db as any).from("jobeen_employment_private_contact").select("owner_id,client_id,address,contact").eq("owner_id",owner)
  ]);
  if(history.error)throw history.error;
- if(details.error)throw details.error;
  await assertMessageScope(scope);
- const contacts=new Map<string,{address:string;contact:string}>((details.data??[]).filter((r:any)=>r.owner_id===owner).map((r:any)=>[r.client_id,{address:r.address,contact:r.contact}]));
- return (history.data??[]).filter((r:any)=>r.owner_id===owner).map((r:any)=>({id:r.client_id,company:r.company,role:r.role,professions:r.professions,from:r.from_year,fromMonth:r.from_month,to:r.to_year,toMonth:r.to_month,status:r.verified_by?"approved":"pending",verifiedBy:r.verified_by,...contacts.get(r.client_id)}));
+ // The contacts table is supplemental and may not exist on the current backend.
+ // Never read legacy contact columns or enable edits when these details are unavailable.
+ const contactsAvailable=!details.error&&Array.isArray(details.data);
+ const contacts=new Map<string,{address:string;contact:string}>((contactsAvailable?details.data:[]).filter((r:any)=>r.owner_id===owner).map((r:any)=>[r.client_id,{address:r.address,contact:r.contact}]));
+ if(!Array.isArray(history.data))throw Error("El historial privado no está disponible.");
+ const rows=history.data.filter((r:any)=>r.owner_id===owner).map((r:any)=>({id:r.client_id,company:r.company,role:r.role,professions:r.professions,from:r.from_year,fromMonth:r.from_month,to:r.to_year,toMonth:r.to_month,status:r.verified_by?"approved":"pending",verifiedBy:r.verified_by,...contacts.get(r.client_id)}));
+ return {rows,contactsAvailable};
 }
 export async function writeCloudHistory(entry:EmploymentEntry,expectedOwner:string,expectedScope?:MessageScope){
  const db=requireSupabase(),scope=await captureMessageScope(expectedScope),owner=scope.owner;

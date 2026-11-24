@@ -91,6 +91,7 @@ function fixture() {
     const states: unknown[] = [];
     const react = {
       createContext: () => ({ Provider: Symbol() }),
+      useRef: (current: unknown) => ({ current }),
       useEffect: (effect: () => () => void) => { cleanup = effect(); },
       useState: (value: unknown) => {
         const index = states.push(value) - 1;
