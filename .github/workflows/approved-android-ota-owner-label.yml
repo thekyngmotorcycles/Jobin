@@ -1,0 +1,118 @@
+# One-shot owner-approved release; never merge this branch into development.
+# Exact application source and compatibility checks are reused from expo-development.yml.
+name: Jobeen approved Android OTA - owner label
+run-name: Jobeen consolidated OTA d6600dfce67b3569a8f2a811cddc60700a8eaa62
+on:
+  pull_request:
+    types: [labeled]
+permissions:
+  contents: read
+concurrency:
+  group: expo-development-ota-manual
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: >-
+      github.repository == 'thekyngmotorcycles/Jobin' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'release/approved-ota-d6600dfc' &&
+      github.event.pull_request.base.ref == 'development' &&
+      github.event.pull_request.base.sha == 'd6600dfce67b3569a8f2a811cddc60700a8eaa62' &&
+      github.event.label.name == 'approve-android-ota-d6600dfc' &&
+      github.actor == 'thekyngmotorcycles' &&
+      github.triggering_actor == 'thekyngmotorcycles' &&
+      github.event.sender.login == 'thekyngmotorcycles' &&
+      github.run_attempt == '1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact approved commit without write credentials
+        uses: actions/checkout@v4
+        with:
+          ref: 'd6600dfce67b3569a8f2a811cddc60700a8eaa62'
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Validate live project identity; never use isolated pilot for an OTA
+        env:
+          EXPO_PROJECT_ID: ${{ vars.EXPO_PROJECT_ID }}
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const expo = JSON.parse(readFileSync('app.json', 'utf8')).expo;
+          const liveId = 'a6befb1a-dc03-45a8-a18c-294643e99434';
+          if (expo.extra?.eas?.projectId !== liveId ||
+              expo.updates?.url !== `https://u.expo.dev/${liveId}` ||
+              (process.env.EXPO_PROJECT_ID && process.env.EXPO_PROJECT_ID !== liveId)) {
+            throw new Error('Expo project/updates URL mismatch; OTA refused.');
+          }
+          if (process.env.JOBEEN_SECURITY_PILOT === '1' ||
+              process.env.EXPO_PUBLIC_JOBEEN_SECURITY_PILOT === '1') {
+            throw new Error('Security-pilot runtime must never publish OTA.');
+          }
+          JS
+      - run: npm ci --no-audit --no-fund
+      - run: npx expo install --check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Match the consolidated feed APK runtime
+        env:
+          OTA_PLATFORM: android
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$OTA_PLATFORM" = android
+          test -n "$EXPO_TOKEN"
+          BASE=4425bdf1b39d3085033e77296dac2ec4a528f443
+          git merge-base --is-ancestor "$BASE" HEAD
+          git diff --exit-code "$BASE" HEAD -- app.json app.config.js app.config.ts eas.json package.json package-lock.json modules android ios plugins .gitignore .easignore .fingerprintignore fingerprint.config.js fingerprint.config.ts babel.config.js metro.config.js
+          node --input-type=module <<'JS'
+          const appId='a6befb1a-dc03-45a8-a18c-294643e99434';
+          const buildId='4497923f-9f26-47ae-bfd9-92864b677028';
+          const runtime='jobeen-native-20261123-feed-4425bdf1';
+          const response=await fetch('https://api.expo.dev/graphql',{
+            method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+process.env.EXPO_TOKEN},
+            body:JSON.stringify({query:'query VerifiedPreview($appId: String!) { app { byId(appId: $appId) { builds(offset: 0, limit: 20) { id status platform runtime { version } buildProfile artifacts { buildUrl applicationArchiveUrl } } } } }',variables:{appId}})
+          });
+          const result=await response.json();
+          if(!response.ok||result.errors)throw Error('Unable to verify the approved Expo build.');
+          const build=result.data?.app?.byId?.builds?.find(item=>item.id===buildId);
+          if(!build||build.status!=='FINISHED'||String(build.platform).toUpperCase()!=='ANDROID'||build.buildProfile!=='preview'||build.runtime?.version!==runtime||!(build.artifacts?.buildUrl||build.artifacts?.applicationArchiveUrl))
+            throw Error('The approved installed Android APK is not verified.');
+          console.log('Verified APK '+buildId+' runtime '+runtime);
+          JS
+          node <<'JS'
+          const {readFileSync,writeFileSync}=require('node:fs');
+          const {resolveRuntimeVersionAsync}=require('expo-updates/utils/build/resolveRuntimeVersionAsync');
+          const config=JSON.parse(readFileSync('app.json','utf8'));
+          const runtime='jobeen-native-20261123-feed-4425bdf1';
+          if(config.expo?.runtimeVersion?.policy!=='fingerprint'||config.expo.android?.package!=='com.thekyngmotorcycles.jobin')throw Error('Unexpected APK config');
+          config.expo.android.runtimeVersion = runtime;
+          writeFileSync('app.json',JSON.stringify(config,null,2)+'\n');
+          resolveRuntimeVersionAsync(process.cwd(),'android',{}, {workflowOverride:'managed'}).then(result=>{
+            if (result.runtimeVersion !== runtime) throw Error('Android runtime mismatch');
+            console.log('Android OTA runtime: '+result.runtimeVersion);
+          }).catch(error=>{console.error(error.message);process.exitCode=1;});
+          JS
+      - name: Publish only the explicitly approved OTA (no builds, Git pushes or channel changes)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          OTA_PLATFORM: android
+        run: |
+          test -n "$EXPO_TOKEN" || { echo "::error::Missing EXPO_TOKEN"; exit 1; }
+          test "$(git rev-parse HEAD)" = 'd6600dfce67b3569a8f2a811cddc60700a8eaa62' || { echo "::error::Commit mismatch"; exit 1; }
+          case "$OTA_PLATFORM" in
+            android|all) ;;
+            *) echo "::error::Invalid OTA platform"; exit 1 ;;
+          esac
+          npx eas-cli@27.1.0 update --branch development --environment preview --platform "$OTA_PLATFORM" --message "Jobeen approved OTA d6600dfce67b3569a8f2a811cddc60700a8eaa62 PANEL-02" --non-interactive --json > "$RUNNER_TEMP/expo-update.json"
+          jq -c 'if type == "array" then .[] | {id, group, runtimeVersion, platform} else empty end' "$RUNNER_TEMP/expo-update.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jobeen-approved-development-ota
+          path: ${{ runner.temp }}/expo-update.json
+          if-no-files-found: error
