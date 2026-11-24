@@ -36,7 +36,7 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
   const subscription=supabase?.auth.onAuthStateChange((event,session)=>{
    let nextScope:MessageScope|null=null;
    try{if(session)nextScope={owner:session.user.id,session:sessionMarkerKey(session.user.id,session.access_token)};}catch{/* Invalid metadata cannot retain a private scope. */}
-   if(nextScope&&sameScope(observedScope.current,nextScope)&&
+   if(cacheWorkspace&&nextScope&&sameScope(observedScope.current,nextScope)&&
       (event==="TOKEN_REFRESHED"||event==="SIGNED_IN"||event==="INITIAL_SESSION"))return;
    observedScope.current=nextScope;
    generation.current++;
@@ -46,7 +46,7 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
    reload();
   });
   return ()=>subscription?.data.subscription.unsubscribe();
- },[reload]);
+ },[cacheWorkspace,reload]);
  useFocusEffect(useCallback(()=>{
   let current=true;
   const requestGeneration=generation.current;
