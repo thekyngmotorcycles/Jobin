@@ -3,7 +3,7 @@ import {pickSecuredEvidence} from "../lib/private-attachment-android";
 import type {PendingEvidence} from "../lib/private-attachment";
 import { router,useFocusEffect } from "expo-router";
 import { Text, View } from "react-native";
-import { Button, Notice, Screen, useUi } from "../components/ui";
+import { Button, Notice, PageFrame, PageState, useUi } from "../components/ui";
 import { ProfessionPicker } from "../components/ProfessionPicker";
 import { ProfessionalStatus } from "../components/ProfessionalStatus";
 import { loadCatalog, loadWorkspace, uploadCredential } from "../lib/professional-api";
@@ -49,11 +49,12 @@ export default function Certificates(){
    setFile(null);
   },"Solicitud registrada como pendiente.");
  }
- return <Screen title="Certifica tu profesión." subtitle="Documentos privados. Ningún archivo concede un sello sin revisión.">
+ return <PageFrame kind="management">
+ <Text style={s.muted}>Documentos privados. Ningún archivo concede un sello sin revisión.</Text>
  {!w?<ProfessionalStatus loading={workspace.loading} error={workspace.error} retry={workspace.reload}/>:<>
   {!!action.notice&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
   <View style={s.panel}>
-   <Text style={s.h2}>{w.organization?"Solicitar sello preaprobado":"Certificados y licencias personales"}</Text>
+   <Text accessibilityRole="header" style={s.h3}>{w.organization?"Solicitar sello preaprobado":"Certificados y licencias personales"}</Text>
    <Text style={s.muted}>{w.organization?"La revisión acredita a esta organización para el rubro elegido. No permite otorgar otros sellos.":"Primero agrega la profesión a tu JCard. Los sellos aprobados por documentos propios se conservan al salir de una empresa."}</Text>
    {!!catalog.error&&<Text style={s.muted}>{catalog.error}</Text>}
    <ProfessionPicker catalog={catalog.data} value={profession} onChange={setProfession}/>
@@ -61,13 +62,13 @@ export default function Certificates(){
    <Button title={action.busy?"Enviando…":"Enviar a revisión"} onPress={()=>void submit()}/>
    <Button secondary title="Editar mis profesiones" onPress={()=>router.push("/professional")}/>
   </View>
-  <View style={s.panel}><Text style={s.h2}>Mis solicitudes</Text>
-   {w.requests.length===0?<Text style={s.muted}>Aún no has enviado documentos.</Text>:w.requests.filter(r=>r.owner_id===scope?.owner).map(r=><View key={r.id} style={{gap:5}}>
+  <View style={s.panel}><Text accessibilityRole="header" style={s.h3}>Mis solicitudes</Text>
+   {w.requests.length===0?<PageState kind="empty" message="Aún no has enviado documentos."/>:w.requests.filter(r=>r.owner_id===scope?.owner).map(r=><View key={r.id} style={{gap:5}}>
     <Text style={s.h3}>{r.label}</Text><Text style={s.tag}>{CREDENTIAL_STATUS[r.status]}</Text>
     {!!r.reason&&<Text style={s.text}>{r.reason}</Text>}
     <Text style={s.muted}>{new Date(r.created_at).toLocaleDateString()}</Text>
    </View>)}
   </View>
  </>}
- </Screen>;
+ </PageFrame>;
 }

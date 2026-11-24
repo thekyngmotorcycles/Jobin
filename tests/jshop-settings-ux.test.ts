@@ -38,3 +38,11 @@ test("Mapbox seller location avoids redundant reverse requests and validates bef
  assert.ok(picker.includes("if(!scope||!mapboxConfigured||!typing"));
  assert.ok(picker.includes("void searchOnSubmit()"));
 });
+
+test("JShop pages reuse shared management geometry while keeping seller settings actions",()=>{
+ const ui=read("src/components/JShopUI.tsx");
+ const settings=read("src/app/jshop/settings.tsx");
+ assert.ok(ui.includes('<PageFrame kind="management" bottomPadding={42}>'));
+ assert.ok(settings.includes('<JShopPage>'));
+ assert.ok(settings.includes('await writeSellerCurrency(owner,next,scope)'));
+});

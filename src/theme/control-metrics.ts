@@ -28,3 +28,11 @@ export function royalHiveLayout(width:number,fontScale=1,methodCount=4){
   methodsMinWidth,methodsNeedScroll:available<methodsMinWidth,methodCell,
   methodsWidth:count*methodCell+(count-1)*gap,actionSize,avatarSize,recipientCell} as const;
 }
+
+/** Standard page geometry; specialized immersive views are excluded. */
+export type JobeenPageKind="settings"|"form"|"list"|"management";
+export function jobeenPageLayout(width:number,kind:JobeenPageKind){
+ const {margin}=royalHiveLayout(width);
+ const maxWidth=kind==="settings"||kind==="form"?720:980;
+ return {padding:margin,gap:16,maxWidth,width:"100%",alignSelf:"center",paddingBottom:32} as const;
+}

@@ -1,7 +1,7 @@
 import {JOBEEN_TYPE} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {useCallback,useEffect,useRef,useState} from "react";
-import {ActivityIndicator,Pressable,ScrollView,Text,TextInput,View} from "react-native";
+import {Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {router,useLocalSearchParams,useFocusEffect} from "expo-router";
 import {Avatar,IconButton} from "../components/social-ui";
@@ -10,7 +10,7 @@ import {readRecentSearches,rememberRecentSearch,clearRecentSearches} from "../li
 import {suggestionsForQuery} from "../lib/search-history-core";
 import {PublicProfileAvatar} from "../components/PublicProfileAvatar";
 import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
-import {useUi} from "../components/ui";
+import {Button,PageState,usePageLayout,useUi} from "../components/ui";
 import {visiblePosts} from "../lib/feed";
 import {browseStreams} from "../lib/streams";
 import {interpretJobinSearch,matchJobinTerms} from "../lib/jobin-search";
@@ -27,6 +27,7 @@ export default function Search(){
  const {s,colors}=useUi();
  const catalog=useProfessionalData(loadCatalog);
  const specialtyCatalog=useProfessionalData(loadSpecialtyCatalog);
+ const pageLayout=usePageLayout("list");
  const filterScrollRef=useRef<ScrollView>(null);
  const filterPositions=useRef<Partial<Record<SearchKind,{x:number;width:number}>>>({});
  const filterViewportWidth=useRef(0);
@@ -128,12 +129,12 @@ export default function Search(){
   </View>
   <View style={{flexDirection:"row",gap:8,paddingHorizontal:16,paddingBottom:9}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Ver resultados en lista" accessibilityState={{selected:true}}
-    onPress={()=>setViewMode("list")} style={{flex:1,minHeight:42,backgroundColor:colors.ink,borderRadius:15,alignItems:"center",justifyContent:"center",flexDirection:"row",gap:7}}>
+    onPress={()=>setViewMode("list")} style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,backgroundColor:colors.ink,borderRadius:15,alignItems:"center",justifyContent:"center",flexDirection:"row",gap:7}}>
     <Ionicons name="list-outline" size={19} color={colors.paper}/>
     <Text style={{fontWeight:"800",color:colors.paper}}>Lista</Text>
    </Pressable>
    <Pressable accessibilityRole="button" accessibilityLabel="Ver empresas y profesionales en el mapa" onPress={()=>{invalidateResults();setViewMode("map");}}
-    style={{flex:1,minHeight:42,backgroundColor:colors.accent,borderRadius:15,alignItems:"center",justifyContent:"center",flexDirection:"row",gap:7}}>
+    style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,backgroundColor:colors.accent,borderRadius:15,alignItems:"center",justifyContent:"center",flexDirection:"row",gap:7}}>
     <Ionicons name="map-outline" size={19} color={colors.ink}/>
     <Text style={{fontWeight:"700",color:colors.ink}}>Mapa</Text>
    </Pressable>
@@ -141,12 +142,12 @@ export default function Search(){
   {showRecent&&recent.length>0&&<View style={{marginHorizontal:16,marginBottom:8,padding:8,borderWidth:1,borderColor:colors.line,borderRadius:17,backgroundColor:colors.paper,gap:1}}>
    <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:10,paddingVertical:4}}>
     <Text style={{fontSize:12,fontWeight:"700",color:colors.muted}}>Búsquedas recientes</Text>
-    <Pressable accessibilityRole="button" accessibilityLabel="Borrar búsquedas recientes" onPress={()=>void clearHistory()} style={{minHeight:36,justifyContent:"center",paddingHorizontal:8}}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Borrar búsquedas recientes" onPress={()=>void clearHistory()} style={{minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center",paddingHorizontal:8}}>
      <Text style={{fontSize:12,color:colors.muted}}>Borrar historial</Text>
     </Pressable>
    </View>
    {suggestionsForQuery(recent,query).map(term=><Pressable key={term} accessibilityRole="button" accessibilityLabel={"Buscar de nuevo "+term} onPress={()=>void runSearch(term)}
-    style={({pressed})=>({minHeight:46,borderRadius:11,flexDirection:"row",alignItems:"center",paddingHorizontal:12,gap:11,backgroundColor:pressed?colors.accent:colors.transparent})}>
+    style={({pressed})=>({minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:JOBEEN_CONTROL.buttonRadius,flexDirection:"row",alignItems:"center",paddingHorizontal:12,gap:11,backgroundColor:pressed?colors.accent:colors.transparent})}>
     <Ionicons name="time-outline" size={18} color={colors.muted}/>
     <Text numberOfLines={1} style={{color:colors.ink,fontSize:14,flex:1}}>{term}</Text>
     <Ionicons name="arrow-up-outline" size={17} color={colors.muted}/>
@@ -171,18 +172,16 @@ export default function Search(){
      color:kind===option?colors.paper:colors.ink,fontWeight:kind===option?"700":"500"}}>{option}</Text>
    </Pressable>)}
   </ScrollView>
-  <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:20,gap:16,paddingBottom:100}}>
+  <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[pageLayout,{paddingBottom:100}]}>
    {(effectiveKind==="Todo"||effectiveKind==="Profesionales"||effectiveKind==="Empresas"||effectiveKind==="Personas")?<>
     <Text style={s.h3}>{effectiveKind==="Todo"?"Busca en todas las cuentas de Jobeen":effectiveKind==="Personas"?"Encuentra personas por nombre, usuario o ciudad":effectiveKind==="Empresas"?"Encuentra empresas por sector, servicio y ciudad":"Encuentra profesionales por profesión, especialidad y ciudad"}</Text>
     <Text style={s.muted}>{effectiveKind==="Todo"?"Busca personas, profesionales y negocios por nombre, usuario, profesión o ciudad.":effectiveKind==="Personas"?"Usuarios que no han agregado ninguna profesión a su JCard. Pueden ver videos, streams y buscar profesionales.":"Describe lo que necesitas: «Técnico de aire acondicionado especializado en VRF en Miami»."}</Text>
-    <TextInput accessibilityLabel="Ciudad" value={city} onChangeText={value=>{setCity(value);invalidateResults();}} placeholder="Ciudad (opcional si la escribiste arriba)" placeholderTextColor={colors.muted} style={{minHeight:JOBEEN_CONTROL.inputHeight,paddingHorizontal:12,borderWidth:1,borderColor:colors.outline,borderRadius:JOBEEN_CONTROL.inputRadius,color:colors.ink,fontSize:JOBEEN_TYPE.input}}/>
-    {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&<TextInput accessibilityLabel="Especialidad" value={specialty} onChangeText={value=>{setSpecialty(value);invalidateResults();}} placeholder="Especialidad (opcional, ej. VRF)" placeholderTextColor={colors.muted} style={{minHeight:JOBEEN_CONTROL.inputHeight,paddingHorizontal:12,borderWidth:1,borderColor:colors.outline,borderRadius:JOBEEN_CONTROL.inputRadius,color:colors.ink,fontSize:JOBEEN_TYPE.input}}/>}
-    <Pressable accessibilityRole="button" onPress={()=>void runSearch()} disabled={loading} style={{minHeight:JOBEEN_CONTROL.touchTarget,padding:12,borderRadius:JOBEEN_CONTROL.buttonRadius,backgroundColor:colors.primary,alignItems:"center",justifyContent:"center"}}>
-     <Text style={{color:colors.onPrimary,fontSize:JOBEEN_TYPE.action,fontWeight:"700",textAlign:"center"}}>{loading?"Buscando…":effectiveKind==="Todo"?"Buscar en todo":effectiveKind==="Personas"?"Buscar personas":effectiveKind==="Empresas"?"Buscar empresas":"Buscar profesionales"}</Text>
-    </Pressable>
+    <TextInput accessibilityLabel="Ciudad" value={city} onChangeText={value=>{setCity(value);invalidateResults();}} placeholder="Ciudad (opcional si la escribiste arriba)" placeholderTextColor={colors.muted} style={s.formInput}/>
+    {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&<TextInput accessibilityLabel="Especialidad" value={specialty} onChangeText={value=>{setSpecialty(value);invalidateResults();}} placeholder="Especialidad (opcional, ej. VRF)" placeholderTextColor={colors.muted} style={s.formInput}/>}
+    <Button title={effectiveKind==="Todo"?"Buscar en todo":effectiveKind==="Personas"?"Buscar personas":effectiveKind==="Empresas"?"Buscar empresas":"Buscar profesionales"} busy={loading} busyLabel="Buscando…" onPress={()=>void runSearch()}/>
     {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&<Text style={s.muted}>Primero coincidencia con tu búsqueda; después credenciales y reconocimientos verificados. Las cuentas personales no tienen puntuación por estrellas.</Text>}
-    {loading&&<ActivityIndicator color={colors.ink}/>}
-    {!!error&&<Text style={{color:colors.ink}}>{error}</Text>}
+    {loading&&<PageState kind="loading"/>}
+    {!!error&&<PageState kind="error" message={error}/>}
     {searched&&!loading&&!error&&<Text style={s.muted}>{effectiveKind==="Todo"?allAccounts.length:effectiveKind==="Personas"?people.length:displayedResults.length} resultados encontrados</Text>}
     {effectiveKind==="Todo"&&allAccounts.map(account=><Pressable key={account.id} accessibilityRole="button" accessibilityLabel={"Ver perfil de "+account.name} onPress={()=>void openProfile(account.id)} style={{flexDirection:"row",alignItems:"center",paddingVertical:12,gap:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
       <PublicProfileAvatar userId={account.id} name={account.name} size={54} respectJCardVisibility/>
@@ -195,7 +194,7 @@ export default function Search(){
     {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&displayedResults.map(person=><Pressable key={person.id+":"+person.profession_code} accessibilityRole="button" accessibilityLabel={"Ver perfil de "+person.name} onPress={()=>void openProfile(person.id)} style={{flexDirection:"row",alignItems:"center",paddingVertical:12,gap:12,borderBottomWidth:1,borderBottomColor:colors.line}}>
       <PublicProfileAvatar userId={person.id} name={person.name} size={54} respectJCardVisibility/><View style={{flex:1,gap:3}}><Text style={{color:colors.ink,fontSize:16,fontWeight:"700"}} numberOfLines={1}>{person.name}</Text><Text style={s.muted} numberOfLines={1}>@{person.handle||"usuario"}</Text><Text style={s.muted} numberOfLines={1}>{person.profession}</Text></View><Text style={{fontSize:22,color:colors.muted}}>›</Text>
     </Pressable>)}
-    {searched&&!loading&&!error&&(effectiveKind==="Todo"?allAccounts.length===0:effectiveKind==="Personas"?people.length===0:displayedResults.length===0)&&<Text style={s.text}>No encontramos perfiles que coincidan. Prueba otra ciudad o una especialidad más amplia.</Text>}
+    {searched&&!loading&&!error&&(effectiveKind==="Todo"?allAccounts.length===0:effectiveKind==="Personas"?people.length===0:displayedResults.length===0)&&<PageState kind="empty" message="No encontramos perfiles que coincidan. Prueba otra ciudad o una especialidad más amplia."/>}
    </>:effectiveKind==="Flashes"?<>
     <Text style={s.muted}>{query?"Resultados de Flashes":"Explorar Flashes"}</Text>
     {posts.map(post=><Pressable key={post.postId} accessibilityRole="button" onPress={()=>router.replace({pathname:"/videos",params:{post:post.postId}})} style={{flexDirection:"row",gap:14,alignItems:"center",paddingVertical:12,borderBottomWidth:1,borderBottomColor:colors.line}}>

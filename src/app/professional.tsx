@@ -6,7 +6,7 @@ import {router,Stack,useFocusEffect,useNavigation} from "expo-router";
 import {usePreventRemove} from "@react-navigation/native";
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import {JobeenNoticeDialog} from "../components/JobeenNoticeDialog";
-import { Button, Chips, Notice, Screen, useUi } from "../components/ui";
+import { Button, Chips, Notice, PageFrame, useUi } from "../components/ui";
 import { ProfessionPicker } from "../components/ProfessionPicker";
 import { SpecialtyPicker } from "../components/SpecialtyPicker";
 import { ProfessionalStatus } from "../components/ProfessionalStatus";
@@ -233,7 +233,7 @@ export default function Professional() {
     <Text style={{fontSize:JOBEEN_TYPE.action,lineHeight:JOBEEN_LINE_HEIGHT.action,fontWeight:"700",color:colors.ink}}>{action.busy?"Guardando…":"Guardar"}</Text>
    </Pressable>
   ):undefined}}/>
-  <Screen demo={false} hideHeader hideFooter scrollRef={scrollRef} title="Editar mi JCard" subtitle="">
+  <PageFrame kind="form" scrollRef={scrollRef}>
   {!w?<ProfessionalStatus loading={workspace.loading||(!settingsReady&&!editorError)} error={editorError||workspace.error} retry={retryEditor}/>:<>
    {!!action.notice&&!removeRequest&&<Notice text={action.notice} onClose={()=>action.setNotice("")}/>}
    <View style={{gap:6,paddingTop:0,paddingBottom:8}}>
@@ -314,7 +314,7 @@ export default function Professional() {
 
    </View>
   </>}
-  </Screen>
+  </PageFrame>
   <JobeenNoticeDialog visible={!!w&&!!removeRequest&&!unsavedDialogOpen} title="Eliminar profesión"
    description={action.notice||(removeRequest?.primary?"¿Eliminar tu profesión principal? Puedes seleccionar otra después.":"¿Eliminar esta profesión?")} tone="danger" confirmLabel="Eliminar" busy={action.busy}
    onCancel={()=>{if(!action.busy){setRemoveRequest(null);action.setNotice("");}}} onConfirm={()=>void confirmRemoveProfession()}/>

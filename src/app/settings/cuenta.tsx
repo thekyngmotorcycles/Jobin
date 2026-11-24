@@ -2,14 +2,12 @@ import {Ionicons} from "@expo/vector-icons";
 import {router,useLocalSearchParams} from "expo-router";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {captureMessageScope,type MessageScope} from "../../lib/message-session";
-import {Pressable,ScrollView,Text,View} from "react-native";
-import {SafeAreaView} from "react-native-safe-area-context";
+import {Pressable,Text,View} from "react-native";
 import {endJobinSession} from "../../components/AuthGate";
-import {useUi} from "../../components/ui";
+import {PageFrame,useUi} from "../../components/ui";
 import {SettingsMenuRow} from "../../components/SettingsMenuRow";
 import {JobeenNoticeDialog} from "../../components/JobeenNoticeDialog";
 import {JOBEEN_TYPE} from "../../theme/typography";
-import {JOBEEN_CONTROL} from "../../theme/control-metrics";
 type Item={label:string;detail:string;icon:React.ComponentProps<typeof Ionicons>["name"];route?:string;action?:()=>void};
 export default function AccountSecurity(){
  const {s,colors}=useUi();const [signingOut,setSigningOut]=useState(false);const [exitOpen,setExitOpen]=useState(false);const [exitError,setExitError]=useState("");
@@ -36,7 +34,7 @@ export default function AccountSecurity(){
    {label:"Desactivar o eliminar cuenta",detail:"Consulta las opciones de cierre de cuenta.",icon:"alert-circle-outline",route:"/settings/cierre-cuenta"}]},
  ];
  async function signOut(){const scope=exitScope.current;if(exitGuard.current||!scope)return;exitGuard.current=true;setSigningOut(true);setExitError("");try{await endJobinSession(scope);setExitOpen(false);}catch{setExitError("No se pudo cerrar sesión. Inténtalo de nuevo.");}finally{exitGuard.current=false;setSigningOut(false);}}
- return <SafeAreaView edges={["bottom"]} style={s.screen}><ScrollView contentContainerStyle={{padding:JOBEEN_CONTROL.pageHorizontalPadding,paddingBottom:48,gap:16,maxWidth:720,width:"100%",alignSelf:"center"}}>
+ return <><PageFrame kind="settings" bottomPadding={48}>
   {groups.map(group=><View key={group.title} style={{gap:8}}>
    <Text accessibilityRole="header" style={[s.h3,{fontSize:JOBEEN_TYPE.sectionTitle,fontWeight:"800"}]}>{group.title}</Text>
    <View style={{gap:2}}>{group.items.map(item=><SettingsMenuRow key={item.label} icon={item.icon} title={item.label}
@@ -45,8 +43,8 @@ export default function AccountSecurity(){
   <Pressable accessibilityRole="button" disabled={signingOut} onPress={()=>void requestExit()} style={{padding:17,borderRadius:18,borderWidth:1,borderColor:colors.line,alignItems:"center",flexDirection:"row",justifyContent:"center",gap:12}}>
    <Ionicons name="log-out-outline" size={23} color={colors.ink}/><Text style={[s.text,{fontWeight:"700"}]}>{signingOut?"Cerrando sesión…":"Cerrar sesión"}</Text>
   </Pressable>
-  </ScrollView>
+  </PageFrame>
   <JobeenNoticeDialog visible={exitOpen} title="Cerrar sesión" description={exitError||"¿Quieres salir de tu cuenta de Jobeen?"}
    tone="warning" confirmLabel="Cerrar sesión" onCancel={()=>{exitScope.current=null;setExitError("");setExitOpen(false);}} onConfirm={()=>void signOut()} busy={signingOut}/>
- </SafeAreaView>;
+ </>;
 }

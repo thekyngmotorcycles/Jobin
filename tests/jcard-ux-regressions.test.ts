@@ -157,3 +157,13 @@ test("Royal Hive editor warnings preserve private contact defaults and prevent h
  assert.ok(personal.includes('await saveJCardVisibility(visibility,owner,origin)'));
  assert.ok(businessEditor.includes('await saveJCardVisibility(visibility,editorOwner,origin)'));
 });
+
+test("Standard form pages preserve editor identity, privacy and unsaved-change handling",()=>{
+ const personal=src("src/app/professional.tsx");
+ assert.ok(personal.includes('<PageFrame kind="form" scrollRef={scrollRef}>'));
+ assert.ok(personal.includes('usePreventRemove(hasUnsavedChanges||professionFormOpen'));
+ assert.ok(personal.includes('saveJCardVisibility(visibility,owner,origin)'));
+ assert.ok(editor.includes('<PageFrame kind="form">'));
+ assert.ok(editor.includes('saveJCardVisibility(visibility,editorOwner,origin)'));
+ assert.ok(editor.includes('writeCloudBusiness(clean,editorOwner,origin)'));
+});

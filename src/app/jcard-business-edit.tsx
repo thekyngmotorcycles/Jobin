@@ -8,7 +8,7 @@ import type {ProfessionalCatalog} from "../lib/professional-types";
 import {EMPTY_BUSINESS_CARD} from "../lib/business-card-cache";
 import {Ionicons} from "@expo/vector-icons";
 import {JobeenNoticeDialog} from "../components/JobeenNoticeDialog";
-import {Screen,Button,useUi} from "../components/ui";
+import {PageFrame,Button,useUi} from "../components/ui";
 import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {readCloudBusiness,writeCloudBusiness,checkBusinessHandleAvailable,BUSINESS_HANDLE_PATTERN} from "../lib/jcard-cloud";
@@ -123,7 +123,7 @@ export default function BusinessEditor(){
    }
   }finally{savingRef.current=false;if(activeRef.current)setSaving(false);}
  }
- return <><Screen demo={false} hideHeader hideFooter title="JCard de negocio" subtitle="">
+ return <><PageFrame kind="form">
   <View style={{gap:8,paddingTop:0,paddingBottom:8}}>
    {loading?<Text style={s.muted}>Cargando JCard…</Text>:!editorScope?<Button title="Reintentar" onPress={()=>setLoadRevision(v=>v+1)}/>:<>
    {sections.map(section=><View key={section.id} style={[s.panel,{padding:JOBEEN_CONTROL.panelPadding,gap:JOBEEN_CONTROL.panelGap}]}>
@@ -159,7 +159,7 @@ export default function BusinessEditor(){
    {!!notice&&<Text accessibilityLiveRegion="polite" style={s.text}>{notice}</Text>}
 
   </View>
- </Screen>
+ </PageFrame>
  <JobeenNoticeDialog visible={!!editorScope&&visibilityWarning} title="Al menos una JCard activa"
   description="Debes conservar activa la JCard personal o la de negocio." tone="warning" singleAction onConfirm={()=>setVisibilityWarning(false)} onCancel={()=>setVisibilityWarning(false)}/>
  </>;

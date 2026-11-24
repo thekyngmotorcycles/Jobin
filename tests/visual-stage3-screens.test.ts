@@ -26,7 +26,7 @@ test("Settings list and side menu reuse one proportional row and section typogra
  assert.ok(row.includes("fontSize:JOBEEN_TYPE.body"));
  assert.ok(side.includes("minHeight:JOBEEN_CONTROL.touchTarget"),"Settings search should use the 48dp shared touch target");
  assert.ok(settings.includes("fontSize:JOBEEN_TYPE.sectionTitle"));
- assert.ok(settings.includes("gap:16,maxWidth:720"));
+ assert.ok(settings.includes('<PageFrame kind="settings" bottomPadding={48}>'));
  assert.ok(settings.includes("<JobeenNoticeDialog"));
  assert.ok(!settings.includes('Alert.alert("Cerrar sesión"'));
 });
@@ -83,4 +83,25 @@ test("JCard editors reuse accessible fields, actions and Royal Hive notices",()=
  assert.ok(personal.includes('variant="danger" disabled={action.busy} onPress={discardChanges}'));
  assert.ok(personal.includes("Una profesión declarada no equivale a una credencial verificada."));
  assert.ok(!personal.includes("El aro indica visualmente tu nivel."));
+});
+
+test("Stack settings and management pages reuse shared responsive page geometry",()=>{
+ const ui=src("src/components/ui.tsx");
+ assert.ok(ui.includes('edges={["bottom","left","right"]}'));
+ assert.ok(ui.includes("const layout=usePageLayout(kind)"));
+ for(const file of ["src/app/settings/cuenta.tsx","src/app/settings/datos-personales.tsx","src/app/settings/tipo-cuenta.tsx","src/app/settings/cierre-cuenta.tsx","src/app/settings/[item].tsx","src/app/menu/[section].tsx"])
+  assert.ok(src(file).includes('<PageFrame kind="settings"'),file);
+ assert.ok(src("src/components/JShopUI.tsx").includes('<PageFrame kind="management"'));
+ assert.ok(ui.includes('kind==="error"?"alert"'));
+ assert.ok(src("src/components/ProfessionalStatus.tsx").includes('actionLabel="Reintentar" onAction={retry}'));
+});
+
+test("Form and results pages reuse page templates while retaining custom search navigation",()=>{
+ for(const file of ["src/app/professional.tsx","src/app/jcard-business-edit.tsx"])assert.ok(src(file).includes('<PageFrame kind="form"'),file);
+ for(const file of ["src/app/opportunities.tsx","src/app/certificates.tsx"])assert.ok(src(file).includes('<PageFrame kind="management"'),file);
+ const search=src("src/app/search.tsx");
+ assert.ok(search.includes('usePageLayout("list")'));
+ assert.ok(search.includes('ProfessionalMapExplorer'));
+ assert.ok(search.includes('<PageState kind="error" message={error}'));
+ assert.ok(src("src/app/certificates.tsx").includes("Documentos privados. Ningún archivo concede un sello sin revisión."));
 });
