@@ -33,3 +33,6 @@ Backend: verificar purchase token/transaction y producto/entitlement, identidad 
 - https://support.google.com/googleplay/android-developer/answer/10281818
 - https://docs.livekit.io/transport/sdk-platforms/expo/
 - https://raw.githubusercontent.com/expo/expo/sdk-54/packages/expo/bundledNativeModules.json
+
+## Precios base y dimensionamiento (2026-11-24)
+Propietario aprueba precios de referencia Free $0, Premium $9.99 y Business Premium $49.99 mensuales. Ver [JOBEEN_PRICING_USAGE_PLAN.md](JOBEEN_PRICING_USAGE_PLAN.md) para cupos candidatos, margen y límites de gasto. Híbrido visibilidad por duración + beneficios de suscripción recomendado, sin productos de tienda creados; promociones y cupos concretos pendientes de aprobación final. Prevalece mandato clasificados sin comisión. No fijar precios de lanzamiento regionales ni activar cobros.

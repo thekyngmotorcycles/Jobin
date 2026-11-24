@@ -1,5 +1,8 @@
 # Jobeen — registro central de desarrollo
 
+## Precios base aprobados y cupos candidatos (2026-11-24)
+Propietario aprueba Free $0, Premium $9.99, Business Premium $49.99 mensuales; pide análisis económico. JOBEEN_PRICING_USAGE_PLAN.md registra tarifas públicas, presupuestos supuestos y objetivo >=60% contribución neta tras tienda/costes variables, no utilidad neta. Propuesta conservadora Free 30min/mes, Premium 75min/mes, Business 6h/organización/mes; IA 5/50/300 créditos; alternativa condicionada a ruta optimizada 2/3/18h. Cuotas no aprobadas para venta, no costes medidos. Build gratis global 60min transcode, solo piloto; capacidad Free subvencionada y global, mantener seguridad 60s. Sin nuevo SDK, proveedor, cambio hosted, compra, merge, OTA/APK. Fase 03 y lote nativo conservados; PR #109 nuevo SHA requiere CI.
+
 ## JShop — modelo de negocio definido por propietario (2026-11-24)
 JShop conecta compradores/vendedores; no cobra comisión por venta, no procesa precio del artículo ni pedidos/envíos, monetiza publicidad y mayor exposición opcional. Sustituye expresamente propuesta anterior de checkout Stripe/Mercado Pago para JShop. Registrado en AGENTS, Master Plan, visión, NATIVE_CAPABILITY_PLAN y JOBEEN_PAYMENTS_PLAN. Tres opciones de promoción pendientes de elección: por duración, suscripción con plazas, campaña por alcance. Recomendación escalonada por duración primero. Expo-iap sigue candidato para visibilidad digital; no se añade SDK físico ni red publicitaria de terceros. JQuote presencial y liquidaciones independientes pendientes. Sin cambios de app, proveedores, gastos o compilación. PR #109 pendiente de integración; fase 03 permanece activa.
 
