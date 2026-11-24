@@ -75,7 +75,7 @@ test("selection stores ciphertext, recovers for the same owner after sign-in, an
 test("oversize or switched session leaves no usable reference and cleans every returned cache copy",async()=>{
  const photos=[{uri:"file:///first.jpg"},{uri:"file:///second.jpg"}];
  const f=fixture();f.tooBig();
- await assert.rejects(f.client.protect(a,"draft-photo",photos,"image"),/2 MiB/);
+ await assert.rejects(f.client.protect(a,"draft-photo",photos,"image"),/No se pudo comprimir la fotografía/);
  assert.deepEqual(f.cleaned,photos.map(x=>x.uri));
  assert.equal(f.buffers.size,0);
  const g=fixture();g.switchDuringRead();
@@ -128,4 +128,13 @@ test("native photo normalization happens before enforcing the two MiB encrypted 
  assert.match(read,/compressed && !overflow && written in 1\.\.LIMIT/);
  assert.match(read,/bytes.fill\(0\)[\s\S]*?prepared.fill\(0\)/);
  assert.doesNotMatch(read,/FileOutputStream|createTempFile/);
+});
+
+test("publication picker accepts ten distinct photos while other callers retain their five-file bound",async()=>{
+ const photos=Array.from({length:10},(_,i)=>({uri:"file:///"+i+".jpg"}));
+ const f=fixture();const files=await f.client.protect(a,"draft-photo",photos,"image",undefined,10);
+ assert.equal(files.length,10);assert.equal(new Set(files.map(x=>x.ref.id)).size,10);assert.equal(f.cleaned.length,10);
+ const g=fixture();await assert.rejects(g.client.protect(a,"draft-photo",photos,"image"),/5 archivos/);assert.equal(g.buffers.size,0);
+ const h=fixture();await assert.rejects(h.client.protect(a,"draft-photo",[...photos,{uri:"file:///11.jpg"}],"image",undefined,10),/10 archivos/);assert.equal(h.buffers.size,0);
+ const j=fixture();await assert.rejects(j.client.protect(a,"report-evidence",photos,"image",undefined,10),/5 archivos/);assert.equal(j.buffers.size,0);
 });

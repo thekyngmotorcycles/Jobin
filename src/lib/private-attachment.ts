@@ -1,6 +1,6 @@
 import type {PrivateFileKind,PrivateFileRef} from "./private-file-vault";
 import type {MessageScope} from "./session-continuity";
-import {POST_PHOTO_LIMIT} from "./feed-photo-layout";
+import {POST_PHOTO_LIMIT} from "./feed-photo-layout.ts";
 
 export const PRIVATE_ATTACHMENT_LIMIT=2*1024*1024;
 export type AttachmentMime="image/jpeg"|"image/png"|"image/webp"|"application/pdf";

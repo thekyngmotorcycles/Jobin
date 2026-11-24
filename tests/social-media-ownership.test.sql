@@ -11,6 +11,30 @@ insert into auth.users(id, raw_user_meta_data) values
 insert into public.profile_follows(follower_id, followed_id) values
  ('b2222222-2222-4222-8222-222222222222', 'a1111111-1111-4111-8111-111111111111');
 
+-- The new count constraint is checked before relaxing legacy ownership checks.
+do $
+declare owner_id uuid := 'a1111111-1111-4111-8111-111111111111';
+ ten text[]; eleven text[];
+begin
+ select array_agg(owner_id::text||'/limit-'||i||'.jpg' order by i) into ten from generate_series(1,10) i;
+ eleven := ten || array[owner_id::text||'/limit-11.jpg'];
+ insert into public.jobeen_feed_posts(author_id,kind,body,photo_paths,photo_alt_texts)
+ values(owner_id,'photos','Ten photo regression',ten,array_fill('alt'::text,array[10]));
+ begin
+  insert into public.jobeen_feed_posts(author_id,kind,body,photo_paths)
+  values(owner_id,'photos','Eleven photo regression',eleven);
+  raise exception 'Eleven photographs were accepted';
+ exception when check_violation then null;
+ end;
+ begin
+  insert into public.jobeen_feed_posts(author_id,kind,body,photo_paths,photo_alt_texts)
+  values(owner_id,'photos','Alt mismatch regression',ten,array['one']);
+  raise exception 'Mismatched photo alt texts were accepted';
+ exception when check_violation then null;
+ end;
+ delete from public.jobeen_feed_posts where author_id=owner_id and body='Ten photo regression';
+end $;
+
 -- Model legacy rows with unverified references. The surrounding rollback
 -- restores the constraints and fixtures, including the deliberately bad rows.
 alter table public.jobeen_feed_posts drop constraint jobeen_feed_paths;
