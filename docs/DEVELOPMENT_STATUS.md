@@ -1,11 +1,26 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-COMPACT — medición de caché de portada en Security Pilot (2026-11-25)
+
+- PR #130, SHA probado `f36c37a6`. Ensayo REST/Storage de 19:21:53 a 19:24 UTC con las cuentas sintéticas SEC06. Carga JPEG con `cacheControl: "0"` (`Cache-Control: max-age=0`). Se consultó cada URL antes de la operación y se repitió la misma URL a los 0, 15, 30, 60 y 120 s. Los enlaces firmados tenían `expiresIn: 60` y se descargaron sin sesión. El tiempo cero corresponde a la confirmación HTTP del borrado del archivo en Storage o de la creación del bloqueo.
+- Cada celda indica el código HTTP de la URL autenticada y el del enlace firmado previamente emitido. Las respuestas 200 contenían el JPEG sintético original byte a byte. Las respuestas 400 no entregaron imagen.
+
+| Operación (titular → visitante) | 0 s | 15 s | 30 s | 60 s | 120 s |
+| --- | --- | --- | --- | --- | --- |
+| Reemplazo y borrado del archivo anterior (B → C) | 200 / 200 | 200 / 200 | 200 / 200 | 400 / 400 | 400 / 400 |
+| Retirada y borrado (C → A) | 200 / 200 | 200 / 200 | 200 / 200 | 400 / 400 | 400 / 400 |
+| Bloqueo con la portada aún seleccionada (A → B) | 200 / 200 | 200 / 200 | 200 / 200 | 200 / 400 | 200 / 400 |
+
+- Encabezados. Las lecturas iniciales devolvieron `CF-Cache-Status: MISS`. Todas las respuestas posteriores con imagen devolvieron `HIT` con el mismo `ETag`. La ruta autenticada devolvió `Cache-Control: private, max-age=0, must-revalidate` y `Vary: Authorization, apikey`, sin `Age`. El enlace firmado en caché devolvió `Age: 0`, `15` y `30` y conservó `Expires`. Las firmas vencían entre 58,3 y 58,9 s después del tiempo cero. A los 60 y 120 s los enlaces firmados devolvieron HTTP 400, `CF-Cache-Status: DYNAMIC` y `Cache-Control: private, no-cache`. El ejecutor terminó con código 2 porque su clasificador no identificó el subtipo de esos seis errores 400. Las 30 respuestas HTTP se registraron.
+- Controles a 0 y 120 s. Una variante nueva de la URL autenticada devolvió HTTP 400, código de Storage 404 y `CF-Cache-Status: BYPASS` en los tres escenarios. Tras el bloqueo, C conservó el acceso con una URL nueva (`200 / MISS`). Se revirtió el bloqueo A → B, se confirmó la ausencia de los cuatro archivos y sus selecciones de ensayo y se cerraron las sesiones creadas.
+- **BLOQUEADO — revocación inmediata.** Tras reemplazar o retirar la portada, el acceso residual por ambas rutas terminó entre las muestras de 30 y 60 s. Tras bloquear al visitante, el enlace firmado también dejó de entregar la imagen en ese intervalo. La URL autenticada ya consultada por B seguía entregándola a los 120 s. El ensayo establece una duración mínima de 120 s para esa ruta, con límite superior pendiente.
+
 ## JCARD-COMPACT — prueba HTTP de portada compartida en Security Pilot (2026-11-25)
 
 - PR #130, SHA probado `da340221`. CI previo aprobado en [45679347903](https://github.com/thekyngmotorcycles/Jobin/actions/runs/45679347903). Se reutilizaron las cuentas sintéticas A/B/C de SEC06 y el contrato alojado `20261125180601 jcard_shared_cover_pilot`. El ensayo dirigido completó el recorrido REST/Storage con salida 0. Las sesiones se abrieron para la prueba de portada y se cerraron con alcance local al terminar.
 - A cargó dos JPEG sintéticos y seleccionó el primero. Antes de seleccionar, B y C quedaron sin lectura ni firma. Tras seleccionar, A/B/C obtuvieron una firma de 60 segundos y el JPEG coincidió byte a byte. Sin sesión, el servicio denegó metadatos, firma y ruta pública. B y C no pudieron subir ni sobrescribir archivos de A, crear una referencia a su archivo, cambiar la selección ni borrar metadatos u objetos. A tampoco pudo borrar el objeto mientras estaba seleccionado.
 - A reemplazó la selección y borró el archivo anterior. B y C pudieron ver la portada nueva. La retirada final eliminó la selección y el segundo archivo. Las solicitudes nuevas de lectura y firma se denegaron para los objetos retirados. Se verificó la limpieza de los archivos de ambos intentos y se cerraron las sesiones del ensayo.
-- **Pendiente de validación — revocación inmediata de una URL ya consultada.** Justo después del reemplazo y de la retirada, las URLs autenticadas de lectura directa ya consultadas por B y C devolvieron HTTP 200 con `CF-Cache-Status: HIT`. Una URL de solicitud distinta devolvió HTTP 400 con denegación de Storage y la firma nueva fue rechazada. También se observó la respuesta en caché para el titular tras el borrado. No se midió su duración ni la vigencia posborrado de enlaces firmados ya emitidos. Queda pendiente acotar la ventana de caché antes de afirmar retirada inmediata.
+- **Primera observación de caché en una URL ya consultada.** Justo después del reemplazo y de la retirada, las URLs autenticadas de lectura directa ya consultadas por B y C devolvieron HTTP 200 con `CF-Cache-Status: HIT`. Una URL de solicitud distinta devolvió HTTP 400 con denegación de Storage y la firma nueva fue rechazada. También se observó la respuesta en caché para el titular tras el borrado. La entrada superior registra la medición posterior y su alcance.
 
 ## Norma operativa — uso selectivo del Security Pilot (2026-11-25)
 
