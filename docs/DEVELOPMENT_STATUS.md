@@ -1,5 +1,7 @@
 # Jobin — registro central de desarrollo
 
+- CI 45663850961 success (contadores integrados). CI 45664083558: database success, validate rechazado por falta de prueba específica del cambio de workflow; se añade regresión que exige ejecución exclusiva en Postgres desechable local, ON_ERROR_STOP y ausencia de credenciales alojadas, sin relajar el gate. CI posterior pendiente.
+
 ## JCARD-COMPACT — editor de portada candidato (2026-11-25)
 
 - Portada fija compartida: selección de galería reutilizando Expo instalado, recorte central 10:3, JPEG máximo 1024px/2 MiB, vista previa y confirmación Publicar portada, retirada confirmada, una sola instancia fuera del giro. URL firmada de 60 segundos, sin URL pública permanente ni cache local de metadatos; estado ligado a destino y sesión, autorización RLS por archivo y selección, compare-and-swap de versión y limpieza de objeto anterior no vigente. Enlace firmado emitido puede seguir válido hasta su expiración; la retirada impide nuevas firmas y elimina la versión anterior cuando Storage lo permite. Candidato SQL aún no aplicado a alojado; editor muestra fallback/reintentar si contrato no existe. Pruebas de fuente y RLS CI pendientes. Sin OTA, APK, merge ni cambios alojados. Validar en dispositivo real y ajustar dimensiones finales antes de publicación.

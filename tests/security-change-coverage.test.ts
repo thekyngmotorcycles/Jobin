@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import {readFileSync} from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
@@ -76,4 +77,21 @@ test("the current governance PR is allowed with its regression test", () => {
   assert.equal(check(["scripts/check-security-change-coverage.mjs", ".github/workflows/check.yml",
     "tests/security-change-coverage.test.ts"],
   "test/sec06-hosted-isolation-harness-20261122", "governance/security-foundation-20261122").status, 0);
+});
+
+
+test("Shared cover SQL is executed only in the disposable local Postgres job with strict failures",()=>{
+ const workflow=readFileSync(resolve(dirname(script),"../.github/workflows/check.yml"),"utf8");
+ const marker="  database:\n";const jobs=workflow.indexOf(marker);
+ assert.ok(jobs>0);
+ const validation=workflow.slice(0,jobs),database=workflow.slice(jobs);
+ const coverStep="psql -v ON_ERROR_STOP=1 -f tests/jcard-shared-cover.test.sql";
+ assert.ok(!validation.includes(coverStep));
+ assert.equal(database.split(coverStep).length-1,1);
+ assert.ok(database.includes("image: postgres:17")&&database.includes("PGHOST: localhost")&&database.includes("PGDATABASE: jobin_test"));
+ assert.ok(database.indexOf("tests/database-bootstrap.sql")<database.indexOf(coverStep));
+ assert.ok(database.indexOf("tests/security-integration.test.sql")<database.indexOf(coverStep));
+ assert.ok(!database.includes("secrets.")&&!database.includes("supabase db push")&&!database.includes("continue-on-error: true"));
+ assert.equal(check([".github/workflows/check.yml","supabase/security-review/jcard-shared-cover.sql","tests/jcard-shared-cover.test.sql"]).status,1);
+ assert.equal(check([".github/workflows/check.yml","supabase/security-review/jcard-shared-cover.sql","tests/jcard-shared-cover.test.sql","tests/security-change-coverage.test.ts"]).status,0);
 });
