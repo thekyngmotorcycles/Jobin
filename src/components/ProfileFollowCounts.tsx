@@ -1,6 +1,7 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
-import {useCallback,useImperativeHandle,useRef,useState,type Ref} from "react";
+import {createContext,useContext,useCallback,useImperativeHandle,useRef,useState,type Ref,type ReactNode} from "react";
+import {CardFlipInteractionContext} from "./BusinessCard3D";
 import {ActivityIndicator,Pressable,Text,TextInput,View} from "react-native";
 import {requireSupabase} from "../lib/supabase";
 import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
@@ -17,7 +18,29 @@ import {useTheme} from "../state/ThemeProvider";
 type ListType="followers"|"following"|"contacts";
 type Connection={id:string;name:string;following:boolean};
 export type ProfileContactsHandle={openContacts:(expectedOwner:string)=>void};
-export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userId:string;refreshKey?:number;contactsMenuRef?:Ref<ProfileContactsHandle>}){
+type CountSummary={followers:number|null;contacts:number};
+const ProfileCountContext=createContext<{counts:CountSummary|null;isOwner:boolean;openList:(kind:ListType)=>void}|null>(null);
+/** Two visual rows can share one provider; no network or private lists in either face. */
+export function ProfileConnectionCountRow({ink,muted,line}:{ink?:string;muted?:string;line?:string}){
+ const context=useContext(ProfileCountContext),markInteractive=useContext(CardFlipInteractionContext);
+ const {colors}=useUi(),{theme}=useTheme(),jt=jobeenTokens(theme);
+ if(!context)return null;
+ const {counts,isOwner,openList}=context;
+ return <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:6,minHeight:JOBEEN_CONTROL.touchTarget}}>
+  {([{id:"followers",label:"Seguidores",value:counts?.followers},{id:"contacts",label:"Contactos",value:counts?.contacts}] as const).map((item,index)=>
+   <View key={item.id} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:5}}>
+    {index>0&&<View style={{width:1,height:18,backgroundColor:line??jt.line}}/>}
+    <Pressable accessibilityRole={isOwner?"button":undefined} accessibilityLabel={item.label+": "+(item.value??"no disponible")+(isOwner?", ver lista":"")}
+     disabled={!isOwner} onTouchStart={isOwner?()=>markInteractive?.():undefined} onPress={event=>{event.stopPropagation();openList(item.id);}}
+     style={{flex:1,minWidth:0,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",gap:4,alignItems:"center",justifyContent:"center",paddingHorizontal:2}}>
+     <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:14,fontWeight:"800",color:ink??colors.ink,flexShrink:1}}>{item.value==null?"—":new Intl.NumberFormat("es").format(item.value)}</Text>
+     <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:12,color:muted??colors.muted,flexShrink:1}}>{item.label}</Text>
+    </Pressable>
+   </View>)}
+ </View>;
+}
+
+export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef,children,countsInCard=false,expectedScope}:{userId:string;refreshKey?:number;contactsMenuRef?:Ref<ProfileContactsHandle>;children?:ReactNode;countsInCard?:boolean;expectedScope?:MessageScope|null}){
  const {colors,s}=useUi();const {theme}=useTheme();const jt=jobeenTokens(theme);
  const scopeRef=useRef<MessageScope|null>(null),countRevision=useRef(0),listRevision=useRef(0);
  const [summary,setSummary]=useState<{target:string;viewer:string;followers:number|null;contacts:number}|null>(null);
@@ -38,7 +61,7 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userI
   if(!userId)return;
   try{
    const db=requireSupabase();
-   const scope=await captureMessageScope();
+   const scope=await captureMessageScope(expectedScope??undefined);
    // Only request the two counts actually rendered. Following is loaded on demand in My network.
    const [followers,contacts]=await Promise.all([
     db.from("profile_follows" as never).select("*",{head:true,count:"exact"}).eq("followed_id",userId),
@@ -48,7 +71,7 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userI
    await assertMessageScope(scope);
    if(countRevision.current===generation){scopeRef.current=scope;setSummary({target:userId,viewer:scope.owner,followers:followers.count,contacts});}
   }catch{if(countRevision.current===generation){scopeRef.current=null;setSummary(null);}}
- },[userId]);
+ },[userId,expectedScope?.owner,expectedScope?.session]);
  // Focus and explicit refresh share one trigger; do not also request on mount.
  useFocusEffect(useCallback(()=>{void refreshCounts();return()=>{scopeRef.current=null;countRevision.current++;listRevision.current++;setSummary(null);setSheet(false);setPendingRemove(null);contactMutation.current=null;setBusy("");setRows([]);setContactRows([]);};},[refreshCounts,refreshKey]));
  const isOwner=!!viewer&&viewer===userId;
@@ -139,20 +162,9 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userI
  function changeTab(next:ListType){setTab(next);setQuery("");void loadConnections(next);}
  const visible=rows.filter(r=>r.name.toLowerCase().includes(query.trim().toLowerCase()));
  const visibleContacts=contactRows.filter(r=>r.name.toLowerCase().includes(query.trim().toLowerCase()));
- return <>
-  <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:15,paddingVertical:3,minHeight:JOBEEN_CONTROL.touchTarget}}>
-   {([{id:"followers",label:"Seguidores",value:counts?.followers},{id:"contacts",label:"Contactos",value:counts?.contacts}] as const).map((item,index)=>
-    <View key={item.id} style={{flexDirection:"row",alignItems:"center",gap:15}}>
-     {index>0&&<View style={{width:1,height:18,backgroundColor:jt.line}}/>}
-     <Pressable accessibilityRole={isOwner?"button":undefined}
-      accessibilityLabel={item.label+": "+(item.value??"no disponible")+(isOwner?", ver lista":"")}
-      disabled={!isOwner} onPress={()=>openList(item.id)}
-      style={{minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",gap:5,alignItems:"center",justifyContent:"center",paddingHorizontal:2}}>
-      <Text style={{fontSize:14,fontWeight:"800",color:colors.ink}}>{item.value==null?"—":new Intl.NumberFormat("es").format(item.value)}</Text>
-      <Text style={{fontSize:13,color:colors.muted}}>{item.label}</Text>
-     </Pressable>
-    </View>)}
-  </View>
+ return <ProfileCountContext.Provider value={{counts,isOwner,openList}}>
+  {children}
+  {!countsInCard&&<ProfileConnectionCountRow/>}
   <BottomSheet visible={sheet&&!pendingRemove} onClose={()=>{if(!contactMutation.current)setSheet(false);}} title="Mi red">
    <View style={{gap:12,paddingVertical:8}}>
     <View style={{flexDirection:"row",gap:5}}>
@@ -216,5 +228,5 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userI
   <JobeenNoticeDialog visible={sheet&&pendingRemove!==null} title="Eliminar contacto"
    description={error||"Se eliminará la relación profesional para ambos perfiles."} tone="danger" confirmLabel="Eliminar"
    busy={!!busy} onCancel={()=>{if(!contactMutation.current){setPendingRemove(null);setError("");}}} onConfirm={()=>void removeConfirmed()}/>
- </>;
+ </ProfileCountContext.Provider>;;
 }

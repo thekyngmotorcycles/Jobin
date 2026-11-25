@@ -436,7 +436,7 @@ export default function Profile() {
             </View>}
            </> : <JCardLoadState loading={workspace.loading} error={workspace.error||"No se pudo recuperar la JCard. Vuelve a intentarlo."} retry={workspace.reload}/>}
           trust={workspace.data?.card ? <ProfessionalTrustMark worker={workspace.data.card.id}/> : null}
-          profileUserId={workspace.data?.card?.id} contactsMenuRef={contactsMenuRef}
+          profileUserId={workspace.data?.card?.id} contactsMenuRef={contactsMenuRef} countsInCard expectedScope={workspace.scope}
         />
         </Animated.View>
         <View onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}

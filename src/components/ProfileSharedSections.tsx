@@ -153,12 +153,11 @@ export function ProfileMediaGrid({items,emptyMessage}:{items:ProfileTile[];empty
 }
 
 /** Hero moves out of view while ProfileSectionTabs remain pinned. */
-export function ProfileIdentityHeader({card,actions,trust,profileUserId,contactsMenuRef}:{
- card:ReactNode;actions?:ReactNode;trust?:ReactNode;profileUserId?:string;contactsMenuRef?:Ref<ProfileContactsHandle>;
+export function ProfileIdentityHeader({card,actions,trust,profileUserId,contactsMenuRef,countsInCard=false,expectedScope}:{
+ card:ReactNode;actions?:ReactNode;trust?:ReactNode;profileUserId?:string;contactsMenuRef?:Ref<ProfileContactsHandle>;countsInCard?:boolean;expectedScope?:MessageScope|null;
 }){
  return <View style={{gap:14}}>
-  {card}
-  {!!profileUserId&&<ProfileFollowCounts userId={profileUserId} contactsMenuRef={contactsMenuRef}/>}
+  {countsInCard&&profileUserId?<ProfileFollowCounts userId={profileUserId} contactsMenuRef={contactsMenuRef} expectedScope={expectedScope} countsInCard>{card}</ProfileFollowCounts>:<>{card}{!!profileUserId&&<ProfileFollowCounts userId={profileUserId} contactsMenuRef={contactsMenuRef}/>}</>}
   {actions}
   {trust}
  </View>;

@@ -148,3 +148,18 @@ test("Business medals move to About on both profiles while legacy card previews 
  assert.ok(api.includes("captureMessageScope(expectedScope)")&&api.includes("await assertMessageScope(scope)"));
  assert.ok(visitor.includes('cardVisibility.business_enabled&&publicBusiness&&<ProfileBusinessAbout'));
 });
+
+
+test("One connection provider renders both rotating faces without duplicate queries or exposing private lists",()=>{
+ const network=source("src/components/ProfileFollowCounts.tsx"),card=source("src/components/JobinCard.tsx"),shared=source("src/components/ProfileSharedSections.tsx"),owner=source("src/app/(tabs)/profile.tsx"),visitor=source("src/app/jcard.tsx");
+ assert.equal((card.match(/<ProfileConnectionCountRow /g)??[]).length,2);
+ assert.ok(shared.includes("countsInCard>{card}</ProfileFollowCounts>"));
+ assert.ok(network.includes("<ProfileCountContext.Provider value={{counts,isOwner,openList}}>"));
+ assert.ok(network.includes("!countsInCard&&<ProfileConnectionCountRow/>"));
+ assert.ok(network.includes("disabled={!isOwner}")&&network.includes("if(!isOwner)return;"));
+ assert.ok(network.includes("captureMessageScope(expectedScope??undefined)"));
+ assert.ok(network.includes("markInteractive?.()"));
+ assert.ok(owner.includes("countsInCard expectedScope={workspace.scope}")&&visitor.includes("countsInCard expectedScope={publicScope}"));
+ const view=network.slice(network.indexOf("export function ProfileConnectionCountRow"),network.indexOf("export function ProfileFollowCounts"));
+ assert.ok(!view.includes("requireSupabase")&&!view.includes("contactCount("));
+});

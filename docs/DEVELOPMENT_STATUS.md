@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-COMPACT — contadores dentro de las caras (2026-11-25)
+
+- CI 45662508926 (sellos) y 45662798647 (geometría) success. Una sola instancia de ProfileFollowCounts provee ambos rostros mediante contexto, sin consultas duplicadas ni listas privadas en el visitante. Dos contadores reales bajo profesión/categoría, desconocido como guion, controles del titular conservados fuera de la cara animada en el modal Mi red; captura de sesión esperada. Se conserva el header antiguo para otras vistas. Se recupera espacio de padding de Personal y se añade fila al skeleton. Altura definitiva todavía requiere prueba física con contenido extenso, especialidades y escala de fuente; no reducir áreas táctiles. Portada persistente pendiente; no merge/OTA/APK ni cambios alojados. CI del candidato pendiente.
+
 ## JCARD-COMPACT — composición y giro de retratos (2026-11-25)
 
 - Candidato visual: geometría única de retratos 60–86dp y proporción vertical, sobresale exactamente 25% por encima de cada cara. Personal izquierda, Negocio derecha; el retrato pertenece a la cara animada, no a la portada. Se conserva el gesto, control de toques, contenido y edición de foto/logo; el área del giro incluye el retrato. La región de portada es fija y neutral hasta que exista una imagen seleccionada y autorizada; nunca usa el banner de negocio anterior. Esqueleto comparte medidas y altura exterior. Las otras vistas de tarjeta mantienen su layout. Altura del cuerpo conserva medidas previas hasta validar contenido y ajustar composición definitiva; persistencia/edición de portada, contadores dentro de la tarjeta y validación física pendientes. Sin merge, OTA, APK ni escrituras alojadas.

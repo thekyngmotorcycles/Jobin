@@ -243,7 +243,7 @@ export default function PublicJCard(){
       onToggleSaved={savedReady&&cardVisibilityReady&&sideIsPublic?()=>void toggleSaved():undefined}
       savedJCard={cardSaved} savingJCard={savingCard} visibleCardSide={activeCardSide}/>}
      trust={<ProfessionalTrustMark worker={resource.data.id}/>}
-     profileUserId={resource.data.id}
+     profileUserId={resource.data.id} countsInCard expectedScope={publicScope}
     />:<JCardLoadState loading={resource.loading} error={resource.error} retry={resource.reload}/>}
    </Animated.View>
    {!!resource.data&&<View onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}

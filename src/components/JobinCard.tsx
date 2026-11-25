@@ -1,5 +1,6 @@
 import {presentJCardContact} from "../lib/jcard-save-contact";
 import {BusinessCard3D,CardFlipInteractionContext} from "./BusinessCard3D";
+import {ProfileConnectionCountRow} from "./ProfileFollowCounts";
 import {jobeenTokens,jcardArtTokens} from "../theme/jobeen";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {personalAvatarUrl} from "../lib/personal-jcard-photo";
@@ -152,7 +153,8 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         {!!profilePortrait&&theme!=="light"&&onShare&&<Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard personal" onPress={event=>{event.stopPropagation();onShare();}} style={{width:44,height:44,alignItems:"center",justifyContent:"center",flexShrink:0}}><Ionicons name="share-social-outline" size={20} color={finish.text}/></Pressable>}
       </View>
 
-      <View style={{flex:1,minHeight:0,justifyContent:"flex-start",gap:5,paddingTop:0,paddingBottom:theme==="light"?18:4}}>
+      {!!profilePortrait&&<ProfileConnectionCountRow ink={finish.text} muted={finish.secondary} line={finish.line}/>}
+      <View style={{flex:1,minHeight:0,justifyContent:"flex-start",gap:5,paddingTop:0,paddingBottom:profilePortrait?0:theme==="light"?18:4}}>
         {!inlineIdentity&&<View style={{gap:0,marginTop:0}}>
         <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
           <View style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:4}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={[s.h3,{color:finish.text,fontSize:Math.max(20,fs(expanded?22:22)),lineHeight:Math.max(23,fs(expanded?26:25)),flexShrink:1}]}>{card.name}</Text><Pressable accessibilityRole="button" accessibilityLabel={card.identityVerified?"Persona verificada":"Persona sin verificar"} hitSlop={{top:6,bottom:6,right:6,left:0}} onPress={()=>setInfo(card.identityVerified?"Identidad verificada por Jobin. Esta insignia no certifica licencias ni competencias profesionales.":"Identidad sin verificar. Para obtener la insignia se requerirá nombre legal, correo y teléfono confirmados, documento de identidad y validación de identidad.")} style={{width:19,height:19,alignItems:"center",justifyContent:"center",flexShrink:0}}><View style={{transform:[{scale:0.72}]}}><IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/></View></Pressable></View>
@@ -161,14 +163,14 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         <Text numberOfLines={1} style={{color:finish.secondary,fontSize:14,lineHeight:19,marginTop:0}}>@{card.handle}</Text>
         {typeof card.followers==="number"&&<Text style={{color:finish.secondary,fontSize:10}}>{card.followers.toLocaleString()} seguidores</Text>}
         </View>}
-        <View style={{flex:1,minHeight:0,justifyContent:theme==="light"?"flex-start":"center",gap:4,paddingTop:theme==="light"?12:0}}>
+        <View style={{flex:1,minHeight:0,justifyContent:theme==="light"?"flex-start":"center",gap:4,paddingTop:profilePortrait?0:theme==="light"?12:0}}>
         {!inlineIdentity&&<View style={{flexDirection:"row",alignItems:"center",gap:7,width:"100%"}}>
           <Text textBreakStrategy="simple" android_hyphenationFrequency="none" style={[lineStyle,{fontWeight:"600",flexShrink:1,flexGrow:0}]}>{primaryProfession}{!!card.primarySpecialties?.length?" / Especializado":""}</Text>
           <Pressable accessibilityRole="button" accessibilityLabel="Detalles de la profesión principal" onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nEspecialidades: "+(card.primarySpecialties?.length?card.primarySpecialties.join(", "):"No declaradas")+"\nExperiencia en esta profesión: "+(primarySealMonths===undefined?"No disponible":experienceLabel(primarySealMonths))+".\n"+(primarySeal?.verified?"Acreditación verificada.":"Acreditación pendiente de verificación."))} style={{width:undefined,height:undefined,alignItems:"center",justifyContent:"center",padding:3,borderWidth:1,borderColor:finish.line,borderRadius:22,flexShrink:0}}>
             <ProfessionGlyph profession={card.role} fallback={primarySeal?.icon??"briefcase-outline"} size={19} color={finish.text}/>
           </Pressable>
         </View>}
-        <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8,minWidth:0,width:"100%",marginTop:theme==="light"?10:undefined}}>
+        <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8,minWidth:0,width:"100%",marginTop:profilePortrait?0:theme==="light"?10:undefined}}>
           {card.primaryExperienceMonths!==undefined&&<Pressable accessibilityRole="button" accessibilityLabel="Ver experiencia por profesión" onPress={event=>{event.stopPropagation();setExperienceOpen(true);}} style={{flexShrink:1,backgroundColor:jobeen.cream,borderColor:jobeen.yellow,borderWidth:1,borderRadius:16,paddingHorizontal:10,paddingVertical:5,minHeight:40,alignItems:"center",justifyContent:"center"}}><View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{color:jobeen.ink,fontSize:12,fontWeight:"600",textAlign:"center"}}>{card.primaryExperienceMonths>=12?Math.floor(card.primaryExperienceMonths/12)+(card.primaryExperienceMonths%12?"+":"")+" "+(Math.floor(card.primaryExperienceMonths/12)===1?"Año de experiencia":"Años de experiencia"):card.primaryExperienceMonths>0?card.primaryExperienceMonths+" "+(card.primaryExperienceMonths===1?"Mes de experiencia":"Meses de experiencia"):"Sin experiencia"}</Text></View></Pressable>}
           <Pressable accessibilityRole="button" accessibilityLabel="Información sobre disponibilidad" onPress={()=>setInfo(card.status==="ACTIVE"?"Trabajando actualmente\nLa persona indica que tiene un trabajo activo. Esto no significa que Jobin haya confirmado su relación laboral.":"Disponible para trabajar\nLa persona indica que está abierta a nuevas oportunidades laborales o solicitudes de clientes.")} style={{minHeight:44,justifyContent:"center"}}><View style={{flexDirection:"row",alignItems:"center",gap:5,backgroundColor:jobeen.okBackground,borderRadius:18,paddingHorizontal:10,paddingVertical:6}}><View style={{width:7,height:7,borderRadius:4,backgroundColor:jobeen.okDot}}/><Text style={{color:jobeen.okText,fontWeight:"700",fontSize:11}}>{card.status==="ACTIVE"?"Trabajando":"Disponible"}</Text></View></Pressable>
         </View>
@@ -314,6 +316,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
     </View>
    </View>
 
+   {!!profilePortrait&&<ProfileConnectionCountRow ink={finish.text} muted={finish.secondary} line={finish.line}/>}
    {!!b?.services?.length&&<View style={{alignSelf:"stretch",paddingHorizontal:8,marginTop:3,marginBottom:1,paddingBottom:4,borderBottomWidth:1,borderBottomColor:finish.line,flexShrink:0}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{fontSize:14,lineHeight:19,fontWeight:"500",color:finish.secondary}}>{b.services.filter(Boolean).join(" · ")}</Text></View>}
    <View style={{flex:1,minHeight:0,justifyContent:"space-evenly",gap:0,paddingTop:2,paddingBottom:2,alignSelf:"stretch"}}>
     <View style={{gap:theme==="light"?1:5,alignSelf:"stretch"}}>
