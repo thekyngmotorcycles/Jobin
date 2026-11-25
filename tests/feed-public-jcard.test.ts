@@ -112,9 +112,11 @@ test("an unrelated feed viewer gets the authorized personal profile before a 42P
 
 test("a follower and a contact can each load public posts and both authorized faces",async()=>{
  for(const viewer of [follower,contact]){
-  const page=mount({viewer});
+  const requestedSide=viewer===follower?"business":"personal";
+  const page=mount({viewer,requestedSide});
   await settle();
   assert.equal(page.read().posts,author);
+  assert.equal(page.read().card?.props.initialSide,requestedSide);
   assert.deepEqual((page.read().card?.props.card as {business:unknown}).business,business);
   page.close();
  }
@@ -141,6 +143,7 @@ test("hidden faces, rejected profiles and unreadable visibility remain closed",a
  await settle();
  assert.equal((allowed.read().card?.props.publicVisibility as {personal_enabled:boolean}).personal_enabled,false);
  assert.equal(allowed.read().actions?.props.name,business.name);
+ assert.equal(allowed.read().card?.props.initialSide,"business");
  allowed.close();
 });
 
