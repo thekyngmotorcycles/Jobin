@@ -10,8 +10,12 @@ test("Local JCard appearance can only be read and changed by the verified owner"
  assert.ok(gallery.includes("saveJCardAppearance(scope.owner,selected,side,scope)"));
  assert.ok(card.includes("if(!ownerId||!showOwnerActions)"));
  assert.ok(card.includes("if(scope.owner!==ownerId||!live)return;"));
- assert.ok(card.includes('const key="jobeen.jcard.flip.ghost.v3."+scope.owner'));
- assert.ok(!card.includes('const key="jobeen.jcard.flip.ghost.v2."+ownerId'));
+ // The approved redesign removed the optional tutorial entirely; owner-only
+ // appearance access above remains required.
+ assert.ok(!card.includes("jobeen.jcard.flip.ghost"));
+ assert.ok(!card.includes("AsyncStorage"));
+ assert.ok(card.includes('readJCardAppearance(ownerId,"personal",scope)'));
+ assert.ok(card.includes('readJCardAppearance(ownerId,"business",scope)'));
 });
 test("Quick composer preference is cloud-authoritative with current-session fallback only",()=>{
  const store=read("src/lib/home-preferences.ts"),header=read("src/components/SocialHeader.tsx");

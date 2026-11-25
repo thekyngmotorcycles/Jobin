@@ -16,7 +16,7 @@ test("JCard and skeleton share the same responsive dimensions for small screens 
  assert.ok(!skeleton.includes("height:450"));
  assert.ok(skeleton.includes("maxWidth:jcardSurfaceMetrics.maxWidth"));
  assert.ok(card.includes("maxWidth:jcardSurfaceMetrics.maxWidth"));
- assert.ok(skeleton.includes("JCardAbstractBee"));
+ assert.ok(skeleton.includes("JobinLoadingGears"));
  assert.ok(skeleton.includes("Cargando JCard"));
 });
 test("JCard does not auto-flip, store tutorial markers or display a flip control",()=>{
@@ -32,16 +32,24 @@ test("JCard does not auto-flip, store tutorial markers or display a flip control
  assert.ok(flip.includes("CardFlipInteractionContext.Provider"));
  assert.ok(card.includes('onSideChange={side=>setBack(side==="business")}'));
 });
-test("Minimal bee animates during loading, pauses for reduced motion, and stays static when offline",()=>{
- const bee=src("src/components/JCardAbstractBee.tsx");
- assert.ok(bee.includes('mode?:"loading"|"offline"'));
- assert.ok(bee.includes('mode!=="loading"||reducedMotion'));
- assert.ok(bee.includes("withRepeat(withSequence("));
- assert.ok(bee.includes("cancelAnimation(progress)"));
- assert.ok(bee.includes('viewBox="0 0 64 64"'));
- assert.ok(bee.includes("<Polygon "));
- assert.ok(bee.includes("t.yellow"));
- assert.ok(bee.includes('accessibilityElementsHidden'));
+test("Hexagonal gears share one animation clock, are monochrome and respect reduced motion/offline",()=>{
+ const gears=src("src/components/JobinLoadingGears.tsx");
+ assert.ok(gears.includes('mode?:"loading"|"offline"'));
+ assert.ok(gears.includes('if(mode!=="loading"||reducedMotion)return;'));
+ assert.ok(gears.includes("withRepeat(withTiming(360"));
+ assert.ok(gears.includes("cancelAnimation(progress)"));
+ assert.equal((gears.match(/useSharedValue\(0\)/g)??[]).length,1);
+ assert.equal((gears.match(/direction:-1/g)??[]).length,2);
+ assert.equal((gears.match(/direction:1/g)??[]).length,1);
+ assert.ok(gears.includes("length:6"));
+ assert.ok(gears.includes('fill="none"'));
+ assert.ok(gears.includes("color={t.ink2}"));
+ assert.ok(!gears.includes("t.yellow"));
+ assert.ok(!gears.includes("translateX"));
+ assert.ok(!gears.includes("backgroundColor"));
+ assert.ok(!gears.includes("fetch("));
+ assert.ok(gears.includes("accessibilityElementsHidden"));
+ assert.ok(src("src/components/JCardConnectionState.tsx").includes('<JobinLoadingGears mode="offline"'));
 });
 test("Offline JCard is distinct from endless loading and provides a retry or cached card",()=>{
  const state=src("src/components/JCardConnectionState.tsx");

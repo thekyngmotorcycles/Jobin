@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {View,useWindowDimensions,type DimensionValue} from "react-native";
-import {JCardAbstractBee} from "./JCardAbstractBee";
+import {JobinLoadingGears} from "./JobinLoadingGears";
 import {useTheme} from "../state/ThemeProvider";
 import {jcardArtTokens} from "../theme/jobeen";
 import {businessCardPaper,jcardCommon,jcardSurfaceMetrics,jcardSurfaceSize} from "../theme/jcard";
@@ -44,7 +44,7 @@ export function JCardLoadingSkeleton(){
     </View>)}
    </View>
    <View style={{alignItems:"center",height:43,justifyContent:"center"}}>
-    <JCardAbstractBee size={35} mode="loading"/>
+    <JobinLoadingGears size={35} mode="loading"/>
    </View>
   </View>
  </View>;

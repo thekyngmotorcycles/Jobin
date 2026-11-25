@@ -2,7 +2,7 @@ import {Pressable,Text,View} from "react-native";
 import {Ionicons} from "@expo/vector-icons";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
-import {JCardAbstractBee} from "./JCardAbstractBee";
+import {JobinLoadingGears} from "./JobinLoadingGears";
 import {JCardLoadingSkeleton} from "./JCardLoadingSkeleton";
 import {ProfessionalStatus} from "./ProfessionalStatus";
 
@@ -15,7 +15,7 @@ export function JCardOfflineNotice({retry,cached=false}:{retry:()=>void;cached?:
  const {theme}=useTheme(),t=jobeenTokens(theme);
  return <View accessibilityRole="alert" style={{width:"100%",gap:11,alignItems:"center",
   paddingHorizontal:15,paddingVertical:17,borderRadius:19,borderWidth:1,borderColor:t.line,backgroundColor:t.surface}}>
-  <JCardAbstractBee mode="offline" size={36}/>
+  <JobinLoadingGears mode="offline" size={36}/>
   <View style={{gap:4,alignItems:"center"}}>
    <Text style={{color:t.ink,fontSize:14,fontWeight:"800",textAlign:"center"}}>
     {cached?"Mostrando la última JCard guardada":"No se pudo conectar con Jobeen"}

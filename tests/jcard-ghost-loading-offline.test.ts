@@ -20,26 +20,26 @@ test("Skeleton and real JCard share identical responsive sizing calculations",()
  assert.ok(skeleton.includes('accessibilityLabel="Cargando JCard"'));
 });
 
-test("Skeleton mirrors the frameless portrait and chip/language layout with the existing bee loader",()=>{
+test("Skeleton mirrors the frameless portrait and chip/language layout with the hexagonal gears loader",()=>{
  const skeleton=source("src/components/JCardLoadingSkeleton.tsx");
- const bee=source("src/components/JCardAbstractBee.tsx");
- assert.ok(skeleton.includes("<JCardAbstractBee size={35} mode=\"loading\"/>"));
+ const gears=source("src/components/JobinLoadingGears.tsx");
+ assert.ok(skeleton.includes("<JobinLoadingGears size={35} mode=\"loading\"/>"));
  assert.ok(skeleton.includes("height:compact?83:88,borderRadius:14"));
  assert.ok(!skeleton.includes("borderRadius:44,borderWidth:3"));
  assert.ok(!skeleton.includes(">JCard</Text>"));
  assert.ok(skeleton.includes("minHeight:80"));
  assert.ok(skeleton.includes("height:35,borderRadius:18"));
  assert.ok(skeleton.includes("minHeight:43"));
- assert.ok(bee.includes('mode="loading"'));
- assert.ok(bee.includes("useReducedMotion()"));
- assert.ok(bee.includes('if(mode!=="loading"||reducedMotion)'));
- assert.ok(bee.includes("withRepeat(withSequence("));
- assert.ok(bee.includes("<Polygon"));
- assert.ok(bee.includes("t.yellow"));
- assert.ok(bee.includes("t.silver"));
+ assert.ok(gears.includes('mode="loading"'));
+ assert.ok(gears.includes("useReducedMotion()"));
+ assert.ok(gears.includes('if(mode!=="loading"||reducedMotion)return;'));
+ assert.ok(gears.includes("withRepeat(withTiming(360"));
+ assert.ok(gears.includes("<Polygon"));
+ assert.ok(gears.includes("t.ink2"));
+ assert.ok(!gears.includes("t.yellow"));
 });
 
-test("Offline bee is static and has retry, cached JCard remains visible",()=>{
+test("Offline gear indicator is static and has retry, cached JCard remains visible",()=>{
  const state=source("src/components/JCardConnectionState.tsx");
  const owner=source("src/app/(tabs)/profile.tsx");
  const publicCard=source("src/app/jcard.tsx");
