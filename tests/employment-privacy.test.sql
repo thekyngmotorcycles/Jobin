@@ -317,4 +317,30 @@ reset role;
 select pg_temp.cv_assert((select count(*)=12 from public.jcard_employment_history where ownership_review_pending),'all 12 selected rows preserved');
 select pg_temp.cv_assert(not has_column_privilege('authenticated','public.jcard_employment_history','ownership_review_pending','UPDATE'),'client cannot unquarantine');
 select pg_temp.cv_assert(not has_function_privilege('anon','public.jobeen_own_employment_review_pending()','EXECUTE'),'review status requires authentication');
+-- The owner explicitly confirms fixture A owns the four experiences.
+-- Apply only after the original containment and in the same rollback-only suite.
+select set_config('jobin.approved_employment_owner','a1111111-1111-4111-8111-111111111111',true);
+\ir ../supabase/security-review/employment-legacy-ownership-resolution.sql
+select pg_temp.cv_assert((select count(*)=12 from public.jcard_employment_history where client_id like 'legacy-%'),'all original copies preserved after resolution');
+select pg_temp.cv_assert((select count(*)=4 from public.jcard_employment_history where client_id like 'legacy-%' and not ownership_review_pending and not ownership_review_excluded),'only four legitimate copies released');
+select pg_temp.cv_assert((select count(*)=8 from public.jcard_employment_history where ownership_review_pending and ownership_review_excluded),'eight foreign copies remain inaccessible');
+select pg_temp.cv_assert(not has_column_privilege('authenticated','public.jcard_employment_history','ownership_review_excluded','UPDATE'),'exclusion is administrator-only');
+select pg_temp.cv_assert(not has_column_privilege('authenticated','public.jcard_employment_history','ownership_review_excluded','INSERT'),'client cannot create exclusion');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+select pg_temp.cv_assert((select count(*)=4 from public.jcard_employment_history where client_id like 'legacy-%'),'A recovers exactly four experiences');
+select pg_temp.cv_assert(not public.jobeen_own_employment_review_pending(),'A review message clears');
+select pg_temp.cv_assert(exists(select 1 from public.jcard_employment_history where client_id='unique-history'),'independent entry preserved');
+select pg_temp.cv_assert(exists(select 1 from public.jobeen_employment_private_contact where client_id='legacy-1'),'legitimate linked contact restored');
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.cv_assert(not exists(select 1 from public.jcard_employment_history where client_id like 'legacy-%'),'B cannot read excluded duplicates');
+select pg_temp.cv_assert(not public.jobeen_own_employment_review_pending(),'B resolved review message clears');
+select pg_temp.cv_assert(not exists(select 1 from public.read_approved_employment(auth.uid()) where company='Shared fixture'),'B cannot export excluded copies');
+select pg_temp.cv_assert((select count(*)=4 from public.read_approved_employment('a1111111-1111-4111-8111-111111111111') where company='Shared fixture'),'existing approved CV reader sees only legitimate restored records');
+select set_config('request.jwt.claim.sub','c3333333-3333-4333-8333-333333333333',true);
+select pg_temp.cv_assert(not exists(select 1 from public.jcard_employment_history where client_id like 'legacy-%'),'C cannot read excluded duplicates');
+select pg_temp.cv_assert(not public.jobeen_own_employment_review_pending(),'C resolved review message clears');
+select pg_temp.cv_assert(not exists(select 1 from public.read_approved_employment(auth.uid()) where company='Shared fixture'),'C cannot export excluded copies');
+select pg_temp.cv_assert(not exists(select 1 from public.read_approved_employment('a1111111-1111-4111-8111-111111111111') where company='Shared fixture'),'unapproved requester cannot see restored records');
+reset role;
 rollback;

@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## AUTH-HISTORIAL-RESOLUCIÓN — titular confirmado (2026-11-25)
+
+- OTA 45546069608 success; propietario confirma tres cuentas Google, acceso desde feed y mensaje de revisión en las tres. Confirma que las cuatro experiencias pertenecen exclusivamente a una de sus cuentas. SQL read-only: 12 retenidas, cuatro grupos exactos, una nueva experiencia independiente con contacto privado. Existe una autorización CV previa en cuenta legítima. Candidato de resolución restaura cuatro copias legítimas y conserva ocho excluidas e inaccesibles, sin borrar ni reasignar ni cambiar el consentimiento. RPC distingue revisión pendiente de exclusión resuelta. Pruebas sintéticas en suite existente. Pendiente CI, autorización alojada, merge y prueba física. Codex trabaja en navegación y rendimiento por separado; no modificar su rama.
+
 ## FEED-PERFIL — acceso a JCard visitante (2026-11-25)
 
 - Base `fa8cf724` (#124), CI 45532180210 success. JobIn expone el RPC personal, la visibilidad y la contención del historial. Falta la vista empresarial pública. El 42P01 de esa consulta rechazaba la carga conjunta de la ficha visitante.
