@@ -166,3 +166,20 @@ Volver a aplicar el mismo candidato restaura los permisos previstos y conserva l
 2. Ejecutar el candidato en una sola transacción con `ON_ERROR_STOP` y `SET LOCAL lock_timeout='5s'`. Incluir `NOTIFY pgrst, 'reload schema'` antes del commit. El SQL aborta si el lote esperado cambió. El DDL toma bloqueos temporales. La marca administrativa mantiene los campos originales y el acceso se limita mientras se comprueba la titularidad.
 3. Revalidar por catálogo y totales. Verificar con cuentas autorizadas que historial directo, contactos y CV excluyan las filas en revisión y que las entradas legítimas sigan disponibles. Verificar también la RPC de estado antes de preparar la OTA compatible, para que el teléfono muestre la revisión de titularidad en vez de un historial vacío.
 4. Antes del commit, cualquier fallo revierte toda la transacción. Después del commit, mantener las restricciones y conservar las filas si se revierte el cliente. Resolver cada marca únicamente tras acreditar la titularidad con evidencia independiente y autorización específica. El cliente anterior omite las filas retenidas por RLS y puede mostrar experiencia incompleta. Restaurar la visibilidad indiscriminada volvería a mostrar los datos del incidente.
+
+## Proyección empresarial del perfil visitante
+
+La corrección del acceso personal funciona con el esquema actual. Para habilitar la cara empresarial, el mínimo es aplicar en JobIn el bloque de proyección de [business-card-projection.sql](../supabase/security-review/business-card-projection.sql) hasta `grant select on public.jobeen_public_business_cards to authenticated;`. El bloque de disponibilidad de nombres empresariales y el corte de permisos de las tablas heredadas tienen su propia revisión.
+
+Antes del corte autorizado, confirmar que la vista está ausente, que `jobeen_private` queda fuera de los esquemas expuestos por PostgREST y que existen las columnas de `profiles`, `jcard_visibility` y `jcard_business_details` y la función bilateral `private.is_blocked(uuid,uuid)`. El catálogo verificado contiene las dependencias y carece de la vista y del esquema privado del candidato.
+
+Con una conexión administrativa existente y aprobación expresa del propietario, aplicar el prefijo en una transacción:
+
+```sh
+set -o pipefail
+sed '/^-- Hidden handles are still reserved/,$d' supabase/security-review/business-card-projection.sql |
+  psql --no-psqlrc --set=ON_ERROR_STOP=1 --single-transaction --file=- \
+    --command="NOTIFY pgrst, 'reload schema'"
+```
+
+Verificar en la API, con cuentas de prueba autorizadas, la lectura con datos de contacto enmascarados y las denegaciones de fichas ocultas, bloqueadas y cuentas desactivadas. Una reversión puede revocar `SELECT` de `authenticated` sobre la vista tras autorización. Conservar las protecciones y filas de origen.

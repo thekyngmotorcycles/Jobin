@@ -1,5 +1,11 @@
 # Jobin — registro central de desarrollo
 
+## FEED-PERFIL — acceso a JCard visitante (2026-11-25)
+
+- Base `fa8cf724` (#124), CI 45532180210 success. JobIn expone el RPC personal, la visibilidad y la contención del historial. Falta la vista empresarial pública. El 42P01 de esa consulta rechazaba la carga conjunta de la ficha visitante.
+- El perfil personal autorizado y sus publicaciones cargan de forma independiente. La cara empresarial solo se muestra con datos de la proyección autorizada. Cada resultado verifica la sesión y la revisión de la ruta. Nombre y foto del feed usan el UUID `author_id`. Regresiones de 42P01, contacto/seguidor, JCards ocultas, bloqueos y respuesta tardía tras cambio de sesión.
+- La recuperación del perfil personal funciona con el esquema actual. Para habilitar la cara empresarial queda pendiente la autorización del [bloque aditivo de proyección](SECURITY_DEPLOYMENT.md#proyección-empresarial-del-perfil-visitante). CI y prueba física del candidato pendientes.
+
 ## AUTH-HISTORIAL-LEGADO — regresión de visibilidad (2026-11-25)
 
 - Base 3d51724e, CI 45526299438 success, OTA Android 45526900260 success. Antes de #117, fallar la consulta auxiliar de contactos impedía mostrar todo el historial. #117 recuperó las filas del UUID actual aun con ese fallo y la migración 20261124211524 habilitó el contrato de #118. Las cuatro agrupaciones duplicadas registradas en ACCOUNT_ISOLATION reaparecieron en el flujo normal. En JobIn se comprobaron de forma agregada 12 filas de los cuatro grupos, todas del 15 de noviembre y repartidas entre tres UUID, sin contactos ni verificaciones. La coincidencia no prueba cuál copia pertenece a cada cuenta.
