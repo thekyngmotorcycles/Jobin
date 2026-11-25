@@ -8,6 +8,10 @@
 - Medición sintética con las fuentes de la base y del candidato, siete repeticiones por versión, 20 publicaciones con fotos y 40 ms fijos por solicitud. Alcance: carga inicial y retorno del bloque de publicaciones de Home, incluidas sus tarjetas y avatares. Solicitudes remotas por foco 73 → 8, `getUser` 44 → 2, consultas individuales de avatar 20 → 0. Una consulta de audiencia del feed y una solicitud de firmas privadas en ambas versiones. Mediana hasta las primeras publicaciones: entrada 284 → 163 ms, retorno 283 → 162 ms. Las cifras excluyen arranque nativo y red real. La evidencia justifica el trabajo de red; virtualización e imágenes quedan fuera del candidato.
 - Pruebas dirigidas de raíz, Casa desde cinco pestañas y perfil visitante, A→B→C→A, renovación, cierre, desconexión, revocación y respuesta tardía. La suite existente comprueba retorno de Google, reanudación y protecciones de perfil e historial. CI del candidato y comprobación física pendientes.
 
+## AUTH-HISTORIAL-RESOLUCIÓN — titular confirmado (2026-11-25)
+
+- OTA 45546069608 success; propietario confirma tres cuentas Google, acceso desde feed y mensaje de revisión en las tres. Confirma que las cuatro experiencias pertenecen exclusivamente a una de sus cuentas. SQL read-only: 12 retenidas, cuatro grupos exactos, una nueva experiencia independiente con contacto privado. Existe una autorización CV previa en cuenta legítima. Candidato de resolución restaura cuatro copias legítimas y conserva ocho excluidas e inaccesibles, sin borrar ni reasignar ni cambiar el consentimiento. RPC distingue revisión pendiente de exclusión resuelta. Pruebas sintéticas en suite existente. Pendiente CI, autorización alojada, merge y prueba física. Codex trabaja en navegación y rendimiento por separado; no modificar su rama.
+
 ## FEED-PERFIL — acceso a JCard visitante (2026-11-25)
 
 - Base `fa8cf724` (#124), CI 45532180210 success. JobIn expone el RPC personal, la visibilidad y la contención del historial. Falta la vista empresarial pública. El 42P01 de esa consulta rechazaba la carga conjunta de la ficha visitante.
