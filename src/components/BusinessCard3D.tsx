@@ -1,7 +1,7 @@
 import {JCARD_FLIP_GLARE} from "../theme/jobeen";
 import {jcardCommon, jcardFlipShadow} from "../theme/jcard";
 import {createContext, useCallback, useEffect, useRef, type ReactNode} from "react";
-import {Platform, StyleSheet} from "react-native";
+import {Platform, StyleSheet,View} from "react-native";
 import Svg,{Path,Circle} from "react-native-svg";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
 import Animated, {cancelAnimation, interpolate, runOnJS, useAnimatedReaction, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSequence, withSpring, withTiming} from "react-native-reanimated";
@@ -19,6 +19,9 @@ export interface BusinessCardProps {
   onSideChange: (side:"personal" | "business")=>void;
   shadowColor?: string;
   ghostPreview?: boolean;
+  topInset?:number;
+  frontPortrait?:ReactNode;
+  backPortrait?:ReactNode;
 }
 
 /** Child action controls mark their touches so the card flip never steals a link/button tap. */
@@ -29,7 +32,8 @@ function lightImpact(){
   if(Platform.OS!=="web")void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(()=>{});
 }
 
-export function BusinessCard3D({front,back,height,enabled=true,initialSide="personal",side,onSideChange,shadowColor=jcardCommon.cardShadowColor,ghostPreview=false}:BusinessCardProps){
+export function BusinessCard3D({front,back,height,enabled=true,initialSide="personal",side,onSideChange,shadowColor=jcardCommon.cardShadowColor,ghostPreview=false,topInset=0,frontPortrait,backPortrait}:BusinessCardProps){
+  const totalHeight=height+topInset;
   const interactiveTouch=useRef(false);
   const reducedMotion=useReducedMotion();
   const previewAngle=useSharedValue(0);
@@ -143,14 +147,14 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
     };
   });
   return <CardFlipInteractionContext.Provider value={markInteractive}><GestureDetector gesture={gesture}>
-    <Animated.View onStartShouldSetResponderCapture={()=>{interactiveTouch.current=false;return false;}} style={[styles.shell,{height},outerStyle]}>
-      <Animated.View pointerEvents={side==="personal"?"auto":"none"} style={[styles.face,{height,shadowColor},frontStyle]}>
-        {front}
+    <Animated.View onStartShouldSetResponderCapture={()=>{interactiveTouch.current=false;return false;}} style={[styles.shell,{height:totalHeight},outerStyle]}>
+      <Animated.View pointerEvents={side==="personal"?"auto":"none"} accessibilityElementsHidden={side!=="personal"} importantForAccessibility={side==="personal"?"auto":"no-hide-descendants"} style={[styles.face,topInset>0&&styles.portraitFace,{height:totalHeight,shadowColor},frontStyle]}>
+        {topInset>0?<><View style={[styles.faceContent,{height,marginTop:topInset,shadowColor}]}>{front}</View>{frontPortrait}</>:front}
       </Animated.View>
-      <Animated.View pointerEvents={side==="business"?"auto":"none"} style={[styles.face,styles.reverse,{height,shadowColor},backStyle]}>
-        {back}
+      <Animated.View pointerEvents={side==="business"?"auto":"none"} accessibilityElementsHidden={side!=="business"} importantForAccessibility={side==="business"?"auto":"no-hide-descendants"} style={[styles.face,styles.reverse,topInset>0&&styles.portraitFace,{height:totalHeight,shadowColor},backStyle]}>
+        {topInset>0?<><View style={[styles.faceContent,{height,marginTop:topInset,shadowColor}]}>{back}</View>{backPortrait}</>:back}
       </Animated.View>
-      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill,styles.glareMask]}>
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill,styles.glareMask,{top:topInset}]}>
         <Animated.View style={[styles.glare,glareStyle]}>
           <LinearGradient colors={JCARD_FLIP_GLARE} locations={[0,0.5,1]} start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
         </Animated.View>
@@ -170,6 +174,8 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
 const styles=StyleSheet.create({
   shell:{width:"100%",borderRadius:30,overflow:"visible"},
   face:{width:"100%",borderRadius:30,backfaceVisibility:"hidden",boxShadow:jcardFlipShadow.rest,overflow:"hidden"},
+  portraitFace:{overflow:"visible",boxShadow:undefined},
+  faceContent:{width:"100%",borderRadius:30,overflow:"hidden",boxShadow:jcardFlipShadow.rest},
   reverse:{position:"absolute",top:0,left:0,right:0},
   glareMask:{borderRadius:30,overflow:"hidden"},
   glare:{position:"absolute",top:-80,bottom:-80,width:110,left:"50%"},

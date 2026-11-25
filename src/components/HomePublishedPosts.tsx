@@ -1,3 +1,4 @@
+import {JobinLoadingIndicator} from "./JobinLoadingGears";
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import * as Linking from "expo-linking";
@@ -258,7 +259,7 @@ export function HomePublishedPosts({filter="all",featuredPostId=""}:{filter?:Hom
     <Ionicons name="refresh-outline" size={20} color={t.ink}/>
    </Pressable>
   </View>
-  {(loading||waitingAudience)&&<ActivityIndicator color={t.yellow}/>}
+  {(loading||waitingAudience)&&<JobinLoadingIndicator size={28} label="Cargando publicaciones"/>}
   {!!(error||filterError)&&<Text accessibilityLiveRegion="polite" style={{color:t.ink2,paddingHorizontal:16}}>{error||filterError}</Text>}
   {!loading&&!waitingAudience&&!error&&!filterError&&filter!=="all"&&!visible.length&&<Text style={{color:t.ink2,fontSize:13,paddingHorizontal:16}}>
    {filter==="following"?"Aún no hay publicaciones recientes de las cuentas que sigues.":"Aún no hay publicaciones recientes de empresas."}

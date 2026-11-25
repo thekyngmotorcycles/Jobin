@@ -121,13 +121,16 @@ test("Stories are 20 percent taller portrait cards with one Jobeen gold keyline"
  assert.equal(stories.split('height={65} shape="portrait" framed={false}').length-1,2);
  assert.ok(stories.includes('top:54,width:25,height:25'));
 });
-test("JCard personal and business portraits are 10 percent taller without changing photo width",()=>{
+test("JCard portraits keep their vertical proportions but no permanent gold frame",()=>{
  assert.ok(business.includes('height={theme==="light"?88:jcardLayout.avatar*1.1} shape="portrait" framed={false}'));
- assert.ok(business.includes('width:theme==="light"?90:jcardLayout.avatar+10,height:theme==="light"?99:jcardLayout.avatar*1.1+10,borderRadius:18,borderWidth:3,borderColor:jobeen.yellow'));
- assert.ok(business.includes('width:64,height:70.4,borderRadius:14,borderWidth:2,borderColor:jobeen.yellow'));
+ assert.ok(business.includes('width:theme==="light"?90:jcardLayout.avatar+10,height:theme==="light"?99:jcardLayout.avatar*1.1+10,borderRadius:14'));
+ assert.ok(!business.includes('borderRadius:18,borderWidth:3,borderColor:jobeen.yellow'));
+ assert.ok(business.includes('width:64,height:70.4,borderRadius:14,backgroundColor:jobeen.surface'));
+ assert.ok(!business.includes('borderRadius:14,borderWidth:2,borderColor:jobeen.yellow'));
+ assert.ok(!business.includes("JCARD_WORDMARK_XML"));
  assert.ok(business.includes('width:60,height:66,borderRadius:11'));
 });
-test("Story and JCard portraits keep one frame, while all ordinary avatars stay circular",()=>{
+test("Story frames remain unchanged; JCard portraits are unframed and ordinary avatars stay circular",()=>{
  const shared=src("src/components/social-ui.tsx");
  const publicAvatar=src("src/components/PublicProfileAvatar.tsx");
  const stories=src("src/components/StoryStrip.tsx");

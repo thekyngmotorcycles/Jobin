@@ -11,12 +11,12 @@ import {pickBusinessGalleryPhoto,uploadBusinessPhoto} from "../../lib/business-m
 import {assertAccountOwner} from "../../lib/account-scope";
 import {EMPTY_BUSINESS_CARD,readScopedBusinessCard,writeScopedBusinessCard,clearBusinessCardMemory} from "../../lib/business-card-cache";
 import { employmentMonths,experienceLabel } from "../../lib/employment";
-import { loadCloudHistory,readCloudBusiness,writeCloudHistory,deleteCloudHistory,writeCloudBusiness,readBusinessRating,readBusinessExcellence } from "../../lib/jcard-cloud";
+import { loadCloudHistory,readCloudBusiness,writeCloudHistory,deleteCloudHistory,writeCloudBusiness,readBusinessRating } from "../../lib/jcard-cloud";
 import { useTabClearance } from "../../theme/navigation";
 import {opacity} from "../../theme/color";
 import {useRef} from "react";
 import type {ProfileContactsHandle} from "../../components/ProfileFollowCounts";
-import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../../components/ProfileSharedSections";
+import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,type ProfileSection,type ProfileAboutSide} from "../../components/ProfileSharedSections";
 import {SavedJCardsGallery} from "../../components/SavedJCardsGallery";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfileOwnedPosts} from "../../components/ProfileOwnedPosts";
@@ -59,6 +59,7 @@ function validPhoneLabel(value:string):boolean{
 export default function Profile() {
   const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme);const {contentBottom}=useTabClearance();const {view,card}=useLocalSearchParams<{view?:string;card?:string}>();
   const [mode,setMode]=useState<Mode>("grid");
+  const [aboutSide,setAboutSide]=useState<ProfileAboutSide>("personal");
   const activeCardSide=useRef<"personal"|"business">(card==="business"?"business":"personal");
   const rememberCardSide=useCallback((side:"personal"|"business")=>{activeCardSide.current=side;},[]);
   const profileScroll=useRef<ScrollView|null>(null);
@@ -123,7 +124,6 @@ export default function Profile() {
   
   const [employerLink,setEmployerLink]=useState<{owner:string;id:string;name:string;handle:string}|null>(null);
   const [businessRating,setBusinessRating]=useState<{rating:number|null;count:number}>({rating:null,count:0});
-  const [businessExcellence,setBusinessExcellence]=useState<Pick<BusinessCardData,"excellenceVotes"|"excellenceReviewCount">>({});
   const [businessOpen,setBusinessOpen]=useState(false);
   const [businessCategoryOpen,setBusinessCategoryOpen]=useState(false);
   const [businessCategoryQuery,setBusinessCategoryQuery]=useState("");
@@ -179,6 +179,7 @@ export default function Profile() {
   const workspace = useProfessionalData(loadWorkspace,true);
   const ownerId=workspace.data?.card.id;
   const workspaceSession=workspace.scope?.session;
+  useEffect(()=>setAboutSide("personal"),[ownerId,workspaceSession]);
   const media=useProfessionalData(loadMyMedia,false,true,!!ownerId&&!!workspaceSession);
   const currentLive=hasActiveOwnLive({ownerId,workspaceScope:workspace.scope,mediaScope:media.scope,error:!!media.error||media.loading,media:media.data});
   function openOwnEditor(){
@@ -191,7 +192,7 @@ export default function Profile() {
   const ownHistory=historyState&&historyState.owner===ownerId&&historyState.session===workspaceSession?historyState:null;
   const history=ownHistory?.rows??[];
   const experienceKnown=ownHistory&&!ownHistory.reviewPending;
-  const needsHistoryDetails=mode==="cv";
+  const needsHistoryDetails=mode==="cv"&&aboutSide==="personal";
   const [historyLoading,setHistoryLoading]=useState(false);
   const historyEditable=needsHistoryDetails&&!historyLoading&&ownHistory?.contactsAvailable===true;
   const retryHistory=()=>setHistoryRetry(v=>v+1);
@@ -217,7 +218,7 @@ export default function Profile() {
    })();
    return()=>{active=false;clearTimeout(timeout);historyRevision.current++;historyScope.current=null;historyFormScope.current=null;};
   },[ownerId,workspaceSession,historyRetry,needsHistoryDetails]));
-  useEffect(()=>{setHistoryState(null);setAddOpen(false);setEditingId(null);setCvShareOpen(false);setBusinessOpen(false);setBusinessRating({rating:null,count:0});setBusinessExcellence({});setEmployerLink(null);setVerifiedIdentity(false);setIncomingCV([]);},[ownerId]);
+  useEffect(()=>{setHistoryState(null);setAddOpen(false);setEditingId(null);setCvShareOpen(false);setBusinessOpen(false);setBusinessRating({rating:null,count:0});setEmployerLink(null);setVerifiedIdentity(false);setIncomingCV([]);},[ownerId]);
 
  useFocusEffect(useCallback(()=>{
   const owner=workspace.data?.card.id,generation=++businessRevision.current;
@@ -273,7 +274,6 @@ export default function Profile() {
    return()=>{live=false;setEmployerLink(null);};
   },[ownerId,workspaceSession]));
   useEffect(()=>{if(!ownerId)return;let live=true;void readBusinessRating(ownerId).then(value=>{if(live)setBusinessRating(value);}).catch(()=>{});return()=>{live=false;};},[ownerId]);
-  useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void readBusinessExcellence(id).then(data=>{if(live)setBusinessExcellence(data);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
   useFocusEffect(useCallback(()=>{if(ownerId&&workspaceSession&&needsHistoryDetails)void refreshCV();return()=>{cvRevision.current++;cvScope.current=null;setIncomingCV([]);};},[ownerId,workspaceSession,needsHistoryDetails]));
   const p = DEMO_PROFILE;
 
@@ -430,13 +430,13 @@ export default function Profile() {
         {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
         {historyError&&ownerId&&<PageState kind="error" message="No se pudo recuperar el historial privado. Vuelve a intentarlo." actionLabel="Reintentar" onAction={retryHistory}/>}
         <ProfileIdentityHeader
-          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),...businessExcellence,rating:businessRating.rating,reviewCount:businessRating.count},years:primaryExperienceMonths===undefined?workspace.data.card.years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} onActiveSideChange={rememberCardSide} ownerQuickActions={{onPanel:()=>router.push("/panel"),onLive:()=>currentLive?router.push({pathname:"/live",params:{view:"studio"}}):router.push("/live"),liveLabel:currentLive?"Volver al Live":"En vivo"}} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink?.owner===ownerId?employerLink:null}/>
+          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),rating:businessRating.rating,reviewCount:businessRating.count},years:primaryExperienceMonths===undefined?workspace.data.card.years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} onActiveSideChange={rememberCardSide} awardsInAbout profileCoverScope={workspace.scope} ownerQuickActions={{onPanel:()=>router.push("/panel"),onLive:()=>currentLive?router.push({pathname:"/live",params:{view:"studio"}}):router.push("/live"),liveLabel:currentLive?"Volver al Live":"En vivo"}} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink?.owner===ownerId?employerLink:null}/>
             {!!workspace.error&&isJCardConnectivityError(workspace.error)&&<View style={{marginTop:12}}>
               <JCardOfflineNotice retry={workspace.reload} cached/>
             </View>}
            </> : <JCardLoadState loading={workspace.loading} error={workspace.error||"No se pudo recuperar la JCard. Vuelve a intentarlo."} retry={workspace.reload}/>}
           trust={workspace.data?.card ? <ProfessionalTrustMark worker={workspace.data.card.id}/> : null}
-          profileUserId={workspace.data?.card?.id} contactsMenuRef={contactsMenuRef}
+          profileUserId={workspace.data?.card?.id} contactsMenuRef={contactsMenuRef} countsInCard expectedScope={workspace.scope}
         />
         </Animated.View>
         <View onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}
@@ -453,7 +453,9 @@ export default function Profile() {
             <Text style={s.muted}>Sin transmisión activa verificada</Text>
           </View>
         </View>}
-        {mode === "cv" && (
+        {mode === "cv" && <ProfileAboutSelector side={aboutSide} onSelect={setAboutSide}/>}
+        {mode==="cv"&&aboutSide==="business"&&ownerId&&<ProfileBusinessAbout business={businessOwner===ownerId&&businessScope.current?.owner===ownerId&&businessScope.current?.session===workspaceSession?business:undefined} target={ownerId} scope={businessScope.current?.owner===ownerId&&businessScope.current?.session===workspaceSession?businessScope.current:null} onEdit={editBusiness}/>}
+        {mode === "cv" && aboutSide==="personal" && (
           <View style={{ gap: 14 }}>
             <Text style={s.h2}>Historial profesional</Text>
             {experienceKnown&&<Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}.</Text>}
