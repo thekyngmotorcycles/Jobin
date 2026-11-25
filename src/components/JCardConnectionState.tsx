@@ -5,6 +5,7 @@ import {jobeenTokens} from "../theme/jobeen";
 import {JobinLoadingGears} from "./JobinLoadingGears";
 import {JCardLoadingSkeleton} from "./JCardLoadingSkeleton";
 import {ProfessionalStatus} from "./ProfessionalStatus";
+import {NAVIGATION_ROW_HEIGHT} from "../theme/navigation";
 
 /** A failed request is not necessarily an offline phone; avoid false claims. */
 export function isJCardConnectivityError(message:string){
@@ -34,8 +35,9 @@ export function JCardOfflineNotice({retry,cached=false}:{retry:()=>void;cached?:
  </View>;
 }
 
-export function JCardLoadState({loading,error,retry}:{loading:boolean;error:string;retry:()=>void}){
- if(loading)return <JCardLoadingSkeleton/>;
- if(error&&isJCardConnectivityError(error))return <JCardOfflineNotice retry={retry}/>;
- return <ProfessionalStatus loading={false} error={error} retry={retry}/>;
+export function JCardLoadState({loading,error,retry,profileInset}:{loading:boolean;error:string;retry:()=>void;profileInset:number}){
+ if(loading)return <JCardLoadingSkeleton profileInset={profileInset}/>;
+ return <View style={{paddingHorizontal:profileInset,paddingTop:NAVIGATION_ROW_HEIGHT+12}}>
+  {error&&isJCardConnectivityError(error)?<JCardOfflineNotice retry={retry}/>:<ProfessionalStatus loading={false} error={error} retry={retry}/>}
+ </View>;
 }

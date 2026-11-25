@@ -16,7 +16,7 @@ import { useTabClearance } from "../../theme/navigation";
 import {opacity} from "../../theme/color";
 import {useRef} from "react";
 import type {ProfileContactsHandle} from "../../components/ProfileFollowCounts";
-import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,type ProfileSection,type ProfileAboutSide} from "../../components/ProfileSharedSections";
+import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,ProfilePersonalLanguages,type ProfileSection,type ProfileAboutSide} from "../../components/ProfileSharedSections";
 import {SavedJCardsGallery} from "../../components/SavedJCardsGallery";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfileOwnedPosts} from "../../components/ProfileOwnedPosts";
@@ -365,7 +365,7 @@ export default function Profile() {
 
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={[s.screen,{backgroundColor:jt.bg}]}>
-      <Animated.View pointerEvents={tabsPinned?"none":"auto"} style={{ position:"absolute",top:insets.top,left:0,right:0,zIndex:10,height:NAVIGATION_ROW_HEIGHT,flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8,transform:[{translateY:topHeaderOffset}],opacity:topHeaderOpacity }}>
+      <Animated.View pointerEvents={tabsPinned?"none":"box-none"} style={{ position:"absolute",top:insets.top,left:0,right:0,zIndex:10,height:NAVIGATION_ROW_HEIGHT,flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8,transform:[{translateY:topHeaderOffset}],opacity:topHeaderOpacity }}>
         <View pointerEvents="none" style={{position:"absolute",top:0,left:0,right:0,height:fadeHeight}}>
           <Svg width="100%" height="100%" accessible={false}>
             <Defs><LinearGradient id="profileTopFade" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -382,8 +382,8 @@ export default function Profile() {
             <Rect width="100%" height="100%" fill="url(#profileTopShade)"/>
           </Svg>
         </View>
-        <View style={{flex:1}}/>
-        <View style={{flexDirection:"row",alignItems:"center",gap:2}}>
+        <View pointerEvents="none" style={{flex:1}}/>
+        <View pointerEvents="box-none" style={{flexDirection:"row",alignItems:"center",gap:2}}>
           <JobeenCreateMenu/>
           <NotificationBell/>
           <Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil" accessibilityState={{expanded:profileToolsOpen}} onPress={()=>profileToolsOpen?closeProfileMenu():openProfileMenu()} style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center",borderRadius:24}}><Ionicons name="ellipsis-horizontal" size={23} color={colors.ink}/></Pressable>
@@ -417,7 +417,7 @@ export default function Profile() {
 
       <Animated.ScrollView ref={profileScroll} stickyHeaderIndices={[1]} scrollEventThrottle={16}
         style={{flex:1}}
-        contentContainerStyle={{paddingTop:NAVIGATION_ROW_HEIGHT+12,paddingBottom:0}}
+        contentInsetAdjustmentBehavior="never"
         onScroll={Animated.event([{nativeEvent:{contentOffset:{y:profileScrollY}}}],{
           useNativeDriver:true,
           listener:(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
@@ -426,16 +426,18 @@ export default function Profile() {
           }
         })}
         showsVerticalScrollIndicator={false}>
-        <Animated.View style={{gap:16,paddingHorizontal:16,paddingBottom:20,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
-        {!!notice && <Notice text={notice} onClose={() => setNotice("")} />}
-        {historyError&&ownerId&&<PageState kind="error" message="No se pudo recuperar el historial privado. Vuelve a intentarlo." actionLabel="Reintentar" onAction={retryHistory}/>}
+        <Animated.View style={{paddingBottom:12,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
         <ProfileIdentityHeader
-          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),rating:businessRating.rating,reviewCount:businessRating.count},years:primaryExperienceMonths===undefined?workspace.data.card.years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} onActiveSideChange={rememberCardSide} awardsInAbout profileCoverScope={workspace.scope} ownerQuickActions={{onPanel:()=>router.push("/panel"),onLive:()=>currentLive?router.push({pathname:"/live",params:{view:"studio"}}):router.push("/live"),liveLabel:currentLive?"Volver al Live":"En vivo"}} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink?.owner===ownerId?employerLink:null}/>
-            {!!workspace.error&&isJCardConnectivityError(workspace.error)&&<View style={{marginTop:12}}>
+          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),rating:businessRating.rating,reviewCount:businessRating.count},years:primaryExperienceMonths===undefined?workspace.data.card.years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} onActiveSideChange={rememberCardSide} awardsInAbout profileInset={16} profileCoverScope={workspace.scope} ownerQuickActions={{onPanel:()=>router.push("/panel"),onLive:()=>currentLive?router.push({pathname:"/live",params:{view:"studio"}}):router.push("/live"),liveLabel:currentLive?"Volver al Live":"En vivo"}} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink?.owner===ownerId?employerLink:null}/>
+            {!!workspace.error&&isJCardConnectivityError(workspace.error)&&<View style={{marginTop:12,paddingHorizontal:16}}>
               <JCardOfflineNotice retry={workspace.reload} cached/>
             </View>}
-           </> : <JCardLoadState loading={workspace.loading} error={workspace.error||"No se pudo recuperar la JCard. Vuelve a intentarlo."} retry={workspace.reload}/>}
-          trust={workspace.data?.card ? <ProfessionalTrustMark worker={workspace.data.card.id}/> : null}
+           </> : <JCardLoadState loading={workspace.loading} error={workspace.error||"No se pudo recuperar la JCard. Vuelve a intentarlo."} retry={workspace.reload} profileInset={16}/>}
+          actions={(notice||historyError&&ownerId)?<View style={{paddingHorizontal:16,gap:12}}>
+           {!!notice&&<Notice text={notice} onClose={()=>setNotice("")}/>}
+           {historyError&&ownerId&&<PageState kind="error" message="No se pudo recuperar el historial privado. Vuelve a intentarlo." actionLabel="Reintentar" onAction={retryHistory}/>}
+          </View>:null}
+          trust={workspace.data?.card?<ProfessionalTrustMark worker={workspace.data.card.id} inset={16}/>:null}
           profileUserId={workspace.data?.card?.id} contactsMenuRef={contactsMenuRef} countsInCard expectedScope={workspace.scope}
         />
         </Animated.View>
@@ -457,6 +459,7 @@ export default function Profile() {
         {mode==="cv"&&aboutSide==="business"&&ownerId&&<ProfileBusinessAbout business={businessOwner===ownerId&&businessScope.current?.owner===ownerId&&businessScope.current?.session===workspaceSession?business:undefined} target={ownerId} scope={businessScope.current?.owner===ownerId&&businessScope.current?.session===workspaceSession?businessScope.current:null} onEdit={editBusiness}/>}
         {mode === "cv" && aboutSide==="personal" && (
           <View style={{ gap: 14 }}>
+            {workspace.data?.card&&<ProfilePersonalLanguages languages={workspace.data.card.languages}/>}
             <Text style={s.h2}>Historial profesional</Text>
             {experienceKnown&&<Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}.</Text>}
             {ownerId&&historyLoading&&!historyError&&<PageState kind="loading" message="Cargando historial profesional…"/>}

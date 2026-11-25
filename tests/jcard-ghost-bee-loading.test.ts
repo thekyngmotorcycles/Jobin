@@ -9,8 +9,8 @@ test("JCard and skeleton share the same responsive dimensions for small screens 
  assert.ok(metrics.includes("export function jcardSurfaceSize("));
  assert.ok(metrics.includes("lightHeight:330, darkHeight:400"));
  assert.ok(metrics.includes("compactHeightExtra:8"));
- assert.match(skeleton,/jcardSurfaceSize\(\{screenWidth,measuredWidth,fontScale,theme,profile:\{\}\}\)/);
- assert.match(card,/jcardSurfaceSize\(\{screenWidth:width,measuredWidth:measuredCardWidth,fontScale,theme:previewTheme\?\?theme,profile:profileSizing\}\)/);
+ assert.ok(skeleton.includes("jcardSurfaceSize({screenWidth,measuredWidth,fontScale,theme,profile:true,horizontalInset:profileInset})"));
+ assert.match(card,/jcardSurfaceSize\(\{screenWidth:width,measuredWidth:measuredCardWidth,fontScale,theme:cardTheme,\s*profile:awardsInAbout,horizontalInset:awardsInAbout\?profileInset:undefined\}\)/);
  assert.ok(skeleton.includes("onLayout={event"));
  assert.ok(card.includes("onLayout={event"));
  assert.ok(!skeleton.includes("height:450"));
@@ -56,8 +56,8 @@ test("Offline JCard is distinct from endless loading and provides a retry or cac
  const profile=src("src/app/(tabs)/profile.tsx");
  const publicProfile=src("src/app/jcard.tsx");
  assert.ok(state.includes("export function isJCardConnectivityError"));
- assert.ok(state.includes('if(loading)return <JCardLoadingSkeleton/>'));
- assert.ok(state.includes('if(error&&isJCardConnectivityError(error))return <JCardOfflineNotice retry={retry}/>'));
+ assert.ok(state.includes('if(loading)return <JCardLoadingSkeleton profileInset={profileInset}/>'));
+ assert.ok(state.includes('error&&isJCardConnectivityError(error)?<JCardOfflineNotice retry={retry}/>'));
  assert.ok(state.includes('mode="offline"'));
  assert.ok(state.includes("Reintentar"));
  assert.ok(state.includes("Mostrando la última JCard guardada"));

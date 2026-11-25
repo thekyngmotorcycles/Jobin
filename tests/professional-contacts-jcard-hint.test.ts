@@ -156,9 +156,9 @@ test("Business medals move to About on both profiles while legacy card previews 
 });
 
 
-test("One connection provider renders both rotating faces without duplicate queries or exposing private lists",()=>{
+test("One connection provider renders the personal face without duplicate queries or exposing private lists",()=>{
  const network=source("src/components/ProfileFollowCounts.tsx"),card=source("src/components/JobinCard.tsx"),shared=source("src/components/ProfileSharedSections.tsx"),owner=source("src/app/(tabs)/profile.tsx"),visitor=source("src/app/jcard.tsx");
- assert.equal((card.match(/<ProfileConnectionCountRow /g)??[]).length,2);
+ assert.equal((card.match(/<ProfileConnectionCountRow /g)??[]).length,1);
  assert.ok(shared.includes("countsInCard>{card}</ProfileFollowCounts>"));
  assert.ok(network.includes("<ProfileCountContext.Provider value={{counts,isOwner,openList}}>"));
  assert.ok(network.includes("!countsInCard&&<ProfileConnectionCountRow/>"));

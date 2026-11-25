@@ -81,7 +81,7 @@ test("Creator section panels rise OVER the JCard instead of scrolling the card a
   assert.ok(page.includes("minHeight:screenHeight"),"Short feeds must still allow the section tabs to reach the top");
   assert.ok(page.includes("onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}"),"Pin threshold must follow the measured panel");
  }
- assert.ok(owner.includes("contentContainerStyle={{paddingTop:NAVIGATION_ROW_HEIGHT+12,paddingBottom:0}}"),"The profile must scroll behind its top chrome with no blank gutters");
+ assert.ok(owner.includes('contentInsetAdjustmentBehavior="never"')&&!owner.includes("paddingTop:NAVIGATION_ROW_HEIGHT+12"),"The profile must scroll behind its top chrome with no blank gutters");
  assert.ok(owner.includes("style={{flex:1}}"),"Scroll content must start at the top safe area, not below a static header");
  assert.ok(visitor.includes('stickyHeaderIndices={resource.data?[1]:undefined}'));
 });
@@ -105,19 +105,19 @@ test("Creator tabs replace top navigation in three stages and respect the status
   assert.ok(page.includes("outputRange:[0,0,-NAVIGATION_ROW_HEIGHT]"));
   assert.ok(page.includes("transform:[{translateY:topHeaderOffset}]"));
   assert.ok(page.includes("opacity:topHeaderOpacity"));
-  assert.ok(page.includes("pointerEvents={tabsPinned?\"none\":\"auto\"}"));
+  assert.ok(page.includes("pointerEvents={tabsPinned?\"none\":\"box-none\"}"));
  }
  assert.ok(owner.includes("const insets=useSafeAreaInsets()"),"Use the device safe area for the brand header");
  assert.ok(owner.includes('top:insets.top,left:0,right:0,zIndex:10'),"Do not overlap Android status-bar indicators");
  assert.ok(visitor.includes('<Stack.Screen options={{headerShown:false}}/>'),"The public native stack bar must not block sticky tabs");
  assert.ok(visitor.includes('accessibilityLabel="Volver"'),"Public profile retains a back action");
- assert.ok(visitor.includes("paddingTop:NAVIGATION_ROW_HEIGHT+12"));
+ assert.ok(!visitor.includes("paddingTop:NAVIGATION_ROW_HEIGHT+12"));
 });
 
 test("Floating brand chrome starts below status bar without changing the approved JCard scroll",()=>{
  assert.ok(owner.includes('top:insets.top,left:0,right:0,zIndex:10'));
  assert.ok(owner.includes('height:NAVIGATION_ROW_HEIGHT'));
- assert.ok(owner.includes('contentContainerStyle={{paddingTop:NAVIGATION_ROW_HEIGHT+12,paddingBottom:0}}'));
+ assert.ok(owner.includes('contentInsetAdjustmentBehavior="never"'));
  assert.ok(owner.includes("Animated.multiply(profileScrollY,0.5)"));
  assert.ok(owner.includes("outputRange:[0,0,-NAVIGATION_ROW_HEIGHT]"));
  assert.ok(owner.includes("stickyHeaderIndices={[1]}"));
@@ -206,7 +206,7 @@ test("JCard vertical dragging is released early while horizontal flips remain in
 
 test("Public JCard aligns with owner profile and stays reachable above fixed tabs",()=>{
  assert.ok(visitor.includes('style={{flex:1}} overScrollMode="never" bounces={false} alwaysBounceVertical={false}'));
- assert.ok(visitor.includes('paddingTop:NAVIGATION_ROW_HEIGHT+12,paddingBottom:contentBottom'));
+ assert.ok(visitor.includes('contentContainerStyle={{paddingBottom:contentBottom}}'));
  assert.ok(visitor.includes('paddingTop:20,paddingBottom:20,minHeight:screenHeight'));
  assert.ok(visitor.includes('stickyHeaderIndices={resource.data?[1]:undefined}'));
  assert.ok(visitor.includes('accessibilityLabel="Volver"'));
