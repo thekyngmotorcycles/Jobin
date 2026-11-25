@@ -40,7 +40,13 @@ export function ProfileConnectionCountRow({ink,muted,line}:{ink?:string;muted?:s
  </View>;
 }
 
-export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef,children,countsInCard=false,expectedScope}:{userId:string;refreshKey?:number;contactsMenuRef?:Ref<ProfileContactsHandle>;children?:ReactNode;countsInCard?:boolean;expectedScope?:MessageScope|null}){
+type ProfileFollowCountsProps={userId:string;refreshKey?:number;contactsMenuRef?:Ref<ProfileContactsHandle>;children?:ReactNode;countsInCard?:boolean;expectedScope?:MessageScope|null};
+export function ProfileFollowCounts(props:ProfileFollowCountsProps){
+ // A new target or verified session must never inherit a previous owner's sheet or rows.
+ const key=JSON.stringify([props.userId,props.expectedScope?.owner??null,props.expectedScope?.session??null,!!props.countsInCard]);
+ return <ScopedProfileFollowCounts key={key} {...props}/>;
+}
+function ScopedProfileFollowCounts({userId,refreshKey=0,contactsMenuRef,children,countsInCard=false,expectedScope}:ProfileFollowCountsProps){
  const {colors,s}=useUi();
  const scopeRef=useRef<MessageScope|null>(null),countRevision=useRef(0),listRevision=useRef(0);
  const [summary,setSummary]=useState<{target:string;viewer:string;followers:number|null;contacts:number}|null>(null);
@@ -58,7 +64,7 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef,childre
  const contactMutation=useRef<object|null>(null);
  const refreshCounts=useCallback(async()=>{
   const generation=++countRevision.current;
-  if(!userId)return;
+  if(!userId||(countsInCard&&!expectedScope))return;
   try{
    const db=requireSupabase();
    const scope=await captureMessageScope(expectedScope??undefined);
@@ -71,7 +77,7 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef,childre
    await assertMessageScope(scope);
    if(countRevision.current===generation){scopeRef.current=scope;setSummary({target:userId,viewer:scope.owner,followers:followers.count,contacts});}
   }catch{if(countRevision.current===generation){scopeRef.current=null;setSummary(null);}}
- },[userId,expectedScope?.owner,expectedScope?.session]);
+ },[userId,countsInCard,expectedScope?.owner,expectedScope?.session]);
  // Focus and explicit refresh share one trigger; do not also request on mount.
  useFocusEffect(useCallback(()=>{void refreshCounts();return()=>{scopeRef.current=null;countRevision.current++;listRevision.current++;setSummary(null);setSheet(false);setPendingRemove(null);contactMutation.current=null;setBusy("");setRows([]);setContactRows([]);};},[refreshCounts,refreshKey]));
  const isOwner=!!viewer&&viewer===userId;

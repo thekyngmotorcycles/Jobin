@@ -33,7 +33,12 @@ async function pickCover():Promise<string|null>{
 }
 
 /** One cover, outside the rotating card. No legacy banner and no shared local cache. */
-export function JCardSharedCover({target,scope,editable=false,height}:{target?:string;scope?:MessageScope|null;editable?:boolean;height:number}){
+type SharedCoverProps={target?:string;scope?:MessageScope|null;editable?:boolean;height:number};
+export function JCardSharedCover(props:SharedCoverProps){
+ const key=JSON.stringify([props.target??null,props.scope?.owner??null,props.scope?.session??null,!!props.editable]);
+ return <ScopedJCardSharedCover key={key} {...props}/>;
+}
+function ScopedJCardSharedCover({target,scope,editable=false,height}:SharedCoverProps){
  const {theme}=useTheme(),t=jobeenTokens(theme),modal=jobeenModalTokens(theme);
  const insets=useSafeAreaInsets();
  const revision=useRef(0),busyRef=useRef<object|null>(null);
@@ -104,13 +109,13 @@ export function JCardSharedCover({target,scope,editable=false,height}:{target?:s
       {!current?<Button title="Reintentar" secondary onPress={refresh} disabled={busy}/>:<>
        <Button title={candidate?"Elegir otra foto":"Elegir foto"} secondary onPress={selectPhoto} disabled={busy}/>
        {!!candidate&&<Button title="Publicar portada" onPress={publish} disabled={busy}/>}
-       {!!current.path&&!candidate&&<Button title="Quitar portada" variant="danger" onPress={()=>setConfirmRemove(true)} disabled={busy}/>}
+       {!!current.path&&!candidate&&<Button title="Quitar portada" variant="danger" onPress={()=>{setError("");setConfirmRemove(true);}} disabled={busy}/>}
       </>}
       <Button title="Cancelar" secondary onPress={close} disabled={busy}/>
      </ScrollView>
     </View>
    </View>
   </Modal>}
-  {owner&&<JobeenNoticeDialog visible={confirmRemove} title="Quitar portada" description="La portada dejará de mostrarse en tu perfil." tone="danger" confirmLabel="Quitar" busy={busy} onConfirm={remove} onCancel={()=>{if(!busyRef.current)setConfirmRemove(false);}}/>}
+  {owner&&<JobeenNoticeDialog visible={confirmRemove} title="Quitar portada" description={error||"La portada dejará de mostrarse en tu perfil."} tone="danger" confirmLabel="Quitar" busy={busy} onConfirm={remove} onCancel={()=>{if(!busyRef.current)setConfirmRemove(false);}}/>}
  </>;
 }

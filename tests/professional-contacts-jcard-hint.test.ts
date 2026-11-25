@@ -169,3 +169,11 @@ test("One connection provider renders both rotating faces without duplicate quer
  const view=network.slice(network.indexOf("export function ProfileConnectionCountRow"),network.indexOf("export function ProfileFollowCounts"));
  assert.ok(!view.includes("requireSupabase")&&!view.includes("contactCount("));
 });
+
+
+test("Profile connection state is reset synchronously on viewer session or target change",()=>{
+ const network=source("src/components/ProfileFollowCounts.tsx");
+ assert.ok(network.includes("JSON.stringify([props.userId,props.expectedScope?.owner??null,props.expectedScope?.session??null,!!props.countsInCard])"));
+ assert.ok(network.includes("<ScopedProfileFollowCounts key={key} {...props}/>"));
+ assert.ok(network.includes("if(!userId||(countsInCard&&!expectedScope))return;"));
+});

@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-COMPACT — cierre del alcance local (2026-11-25)
+
+- CI 45668405811 success (499 pruebas y SQL desechable); geometría aprobada en pruebas automatizadas, aún pendiente de dispositivo. Cierre dirigido de dos defectos observables: proveedor de contadores y editor de portada remontan por destino y sesión para descartar estado previo incluso antes del efecto de foco; perfiles compactos sin scope no consultan agregados; el diálogo Quitar portada muestra el error de la operación sin cerrarse. Nuevas regresiones; CI del ajuste pendiente. Siguiente acción: autorización explícita para aplicar únicamente el contrato de portada en el piloto Supabase existente y verificar Storage/REST con cuentas sintéticas; no cambios de producción, merge, OTA ni APK. La versión candidata no está desplegada.
+
 - CI 45666987914: database, gate, lint y typecheck OK; dos aserciones textuales fallaron (firma antigua del cálculo y llave JSX sobrante). Actualizadas las pruebas para exigir el modo de perfil en ambos consumidores, mismo cardHeight en giro y reverso; no se cambió cálculo, comportamiento, privacidad ni workflow. Validación posterior pendiente.
 
 ## JCARD-COMPACT — dimensiones adaptativas (2026-11-25)

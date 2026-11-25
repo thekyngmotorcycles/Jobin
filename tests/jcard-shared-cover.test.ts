@@ -16,3 +16,13 @@ test("Shared cover is one explicit owner-approved upload, independent of the JCa
  assert.ok(api.includes("if(origin.owner!==target)")&&api.includes("await assertMessageScope(scope)"));
  assert.ok(api.includes("if(write.error)throw write.error;")&&api.indexOf("await cleanup(target,previous,scope)")>api.indexOf("if(!write.data)"));
 });
+
+
+test("Cover editor remounts on target or session change and removal failure remains visible",()=>{
+ const editor=source("src/components/JCardSharedCover.tsx");
+ assert.ok(editor.includes("JSON.stringify([props.target??null,props.scope?.owner??null,props.scope?.session??null,!!props.editable])"));
+ assert.ok(editor.includes("<ScopedJCardSharedCover key={key} {...props}/>"));
+ assert.ok(editor.includes('onPress={()=>{setError("");setConfirmRemove(true);}}'));
+ assert.ok(editor.includes('description={error||"La portada dejará de mostrarse en tu perfil."}'));
+ assert.ok(editor.includes("if(active())setError("));
+});
