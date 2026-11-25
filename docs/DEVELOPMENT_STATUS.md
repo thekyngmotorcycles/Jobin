@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## Norma operativa — uso selectivo del Security Pilot (2026-11-25)
+
+- Propietario aprueba AGENTS §0.5: laboratorio de riesgo, no paso obligatorio de UI; Supabase Pilot independiente de APK piloto (OTA deshabilitada); una sola rama de producto, pruebas dirigidas sin repetir auditorías ni nuevos servicios. CI 45671793535 success en a5bf6bd. JCARD-COMPACT: migración piloto verificada y CI verde; falta prueba HTTP de portada con identidades SEC06 preexistentes. Reutilizar entorno privado de ensayo; no reabrir auth/core. No merge, OTA, APK ni producción.
+
 ## JCARD-COMPACT — integración autorizada en Supabase Pilot (2026-11-25)
 
 - CI 45669187300 success, validate + database en 04fd4fe. Con autorización del propietario se aplicó exclusivamente `supabase/security-review/jcard-shared-cover.sql` (blob 7ea6ce0b) al proyecto Jobeen Security Pilot `mkvzkvkmrribcaecvphq`: migración alojada `20261125180601 jcard_shared_cover_pilot`. Verificación posterior: RLS activa, cuatro políticas de metadatos y ocho de Storage, bucket privado 2097152 bytes y MIME JPEG/PNG/WebP, anon sin SELECT, authenticated con SELECT y sin UPDATE owner_id; cero portadas al terminar. Advisor de seguridad no reporta hallazgos que identifiquen la tabla o función nueva. No se repiten auditorías generales ni se modifican otros objetos. Prueba SQL de CI aprobada; prueba HTTP real de carga/firma/reemplazo/retirada con sesiones sintéticas aún pendiente: el entorno de ejecución actual no tiene el archivo SEC06 privado ni acceso de red al piloto (DNS fallido), no se han creado nuevas cuentas ni archivos de ensayo. Validación física Jelly 2 pendiente. No producción, merge, OTA, APK ni nuevos servicios. Siguiente acción: ejecutar comprobación HTTP dirigida reutilizando el entorno de ensayo SEC06 cuando se disponga de sus credenciales sintéticas, sin añadir servicios; después solicitar autorización separada de integración y OTA.
