@@ -220,3 +220,7 @@ JShop conecta compradores y vendedores mediante anuncios clasificados y chat. Pu
 
 ## Política económica de Jobeen (2026-11-24)
 Precios base aprobados Free USD0, Premium USD9.99/mes, Business Premium USD49.99/mes. Aplicar docs/JOBEEN_PRICING_USAGE_PLAN.md para propuestas de cuotas y reserva presupuestaria antes de lanzamiento: medir minutos de emisión y espectadores, IA, costes reales y margen; cuotas candidatas no son autorización de gasto, proveedor ni cambio de prestaciones. No reducir moderación para ahorrar ni cobrar sobrecostes sin consentimiento. Sin comisión de venta JShop.
+
+
+### Identidad de marca aprobada — Jobin (2026-11-24)
+El nombre público oficial es **Jobin**; Jobeen queda como denominación histórica o identificador técnico compatible. Fuente de verdad: `docs/wordmark.md` y `assets/brand/` con los dos originales aprobados por el propietario. El logotipo principal contiene solo Jobin bicolor, sin hexágono; el icono conserva la J y el hexágono abierto aprobado. No redibujar J ni hexágono, estirar, cerrar la apertura o sustituir la tipografía. Icono de launcher en siguiente APK consolidada; logo interno por OTA compatible con aprobación separada. No renombrar paquete, esquema, IDs, rutas, claves ni backend por branding. Conservar Royal Hive y JCard. Esta decisión de identidad prevalece sobre el nombre visible anterior, no altera las reglas de trabajo o publicación.

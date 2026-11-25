@@ -55,3 +55,6 @@ Consultar [Master Plan UI/UX v1.2](docs/JOBEEN_MASTER_PLAN_UIUX.md) antes de dis
 
 - Encabezados de los paneles laterales Configuración y Mi perfil: centrar el título respecto al ancho completo del panel con reservas iguales a ambos lados (cierre de 48dp), no respecto al espacio restante. Permitir crecimiento y salto de línea, sin reducir fuente. Usar SettingsDrawerHeader compartido.
 - Perfil propio conserva barra global visible y operable sobre el contenido, independiente de la animación del encabezado/JCard; separar su host fijo de los modos animados de Casa y Flashes. No duplicar barras ni modificar el acordeón superior.
+
+
+**Identidad definitiva:** nombre público Jobin. Wordmark bicolor sin hexágono; únicamente el icono de marca conserva su hexágono abierto aprobado. Logotipo e icono aprobados en `assets/brand/` y `docs/wordmark.md`; no rediseñar ni sustituir por fuente cursiva de dispositivo. Royal Hive, controles y JCard se conservan.

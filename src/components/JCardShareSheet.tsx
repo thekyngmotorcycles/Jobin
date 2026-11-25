@@ -21,7 +21,7 @@ const OPTIONS=[
  {id:"more",label:"Más opciones",icon:"ellipsis-horizontal"}
 ] as const;
 
-/** Jobeen Premium: the approved universal share sheet with real contact selection. */
+/** Jobin Premium: the approved universal share sheet with real contact selection. */
 export function JCardShareSheet({visible,onClose,label,link="",theme,side="personal",contentTitle,contentMessage,onShared,onError}:{
  visible:boolean;onClose:()=>void;label:string;link?:string;theme:ThemeName;side?:"personal"|"business";
  contentTitle?:string;contentMessage?:string;onShared?:()=>void;onError?:(reason:string)=>void;
@@ -116,7 +116,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
   deferred.current={scope,revision:generation.current,message,title:shareTitle+" · "+label};
   if(action==="whatsapp"){dismiss();void openExternal("https://wa.me/?text="+encodeURIComponent(message));return;}
   if(action==="sms"){dismiss();void openExternal("sms:?body="+encodeURIComponent(message));return;}
-  // The chooser opens only after Jobeen's modal closes; no overlapping sheets.
+  // The chooser opens only after Jobin's modal closes; no overlapping sheets.
   if(Platform.OS==="android"){dismiss();timer.current=setTimeout(()=>void shareNative(),400);return;}
   nativeSharePending.current=true;dismiss();
  }
@@ -150,14 +150,14 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
       <View style={{minHeight:JOBEEN_CONTROL.inputHeight,borderWidth:1,borderColor:t.outline,borderRadius:JOBEEN_CONTROL.inputRadius,backgroundColor:t.surface,
        flexDirection:"row",alignItems:"center",gap:10,paddingHorizontal:16}}>
        <Ionicons name="search-outline" size={20} color={t.ink2}/>
-       <TextInput value={query} onChangeText={setQuery} placeholder="Buscar contactos de Jobeen"
-        accessibilityLabel="Buscar contactos de Jobeen" placeholderTextColor={t.ink2}
+       <TextInput value={query} onChangeText={setQuery} placeholder="Buscar contactos de Jobin"
+        accessibilityLabel="Buscar contactos de Jobin" placeholderTextColor={t.ink2}
         autoCapitalize="none" style={{flex:1,minWidth:0,fontSize:JOBEEN_TYPE.input,color:t.ink,paddingVertical:7}}/>
       </View>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,marginTop:4}}>
        <View style={{flexDirection:"row",gap:8,alignItems:"center",flexShrink:1}}>
         <Ionicons name="people-outline" size={JOBEEN_CONTROL.secondaryIcon} color={t.accentText}/>
-        <Text style={{flexShrink:1,fontSize:JOBEEN_TYPE.modalSectionTitle,fontWeight:"800",color:t.ink}}>Contactos Jobeen</Text>
+        <Text style={{flexShrink:1,fontSize:JOBEEN_TYPE.modalSectionTitle,fontWeight:"800",color:t.ink}}>Contactos Jobin</Text>
        </View>
        <Text style={{fontSize:JOBEEN_TYPE.secondary,color:selected.length?t.ink:t.accentText,fontWeight:selected.length?"700":"700"}}>
         {selected.length?"Seleccionados: "+selected.length:"Seleccionar varios"}
@@ -184,7 +184,7 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
         })}
        </ScrollView>:
        <Text style={{color:t.ink2,fontSize:JOBEEN_TYPE.body,paddingVertical:12}}>
-        {query.trim()?"No hay contactos que coincidan con la búsqueda.":"Aún no tienes contactos aceptados de Jobeen."}
+        {query.trim()?"No hay contactos que coincidan con la búsqueda.":"Aún no tienes contactos aceptados de Jobin."}
        </Text>}
       {!!contactError&&<Text accessibilityRole="alert" style={{fontSize:12,color:t.ink}}>{contactError}</Text>}
       {!!status&&<Text accessibilityLiveRegion="polite" style={{fontSize:12,color:t.ink}}>{status}</Text>}
@@ -222,5 +222,5 @@ export function JCardShareSheet({visible,onClose,label,link="",theme,side="perso
  </Modal>;
 }
 
-/** Every Jobeen share button uses the same branded, accessible contact and external share surface. */
+/** Every Jobin share button uses the same branded, accessible contact and external share surface. */
 export const JobeenShareSheet=JCardShareSheet;

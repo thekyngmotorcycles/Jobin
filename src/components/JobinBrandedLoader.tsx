@@ -1,11 +1,11 @@
 import {useEffect,useRef} from "react";
 import {Animated,Easing,View} from "react-native";
 import Svg,{Circle,Path} from "react-native-svg";
-import {WORDMARK_XML} from "../theme/wordmark";
+import {JOBIN_ICON_INK} from "../theme/brand-art";
 import {BUSINESS_MEDAL_COLORS} from "../theme/business-medals";
 
 /** Brand loading indicator: static Jobin J and a rotating silver/gold arc. */
-const J_PATH=WORDMARK_XML.match(/<path d="(M517 11[^"]+)"/)?.[1]??"";
+const J_PATH=JOBIN_ICON_INK;
 export function JobinBrandedLoader({size=64}:{size?:number}){
  const progress=useRef(new Animated.Value(0)).current;
  useEffect(()=>{
@@ -14,7 +14,7 @@ export function JobinBrandedLoader({size=64}:{size?:number}){
  },[progress]);
  const rotate=progress.interpolate({inputRange:[0,1],outputRange:["0deg","360deg"]});
  return <View accessible accessibilityRole="progressbar" accessibilityLabel="Cargando" testID="jobin-branded-loader" style={{width:size,height:size,alignItems:"center",justifyContent:"center"}}>
-  <Svg width={size*.6} height={size*.6} viewBox="0 0 530 540" accessible={false}><Path d={J_PATH} fill={BUSINESS_MEDAL_COLORS[1]}/></Svg>
+  <Svg width={size*.6} height={size*.6} viewBox="465 451 606 636" accessible={false}><Path d={J_PATH} fill={BUSINESS_MEDAL_COLORS[1]}/></Svg>
   <Animated.View pointerEvents="none" style={{position:"absolute",width:size,height:size,transform:[{rotate}]}}>
    <Svg width={size} height={size} viewBox="0 0 100 100" accessible={false}>
     <Circle cx="50" cy="50" r="44" stroke={BUSINESS_MEDAL_COLORS[5]} strokeWidth="5" strokeLinecap="round" strokeDasharray="86 190" fill="none"/>

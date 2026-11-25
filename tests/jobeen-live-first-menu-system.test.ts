@@ -80,7 +80,7 @@ test("Approved minimalist menus render titles only while keeping search metadata
  assert.ok(!account.includes("description={item.detail}"));
  assert.ok(!account.includes("{group.description}</Text>"));
  assert.ok(visitor.includes('description={confirm==="remove"?"La relación profesional se eliminará para ambos perfiles."'));
- assert.ok(account.includes('description={exitError||"¿Quieres salir de tu cuenta de Jobeen?"}'));
+ assert.ok(account.includes('description={exitError||"¿Quieres salir de tu cuenta de Jobin?"}'));
  assert.ok(row.includes("minHeight:JOBEEN_CONTROL.touchTarget"));
  assert.ok(row.includes("borderRadius:JOBEEN_CONTROL.buttonRadius"));
  assert.ok(row.includes("backgroundColor:pressed?chrome.selected:colors.transparent"));
