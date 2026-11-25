@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-COMPACT — lectura revocable de portada, corrección autorizada (2026-11-25)
+
+- CI 45684985158 success. El propietario aprueba aislar la lectura de portada mediante Edge Function y probarla en el piloto existente. Candidato: POST autenticado, verificación Auth, RPC POST security invoker con RLS, descarga de la única ruta seleccionada mediante credencial exclusiva del servidor, nueva comprobación RLS antes de responder, imagen acotada en memoria y no-store (incluido CDN). El cliente ya no crea URLs firmadas, recibe data URI de hasta 2 MiB de bytes de imagen (base64 incrementa transferencia aprox. 33%). SQL de seguimiento conserva upload inmutable y limpieza del titular, limita SELECT de Storage a las operaciones exactas de borrado del propietario; rechaza lectura/firma directa aun con políticas permisivas. CI prueba SQL y handler con fetch sintético. No hay garantía de borrar una imagen ya recibida o de cancelar una solicitud en vuelo; validar bloqueo inmediato en nuevas solicitudes iguales tras calentamiento, reemplazo/retirada, firma/lectura directa denegada, upload y limpieza real en piloto. CI y prueba HTTP pendientes. Sin producción, merge, OTA, APK ni servicios nuevos.
+
 ## JCARD-COMPACT — medición de caché de portada en Security Pilot (2026-11-25)
 
 - PR #130, SHA probado `f36c37a6`. Ensayo REST/Storage de 19:21:53 a 19:24 UTC con las cuentas sintéticas SEC06. Carga JPEG con `cacheControl: "0"` (`Cache-Control: max-age=0`). Se consultó cada URL antes de la operación y se repitió la misma URL a los 0, 15, 30, 60 y 120 s. Los enlaces firmados tenían `expiresIn: 60` y se descargaron sin sesión. El tiempo cero corresponde a la confirmación HTTP del borrado del archivo en Storage o de la creación del bloqueo.

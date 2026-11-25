@@ -3,7 +3,7 @@ import {assertMessageScope,captureMessageScope,type MessageScope} from "./messag
 
 const BUCKET="jobeen-jcard-covers",TABLE="jobeen_jcard_covers";
 const MAX_BYTES=2*1024*1024;
-const SIGNED_SECONDS=60;
+const READER="jcard-cover-read";
 export type SharedCover={path:string|null;url:string|null};
 
 function ownedPath(owner:string,path:string):boolean{
@@ -17,18 +17,20 @@ async function ownScope(target:string,expected:MessageScope){
  if(origin.owner!==target)throw Error("La cuenta cambió. Vuelve a abrir la portada.");
  return origin;
 }
-/** The metadata and object are separately authorized by RLS. Only current selection is signed. */
+/** Request the selected cover through the non-cacheable authorization gateway. No reusable Storage URL. */
 export async function readSharedCover(target:string,expected:MessageScope):Promise<SharedCover>{
  const scope=await captureMessageScope(expected),db=requireSupabase();
- const {data,error}=await db.from(TABLE as never).select("object_path").eq("owner_id",target).maybeSingle();
- if(error)throw error;
+ const session=await db.auth.getSession();
+ if(session.error||!session.data.session||session.data.session.user.id!==scope.owner)throw Error("La sesión cambió.");
  await assertMessageScope(scope);
- const path=(data as {object_path:string}|null)?.object_path??null;
- if(!path)return {path:null,url:null};
- if(!validSelectedPath(target,path))throw Error("Portada no válida.");
- const signed=await db.storage.from(BUCKET).createSignedUrl(path,SIGNED_SECONDS);
+ const {data,error}=await db.functions.invoke<SharedCover>(READER,{body:{target},headers:{Authorization:"Bearer "+session.data.session.access_token,"Cache-Control":"no-store"}});
  await assertMessageScope(scope);
- return {path,url:signed.error?null:signed.data?.signedUrl??null};
+ if(error)throw Error("No se pudo cargar la portada.");
+ if(data?.path===null&&data.url===null)return {path:null,url:null};
+ if(!data||typeof data.path!=="string"||!validSelectedPath(target,data.path)||
+  typeof data.url!=="string"||data.url.length>Math.ceil(MAX_BYTES/3)*4+64||
+  !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(data.url))throw Error("Portada no válida.");
+ return {path:data.path,url:data.url};
 }
 /** Only noncurrent immutable versions can be removed by the storage policies. */
 async function cleanup(target:string,path:string|null,scope:MessageScope){

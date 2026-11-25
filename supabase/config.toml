@@ -19,3 +19,7 @@ enable_signup = true
 [auth.email]
 enable_signup = true
 enable_confirmations = true
+
+# JWT verified at the gateway and again against Auth inside the reader.
+[functions.jcard-cover-read]
+verify_jwt = true
