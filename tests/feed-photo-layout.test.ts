@@ -23,7 +23,7 @@ test("Shared gallery keeps uncropped viewer, zoom and scope protection",()=>{
  assert.ok(s.includes("await assertMessageScope(captured)"));assert.ok(s.includes("captured.owner!==viewer"));
  assert.ok(s.includes("photos.length-FEED_VISIBLE_PHOTOS"));
  const p=read("src/components/HomePublishedPosts.tsx");assert.ok(p.includes("key={identity} active={ready} viewer={viewer}"));
- const nav=read("src/components/NavigationFade.tsx");assert.ok(nav.includes("height-inset.bottom-NAVIGATION_ROW_HEIGHT"));assert.ok(nav.includes('offset={opaqueStart} stopColor={colors.paper} stopOpacity={1}'));
+ const nav=read("src/components/NavigationFade.tsx");assert.ok(nav.includes("bottomNavigationFade(NAVIGATION_ROW_HEIGHT,inset.bottom,colors.navigationOpacity)"));assert.ok(nav.includes('pointerEvents="none"'));assert.ok(nav.includes("stopOpacity={opacity}"));
 });
 test("Photo limit and per-photo progress agree in client, picker and schema",()=>{
  const editor=read("src/app/post/create.tsx"),api=read("src/lib/social-content.ts");
