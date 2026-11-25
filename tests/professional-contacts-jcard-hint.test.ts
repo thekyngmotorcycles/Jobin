@@ -138,7 +138,13 @@ test("Business medals move to About on both profiles while legacy card previews 
  const card=source("src/components/JobinCard.tsx"),shared=source("src/components/ProfileSharedSections.tsx"),owner=source("src/app/(tabs)/profile.tsx"),visitor=source("src/app/jcard.tsx"),cloud=source("src/lib/jcard-cloud.ts");
  assert.ok(card.includes("export function BusinessAwards"));
  assert.ok(card.includes("!awardsInAbout&&<BusinessAwards"));
- assert.ok(owner.includes("awardsInAbout ownerQuickActions")&&visitor.includes("awardsInAbout publicVisibility"));
+ const ownCard=owner.match(/<JobinCard\b[^\n]*/)?.[0]??"";
+ const visitorCard=visitor.match(/<JobinCard\b[^\n]*/)?.[0]??"";
+ assert.match(ownCard,/\bawardsInAbout\s/);
+ assert.match(visitorCard,/\bawardsInAbout\s/);
+ assert.match(ownCard,/\bownerQuickActions=\{/);
+ assert.match(visitorCard,/\bpublicVisibility=\{cardVisibility\}/);
+ assert.match(ownCard,/\bprofileCoverScope=\{workspace\.scope\}/);
  assert.ok(!owner.includes("readBusinessExcellence("));
  assert.ok(shared.includes("readBusinessExcellence(target,origin)"));
  assert.ok(shared.includes("awardState.scope.session===scope?.session"));

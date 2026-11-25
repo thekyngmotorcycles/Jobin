@@ -1,5 +1,7 @@
 # Jobin — registro central de desarrollo
 
+- CI 45664382110: database, gate, lint y typecheck OK; 497/498 pruebas. Único fallo: aserción textual dependiente del orden de props en JobinCard después de añadir profileCoverScope. Regresión corregida para comprobar cada prop del componente independientemente de su orden, conservando visibilidad pública, acciones propias y añadiendo comprobación de scope de portada. Sin cambios en runtime, políticas, OTA o APK. CI posterior pendiente.
+
 - CI 45663850961 success (contadores integrados). CI 45664083558: database success, validate rechazado por falta de prueba específica del cambio de workflow; se añade regresión que exige ejecución exclusiva en Postgres desechable local, ON_ERROR_STOP y ausencia de credenciales alojadas, sin relajar el gate. CI posterior pendiente.
 
 ## JCARD-COMPACT — editor de portada candidato (2026-11-25)
