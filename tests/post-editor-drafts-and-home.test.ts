@@ -89,7 +89,7 @@ test("A successful publish navigates to Home without waiting on draft Storage cl
  assert.ok(!submitted.includes("await deletePostDraft(author,draftSnapshotRef.current.id,scope).catch"));
  assert.ok(navigation.includes("const timer=setTimeout(()=>{"));
  assert.ok(navigation.includes("navigation.goBack()"));
- assert.ok(navigation.includes('router.replace("/(tabs)/index")'));
+ assert.ok(navigation.includes('router.replace("/(tabs)")'));
  assert.ok(navigation.includes("return()=>clearTimeout(timer)"));
  assert.ok(!navigation.includes("InteractionManager.runAfterInteractions("));
  assert.ok(editor.includes("setExitOpen(false);setDraftsOpen(false);setPreviewOpen(false);"));

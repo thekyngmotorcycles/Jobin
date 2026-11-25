@@ -20,12 +20,12 @@ test("Native Back returns to the existing tabs and never dispatches a cross-stac
  assert.ok(editor.includes('navigation.canGoBack()'));
  assert.ok(editor.includes('navigation.goBack()'));
  assert.ok(editor.includes('const timer=setTimeout(()=>{'));
- assert.ok(editor.includes('else router.replace("/(tabs)/index")'));
+ assert.ok(editor.includes('else router.replace("/(tabs)")'));
  assert.ok(!editor.includes('InteractionManager.runAfterInteractions('));
  assert.ok(editor.includes('usePreventRemove(hasWork&&!editingDone'));
  assert.ok(!editor.includes('StackActions.popTo('));
  assert.ok(!editor.includes('pathname:"/(tabs)/inicio"'));
- assert.ok(!editor.includes('router.replace({pathname:"/(tabs)/index"'));
+ assert.ok(!editor.includes('router.replace({pathname:"/(tabs)"'));
  assert.ok(root.includes('<Stack.Screen name="(tabs)" options={{headerShown:false}}/>'));
  assert.ok(tabs.includes('{name:"index",title:"Casa"'));
  assert.ok(!tabs.includes('<Tabs.Screen name="inicio"'));

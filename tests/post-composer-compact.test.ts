@@ -17,7 +17,7 @@ test("After a successful post, navigate to Home and highlight the created entry"
  assert.ok(!tabs.includes('<Tabs.Screen name="inicio"'));
  assert.ok(!composer.includes('pathname:"/(tabs)/inicio"'));
  assert.ok(composer.includes("finishHome(publishedId)"));
- assert.ok(!composer.includes('router.dismissTo("/(tabs)/index")'));
+ assert.ok(!composer.includes('router.dismissTo("/(tabs)")'));
  assert.ok(composer.includes('const publishedId=await publishHomePost({'));
  assert.ok(composer.includes('}catch(e){setError('),"Publishing failures should still be shown");
 });

@@ -6,11 +6,12 @@ import {loadPublicCard} from "../lib/professional-api";
 import {assertMessageScope,captureMessageScope} from "../lib/message-session";
 
 /** Public profile picture with initials fallback; never displays another user's private contact data. */
-export function PublicProfileAvatar({userId,name,size=52,height=size,shape="circle",framed=true,respectJCardVisibility=false}:{userId:string;name:string;size?:number;height?:number;shape?:"circle"|"portrait";framed?:boolean;respectJCardVisibility?:boolean}){
+export function PublicProfileAvatar({userId,name,size=52,height=size,shape="circle",framed=true,respectJCardVisibility=false,avatarPath}:{userId:string;name:string;size?:number;height?:number;shape?:"circle"|"portrait";framed?:boolean;respectJCardVisibility?:boolean;avatarPath?:string|null}){
  const [uri,setUri]=useState<string|undefined>();
+ const batched=!respectJCardVisibility&&avatarPath!==undefined;
  useEffect(()=>{
   let live=true;setUri(undefined);
-  if(!userId)return;
+  if(!userId||batched)return;
   void (async()=>{
    try{
     const scope=await captureMessageScope();
@@ -21,6 +22,6 @@ export function PublicProfileAvatar({userId,name,size=52,height=size,shape="circ
    }catch{/* Keep initials fallback if the avatar cannot be loaded. */}
   })();
   return()=>{live=false;};
- },[userId,respectJCardVisibility]);
- return <Avatar uri={uri} name={name} size={size} height={height} shape={shape} framed={framed}/>;
+ },[userId,respectJCardVisibility,batched]);
+ return <Avatar uri={batched?personalAvatarUrl(avatarPath):uri} name={name} size={size} height={height} shape={shape} framed={framed}/>;
 }

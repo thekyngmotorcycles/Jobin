@@ -10,7 +10,7 @@ test("unsigned, unresolved and onboarding sessions never select signed-in routes
  assert.equal(classifyAuthNavigation(true,false,"A",true),"onboarding");
  assert.equal(classifyAuthNavigation(true,false,"B",false),"signed-in");
 });
-test("Every root app route is explicitly protected, including routes formerly auto-registered",()=>{
+test("The neutral entry is public and all account routes are phase protected",()=>{
  const layout=readFileSync("src/app/_layout.tsx","utf8");
  const matches=[...layout.matchAll(/<Stack\.Protected guard=\{phase==="([^"]+)"\}>([\s\S]*?)<\/Stack\.Protected>/g)];
  const routes=new Map<string,string>();
@@ -19,10 +19,13 @@ test("Every root app route is explicitly protected, including routes formerly au
    assert.ok(!routes.has(name));routes.set(name,phase);
   }
  }
+ const outsideGuards=layout.replace(/<Stack\.Protected[\s\S]*?<\/Stack\.Protected>/g,"");
+ assert.deepEqual([...outsideGuards.matchAll(/<Stack\.Screen name="([^"]+)"/g)].map(match=>match[1]),["index"]);
  const paths=readdirSync("src/app",{recursive:true}) as string[];
  for(const path of paths){
   if(!path.endsWith(".tsx")||path.endsWith("_layout.tsx")||path.startsWith("(tabs)/"))continue;
   const name=path.slice(0,-4);
+  if(name==="index"){assert.equal(routes.has(name),false);continue;}
   const expected=name==="security-loading"?"checking":name==="choose-username"?"onboarding":["login","account","recover-account"].includes(name)?"signed-out":"signed-in";
   assert.equal(routes.get(name),expected,name);
  }

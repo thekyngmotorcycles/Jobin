@@ -31,12 +31,14 @@ test("a missing private contact table leaves the verified employment history rea
  let contactError:object|null={code:"PGRST205"};
  let reviewPending=false;
  let reviewError:object|null=null;
+ let contactsReads=0;
  const record={owner_id:owner,client_id:"own",company:"Fixture",role:"HVAC",from_year:2020,from_month:1,to_year:2021,to_month:12};
  const db={rpc:(name:string)=>{
   assert.equal(name,"jobeen_own_employment_review_pending");
   return {data:reviewError?null:reviewPending,error:reviewError};
  },from:(table:string)=>({select:()=>({eq:(column:string,id:string)=>{
   assert.equal(column,"owner_id");assert.equal(id,owner);
+  if(table==="jobeen_employment_private_contact")contactsReads++;
   return table==="jcard_employment_history"
    ?{error:historyError,data:historyError?null:[record,{...record,owner_id:other,client_id:"foreign"}]}
    :{error:contactError,data:contactError?null:[{owner_id:other,client_id:"own",contact:"foreign"}]};
@@ -50,6 +52,12 @@ test("a missing private contact table leaves the verified employment history rea
  assert.equal(contactsAvailable,false);
  assert.deepEqual(rows.map(r=>r.id),["own"]);
  assert.equal(employmentMonths(rows),24);
+ const beforeSummary=contactsReads;
+ const summary=await cloud.loadCloudHistory(owner,scope,false);
+ assert.equal(contactsReads,beforeSummary);
+ assert.equal(employmentMonths(summary.rows),24);
+ assert.equal(summary.reviewPending,false);
+ assert.equal(summary.contactsAvailable,false);
  contactError=null;
  assert.equal((await cloud.loadCloudHistory(owner,scope)).rows[0].contact,undefined);
  reviewPending=true;
@@ -257,4 +265,39 @@ test("profile loading settles on no verified identity, retries, and keeps authen
  assert.match(render().error,/recuperar la JCard/);
  assert.equal(render().data,null);
  third?.();
+});
+
+test("the workspace cache survives independent subscriptions and errors",async()=>{
+ const memory=createWorkspaceSessionCache(),value={card:{id:owner}};
+ memory.write(scope,value);
+ let onAuth:(event:string,session:unknown)=>void=()=>{};
+ let focus:()=>void|(()=>void)=()=>{};
+ const localSession={user:{id:owner},access_token:marker(owner)};
+ const {useProfessionalData}=load<typeof import("../src/state/useProfessionalData")>("src/state/useProfessionalData.ts",{
+  react:{useState:(value:unknown)=>[value,()=>{}],useRef:(current:unknown)=>({current}),
+   useEffect:(effect:()=>void)=>effect(),useCallback:(callback:unknown)=>callback},
+  "expo-router":{useFocusEffect:(effect:typeof focus)=>{focus=effect;}},
+  "../lib/supabase":{supabase:{auth:{getSession:async()=>({data:{session:localSession}}),
+   onAuthStateChange:(handler:typeof onAuth)=>{onAuth=handler;return {data:{subscription:{unsubscribe(){}}}};}
+  }}},
+  "../lib/session-lifetime":lifetime,"../lib/message-session":{},"../lib/workspace-session-cache":{createWorkspaceSessionCache:()=>memory}
+ });
+ let calls=0;
+ const failed=async()=>{calls++;throw Error("resource unavailable");};
+ useProfessionalData(failed,false,true);
+ onAuth("INITIAL_SESSION",localSession);
+ assert.equal(memory.read(scope),value);
+ const cleanup=focus();
+ await new Promise<void>(done=>setImmediate(done));
+ assert.equal(calls,1);
+ assert.equal(memory.read(scope),value);
+ cleanup?.();
+ useProfessionalData(failed,false,true,false);
+ focus();
+ assert.equal(calls,1);
+ useProfessionalData(async()=>value,true);
+ onAuth("INITIAL_SESSION",localSession);
+ assert.equal(memory.read(scope),value);
+ onAuth("SIGNED_OUT",null);
+ assert.equal(memory.read(scope),null);
 });

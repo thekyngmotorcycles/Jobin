@@ -9,7 +9,7 @@ import {useVideoSectionNavigation} from "../state/VideoSectionNavigation";
 import {useTheme} from "../state/ThemeProvider";
 
 const items=[
- {id:"index",label:"Casa",path:"/(tabs)/index"},
+ {id:"index",label:"Casa",path:"/(tabs)"},
  {id:"shop",label:"JShop",path:"/(tabs)/shop"},
  {id:"videos",label:"Videos",path:"/(tabs)/videos"},
  {id:"inbox",label:"Mensajes",path:"/(tabs)/inbox"},

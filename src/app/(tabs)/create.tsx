@@ -101,7 +101,7 @@ function CreateVideo(){
  function home(){suppressRef.current=true;setExitOpen(false);setExitAllowed(true);setGoHome(true);}
  function requestExit(){if(hasWork)setExitOpen(true);else home();}
  usePreventRemove(!exitAllowed,()=>requestExit());
- useEffect(()=>{const scope=scopeRef.current;if(goHome&&!scope)router.replace("/(tabs)/index");else if(goHome&&scope)void captureMessageScope(scope).then(()=>{if(scopeRef.current===scope)router.replace("/(tabs)/index");}).catch(()=>{});},[goHome]);
+ useEffect(()=>{const scope=scopeRef.current;if(goHome&&!scope)router.replace("/(tabs)");else if(goHome&&scope)void captureMessageScope(scope).then(()=>{if(scopeRef.current===scope)router.replace("/(tabs)");}).catch(()=>{});},[goHome]);
  useFocusEffect(useCallback(()=>{let active=true;scopeRef.current=null;suppressRef.current=true;setHydrated(false);setOwner("");setClips(emptyClips());setAsset(null);setEdit({title:"",start:"0",end:"180"});void(async()=>{
   try{
    const scope=await captureMessageScope(),id=scope.owner;

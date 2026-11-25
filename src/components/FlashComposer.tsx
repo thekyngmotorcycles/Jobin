@@ -61,7 +61,7 @@ export function FlashComposer(){
   else home();
  }
  usePreventRemove(!exitAllowed,()=>requestExit());
- useEffect(()=>{const scope=scopeRef.current;if(goHome&&!scope)router.replace("/(tabs)/index");else if(goHome&&scope)void captureMessageScope(scope).then(()=>{if(scopeRef.current===scope)router.replace("/(tabs)/index");}).catch(()=>{});},[goHome]);
+ useEffect(()=>{const scope=scopeRef.current;if(goHome&&!scope)router.replace("/(tabs)");else if(goHome&&scope)void captureMessageScope(scope).then(()=>{if(scopeRef.current===scope)router.replace("/(tabs)");}).catch(()=>{});},[goHome]);
  useEffect(()=>{
   if(!userId||loading||(!title.trim()&&!uri)||suppressAutosave.current)return;
   const timer=setTimeout(()=>{void persist().catch(()=>{});},180);

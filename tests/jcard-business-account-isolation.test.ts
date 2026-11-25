@@ -32,7 +32,7 @@ test("Business caches are account-scoped and legacy shared data is never importe
 test("Missing business cloud records cannot trigger uploads from previous accounts",()=>{
  assert.ok(!profile.includes("await writeCloudBusiness(local)"));
  assert.ok(profile.includes("const current={...EMPTY_BUSINESS_CARD,...(row??{})}"));
- assert.ok(profile.includes("scope={owner,session:await assertAccountOwner(owner)}"));
+ assert.ok(profile.includes("scope={owner,session:await assertAccountOwner(owner,workspaceSession)}"));
  assert.ok(profile.includes("await assertMessageScope(scope)"));
  assert.ok(profile.includes("businessScope.current=scope"));
  assert.ok(profile.includes("businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD"));

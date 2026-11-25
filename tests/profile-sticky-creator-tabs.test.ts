@@ -156,7 +156,7 @@ test("Only Home feed retracts navigation; all other pages keep bottom bar static
  const global=source("src/components/PersistentBottomTabs.tsx");
  assert.ok(home.includes("useScrollNavigation"));
  assert.ok(home.includes("if(focused)reportScroll(e.nativeEvent.contentOffset.y)"));
- assert.ok(tabLayout.includes('const homeFeed=pathname==="/"||pathname==="/index"||pathname==="/(tabs)/index"'));
+ assert.ok(tabLayout.includes('const homeFeed=pathname==="/"||pathname==="/(tabs)"'));
  assert.ok(tabLayout.includes('homeFeed?<Animated.View key="home-navigation" pointerEvents={hidden?"none":"auto"}'));
  assert.ok(tabLayout.includes('opacity:progress.interpolate('));
  assert.ok(tabLayout.includes('translateY:progress.interpolate('));
