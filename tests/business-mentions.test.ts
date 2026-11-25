@@ -46,7 +46,7 @@ test("Business mention links navigate to the company's JCard business face, incl
  assert.ok(feed.includes('card:"business" as const'));
  assert.ok(caption.includes('mention.card==="business"?{card:"business"}:{}'));
  assert.ok(caption.includes('captionPieces(text,mentions)'));
- assert.ok(publicJcard.includes('initialSide={card==="business"?"business":"personal"}'));
+ assert.ok(publicJcard.includes('initialSide={publicBusiness&&(card==="business"||!cardVisibility.personal_enabled)?"business":"personal"}'));
  assert.ok(publicJcard.includes('business:publicBusiness??undefined'));
  assert.ok(publicJcard.includes('router.replace({pathname:"/(tabs)/profile",params:card==="business"?{card:"business"}:{}})'));
  assert.ok(read("src/app/(tabs)/profile.tsx").includes('initialSide={card==="business"?"business":"personal"}'));

@@ -56,10 +56,27 @@ export default function PublicJCard(){
    try{
     if(!user||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user))throw Error("Enlace de JCard inválido.");
     const scope=await captureMessageScope();
-    const [data,visibility,business]=await Promise.all([loadPublicCard(user,scope),readJCardVisibility(user,scope),readPublicBusinessCard(user,scope)]);
+    const [data,visibility]=await Promise.all([loadPublicCard(user,scope),readJCardVisibility(user,scope)]);
     await assertMessageScope(scope);
     if(publicRevision.current!==generation)return;
-    if(data.id!==user||(!visibility.personal_enabled&&(!visibility.business_enabled||!business)))throw Error("El perfil no está disponible.");
+    if(data.id!==user||(!visibility.personal_enabled&&!visibility.business_enabled))throw Error("El perfil no está disponible.");
+
+    if(visibility.personal_enabled){
+     setPublicSnapshot({target:user,scope,data,visibility:{...visibility,business_enabled:false},business:null});
+     setPublicLoading(false);
+    }
+    if(!visibility.business_enabled)return;
+
+    const business=await readPublicBusinessCard(user,scope).catch(cause=>{
+     if(!visibility.personal_enabled)throw cause;
+     return null;
+    });
+    await assertMessageScope(scope);
+    if(publicRevision.current!==generation)return;
+    if(!business){
+     if(!visibility.personal_enabled)throw Error("El perfil no está disponible.");
+     return;
+    }
     setPublicSnapshot({target:user,scope,data,visibility,business});
    }catch(e){if(publicRevision.current===generation){setPublicSnapshot(null);setPublicError(e instanceof Error?e.message:"El perfil no está disponible.");}}
    finally{if(publicRevision.current===generation)setPublicLoading(false);}
@@ -212,8 +229,8 @@ export default function PublicJCard(){
     })}>
    <Animated.View style={{gap:14,paddingHorizontal:20,paddingBottom:20,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
     {resource.data?<ProfileIdentityHeader
-     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={card==="business"?"business":"personal"} onActiveSideChange={setActiveCardSide} publicVisibility={cardVisibility} publicScope={snapshot?.scope}/>}
-     actions={<ProfileCommunityActions user={resource.data.id} name={resource.data.name} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
+     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={publicBusiness&&(card==="business"||!cardVisibility.personal_enabled)?"business":"personal"} onActiveSideChange={setActiveCardSide} publicVisibility={cardVisibility} publicScope={snapshot?.scope}/>}
+     actions={<ProfileCommunityActions user={resource.data.id} name={cardVisibility.personal_enabled?resource.data.name:publicBusiness?.name??""} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
       onToggleSaved={savedReady&&cardVisibilityReady&&sideIsPublic?()=>void toggleSaved():undefined}
       savedJCard={cardSaved} savingJCard={savingCard} visibleCardSide={activeCardSide}/>}
      trust={<ProfessionalTrustMark worker={resource.data.id}/>}

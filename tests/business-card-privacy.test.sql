@@ -10,6 +10,8 @@ create table public.jcard_business_details(
 );
 alter table public.jcard_business_details enable row level security;
 grant all on public.jcard_business_details to anon,authenticated;
+-- Exercise the legacy column-ACL bypass separately from broad table grants.
+grant select(email),update(phone) on public.jcard_business_details to anon;
 create policy "Authenticated users can discover active businesses" on public.jcard_business_details for select to authenticated using(length(btrim(name))>0);
 insert into auth.users(id,raw_user_meta_data) values
  ('a1111111-1111-4111-8111-111111111111','{"display_name":"Privacy A"}'),
@@ -43,12 +45,37 @@ select pg_temp.privacy_assert(not public.jobeen_business_handle_available('priva
 reset role;
 \ir ../supabase/security-review/business-card-privacy.sql
 select pg_temp.privacy_assert(not has_table_privilege('anon','public.jcard_business_details','SELECT'),'anonymous raw reads denied');
+select pg_temp.privacy_assert(not has_column_privilege('anon','public.jcard_business_details','email','SELECT'),'anonymous legacy column read denied');
+select pg_temp.privacy_assert(not has_column_privilege('anon','public.jcard_business_details','phone','UPDATE'),'anonymous legacy column write denied');
 select pg_temp.privacy_assert(not has_table_privilege('anon','public.jobeen_public_business_cards','SELECT'),'anonymous projection denied');
 select pg_temp.privacy_assert(not has_table_privilege('authenticated','public.jcard_business_details','TRUNCATE'),'authenticated cannot truncate table');
+-- Test the actual stage-2 map contract before the later, separate map privacy cutover.
+-- Fixtures are inserted administratively because CI lacks hosted dual-card map policies.
+insert into public.jobeen_map_presence(owner_id,kind,city,service,latitude,longitude,is_visible)
+ values ('a1111111-1111-4111-8111-111111111111','company','Test City','HVAC',25.75,-80.2,true),
+ ('b2222222-2222-4222-8222-222222222222','company','Test City','HVAC',25.75,-80.2,true),
+ ('c3333333-3333-4333-8333-333333333333','professional','Test City','Repair',25.75,-80.2,true);
+set local role authenticated;
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.privacy_assert((select count(*)=1 and bool_and(name='Public HVAC') from public.jobeen_find_profiles_on_map(25.75,-80.2,30,'','company')),'stage 2 retains visible business and suppresses hidden face');
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_profiles_on_map(25.75,-80.2,30,'Privacy A','company')),'stage 2 does not match business by personal name');
+select pg_temp.privacy_assert((select count(*)=1 and bool_and(name='Public HVAC') from public.jobeen_find_profiles_on_map(25.75,-80.2,30,'Public HVAC','company')),'stage 2 business name search works');
+select pg_temp.privacy_assert((select count(*)=1 and bool_and(name='Privacy C') from public.jobeen_find_profiles_on_map(25.75,-80.2,30,'Privacy C','professional')),'stage 2 professional map unchanged');
+reset role;
+insert into public.blocks(blocker_id,blocked_id) values('a1111111-1111-4111-8111-111111111111','b2222222-2222-4222-8222-222222222222');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.privacy_assert(not exists(select 1 from public.jobeen_find_profiles_on_map(25.75,-80.2,30,'','company')),'stage 2 blocks company pin for blocked viewer');
+reset role;
+delete from public.blocks where blocker_id='a1111111-1111-4111-8111-111111111111' and blocked_id='b2222222-2222-4222-8222-222222222222';
+delete from public.jobeen_map_presence where owner_id in ('a1111111-1111-4111-8111-111111111111','b2222222-2222-4222-8222-222222222222','c3333333-3333-4333-8333-333333333333');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
 select pg_temp.privacy_assert((select count(*)=1 from public.jcard_business_details),'B reads exactly own raw business');
 select pg_temp.privacy_assert((select email='private-b@example.invalid' from public.jcard_business_details),'B sees own private contacts');
+update public.jcard_business_details set phone='223' where owner_id=auth.uid();
+select pg_temp.privacy_assert((select phone='223' from public.jcard_business_details),'owner can edit own hidden business');
+update public.jcard_business_details set phone='222' where owner_id=auth.uid();
 select pg_temp.privacy_assert(not exists(select 1 from public.jcard_business_details where owner_id='a1111111-1111-4111-8111-111111111111'),'B cannot read A raw data');
 select pg_temp.privacy_assert((select count(*)=2 from public.jobeen_public_business_cards),'only visible businesses published');
 select pg_temp.privacy_assert((select email is null and email_secondary is null and phone is null and phone_secondary is null and phone_label is null and phone_secondary_label is null from public.jobeen_public_business_cards where business_handle='private_hvac'),'A hidden contacts masked before API response');
