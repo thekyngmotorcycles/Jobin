@@ -1,5 +1,12 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-COMPACT — opción 3 aprobada (2026-11-25)
+
+- PR #129 integrado en 2ff0959f con CI previo 45646924671 success (488 pruebas); CI posterior 45653422590 pendiente. Historial #128 restaurado y titular confirma que vuelve a mostrar experiencia en Android.
+- Primer bloque de un único PR de rediseño: retirar título ornamental de ambas apariencias de la cara personal, marco dorado permanente de foto personal y logo empresarial, y tutorial de giro que repetía verificación de sesión y almacenamiento. Preservar gestos, controles, permisos, métricas de tamaño todavía vigentes y recursos de marca. Esqueleto sin QR/título inexistentes y retrato rectangular sin aro; las dimensiones compactas definitivas se definirán conjuntamente con ambas caras y portada. Pruebas de regresión actualizadas para decisiones aprobadas.
+- Pendiente en este mismo PR antes de solicitar merge: portada pública con edición del titular (contrato independiente, no promover banner empresarial anterior; cualquier SQL alojado requiere aprobación separada), geometría compartida foto izquierda/logo derecha al 25% y giro sin recorte, contadores agregados reales, selector deslizante y traslado de acreditaciones a Acerca de, medidas definitivas del esqueleto. Rediseño concreto del icono de carga pendiente de elección visual; mientras tanto conservar abeja aprobada. Validación física y medición de peticiones y renderizado en Jelly; no APK ni OTA ni cambios alojados. Ver DESIGN_RULES.md.
+
+
 ## JCARDS-RENDIMIENTO — carga inicial y retorno (2026-11-25)
 
 - Continuación del PR #129 sobre `development` 4ccb3b4e. Propietario confirma en Android que el historial se recuperó. Se incorporó #128 con su SQL y pruebas intactos.

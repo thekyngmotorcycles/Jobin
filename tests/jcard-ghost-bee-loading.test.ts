@@ -19,25 +19,18 @@ test("JCard and skeleton share the same responsive dimensions for small screens 
  assert.ok(skeleton.includes("JCardAbstractBee"));
  assert.ok(skeleton.includes("Cargando JCard"));
 });
-test("Ghost flip tutorial has no permanent buttons, text, hands or gestures blocking actual card interactions",()=>{
+test("JCard does not auto-flip, store tutorial markers or display a flip control",()=>{
  const card=src("src/components/JobinCard.tsx");
  const flip=src("src/components/BusinessCard3D.tsx");
- assert.ok(card.includes('const key="jobeen.jcard.flip.ghost.v3."+scope.owner'));
- assert.ok(!card.includes('const key="jobeen.jcard.flip.ghost.v2."+ownerId'));
- assert.ok(card.includes("await assertMessageScope(scope);if(!active||value)return;"));
- assert.ok(card.includes("AsyncStorage.getItem(key)"));
- assert.ok(card.includes("ghostPreview={hintVisible}"));
+ assert.ok(!card.includes("jobeen.jcard.flip.ghost"));
+ assert.ok(!card.includes("ghostPreview="));
+ assert.ok(!card.includes("AsyncStorage"));
  assert.ok(!card.includes('name="hand-left-outline"'));
  assert.ok(!card.includes('name="sync-outline"'));
  assert.ok(!card.includes("Toca o desliza para girar"));
- assert.ok(!card.includes("Toca para ver datos de negocio"));
- assert.ok(flip.includes("withTiming(signed,{duration:470})"));
- assert.ok(flip.includes("const combined=angle.value+previewAngle.value"));
- assert.ok(flip.includes("ghostPreview&&!reducedMotion"));
- assert.ok(flip.includes('pointerEvents="none"'));
  assert.ok(flip.includes("Gesture.Exclusive(pan,tap)"));
  assert.ok(flip.includes("CardFlipInteractionContext.Provider"));
- assert.ok(flip.includes("cancelAnimation(previewAngle)"));
+ assert.ok(card.includes('onSideChange={side=>setBack(side==="business")}'));
 });
 test("Minimal bee animates during loading, pauses for reduced motion, and stays static when offline",()=>{
  const bee=src("src/components/JCardAbstractBee.tsx");

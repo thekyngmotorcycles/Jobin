@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {Text,View,useWindowDimensions,type DimensionValue} from "react-native";
+import {View,useWindowDimensions,type DimensionValue} from "react-native";
 import {JCardAbstractBee} from "./JCardAbstractBee";
 import {useTheme} from "../state/ThemeProvider";
 import {jcardArtTokens} from "../theme/jobeen";
@@ -21,16 +21,8 @@ export function JCardLoadingSkeleton(){
    paddingHorizontal:compact?14:19,paddingTop:15,paddingBottom:12,justifyContent:"space-between",
    shadowColor:jcardCommon.cardShadowColor,shadowOffset:{width:0,height:6},shadowOpacity:0.10,shadowRadius:12,elevation:3}}>
    <View pointerEvents="none" style={{position:"absolute",top:5,left:5,right:5,bottom:5,borderRadius:radius-5,borderWidth:1,borderColor:t.line,opacity:0.5}}/>
-   <View style={{flexDirection:"row",alignItems:"flex-start",justifyContent:"space-between",height:42}}>
-    <View style={{width:43}}/>
-    <Text style={{fontFamily:"serif",fontStyle:"italic",fontSize:18,color:muted,opacity:0.48}}>JCard</Text>
-    <View style={{width:41,height:41,borderRadius:9,borderWidth:1,borderColor:t.line,backgroundColor:t.surface,
-     alignItems:"center",justifyContent:"center"}}>
-     <View style={{width:26,height:26,borderWidth:3,borderColor:muted,borderRadius:3,opacity:0.43}}/>
-    </View>
-   </View>
    <View style={{flexDirection:"row",alignItems:"center",gap:13,paddingHorizontal:2,minHeight:80}}>
-    <View style={{width:compact?75:82,height:compact?75:82,borderRadius:44,borderWidth:3,borderColor:t.yellow,
+    <View style={{width:compact?75:80,height:compact?83:88,borderRadius:14,
      backgroundColor:muted,opacity:0.45}}/>
     <View style={{flex:1,gap:9}}>
      {line("85%",19)}{line("56%",11)}{line("76%",13)}

@@ -20,11 +20,13 @@ test("Skeleton and real JCard share identical responsive sizing calculations",()
  assert.ok(skeleton.includes('accessibilityLabel="Cargando JCard"'));
 });
 
-test("Skeleton shows new avatar/QR/chip/languages layout plus abstract bee loader",()=>{
+test("Skeleton mirrors the frameless portrait and chip/language layout with the existing bee loader",()=>{
  const skeleton=source("src/components/JCardLoadingSkeleton.tsx");
  const bee=source("src/components/JCardAbstractBee.tsx");
  assert.ok(skeleton.includes("<JCardAbstractBee size={35} mode=\"loading\"/>"));
- assert.ok(skeleton.includes("borderColor:t.yellow"));
+ assert.ok(skeleton.includes("height:compact?83:88,borderRadius:14"));
+ assert.ok(!skeleton.includes("borderRadius:44,borderWidth:3"));
+ assert.ok(!skeleton.includes(">JCard</Text>"));
  assert.ok(skeleton.includes("minHeight:80"));
  assert.ok(skeleton.includes("height:35,borderRadius:18"));
  assert.ok(skeleton.includes("minHeight:43"));
@@ -58,7 +60,7 @@ test("No persistent flip handle or hand tutorial remains",()=>{
  assert.ok(!card.includes('accessibilityLabel="Girar a JCard de negocio"'));
  assert.ok(!card.includes('name="hand-left-outline"'));
  assert.ok(!card.includes('name="sync-outline"'));
- assert.ok(flip.includes("ghostPreview"));
+ assert.ok(!card.includes("ghostPreview="));
  assert.ok(flip.includes("return()=>{cancelAnimation(previewAngle)"));
  assert.ok(flip.includes("onSide(next)"));
 });

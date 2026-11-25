@@ -55,28 +55,18 @@ test("Incoming contacts are actionable and count toward notification badge",()=>
  assert.ok(sql.includes("'contact_request'"));
  assert.ok(sql.includes("'contact_accepted'"));
 });
-test("JCard uses a one-time ghost reveal, no permanent button, and retains real gestures",()=>{
+test("JCard keeps real flip gestures without an automatic reveal or extra tutorial queries",()=>{
  const card=source("src/components/JobinCard.tsx");
  const flip=source("src/components/BusinessCard3D.tsx");
- assert.ok(card.includes('const key="jobeen.jcard.flip.ghost.v3."+scope.owner'));
- assert.ok(!card.includes('const key="jobeen.jcard.flip.ghost.v2."+ownerId'));
- assert.ok(card.includes("await assertMessageScope(scope);if(!active||value)return;"));
- assert.ok(card.includes("AsyncStorage.getItem(key)"));
- assert.ok(card.includes('AsyncStorage.setItem(key,"1")'));
- assert.ok(card.includes("ghostPreview={hintVisible}"));
+ assert.ok(!card.includes("jobeen.jcard.flip.ghost"));
+ assert.ok(!card.includes("ghostPreview="));
+ assert.ok(!card.includes("AsyncStorage.getItem"));
  assert.ok(!card.includes('name="hand-left-outline"'));
- assert.ok(!card.includes("Toca o desliza para girar"));
  assert.ok(!card.includes('name="sync-outline"'));
- assert.ok(!card.includes("Toca para ver datos de negocio"));
- assert.ok(flip.includes("useReducedMotion()"));
- assert.ok(flip.includes("if(!enabled||!ghostPreview||reducedMotion)return"));
- assert.ok(flip.includes("withTiming(signed,{duration:470})"));
- assert.ok(flip.includes("const combined=angle.value+previewAngle.value"));
- assert.ok(flip.includes('pointerEvents="none"'));
+ assert.ok(!card.includes("Toca o desliza para girar"));
  assert.ok(flip.includes("Gesture.Exclusive(pan,tap)"));
  assert.ok(flip.includes("CardFlipInteractionContext.Provider"));
- assert.ok(flip.includes("cancelAnimation(previewAngle)"));
- assert.ok(!flip.includes("onSideChange(\"business\")"));
+ assert.ok(flip.includes("onSide(next)"));
 });
 
 test("Contact actions and notifications use the originating session across awaits",()=>{
