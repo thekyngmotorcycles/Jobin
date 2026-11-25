@@ -19,6 +19,9 @@ alter table public.jcard_visibility
 -- The legacy business-details table exists in the hosted project, not base CI.
 alter table public.jcard_business_details enable row level security;
 revoke all on public.jcard_business_details from public,anon,authenticated;
+-- Explicitly remove legacy column-level grants as well as table-level grants.
+revoke all (owner_id,name,business_handle,opened,closed,services,location,updated_at,banner_url,avatar_url,category,email,email_secondary,phone,phone_secondary,phone_label,phone_secondary_label)
+ on public.jcard_business_details from public,anon,authenticated;
 grant select,insert,update on public.jcard_business_details to authenticated;
 drop policy if exists "Authenticated users can discover active businesses" on public.jcard_business_details;
 drop policy if exists "Owner reads business card" on public.jcard_business_details;
@@ -42,19 +45,21 @@ create or replace function public.jobeen_find_profiles_on_map(
 returns table(id uuid,name text,kind text,city text,service text,latitude double precision,longitude double precision,distance_km double precision)
 language sql stable security invoker set search_path=''
 as $map$
- select m.owner_id,coalesce(nullif(btrim(b.name),''),p.display_name),
+ select m.owner_id,case when m.kind='company' then b.name else p.display_name end,
  m.kind,m.city,m.service,m.latitude,m.longitude,
  (111.32 * sqrt(power(m.latitude-p_lat,2)+power((m.longitude-p_lon)*cos(radians(p_lat)),2)))::double precision
  from public.jobeen_map_presence m
  join public.profiles p on p.id=m.owner_id and p.deactivated_at is null
  left join public.jobeen_public_business_cards b on b.owner_id=m.owner_id and m.kind='company'
  where m.is_visible=true and (select auth.uid()) is not null
+ -- A hidden/blocked business cannot fall back to the personal name or pin.
+ and (m.kind<>'company' or b.owner_id is not null)
  and p_lat between -85 and 85 and p_lon between -180 and 180
  and p_radius_km between 1 and 200
  and (p_kind='all' or (p_kind in ('company','professional') and m.kind=p_kind))
  and abs(m.latitude-p_lat)<=p_radius_km/110
  and abs((m.longitude-p_lon)*cos(radians(p_lat)))<=p_radius_km/110
- and (coalesce(btrim(p_query),'')='' or p.display_name ilike '%'||left(btrim(p_query),100)||'%'
+ and (coalesce(btrim(p_query),'')='' or (m.kind='professional' and p.display_name ilike '%'||left(btrim(p_query),100)||'%')
  or coalesce(b.name,'') ilike '%'||left(btrim(p_query),100)||'%'
  or m.city ilike '%'||left(btrim(p_query),100)||'%' or m.service ilike '%'||left(btrim(p_query),100)||'%')
  order by 8 asc limit 250
