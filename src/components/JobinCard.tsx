@@ -1,6 +1,7 @@
 import {presentJCardContact} from "../lib/jcard-save-contact";
 import {BusinessCard3D,CardFlipInteractionContext} from "./BusinessCard3D";
 import {ProfileConnectionCountRow} from "./ProfileFollowCounts";
+import {JCardSharedCover} from "./JCardSharedCover";
 import {jobeenTokens,jcardArtTokens} from "../theme/jobeen";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {personalAvatarUrl} from "../lib/personal-jcard-photo";
@@ -342,7 +343,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
 
  </View>;
 }
-export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,onEditPersonalPhoto,ownerId,showOwnerActions=false,initialSide="personal",employerLink,onDemoSaveContact,onActiveSideChange,ownerQuickActions,publicVisibility,publicScope,awardsInAbout=false,profileCoverUrl}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;onEditBusinessMedia?:(slot:"banner"|"avatar")=>void;onEditPersonalPhoto?:()=>void;ownerId?:string;showOwnerActions?:boolean;initialSide?:"personal"|"business";employerLink?:{id:string;name:string;handle:string}|null;onDemoSaveContact?:()=>void;onActiveSideChange?:(side:"personal"|"business")=>void;ownerQuickActions?:{onPanel:()=>void;onLive:()=>void;liveLabel:string};publicVisibility?:JCardVisibility;publicScope?:MessageScope;awardsInAbout?:boolean;profileCoverUrl?:string|null}){
+export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,onEditPersonalPhoto,ownerId,showOwnerActions=false,initialSide="personal",employerLink,onDemoSaveContact,onActiveSideChange,ownerQuickActions,publicVisibility,publicScope,awardsInAbout=false,profileCoverScope}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;onEditBusinessMedia?:(slot:"banner"|"avatar")=>void;onEditPersonalPhoto?:()=>void;ownerId?:string;showOwnerActions?:boolean;initialSide?:"personal"|"business";employerLink?:{id:string;name:string;handle:string}|null;onDemoSaveContact?:()=>void;onActiveSideChange?:(side:"personal"|"business")=>void;ownerQuickActions?:{onPanel:()=>void;onLive:()=>void;liveLabel:string};publicVisibility?:JCardVisibility;publicScope?:MessageScope;awardsInAbout?:boolean;profileCoverScope?:MessageScope|null}){
  const {theme}=useTheme();const {colors}=useUi();const {width,fontScale}=useWindowDimensions();
  const [measuredCardWidth,setMeasuredCardWidth]=useState(0);
  const [contact,setContact]=useState<{email:string|null;phone:string|null;details?:PersonalContactDetails}>({email:null,phone:null});
@@ -391,7 +392,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
    const next=Math.round(event.nativeEvent.layout.width);
    if(next>0)setMeasuredCardWidth(previous=>previous!==next?next:previous);
   }} style={{width:"100%",maxWidth:jcardSurfaceMetrics.maxWidth,alignSelf:"center"}}>
-   {!!profilePortrait&&<View pointerEvents="none" style={{height:profilePortrait.coverHeight,marginBottom:-profilePortrait.overlap,borderRadius:18,overflow:"hidden",backgroundColor:cardColors.line}}>{!!profileCoverUrl&&<Image source={{uri:profileCoverUrl}} resizeMode="cover" style={{width:"100%",height:"100%"}}/>}</View>}
+   {!!profilePortrait&&<View style={{height:profilePortrait.coverHeight,marginBottom:-profilePortrait.overlap,borderRadius:18,overflow:"hidden",backgroundColor:cardColors.line}}><JCardSharedCover target={ownerId} scope={profileCoverScope??publicScope} editable={showOwnerActions} height={profilePortrait.coverHeight}/></View>}
    <BusinessCard3D height={cardHeight} topInset={profilePortrait?.overlap??0} enabled={canFlip} initialSide={initialSide} side={back?"business":"personal"}
      onSideChange={side=>setBack(side==="business")} shadowColor={jcardCommon.cardShadowColor}
      frontPortrait={profilePortrait&&(showOwnerActions||visibility.personal_enabled)?<Pressable disabled={!showOwnerActions||!onEditPersonalPhoto} accessibilityRole={showOwnerActions&&onEditPersonalPhoto?"button":undefined} accessibilityLabel="Foto de JCard personal" onPress={event=>{event.stopPropagation();onEditPersonalPhoto?.();}} style={{position:"absolute",top:0,left:profilePortrait.inset,width:profilePortrait.width,height:profilePortrait.height,borderRadius:profilePortrait.radius,overflow:"hidden",zIndex:3}}><Avatar uri={personalAvatarUrl(card.avatar)} name={card.name} size={profilePortrait.width} height={profilePortrait.height} shape="portrait" framed={false}/></Pressable>:undefined}

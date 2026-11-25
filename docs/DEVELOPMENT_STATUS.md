@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-COMPACT — editor de portada candidato (2026-11-25)
+
+- Portada fija compartida: selección de galería reutilizando Expo instalado, recorte central 10:3, JPEG máximo 1024px/2 MiB, vista previa y confirmación Publicar portada, retirada confirmada, una sola instancia fuera del giro. URL firmada de 60 segundos, sin URL pública permanente ni cache local de metadatos; estado ligado a destino y sesión, autorización RLS por archivo y selección, compare-and-swap de versión y limpieza de objeto anterior no vigente. Enlace firmado emitido puede seguir válido hasta su expiración; la retirada impide nuevas firmas y elimina la versión anterior cuando Storage lo permite. Candidato SQL aún no aplicado a alojado; editor muestra fallback/reintentar si contrato no existe. Pruebas de fuente y RLS CI pendientes. Sin OTA, APK, merge ni cambios alojados. Validar en dispositivo real y ajustar dimensiones finales antes de publicación.
+
 ## JCARD-COMPACT — contrato candidato de portada (2026-11-25)
 
 - SQL aditivo en `supabase/security-review/jcard-shared-cover.sql`: bucket privado 2 MiB, archivo inmutable por propietario, referencia seleccionada explícitamente, acceso al agregado seleccionado de perfil activo no bloqueado (independiente de cara visible); borrador no legible por visitantes, restricciones frente a políticas permisivas de otros buckets. No importa banner anterior ni cambia permisos de otros medios. CI desechable prueba A/B/C, bloqueos, mutaciones cruzadas, selección, reemplazo y retirada; se añade a job database. No ejecutar en alojado sin autorización. Cliente editor pendiente; CI aún no confirmado. No OTA ni APK.

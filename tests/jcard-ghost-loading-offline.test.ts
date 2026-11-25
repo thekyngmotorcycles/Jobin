@@ -78,7 +78,7 @@ test("Profile portraits use a common exact quarter overlap and fixed non-rotatin
  assert.ok(card.includes("jcardProfilePortraitMetrics(")&&skeleton.includes("jcardProfilePortraitMetrics(width)"));
  assert.ok(card.includes("left:profilePortrait.inset")&&card.includes("right:profilePortrait.inset"));
  assert.ok(card.indexOf("height:profilePortrait.coverHeight")<card.indexOf("<BusinessCard3D height={cardHeight}"));
- assert.ok(card.includes("source={{uri:profileCoverUrl}}")&&!card.includes("source={{uri:card.business.bannerUrl}}"));
+ assert.ok(card.includes("<JCardSharedCover target={ownerId}")&&!card.includes("source={{uri:card.business.bannerUrl}}"));
  assert.ok(flip.includes("height:totalHeight")&&flip.includes("marginTop:topInset,shadowColor"));
  assert.ok(flip.includes("{frontPortrait}")&&flip.includes("{backPortrait}"));
  assert.ok(skeleton.includes("top:portrait.coverHeight-portrait.overlap"));
