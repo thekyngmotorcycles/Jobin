@@ -1,6 +1,6 @@
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
-import {useCallback,useEffect,useImperativeHandle,useRef,useState,type Ref} from "react";
+import {useCallback,useImperativeHandle,useRef,useState,type Ref} from "react";
 import {ActivityIndicator,Pressable,Text,TextInput,View} from "react-native";
 import {requireSupabase} from "../lib/supabase";
 import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
@@ -20,8 +20,9 @@ export type ProfileContactsHandle={openContacts:(expectedOwner:string)=>void};
 export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userId:string;refreshKey?:number;contactsMenuRef?:Ref<ProfileContactsHandle>}){
  const {colors,s}=useUi();const {theme}=useTheme();const jt=jobeenTokens(theme);
  const scopeRef=useRef<MessageScope|null>(null),countRevision=useRef(0),listRevision=useRef(0);
- const [viewer,setViewer]=useState("");
- const [counts,setCounts]=useState<{followers:number;following:number;contacts:number}|null>(null);
+ const [summary,setSummary]=useState<{target:string;viewer:string;followers:number|null;contacts:number}|null>(null);
+ const counts=summary?.target===userId?summary:null;
+ const viewer=counts?.viewer??"";
  const [sheet,setSheet]=useState(false);
  const [tab,setTab]=useState<ListType>("followers");
  const [rows,setRows]=useState<Connection[]>([]);
@@ -38,18 +39,18 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userI
   try{
    const db=requireSupabase();
    const scope=await captureMessageScope();
-   const [followers,following,contacts]=await Promise.all([
+   // Only request the two counts actually rendered. Following is loaded on demand in My network.
+   const [followers,contacts]=await Promise.all([
     db.from("profile_follows" as never).select("*",{head:true,count:"exact"}).eq("followed_id",userId),
-    db.from("profile_follows" as never).select("*",{head:true,count:"exact"}).eq("follower_id",userId),
     contactCount(userId)
    ]);
-   if(followers.error||following.error)throw new Error("No se pudieron cargar los contadores.");
+   if(followers.error)throw new Error("No se pudieron cargar los contadores.");
    await assertMessageScope(scope);
-   if(countRevision.current===generation){scopeRef.current=scope;setViewer(scope.owner);setCounts({followers:followers.count??0,following:following.count??0,contacts});}
-  }catch{if(countRevision.current===generation){scopeRef.current=null;setViewer("");setCounts(null);}}
+   if(countRevision.current===generation){scopeRef.current=scope;setSummary({target:userId,viewer:scope.owner,followers:followers.count,contacts});}
+  }catch{if(countRevision.current===generation){scopeRef.current=null;setSummary(null);}}
  },[userId]);
- useFocusEffect(useCallback(()=>{void refreshCounts();return()=>{scopeRef.current=null;countRevision.current++;listRevision.current++;setSheet(false);setPendingRemove(null);contactMutation.current=null;setBusy("");setRows([]);setContactRows([]);};},[refreshCounts]));
- useEffect(()=>{void refreshCounts();},[refreshCounts,refreshKey]);
+ // Focus and explicit refresh share one trigger; do not also request on mount.
+ useFocusEffect(useCallback(()=>{void refreshCounts();return()=>{scopeRef.current=null;countRevision.current++;listRevision.current++;setSummary(null);setSheet(false);setPendingRemove(null);contactMutation.current=null;setBusy("");setRows([]);setContactRows([]);};},[refreshCounts,refreshKey]));
  const isOwner=!!viewer&&viewer===userId;
 
  async function loadConnections(kind:ListType){
@@ -147,7 +148,7 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef}:{userI
       accessibilityLabel={item.label+": "+(item.value??"no disponible")+(isOwner?", ver lista":"")}
       disabled={!isOwner} onPress={()=>openList(item.id)}
       style={{minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",gap:5,alignItems:"center",justifyContent:"center",paddingHorizontal:2}}>
-      <Text style={{fontSize:14,fontWeight:"800",color:colors.ink}}>{item.value===undefined?"—":new Intl.NumberFormat("es").format(item.value)}</Text>
+      <Text style={{fontSize:14,fontWeight:"800",color:colors.ink}}>{item.value==null?"—":new Intl.NumberFormat("es").format(item.value)}</Text>
       <Text style={{fontSize:13,color:colors.muted}}>{item.label}</Text>
      </Pressable>
     </View>)}
