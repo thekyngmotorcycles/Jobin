@@ -2,6 +2,7 @@
  * The original binary files are preserved under assets/brand. Do not redraw or substitute fonts.
  */
 export const JOBIN_BRAND_NAME="Jobin";
+export const JOBIN_BRAND_INK={light:"#000000",dark:"#FFFFFF"} as const;
 export const JOBIN_BRAND_GOLD="#FDBD03";
 export const JOBIN_WORDMARK_VIEWBOX="0 0 997 528";
 export const JOBIN_WORDMARK_ASPECT=997/528;

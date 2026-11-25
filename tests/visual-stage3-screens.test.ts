@@ -32,7 +32,7 @@ test("Settings list and side menu reuse one proportional row and section typogra
 });
 test("Account sign-out errors remain visible in the confirmation dialog",()=>{
  const settings=src("src/app/settings/cuenta.tsx");
- assert.ok(settings.includes('description={exitError||"¿Quieres salir de tu cuenta de Jobeen?"}'),"Errors must appear above the scrim");
+ assert.ok(settings.includes('description={exitError||"¿Quieres salir de tu cuenta de Jobin?"}'),"Errors must appear above the scrim");
  assert.ok(settings.includes('onCancel={()=>{exitScope.current=null;setExitError("");setExitOpen(false);}}'),"Dismissing clears the failure and its captured session");
  assert.ok(settings.includes('onPress={()=>void requestExit()}'),"Reopening must verify the active session");
  assert.ok(settings.includes('exitScope.current=await captureMessageScope()'),"The confirmation must bind the session that opened it");

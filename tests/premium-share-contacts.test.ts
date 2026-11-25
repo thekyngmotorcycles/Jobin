@@ -6,7 +6,7 @@ const src=(path:string)=>readFileSync(path,"utf8");
 const panel=src("src/components/JCardShareSheet.tsx");
 const contacts=src("src/lib/share-contacts.ts");
 
-test("Approved premium light panel has real accepted Jobeen contacts with circular avatars",()=>{
+test("Approved premium light panel has real accepted Jobin contacts with circular avatars",()=>{
  assert.ok(panel.includes("loadShareRecipients(scope)"));
  assert.ok(contacts.includes('c.status==="accepted"'));
  assert.ok(panel.includes("<PublicProfileAvatar userId={contact.id}"));
@@ -16,7 +16,7 @@ test("Approved premium light panel has real accepted Jobeen contacts with circul
  assert.ok(panel.includes('name="checkmark" color={t.onYellow} size={16}'));
  assert.ok(panel.includes('position:"absolute",right:-4,top:-5,width:23,height:23'));
  assert.ok(panel.includes("textAlign:\"center\""));
- assert.ok(panel.includes('Buscar contactos de Jobeen'));
+ assert.ok(panel.includes('Buscar contactos de Jobin'));
  assert.ok(!panel.includes("Para ver los contactos sugeridos y todas las apps instaladas"));
 });
 test("Multi-select and dynamic send button use real recipients, never mock contacts",()=>{
@@ -27,7 +27,7 @@ test("Multi-select and dynamic send button use real recipients, never mock conta
  assert.ok(panel.includes('selected.length?"Seleccionados: "+selected.length'));
  assert.ok(panel.includes('!!selected.length&&<Pressable'));
  assert.ok(panel.includes("await sendToShareRecipients(selected,message,scope)"));
- assert.ok(panel.includes("Aún no tienes contactos aceptados de Jobeen"));
+ assert.ok(panel.includes("Aún no tienes contactos aceptados de Jobin"));
  assert.ok(!panel.includes("Mariana Torres"));
 });
 test("Share messages obey existing privacy rules and distinguish delivered from pending",()=>{
