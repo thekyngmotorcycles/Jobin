@@ -5,6 +5,7 @@ import {useFocusEffect} from "expo-router";
 import Animated,{cancelAnimation,Easing,useAnimatedStyle,useReducedMotion,useSharedValue,withRepeat,withTiming,type SharedValue} from "react-native-reanimated";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
+import {composite,opacity} from "../theme/color";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {useWindowDimensions} from "react-native";
 
@@ -33,7 +34,8 @@ export function JShopListingSkeleton({withFavorite=true,count=3}:{withFavorite?:
   clock.value=withRepeat(withTiming(1,{duration:1500,easing:Easing.linear}),-1,false);
   return()=>{cancelAnimation(clock);clock.value=0;};
  },[clock,reducedMotion]));
- const palette={base:theme==="light"?"#E5E8EB":"#343941",highlight:theme==="light"?"#F7F8FA":"#4B515A",clock,animated:!reducedMotion};
+ // Derive the sweep from Royal Hive in both modes, without local color literals.
+ const palette={base:t.line,highlight:theme==="light"?t.surface:composite(opacity(t.ink,.14),t.line),clock,animated:!reducedMotion};
  return <View accessibilityRole="progressbar" accessibilityLabel="Cargando artículos" accessibilityState={{busy:true}} style={{gap:10}}>
   <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{gap:10}}>
    {Array.from({length:Math.max(1,Math.min(4,Math.floor(count)))},(_,i)=>
