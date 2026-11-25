@@ -1,3 +1,5 @@
+import {JobinLoadingIndicator} from "../../components/JobinLoadingGears";
+import {JobinFileProgress} from "../../components/JobinFileProgress";
 import {userImageSource} from "../../lib/media-urls";
 import {Ionicons} from "@expo/vector-icons";
 import {router,Stack,useLocalSearchParams,useNavigation} from "expo-router";
@@ -523,9 +525,9 @@ export default function PostCreate(){
    </ScrollView>
    {busy&&<View accessibilityLiveRegion="polite" style={{position:"absolute",top:0,bottom:0,left:0,right:0,backgroundColor:modal.scrim,alignItems:"center",justifyContent:"center"}}>
     <View style={{backgroundColor:t.surface,borderRadius:20,paddingHorizontal:32,paddingVertical:23,alignItems:"center",gap:13}}>
-     <ActivityIndicator color={t.ink} size="large"/>
-     <Text style={{color:t.ink,fontSize:15,fontWeight:"700"}}>Publicando...</Text>
-     {!!photoProgress&&<Text style={{color:t.ink2}}>{photoProgress.done} de {photoProgress.total} fotografías</Text>}
+     {!photoProgress&&<JobinLoadingIndicator size={34} label="Publicando"/>}
+     <Text style={{color:t.ink,fontSize:15,fontWeight:"700"}}>{photoProgress&&photoProgress.done===photoProgress.total?"Finalizando publicación…":"Publicando..."}</Text>
+     {!!photoProgress&&<JobinFileProgress done={photoProgress.done} total={photoProgress.total}/>}
     </View>
    </View>}
   </SafeAreaView>

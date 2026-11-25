@@ -50,3 +50,8 @@ export const JobinLoadingGears=memo(function JobinLoadingGears({size=36,mode="lo
   {positions.map(position=><Gear key={position.y} position={position} size={size} color={t.ink2} progress={progress}/>)}
  </View>;
 });
+
+/** Accessible wrapper for the handful of page-level waiting states. */
+export function JobinLoadingIndicator({size=28,label="Cargando"}:{size?:number;label?:string}){
+ return <View accessibilityRole="progressbar" accessibilityLabel={label} accessibilityState={{busy:true}} style={{alignItems:"center",justifyContent:"center",paddingVertical:6}}><JobinLoadingGears size={size}/></View>;
+}

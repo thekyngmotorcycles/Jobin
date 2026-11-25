@@ -1,6 +1,7 @@
+import {JShopListingSkeleton} from "../../components/JShopListingSkeleton";
 import {router,Stack,useFocusEffect} from "expo-router";
 import {useCallback,useRef,useState} from "react";
-import {ActivityIndicator,Text,View} from "react-native";
+import {Text,View} from "react-native";
 import {JShopButton,JShopEmpty,JShopItemCard,JShopPage,JShopTitle} from "../../components/JShopUI";
 import {captureMessageScope,assertMessageScope,type MessageScope} from "../../lib/message-session";
 import {loadFavoriteJShopListings,setJShopFavorite} from "../../lib/jshop-api";
@@ -40,12 +41,12 @@ export default function JShopFavorites(){
   <Stack.Screen options={{title:"Guardados de JShop"}}/>
   <JShopPage>
    <JShopTitle title="Guardados" subtitle="Los artículos que guardás se sincronizan con tu cuenta."/>
-   {loading?<ActivityIndicator color={t.yellow}/>:saved.length?
+   {loading?<JShopListingSkeleton/>:saved.length?
     <View style={{gap:10}}>
      {saved.map(item=><JShopItemCard key={item.id} item={item} saved
       onOpen={()=>router.push({pathname:"/jshop/item/[id]",params:{id:item.id}})}
       onFavorite={()=>void removeFavorite(item.id)}/>)}
-    </View>:
+    </View>:error?null:
     <JShopEmpty icon="heart-outline" title="Todavía no guardaste artículos"
      description="Cuando encuentres un artículo que te interese, toca el corazón para guardarlo."
      action={{title:"Explorar JShop",onPress:()=>router.push("/(tabs)/shop")}}/>}

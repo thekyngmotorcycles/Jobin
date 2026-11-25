@@ -2,6 +2,7 @@ import {Ionicons} from "@expo/vector-icons";
 import type {ComponentProps,ReactNode} from "react";
 import {Image,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
 import {PageFrame} from "./ui";
+import {jshopItemGeometry} from "./JShopListingSkeleton";
 import {useTheme} from "../state/ThemeProvider";
 import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
@@ -67,10 +68,10 @@ export function JShopItemCard({item,onOpen,onFavorite,saved=false}:{
  const {theme}=useTheme();const t=jobeenTokens(theme);
  const draft="ownerId" in item;
  const {width}=useWindowDimensions();
- const imageSize=width<=350?90:width<=430?106:width>=800?124:112;
+ const {imageSize,gap,minHeight,padding}=jshopItemGeometry(width);
  return <Pressable accessibilityRole="button" accessibilityLabel={"Ver "+item.title} onPress={onOpen}
-  style={({pressed})=>({width:"100%",minHeight:128,borderRadius:JOBEEN_CONTROL.cardRadius,padding:9,backgroundColor:t.surface,
-   borderWidth:1,borderColor:t.line,flexDirection:"row",alignItems:"flex-start",gap:width<=350?9:12,opacity:pressed?0.8:1})}>
+  style={({pressed})=>({width:"100%",minHeight,borderRadius:JOBEEN_CONTROL.cardRadius,padding,backgroundColor:t.surface,
+   borderWidth:1,borderColor:t.line,flexDirection:"row",alignItems:"flex-start",gap,opacity:pressed?0.8:1})}>
   <View style={{width:imageSize,flexShrink:0}}>
    <JShopPhoto uri={item.photos[0]}/>
    {draft?<View style={{position:"absolute",top:6,left:6,backgroundColor:t.cream,paddingVertical:4,paddingHorizontal:6,borderRadius:8}}>

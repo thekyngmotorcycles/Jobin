@@ -1,9 +1,10 @@
+import {JShopListingSkeleton} from "../components/JShopListingSkeleton";
 import {JOBEEN_TYPE} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import {useCallback,useRef,useState} from "react";
-import {ActivityIndicator,Alert,Pressable,ScrollView,Text,TextInput,View} from "react-native";
+import {Alert,Pressable,ScrollView,Text,TextInput,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {BottomSheet} from "../components/social-ui";
 import {JShopButton,JShopCategories,JShopEmpty,JShopIconButton,JShopItemCard,JShopTitle} from "../components/JShopUI";
@@ -34,7 +35,7 @@ export default function JShop(){
  const [error,setError]=useState("");
  const scopeRef=useRef<MessageScope|null>(null),revision=useRef(0),favoriteBusy=useRef(false);
  useFocusEffect(useCallback(()=>{
-  const generation=++revision.current;scopeRef.current=null;setLoading(true);setDrafts([]);setFavorites([]);setSearchArea(null);setOwnerId("");setRemoteListings([]);
+  const generation=++revision.current;scopeRef.current=null;setLoading(true);setError("");setDrafts([]);setFavorites([]);setSearchArea(null);setOwnerId("");setRemoteListings([]);
   void(async()=>{try{
    const scope=await captureMessageScope(),userId=scope.owner;
    const [savedDrafts,savedFavorites,selectedPlace]=await Promise.all([readJShopDrafts(userId,scope),loadJShopFavoriteIds(userId,scope),readJShopLocation(userId,scope)]);
@@ -101,7 +102,7 @@ export default function JShop(){
     <JShopTitle title="Explorar artículos" subtitle={searchArea?searchArea.city:filterCount?"Filtros activos: "+filterCount:"Explora por categoría, precio y ubicación"}/>
     {listings.length>0?<View style={{gap:10}}>
      {listings.map(item=><JShopItemCard key={item.id} item={item} onOpen={()=>router.push({pathname:"/jshop/item/[id]",params:{id:item.id}})} onFavorite={item.sellerId===ownerId?undefined:()=>void toggleFavorite(item.id)} saved={favorites.includes(item.id)}/>)}
-    </View>:<JShopEmpty icon={query||category!=="Todo"||filterCount?"search-outline":"bag-handle-outline"}
+    </View>:loading?<JShopListingSkeleton/>:error?null:<JShopEmpty icon={query||category!=="Todo"||filterCount?"search-outline":"bag-handle-outline"}
       title={searchArea?"No hay artículos en esta zona":query||category!=="Todo"||filterCount?"No hay artículos con estos filtros":"Todavía no hay artículos publicados"}
       description={searchArea?"No encontramos anuncios cerca de "+searchArea.city+". Prueba moviendo el mapa o cambiando la zona.":query||category!=="Todo"||filterCount?"Prueba otra búsqueda o quita los filtros para explorar los anuncios publicados.":"Sé el primero en publicar un artículo. Los anuncios se mostrarán aquí cuando los vendedores los publiquen."}
       action={query||category!=="Todo"||filterCount?{title:"Limpiar filtros",onPress:()=>{setQuery("");setCategory("Todo");setActiveFilters(DEFAULT_JSHOP_FILTERS);setPending(DEFAULT_JSHOP_FILTERS);void clearSearchArea();}} :{title:"Crear anuncio",onPress:()=>router.push("/jshop/publish")}}/>}
@@ -115,7 +116,6 @@ export default function JShop(){
    {!!favorites.length&&<Pressable accessibilityRole="button" onPress={()=>router.push("/jshop/favorites")} style={{borderWidth:1,borderColor:t.line,borderRadius:18,padding:13,flexDirection:"row",alignItems:"center",gap:12,backgroundColor:t.surface}}>
     <Ionicons name="heart-outline" size={21} color={t.ink}/><Text style={{flex:1,fontSize:13,color:t.ink}}>Artículos guardados: {favorites.length}</Text><Ionicons name="chevron-forward" color={t.ink2} size={18}/>
    </Pressable>}
-   {loading&&<ActivityIndicator color={t.yellow}/>}
    {!!error&&<Text accessibilityLiveRegion="polite" style={{fontSize:12,color:t.ink2}}>{error}</Text>}
   </ScrollView>
   <BottomSheet visible={filtersOpen} onClose={()=>setFiltersOpen(false)} title="Filtrar artículos">

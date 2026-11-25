@@ -1,3 +1,4 @@
+import {JobinLoadingIndicator} from "../components/JobinLoadingGears";
 import {JOBEEN_TYPE} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {useCallback,useEffect,useRef,useState} from "react";
@@ -180,7 +181,7 @@ export default function Search(){
     {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&<TextInput accessibilityLabel="Especialidad" value={specialty} onChangeText={value=>{setSpecialty(value);invalidateResults();}} placeholder="Especialidad (opcional, ej. VRF)" placeholderTextColor={colors.muted} style={s.formInput}/>}
     <Button title={effectiveKind==="Todo"?"Buscar en todo":effectiveKind==="Personas"?"Buscar personas":effectiveKind==="Empresas"?"Buscar empresas":"Buscar profesionales"} busy={loading} busyLabel="Buscando…" onPress={()=>void runSearch()}/>
     {effectiveKind!=="Personas"&&effectiveKind!=="Todo"&&<Text style={s.muted}>Primero coincidencia con tu búsqueda; después credenciales y reconocimientos verificados. Las cuentas personales no tienen puntuación por estrellas.</Text>}
-    {loading&&<PageState kind="loading"/>}
+    {loading&&<JobinLoadingIndicator size={24} label="Buscando resultados"/>}
     {!!error&&<PageState kind="error" message={error}/>}
     {searched&&!loading&&!error&&<Text style={s.muted}>{effectiveKind==="Todo"?allAccounts.length:effectiveKind==="Personas"?people.length:displayedResults.length} resultados encontrados</Text>}
     {effectiveKind==="Todo"&&allAccounts.map(account=><Pressable key={account.id} accessibilityRole="button" accessibilityLabel={"Ver perfil de "+account.name} onPress={()=>void openProfile(account.id)} style={{flexDirection:"row",alignItems:"center",paddingVertical:12,gap:12,borderBottomWidth:1,borderBottomColor:colors.line}}>

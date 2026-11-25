@@ -1,7 +1,8 @@
+import {JobinLoadingIndicator} from "../../components/JobinLoadingGears";
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import {useCallback,useEffect,useState} from "react";
-import {ActivityIndicator,Image,Pressable,ScrollView,Text,View} from "react-native";
+import {Image,Pressable,ScrollView,Text,View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {AccountAvatar} from "../../components/AccountAvatar";
 import {JobeenMessageIcon} from "../../components/JobeenMessageIcon";
@@ -117,7 +118,7 @@ export default function Messages(){
      })}
     </View>
     {!!error&&<Text accessibilityLiveRegion="polite" style={{fontSize:12,color:t.ink2}}>{error}</Text>}
-    {loading&&<ActivityIndicator color={t.yellow}/>}
+    {loading&&<JobinLoadingIndicator size={26} label="Cargando conversaciones"/>}
     {tab==="chats"?<View style={{gap:10}}>
      <Pressable accessibilityRole="button" accessibilityLabel={"Abrir solicitudes de mensajes, "+(requestCounts.pending+requestCounts.spam)+" pendientes"}
       onPress={()=>router.push("/message-requests")}

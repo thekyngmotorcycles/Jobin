@@ -1,9 +1,10 @@
+import {JShopListingSkeleton} from "../../components/JShopListingSkeleton";
 import {previewSecuredPhoto,watchAttachmentScope} from "../../lib/private-attachment-android";
 import type {MessageScope} from "../../lib/message-session";
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect,Stack} from "expo-router";
 import {useCallback,useMemo,useState} from "react";
-import {ActivityIndicator,Pressable,ScrollView,Text,View} from "react-native";
+import {Pressable,ScrollView,Text,View} from "react-native";
 import {JShopButton,JShopItemCard,JShopPage} from "../../components/JShopUI";
 import {readJShopDrafts} from "../../lib/jshop-local";
 import {captureMessageScope,assertMessageScope} from "../../lib/message-session";
@@ -36,7 +37,7 @@ export default function MyJShop(){
  const [error,setError]=useState("");
  useFocusEffect(useCallback(()=>{
   let live=true;let invalidated=false;
-  setLoading(true);setDrafts([]);setPublished([]);
+  setLoading(true);setError("");setDrafts([]);setPublished([]);
   const selected:{scope:MessageScope|null}={scope:null};
   const stop=watchAttachmentScope(()=>selected.scope,()=>{invalidated=true;setDrafts([]);setPublished([]);});
   void(async()=>{
@@ -96,11 +97,11 @@ export default function MyJShop(){
       {!loading&&<Text style={{fontSize:12,color:status===tab.key?t.bg:t.ink2}}>{counts[tab.key]}</Text>}
      </Pressable>)}
     </ScrollView>
-    {loading?<ActivityIndicator color={t.yellow} style={{paddingVertical:28}}/>:filtered.length>0?
+    {loading?<JShopListingSkeleton withFavorite={false}/>:filtered.length>0?
      <View style={{gap:10}}>
       {filtered.map(item=><JShopItemCard key={item.id} item={item}
        onOpen={()=>router.push({pathname:"/jshop/item/[id]",params:{id:item.id}})}/>)}
-     </View>:
+     </View>:error?null:
      <View style={{borderRadius:20,borderWidth:1,borderColor:t.line,backgroundColor:t.surface,
       paddingHorizontal:18,paddingVertical:24,gap:9,alignItems:"center"}}>
       <View style={{width:54,height:54,borderRadius:18,backgroundColor:t.cream,
