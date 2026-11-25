@@ -1,5 +1,7 @@
 # Jobin — registro central de desarrollo
 
+- CI 45666987914: database, gate, lint y typecheck OK; dos aserciones textuales fallaron (firma antigua del cálculo y llave JSX sobrante). Actualizadas las pruebas para exigir el modo de perfil en ambos consumidores, mismo cardHeight en giro y reverso; no se cambió cálculo, comportamiento, privacidad ni workflow. Validación posterior pendiente.
+
 ## JCARD-COMPACT — dimensiones adaptativas (2026-11-25)
 
 - CI 45665773379 success (validate + database) confirma el bloque completo previo, incluyendo las 498 pruebas y SQL desechable. Se cierra la corrección de aserción por orden de props. Ajuste de geometría candidato: base 320dp (+8 en ancho inferior a 350), ambas caras comparten el máximo necesario según idiomas, sellos secundarios, contactos visibles, vínculo laboral y acción guardar. Mayor fuente reserva espacio adicional; se mantiene la geometría legacy en otras vistas. Footer de Personal permite crecer y botón guardar conserva 44dp; skeleton usa la misma base (si no conoce los datos, las tarjetas densas pueden crecer al terminar la carga). No se oculta información, no se recortan controles para forzar altura. Pruebas de cálculo para 250–520dp, ambas apariencias y contenidos densos. CI nuevo pendiente y revisión física en Jelly 2 todavía no realizada. Portada alojada pendiente de autorización, sin merge/OTA/APK.

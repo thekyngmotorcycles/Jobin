@@ -104,7 +104,9 @@ test("Compact profile geometry has a shared baseline, grows for real content, an
   }
  }
  const card=source("src/components/JobinCard.tsx");
- assert.ok(card.includes("profile:profileSizing")&&card.includes("back={<View style={{height:cardHeight}}}"));
+ assert.ok(card.includes("profile:profileSizing"));
+ assert.match(card,/<BusinessCard3D\s+height=\{cardHeight\}/);
+ assert.match(card,/back=\{<View\s+style=\{\{height:cardHeight\}\}>/);
  assert.ok(card.includes("secondarySealCount:secondaryCardSeals(card).length"));
  assert.ok(card.includes("visibility.business_show_email?")&&card.includes("visibility.business_show_phone&&"));
  assert.ok(card.includes("minHeight:profilePortrait?44:28"));

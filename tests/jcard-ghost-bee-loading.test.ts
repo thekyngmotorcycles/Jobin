@@ -9,8 +9,8 @@ test("JCard and skeleton share the same responsive dimensions for small screens 
  assert.ok(metrics.includes("export function jcardSurfaceSize("));
  assert.ok(metrics.includes("lightHeight:330, darkHeight:400"));
  assert.ok(metrics.includes("compactHeightExtra:8"));
- assert.ok(skeleton.includes("jcardSurfaceSize({screenWidth,measuredWidth,fontScale,theme})"));
- assert.ok(card.includes("jcardSurfaceSize({screenWidth:width,measuredWidth:measuredCardWidth,fontScale,theme:previewTheme??theme})"));
+ assert.match(skeleton,/jcardSurfaceSize\(\{screenWidth,measuredWidth,fontScale,theme,profile:\{\}\}\)/);
+ assert.match(card,/jcardSurfaceSize\(\{screenWidth:width,measuredWidth:measuredCardWidth,fontScale,theme:previewTheme\?\?theme,profile:profileSizing\}\)/);
  assert.ok(skeleton.includes("onLayout={event"));
  assert.ok(card.includes("onLayout={event"));
  assert.ok(!skeleton.includes("height:450"));
