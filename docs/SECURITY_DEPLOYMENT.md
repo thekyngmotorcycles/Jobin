@@ -157,3 +157,12 @@ COMMIT;
 ```
 
 Volver a aplicar el mismo candidato restaura los permisos previstos y conserva los contactos guardados.
+
+## Contención del historial heredado
+
+[SQL candidato exacto](../supabase/security-review/employment-legacy-ownership-hold.sql). Requiere aprobación explícita para JobIn. La coincidencia en cuatro grupos históricos permite contener el lote, pero la titularidad individual permanece pendiente de verificación independiente.
+
+1. Revalidar los cuatro grupos y las 12 filas del 15 de noviembre de 2026 con consultas agregadas. Comprobar el contrato de contactos instalado y que `read_approved_employment(uuid)` conserve el cuerpo alojado que selecciona por titular o consentimiento aprobado. Si el catálogo cambió, reconciliar el diff antes de aplicar. Una modificación independiente de ese RPC debe conservar el filtro de revisión.
+2. Ejecutar el candidato en una sola transacción con `ON_ERROR_STOP` y `SET LOCAL lock_timeout='5s'`. Incluir `NOTIFY pgrst, 'reload schema'` antes del commit. El SQL aborta si el lote esperado cambió. El DDL toma bloqueos temporales. La marca administrativa mantiene los campos originales y el acceso se limita mientras se comprueba la titularidad.
+3. Revalidar por catálogo y totales. Verificar con cuentas autorizadas que historial directo, contactos y CV excluyan las filas en revisión y que las entradas legítimas sigan disponibles. Verificar también la RPC de estado antes de preparar la OTA compatible, para que el teléfono muestre la revisión de titularidad en vez de un historial vacío.
+4. Antes del commit, cualquier fallo revierte toda la transacción. Después del commit, mantener las restricciones y conservar las filas si se revierte el cliente. Resolver cada marca únicamente tras acreditar la titularidad con evidencia independiente y autorización específica. El cliente anterior omite las filas retenidas por RLS y puede mostrar experiencia incompleta. Restaurar la visibilidad indiscriminada volvería a mostrar los datos del incidente.
