@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-COMPACT — composición y giro de retratos (2026-11-25)
+
+- Candidato visual: geometría única de retratos 60–86dp y proporción vertical, sobresale exactamente 25% por encima de cada cara. Personal izquierda, Negocio derecha; el retrato pertenece a la cara animada, no a la portada. Se conserva el gesto, control de toques, contenido y edición de foto/logo; el área del giro incluye el retrato. La región de portada es fija y neutral hasta que exista una imagen seleccionada y autorizada; nunca usa el banner de negocio anterior. Esqueleto comparte medidas y altura exterior. Las otras vistas de tarjeta mantienen su layout. Altura del cuerpo conserva medidas previas hasta validar contenido y ajustar composición definitiva; persistencia/edición de portada, contadores dentro de la tarjeta y validación física pendientes. Sin merge, OTA, APK ni escrituras alojadas.
+
 ## JCARD-COMPACT — sellos del negocio en Acerca de (2026-11-25)
 
 - CI 45660824007 y 45661176496 success. Se reutiliza arte, reglas de medallas y explicación existentes mediante BusinessAwards; perfil propio y visitante dejan de mostrar los cinco sellos dentro del giro, las vistas previas restantes conservan su presentación anterior. Acerca de > Negocio consulta el agregado existente solo al abrir esa sección y valida sesión de origen y destino, sin cargar listas de reseñas ni contactos. Catálogo alojado consultado en solo lectura: jcard_business_excellence es security_invoker y agrega exclusivamente reseñas publicadas/en disputa; no se cambia ninguna política. Estado desconocido no simula medallas de cero. Se mantiene la proyección autorizada de negocio como condición del visitante. Pruebas dirigidas añadidas. CI del candidato pendiente; portada, foto/logo 25%, geometría definitiva y contadores dentro de la tarjeta pendientes. Sin merge, OTA, APK ni escrituras alojadas.

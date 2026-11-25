@@ -36,6 +36,12 @@ export function jcardSurfaceSize(args:{screenWidth:number;measuredWidth?:number;
   Math.round(Math.max(0,Math.min(args.fontScale,m.maxFontScale)-1)*m.fontScaleExtra);
  return {width,height,compact,radius:m.radius};
 }
+export function jcardProfilePortraitMetrics(cardWidth:number){
+ const width=Math.max(60,Math.min(86,Math.round(cardWidth*.24)));
+ const height=Math.round(width*1.1);
+ return {width,height,overlap:height/4,inset:14,radius:14,coverHeight:Math.max(82,Math.min(148,Math.round(cardWidth*.30)))};
+}
+export type JCardProfilePortraitMetrics=ReturnType<typeof jcardProfilePortraitMetrics>;
 export const proficiencyColors = {low:'#d84b54',middle:'#e4af42',high:'#219765'};
 export const businessCardAccents = {name:"#151B24",category:"#465B6C",contact:"#354553",icon:"#416477"};
 export const businessCardPaper = { background:"#ffffff", ink:"#111111", secondary:"#5d6165", border:"#dedede", muted:"#f5f5f5", outerBorder:"#e5e5e5" }; 

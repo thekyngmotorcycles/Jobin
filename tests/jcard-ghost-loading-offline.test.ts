@@ -24,7 +24,7 @@ test("Skeleton mirrors the frameless portrait and chip/language layout with the 
  const skeleton=source("src/components/JCardLoadingSkeleton.tsx");
  const gears=source("src/components/JobinLoadingGears.tsx");
  assert.ok(skeleton.includes("<JobinLoadingGears size={35} mode=\"loading\"/>"));
- assert.ok(skeleton.includes("height:compact?83:88,borderRadius:14"));
+ assert.ok(skeleton.includes("height:portrait.height,borderRadius:portrait.radius"));
  assert.ok(!skeleton.includes("borderRadius:44,borderWidth:3"));
  assert.ok(!skeleton.includes(">JCard</Text>"));
  assert.ok(skeleton.includes("minHeight:80"));
@@ -63,4 +63,23 @@ test("No persistent flip handle or hand tutorial remains",()=>{
  assert.ok(!card.includes("ghostPreview="));
  assert.ok(flip.includes("return()=>{cancelAnimation(previewAngle)"));
  assert.ok(flip.includes("onSide(next)"));
+});
+
+
+test("Profile portraits use a common exact quarter overlap and fixed non-rotating cover region",async()=>{
+ const {jcardProfilePortraitMetrics}=await import("../src/theme/jcard.ts");
+ for(const width of [250,288,310,390,520]){
+  const m=jcardProfilePortraitMetrics(width);
+  assert.equal(m.overlap,m.height/4);
+  assert.ok(m.width>=60&&m.width<=86);
+  assert.ok(m.coverHeight>m.overlap);
+ }
+ const card=source("src/components/JobinCard.tsx"),flip=source("src/components/BusinessCard3D.tsx"),skeleton=source("src/components/JCardLoadingSkeleton.tsx");
+ assert.ok(card.includes("jcardProfilePortraitMetrics(")&&skeleton.includes("jcardProfilePortraitMetrics(width)"));
+ assert.ok(card.includes("left:profilePortrait.inset")&&card.includes("right:profilePortrait.inset"));
+ assert.ok(card.indexOf("height:profilePortrait.coverHeight")<card.indexOf("<BusinessCard3D height={cardHeight}"));
+ assert.ok(card.includes("source={{uri:profileCoverUrl}}")&&!card.includes("source={{uri:card.business.bannerUrl}}"));
+ assert.ok(flip.includes("height:totalHeight")&&flip.includes("marginTop:topInset,shadowColor"));
+ assert.ok(flip.includes("{frontPortrait}")&&flip.includes("{backPortrait}"));
+ assert.ok(skeleton.includes("top:portrait.coverHeight-portrait.overlap"));
 });
