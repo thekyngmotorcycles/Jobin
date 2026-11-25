@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-COMPACT — contrato candidato de portada (2026-11-25)
+
+- SQL aditivo en `supabase/security-review/jcard-shared-cover.sql`: bucket privado 2 MiB, archivo inmutable por propietario, referencia seleccionada explícitamente, acceso al agregado seleccionado de perfil activo no bloqueado (independiente de cara visible); borrador no legible por visitantes, restricciones frente a políticas permisivas de otros buckets. No importa banner anterior ni cambia permisos de otros medios. CI desechable prueba A/B/C, bloqueos, mutaciones cruzadas, selección, reemplazo y retirada; se añade a job database. No ejecutar en alojado sin autorización. Cliente editor pendiente; CI aún no confirmado. No OTA ni APK.
+
 ## JCARD-COMPACT — contadores dentro de las caras (2026-11-25)
 
 - CI 45662508926 (sellos) y 45662798647 (geometría) success. Una sola instancia de ProfileFollowCounts provee ambos rostros mediante contexto, sin consultas duplicadas ni listas privadas en el visitante. Dos contadores reales bajo profesión/categoría, desconocido como guion, controles del titular conservados fuera de la cara animada en el modal Mi red; captura de sesión esperada. Se conserva el header antiguo para otras vistas. Se recupera espacio de padding de Personal y se añade fila al skeleton. Altura definitiva todavía requiere prueba física con contenido extenso, especialidades y escala de fuente; no reducir áreas táctiles. Portada persistente pendiente; no merge/OTA/APK ni cambios alojados. CI del candidato pendiente.

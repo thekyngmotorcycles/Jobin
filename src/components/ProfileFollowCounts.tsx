@@ -41,7 +41,7 @@ export function ProfileConnectionCountRow({ink,muted,line}:{ink?:string;muted?:s
 }
 
 export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef,children,countsInCard=false,expectedScope}:{userId:string;refreshKey?:number;contactsMenuRef?:Ref<ProfileContactsHandle>;children?:ReactNode;countsInCard?:boolean;expectedScope?:MessageScope|null}){
- const {colors,s}=useUi();const {theme}=useTheme();const jt=jobeenTokens(theme);
+ const {colors,s}=useUi();
  const scopeRef=useRef<MessageScope|null>(null),countRevision=useRef(0),listRevision=useRef(0);
  const [summary,setSummary]=useState<{target:string;viewer:string;followers:number|null;contacts:number}|null>(null);
  const counts=summary?.target===userId?summary:null;
@@ -228,5 +228,5 @@ export function ProfileFollowCounts({userId,refreshKey=0,contactsMenuRef,childre
   <JobeenNoticeDialog visible={sheet&&pendingRemove!==null} title="Eliminar contacto"
    description={error||"Se eliminará la relación profesional para ambos perfiles."} tone="danger" confirmLabel="Eliminar"
    busy={!!busy} onCancel={()=>{if(!contactMutation.current){setPendingRemove(null);setError("");}}} onConfirm={()=>void removeConfirmed()}/>
- </ProfileCountContext.Provider>;;
+ </ProfileCountContext.Provider>;
 }
