@@ -88,6 +88,13 @@ const Pressable:typeof NativePressable = ((props:React.ComponentProps<typeof Nat
  return <NativePressable {...props} onTouchStart={event=>{if(!props.disabled&&typeof props.onPress==="function")markInteractive?.();props.onTouchStart?.(event);}}/>;
 }) as typeof NativePressable;
 
+function primaryCardProfession(card:CardData){
+ return card.role.trim().replace(/^Técnico HVAC\s*\/\s*climatización y aire acondicionado$/i,"Técnico HVAC").replace(/\s*[-–/]\s*aire acondicionado\s*$/i,"").trim();
+}
+function secondaryCardSeals(card:CardData){
+ const primaryProfession=primaryCardProfession(card);
+ return card.seals.filter(seal=>!(/hvac/i.test(primaryProfession)&&/hvac|aire acondicionado/i.test(seal.profession))&&seal.profession.trim().toLocaleLowerCase()!==primaryProfession.toLocaleLowerCase());
+}
 function CardFace({ card, theme, appearance="original", expanded = false, onEdit, onShare, onEditPhoto, onSaveContact, contact, employerLink,profilePortrait }: { card: CardData; theme: ThemeName; appearance?:JCardPremiumBackgroundId; expanded?: boolean; onEdit?: () => void; onShare?: () => void; onEditPhoto?: () => void; onSaveContact?:()=>void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null;profilePortrait?:JCardProfilePortraitMetrics }) {
   const { s, fs } = useUi();
   const inlineIdentity=theme==="light"||!!profilePortrait;
@@ -111,10 +118,10 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
   const nameBreakAt=visibleName.length>17?visibleName.lastIndexOf(" ",17):-1;
   const firstNameLine=nameBreakAt>5?visibleName.slice(0,nameBreakAt):visibleName;
   const lastNameLine=nameBreakAt>5?visibleName.slice(nameBreakAt+1):null;
-  const primaryProfession=card.role.trim().replace(/^Técnico HVAC\s*\/\s*climatización y aire acondicionado$/i,"Técnico HVAC").replace(/\s*[-–/]\s*aire acondicionado\s*$/i,"").trim();
+  const primaryProfession=primaryCardProfession(card);
   const primarySeal=card.seals.find(seal=>/hvac/i.test(primaryProfession)?/hvac|aire acondicionado/i.test(seal.profession):seal.profession.trim().toLocaleLowerCase()===primaryProfession.toLocaleLowerCase());
   const primarySealMonths=card.primaryExperienceMonths??primarySeal?.months;
-  const secondarySeals=card.seals.filter(seal=>!(/hvac/i.test(primaryProfession)&&/hvac|aire acondicionado/i.test(seal.profession))&&seal.profession.trim().toLocaleLowerCase()!==primaryProfession.toLocaleLowerCase());
+  const secondarySeals=secondaryCardSeals(card);
   const sealCount = Math.max(card.languages.length, Math.min(secondarySeals.length, 5));
   const sealColumns = sealCount > 8 ? 4 : sealCount > 4 ? 3 : 2;
   const sealDiameter = sealCount > 12 ? 24 : sealCount > 8 ? 29 : sealCount > 4 ? 32 : 36;
@@ -178,14 +185,14 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         
         
 
-        {onSaveContact&&<Pressable accessibilityRole="button" accessibilityLabel="Guardar contacto personal" onPress={event=>{event.stopPropagation();onSaveContact();}} style={{alignSelf:"center",flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,backgroundColor:jobeen.yellow,borderRadius:20,paddingHorizontal:10,paddingVertical:4,minHeight:28,marginTop:0,marginBottom:theme==="light"?12:0,transform:[{translateY:theme==="light"?-6:0}]}}>
+        {onSaveContact&&<Pressable accessibilityRole="button" accessibilityLabel="Guardar contacto personal" onPress={event=>{event.stopPropagation();onSaveContact();}} style={{alignSelf:"center",flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,backgroundColor:jobeen.yellow,borderRadius:20,paddingHorizontal:10,paddingVertical:4,minHeight:profilePortrait?44:28,marginTop:0,marginBottom:theme==="light"?12:0,transform:[{translateY:theme==="light"?-6:0}],...(profilePortrait?{marginBottom:0,transform:[]}: {})}}>
           <Ionicons name="person-add-outline" size={12} color={jobeen.ink}/><Text style={{fontSize:10,fontWeight:"700",color:jobeen.ink}}>Guardar contacto</Text>
         </Pressable>}
         {card.status==="ACTIVE"&&employerLink&&<Pressable accessibilityRole="link" accessibilityLabel={"Ver empresa "+employerLink.name} onPress={()=>router.push({pathname:"/company",params:{id:employerLink.id}})} style={{alignSelf:"flex-start",maxWidth:"100%"}}><Text style={[lineStyle,{textDecorationLine:"underline"}]}>Trabaja en {employerLink.name} · @{employerLink.handle} ↗</Text><Text style={{fontSize:10,color:finish.secondary}}>Vínculo laboral verificado por la empresa</Text></Pressable>}
 
         </View>
       </View>
-      <View style={{height:theme==="light"?76:(secondarySeals.length?166:92),borderTopWidth:1,borderTopColor:finish.line,paddingTop:theme==="light"?3:(secondarySeals.length?9:5),paddingBottom:theme==="light"?0:(secondarySeals.length?17:0),justifyContent:"space-evenly"}}>
+      <View style={{height:theme==="light"?76:(secondarySeals.length?166:92),borderTopWidth:1,borderTopColor:finish.line,paddingTop:theme==="light"?3:(secondarySeals.length?9:5),paddingBottom:theme==="light"?0:(secondarySeals.length?17:0),justifyContent:"space-evenly",...(profilePortrait?{height:undefined,minHeight:66,flexShrink:0,paddingTop:3,paddingBottom:0}: {})}}>
         {theme==="light"?<View style={{minHeight:62,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8,paddingHorizontal:12}}><Text style={{fontSize:11,fontWeight:"700",letterSpacing:0.5,color:finish.secondary,textAlign:"center",minWidth:64}}>Idiomas</Text><View style={{width:1,height:24,backgroundColor:finish.line}}/>{card.languages.slice(0,2).map((language,index)=><View key={language.name+index} style={{flex:1,minWidth:0,alignItems:"center",justifyContent:"center"}}><Pressable accessibilityRole="button" accessibilityLabel={"Idioma "+language.name+", "+languageLabel(language.fluency)+". Ver detalles"} onPress={()=>setInfo(languageDetails(language.name,language.fluency))} style={{alignSelf:"center",maxWidth:"100%",minHeight:44,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:4,paddingHorizontal:2}}><View style={{width:25,height:25,borderRadius:13,backgroundColor:jobeen.yellow,alignItems:"center",justifyContent:"center"}}><Text style={{fontSize:10,fontWeight:"800",color:jobeen.ink}}>{language.name.toLowerCase().startsWith("es")?"ES":language.name.toLowerCase().startsWith("in")||language.name.toLowerCase().startsWith("en")?"EN":language.name.slice(0,2).toUpperCase()}</Text></View><View style={{flexShrink:1,justifyContent:"center",alignItems:"flex-start",gap:1}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{fontSize:10,color:finish.text}}>{language.name}</Text><Text numberOfLines={1} style={{fontSize:10,color:finish.text}}>{Math.round(language.fluency)}%</Text></View></Pressable></View>)}</View>:<View style={{minHeight:62,justifyContent:"center",gap:7}}>
           {<Text style={{fontSize:11,color:finish.secondary,textAlign:"center",letterSpacing:1.2}}>Idiomas</Text>}
           <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:sealGap}}>
@@ -376,8 +383,19 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const canFlip=showOwnerActions||(visibility.personal_enabled&&visibility.business_enabled&&(!publicVisibility||!!card.business));
  const activeBusiness=!visibility.personal_enabled&&visibility.business_enabled;
  useEffect(()=>{onActiveSideChange?.(canFlip?(back?"business":"personal"):(activeBusiness?"business":"personal"));},[back,canFlip,activeBusiness,onActiveSideChange]);
- // Preserve approved dimensions on normal phones; give narrow screens and large text room.
- const {height:cardHeight}=jcardSurfaceSize({screenWidth:width,measuredWidth:measuredCardWidth,fontScale,theme:previewTheme??theme});
+ // Both faces keep the same content-aware height throughout the flip.
+ const profileSizing=awardsInAbout?{
+  personal:showOwnerActions||visibility.personal_enabled?{
+   languageCount:card.languages.length,secondarySealCount:secondaryCardSeals(card).length,
+   saveContact:!showOwnerActions&&!!(onDemoSaveContact||ownerId),employerLink:card.status==="ACTIVE"&&!!employerLink
+  }:undefined,
+  business:showOwnerActions||(visibility.business_enabled&&!!card.business)?{
+   contactRows:(visibility.business_show_email?(previewTheme??theme)==="light"?Number(!!(card.business?.email??card.business?.emailSecondary)):[card.business?.email,card.business?.emailSecondary].filter(Boolean).length:0)
+    +Number(visibility.business_show_phone&&!!(card.business?.phone||card.business?.phoneSecondary))+Number(!!card.business?.location),
+   services:!!card.business?.services?.length,saveContact:!showOwnerActions&&!!(onDemoSaveContact||ownerId)
+  }:undefined
+ }:undefined;
+ const {height:cardHeight}=jcardSurfaceSize({screenWidth:width,measuredWidth:measuredCardWidth,fontScale,theme:previewTheme??theme,profile:profileSizing});
  useEffect(()=>{if(!canFlip)setBack(activeBusiness);},[canFlip,activeBusiness]);
  const cardTheme=previewTheme??theme;
  const cardColors=jobeenTokens(cardTheme);

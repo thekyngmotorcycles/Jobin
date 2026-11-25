@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-COMPACT — dimensiones adaptativas (2026-11-25)
+
+- CI 45665773379 success (validate + database) confirma el bloque completo previo, incluyendo las 498 pruebas y SQL desechable. Se cierra la corrección de aserción por orden de props. Ajuste de geometría candidato: base 320dp (+8 en ancho inferior a 350), ambas caras comparten el máximo necesario según idiomas, sellos secundarios, contactos visibles, vínculo laboral y acción guardar. Mayor fuente reserva espacio adicional; se mantiene la geometría legacy en otras vistas. Footer de Personal permite crecer y botón guardar conserva 44dp; skeleton usa la misma base (si no conoce los datos, las tarjetas densas pueden crecer al terminar la carga). No se oculta información, no se recortan controles para forzar altura. Pruebas de cálculo para 250–520dp, ambas apariencias y contenidos densos. CI nuevo pendiente y revisión física en Jelly 2 todavía no realizada. Portada alojada pendiente de autorización, sin merge/OTA/APK.
+
 - CI 45664382110: database, gate, lint y typecheck OK; 497/498 pruebas. Único fallo: aserción textual dependiente del orden de props en JobinCard después de añadir profileCoverScope. Regresión corregida para comprobar cada prop del componente independientemente de su orden, conservando visibilidad pública, acciones propias y añadiendo comprobación de scope de portada. Sin cambios en runtime, políticas, OTA o APK. CI posterior pendiente.
 
 - CI 45663850961 success (contadores integrados). CI 45664083558: database success, validate rechazado por falta de prueba específica del cambio de workflow; se añade regresión que exige ejecución exclusiva en Postgres desechable local, ON_ERROR_STOP y ausencia de credenciales alojadas, sin relajar el gate. CI posterior pendiente.

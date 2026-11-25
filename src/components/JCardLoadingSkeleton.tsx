@@ -10,7 +10,7 @@ export function JCardLoadingSkeleton(){
  const {theme}=useTheme(),t=jcardArtTokens(theme);
  const {width:screenWidth,fontScale}=useWindowDimensions();
  const [measuredWidth,setMeasuredWidth]=useState(0);
- const {height,radius,compact,width}=jcardSurfaceSize({screenWidth,measuredWidth,fontScale,theme});
+ const {height,radius,compact,width}=jcardSurfaceSize({screenWidth,measuredWidth,fontScale,theme,profile:{}});
  const portrait=jcardProfilePortraitMetrics(width);
  const light=theme==="light",fill=light?businessCardPaper.background:t.ink;
  const muted=light?businessCardPaper.border:t.silver;
@@ -29,7 +29,7 @@ export function JCardLoadingSkeleton(){
      {line("85%",19)}{line("56%",11)}{line("76%",13)}
     </View>
    </View>
-   <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:12,minHeight:28}}>{line("36%",11)}<View style={{width:1,height:18,backgroundColor:t.line}}/>{line("36%",11)}</View>
+   <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:12,minHeight:48}}>{line("36%",11)}<View style={{width:1,height:18,backgroundColor:t.line}}/>{line("36%",11)}</View>
    <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",gap:10,paddingHorizontal:3}}>
     <View style={{flex:1,height:35,borderRadius:18,backgroundColor:t.cream,borderWidth:1,borderColor:t.yellow,
      paddingHorizontal:13,justifyContent:"center"}}>{line("83%",10)}</View>
