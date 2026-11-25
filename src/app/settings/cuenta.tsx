@@ -44,7 +44,7 @@ export default function AccountSecurity(){
    <Ionicons name="log-out-outline" size={23} color={colors.ink}/><Text style={[s.text,{fontWeight:"700"}]}>{signingOut?"Cerrando sesión…":"Cerrar sesión"}</Text>
   </Pressable>
   </PageFrame>
-  <JobeenNoticeDialog visible={exitOpen} title="Cerrar sesión" description={exitError||"¿Quieres salir de tu cuenta de Jobeen?"}
+  <JobeenNoticeDialog visible={exitOpen} title="Cerrar sesión" description={exitError||"¿Quieres salir de tu cuenta de Jobin?"}
    tone="warning" confirmLabel="Cerrar sesión" onCancel={()=>{exitScope.current=null;setExitError("");setExitOpen(false);}} onConfirm={()=>void signOut()} busy={signingOut}/>
  </>;
 }

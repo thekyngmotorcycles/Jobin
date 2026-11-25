@@ -1,0 +1,28 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {readFileSync} from "node:fs";
+const read=(path:string)=>readFileSync(path,"utf8");
+test("brand change preserves scoped sharing, inbox and private profile contracts",()=>{
+ const sheet=read("src/components/JCardShareSheet.tsx");
+ assert.match(sheet,/const scope=await captureMessageScope\(\);\s*const rows=await loadShareRecipients\(scope\);\s*await assertMessageScope\(scope\);/);
+ assert.match(sheet,/if\(active&&generation\.current===revision\)\{scopeRef\.current=scope;setContacts\(rows\);setReady\(true\);\}/);
+ assert.match(sheet,/if\(!visible\)\{scopeRef\.current=null;setReady\(false\);setContacts\(\[\]\);setSelected\(\[\]\)/);
+ assert.match(sheet,/await captureMessageScope\(scope\);if\(!live\(\)\)return;\s*const result=await sendToShareRecipients\(selected,message,scope\);\s*await assertMessageScope\(scope\);if\(!live\(\)\)return;/);
+ assert.match(sheet,/disabled=\{sending\|\|!ready\}/);
+ assert.ok(sheet.includes('placeholder="Buscar contactos de Jobin"'));
+ assert.ok(sheet.includes('accessibilityLabel="Buscar contactos de Jobin"'));
+ const inbox=read("src/app/(tabs)/inbox.tsx");
+ assert.ok(inbox.includes("scope=await captureMessageScope(),user={id:scope.owner}"));
+ assert.ok(inbox.includes("loadJShopInbox(scope)"));
+ assert.ok(inbox.includes("loadIncomingRequests(scope)"));
+ assert.ok(inbox.includes("await assertMessageScope(scope)"));
+ const profile=read("src/app/(tabs)/profile.tsx");
+ assert.ok(profile.includes("visible={cvShareOpen&&!!ownHistory}"));
+ assert.ok(profile.includes('contentMessage={["Historial profesional de Jobin",...history.map('));
+ const account=read("src/app/settings/cuenta.tsx");
+ assert.ok(account.includes("exitScope.current=await captureMessageScope()"));
+ assert.ok(account.includes("await endJobinSession(scope)"));
+ const card=read("src/components/JobinCard.tsx");
+ assert.ok(card.includes('card.identityVerified?"Identidad verificada por Jobin.":"Identidad sin verificar."'));
+ assert.ok(card.includes("Esto no significa que Jobin haya confirmado su relación laboral."));
+});

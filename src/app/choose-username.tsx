@@ -135,7 +135,7 @@ export default function ChooseUsername(){
      </View>
      <View style={{flexDirection:"row",gap:8,marginBottom:30}}><View style={{height:3,flex:1,backgroundColor:ink,borderRadius:4}}/><View style={{height:3,flex:1,backgroundColor:step===2?ink:setup.progressInactive,borderRadius:4}}/></View>
      <Text style={{color:gold,fontSize:11,fontWeight:"700",letterSpacing:2,marginBottom:12}}>{step===1?"TU IDENTIDAD":"PERSONALIZA TU EXPERIENCIA"}</Text>
-     <Text style={{color:ink,fontSize:29,fontWeight:"700",letterSpacing:-0.7,marginBottom:12}}>{step===1?"Configura tu cuenta":"¿Qué buscas en Jobeen?"}</Text>
+     <Text style={{color:ink,fontSize:29,fontWeight:"700",letterSpacing:-0.7,marginBottom:12}}>{step===1?"Configura tu cuenta":"¿Qué buscas en Jobin?"}</Text>
      <Text style={{color:muted,fontSize:15,lineHeight:23,marginBottom:28}}>{step===1?"Solo necesitamos dos datos para empezar. Podrás completar tu JCard más adelante.":"Selecciona hasta 3 objetivos. Puedes cambiarlos cuando quieras."}</Text>
      {step===1?<View style={{gap:10}}>
       <Text style={{color:ink,fontSize:14,fontWeight:"600"}}>Nombre legal {savedName&&<Text style={{color:muted,fontSize:12}}>✓ Ya completado</Text>}</Text>

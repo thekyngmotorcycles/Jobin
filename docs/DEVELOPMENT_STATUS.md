@@ -1,4 +1,7 @@
-# Jobeen — registro central de desarrollo
+# Jobin — registro central de desarrollo
+
+## BRAND — revisión definitiva (2026-11-24)
+Propietario aprueba retirar únicamente el hexágono del logotipo principal y conservar el icono con hexágono. PR #121: se elimina un único subcontorno SVG del wordmark, se ajusta su viewBox sin deformar letras y se actualizan los recursos claro/oscuro y reglas permanentes. Originales archivados intactos; icono, paleta, componentes JCard y configuración nativa sin cambios. CI previo 45517399244 success; nueva revisión requiere CI e integración/publicación conforme a las autorizaciones. Launcher pendiente del siguiente APK consolidado.
 
 ## AUTH-HISTORIAL — contrato privado de Supabase (2026-11-24)
 
@@ -218,3 +221,7 @@ Prioridades de riesgo P0/P1/P2/P3. El orden indicado respeta dependencias; no a�
 - `DESIGN_RULES.md` y roadmap de producto aprobado.
 
 Actualizar solo filas que cambian y el siguiente ID. No duplicar este backlog en otros documentos. Informar nueva evidencia en un cambio coherente y comprobar CI real al reanudar.
+
+
+## BRAND-JOBIN — identidad definitiva aprobada (2026-11-24)
+El propietario vuelve a elegir Jobin y aprueba los dos adjuntos originales (logo e icono de J con extremos alineados). Originales conservados byte por byte (WebP real) y SVG derivados en assets/brand. Componentes compartidos usan contornos extraídos y variantes por tema, sin volver a dibujar la J o el hexágono. Actualización del nombre visible en superficies revisadas, sin cambiar identificadores internos, esquema, credenciales, Supabase, paleta, JCard ni navegación. PNG 1024/adaptativo preparados en paquete de marca; configurar launcher y textos nativos de permisos en siguiente lote consolidado. Sin merge, OTA, APK ni hosted. PR #120 de degradado mantiene su alcance separado; CI 45491830279 success. Validación física de sesión/edición aún pendiente; retomar STREAM-UI tras correcciones y marca. Ver docs/wordmark.md.
