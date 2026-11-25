@@ -121,7 +121,7 @@ export default function ChooseUsername(){
    const {error}=await client.auth.updateUser({data:{professional_goals:skip?[]:selected,account_setup_completed:true}});
    if(error)throw error;
    completeUsernameOnboarding();
-   router.replace("/videos");
+   router.replace({pathname:"/",params:{onboarded:"1"}});
   }catch(error){setMessage(error instanceof Error?error.message:"No se pudieron guardar tus preferencias.");}
   finally{setBusy(false);}
  }

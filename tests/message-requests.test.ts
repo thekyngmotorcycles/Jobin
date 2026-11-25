@@ -78,7 +78,7 @@ test("Messaging reads and actions carry the original authenticated session",()=>
  const requests=read("src/app/message-requests.tsx");
  assert.ok(guard.includes("expected.session!==session"));
  assert.ok(guard.includes("await assertCurrent(owner,session)"));
- assert.ok(scope.includes("},assertAccountOwner,expected)"));
+ assert.ok(scope.includes("},()=>verifyUser(db,credential),assertAccountOwner,expected)"));
  assert.ok(api.includes("await assertMessageScope(scope)"));
  assert.ok(chat.includes("if(revision.current!==generation)return;"));
  assert.ok(chat.includes("scopeRef.current=scope;setMe(scope.owner)"));

@@ -177,7 +177,7 @@ export default function PostCreate(){
    void captureMessageScope(scope).then(()=>{if(!liveScope(scope))return;
    if(destination)markPublishedPostForHome(destination,scope);
    if(navigation.canGoBack())navigation.goBack();
-   else router.replace("/(tabs)/index");}).catch(()=>{});
+   else router.replace("/(tabs)");}).catch(()=>{});
   },350);
   return()=>clearTimeout(timer);
  },[editingDone,destination,navigation]);

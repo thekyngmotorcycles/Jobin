@@ -16,7 +16,7 @@ const STORIES_BUCKET="jobeen-story-media";
 export type FeedPostKind="text"|"photos"|"video"|"live";
 export type StoryKind="text"|"photo"|"video";
 export type FeedPost={
- id:string;authorId:string;authorName:string;authorHandle:string;body:string;kind:FeedPostKind;
+ id:string;authorId:string;authorName:string;authorHandle:string;authorAvatarPath?:string|null;body:string;kind:FeedPostKind;
  photoUrls:string[];photoAltTexts:string[];mentionedProfileIds:string[];mentions:{id:string;label:string;card?:"personal"|"business"}[];mediaId:string|null;createdAt:string;
  likes:number;comments:number;shares:number;likedByViewer:boolean;
 };
@@ -29,15 +29,15 @@ type StoryRow={id:string;author_id:string;kind:StoryKind;body:string;photo_path:
 
 async function namesFor(ids:string[]){
  const db=requireSupabase();const uniq=[...new Set(ids)];
- if(!uniq.length)return new Map<string,{name:string;handle:string}>();
+ if(!uniq.length)return new Map<string,{name:string;handle:string;avatarPath:string|null}>();
  const [profiles,handles]=await Promise.all([
-  db.from("profiles").select("id,display_name").in("id",uniq),
+  db.from("profiles").select("id,display_name,avatar_path").in("id",uniq),
   db.from("jcard_profiles").select("profile_id,handle").in("profile_id",uniq)
  ]);
  if(profiles.error)throw profiles.error;
  if(handles.error)throw handles.error;
  const hs=new Map((handles.data??[]).map(x=>[x.profile_id,x.handle??""]));
- return new Map((profiles.data??[]).map(x=>[x.id,{name:x.display_name??"Profesional",handle:hs.get(x.id)??""}]));
+ return new Map((profiles.data??[]).map(x=>[x.id,{name:x.display_name??"Profesional",handle:hs.get(x.id)??"",avatarPath:x.avatar_path}]));
 }
 export async function currentSocialUser():Promise<string>{
  const {data,error}=await requireSupabase().auth.getUser();
@@ -55,13 +55,19 @@ export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,
  if(error)throw error;
  const rows=(data??[]) as unknown as FeedRow[];
  await assertMessageScope(scope);
- const authors=await namesFor([...rows.map(r=>r.author_id),...rows.flatMap(r=>r.mentioned_profile_ids??[])]);
+ const namesRequest=namesFor([...rows.map(r=>r.author_id),...rows.flatMap(r=>r.mentioned_profile_ids??[])]);
  const ids=rows.map(row=>row.id);
  type CountRow={post_id:string;likes:number|string;comments:number|string;shares:number|string};
- const [summary,liked]=ids.length?await Promise.all([
+ const engagementRequest=ids.length?Promise.all([
   db.from("jobeen_feed_engagement" as never).select("post_id,likes,comments,shares").in("post_id",ids),
   viewerId?db.from("jobeen_feed_likes" as never).select("post_id").in("post_id",ids).eq("profile_id",viewerId):Promise.resolve({data:[],error:null})
- ]):[{data:[],error:null},{data:[],error:null}];
+ ]):Promise.resolve([{data:[],error:null},{data:[],error:null}] as const);
+ // Every load rechecks Storage RLS for private photos. Run these independent
+ // reads together after the posts query has applied the current audience.
+ const privatePaths=[...new Set(rows.filter(row=>row.photo_bucket===PRIVATE_POSTS_BUCKET).flatMap(row=>row.photo_paths??[]))];
+ const photosRequest=privatePaths.length?db.storage.from(PRIVATE_POSTS_BUCKET).createSignedUrls(privatePaths,300):null;
+ const [authors,[summary,liked],photos]=await Promise.all([namesRequest,engagementRequest,photosRequest]);
+ if(photos?.error)throw photos.error;
  // Feed remains resilient; administrative statistics must never substitute missing counts.
  if(requireEngagement){
   if(summary.error)throw Error("No se pudieron verificar las estadísticas de publicaciones.");
@@ -70,23 +76,14 @@ export async function loadHomePosts(viewerId="",authorId?:string,postId?:string,
  // Posts must remain visible during an additive backend migration.
  const counts=new Map(((summary.error?[]:summary.data??[]) as unknown as CountRow[]).map(x=>[x.post_id,x]));
  const viewerLikes=new Set(((liked.error?[]:liked.data??[]) as unknown as {post_id:string}[]).map(x=>x.post_id));
- // A private bucket is never served with getPublicUrl. Only viewers who
- // pass Storage RLS may request these short-lived links.
- const privatePaths=[...new Set(rows.filter(row=>row.photo_bucket===PRIVATE_POSTS_BUCKET)
-  .flatMap(row=>row.photo_paths??[]))];
  const signedUrls=new Map<string,string>();
- if(privatePaths.length){
-  await assertMessageScope(scope);
-  const {data:links,error:linkError}=await db.storage.from(PRIVATE_POSTS_BUCKET).createSignedUrls(privatePaths,300);
-  if(linkError)throw linkError;
-  for(const link of links??[])if(link.signedUrl&&link.path)signedUrls.set(link.path,link.signedUrl);
- }
+ for(const link of photos?.data??[])if(link.signedUrl&&link.path)signedUrls.set(link.path,link.signedUrl);
  await assertMessageScope(scope);
  return rows.map(row=>{
   const count=counts.get(row.id);
   return {
    id:row.id,authorId:row.author_id,authorName:authors.get(row.author_id)?.name??"Profesional",
-   authorHandle:authors.get(row.author_id)?.handle??"",body:row.body,kind:row.kind,
+   authorHandle:authors.get(row.author_id)?.handle??"",authorAvatarPath:authors.get(row.author_id)?.avatarPath??null,body:row.body,kind:row.kind,
    photoUrls:(row.photo_paths??[]).map(path=>row.photo_bucket===PRIVATE_POSTS_BUCKET?
     signedUrls.get(path)??"":db.storage.from(POSTS_BUCKET).getPublicUrl(path).data.publicUrl).filter(Boolean),
    photoAltTexts:row.photo_alt_texts??[],mentionedProfileIds:row.mentioned_profile_ids??[],

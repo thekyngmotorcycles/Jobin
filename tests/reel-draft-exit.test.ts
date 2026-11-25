@@ -16,7 +16,7 @@ test("Flash editor autosaves video metadata when editing and backgrounded",()=>{
  assert.ok(flash.includes('usePreventRemove(!exitAllowed'));
  assert.ok(flash.includes("Guardar borrador"));
  assert.ok(flash.includes("Descartar cambios"));
- assert.ok(flash.includes('router.replace("/(tabs)/index")'));
+ assert.ok(flash.includes('router.replace("/(tabs)")'));
 });
 test("Video preparation stores clip and trim metadata without pretending it has published",()=>{
  assert.ok(video.includes('jobeen.reel.draft.v1.'));
@@ -26,7 +26,7 @@ test("Video preparation stores clip and trim metadata without pretending it has 
  assert.ok(video.includes('onPress={requestExit}'));
  assert.ok(video.includes("Guardar borrador"));
  assert.ok(video.includes("Descartar cambios"));
- assert.ok(video.includes('router.replace("/(tabs)/index")'));
+ assert.ok(video.includes('router.replace("/(tabs)")'));
  assert.ok(video.includes('Si Android borra un archivo temporal'));
 });
 

@@ -110,7 +110,7 @@ test("Shared avatars are circular by default with the Jobeen gold ring in every 
  assert.ok(shared.includes('borderColor:t.yellow'));
  assert.ok(shared.includes('height,width:size'));
  assert.ok(account.includes('<Avatar uri={identity?.avatar'));
- assert.ok(publicAvatar.includes('<Avatar uri={uri}'));
+ assert.ok(publicAvatar.includes('<Avatar uri={batched?personalAvatarUrl(avatarPath):uri}'));
  assert.ok(publicAvatar.includes('shape={shape}'));
  assert.ok(src("src/components/HomePublishedPosts.tsx").includes('<PublicProfileAvatar userId={post.authorId}'));
  assert.ok(src("src/app/(tabs)/inbox.tsx").includes('<AccountAvatar accountId={thread.id}'));

@@ -34,6 +34,7 @@ function Navigation() {
  useEffect(()=>reset(),[pathname,reset]);
  const isBrowserPage=pathname==="/jcard"||pathname==="/search"||pathname==="/notifications"||pathname.startsWith("/post/")||pathname.startsWith("/work-media/")||pathname.startsWith("/jshop/item/")||pathname==="/jshop/favorites";
  return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:shellBackground},headerTintColor:colors.ink,headerTitleStyle:{fontSize:JOBEEN_TYPE.navigationTitle,fontWeight:"600"},contentStyle:{backgroundColor:shellBackground}}}>
+ <Stack.Screen name="index" options={{headerShown:false}}/>
  <Stack.Protected guard={phase==="checking"}>
  <Stack.Screen name="security-loading" options={{headerShown:false}}/>
  </Stack.Protected>
