@@ -1,5 +1,8 @@
 # Jobin — registro central de desarrollo
 
+## BRAND — revisión definitiva (2026-11-24)
+Propietario aprueba retirar únicamente el hexágono del logotipo principal y conservar el icono con hexágono. PR #121: se elimina un único subcontorno SVG del wordmark, se ajusta su viewBox sin deformar letras y se actualizan los recursos claro/oscuro y reglas permanentes. Originales archivados intactos; icono, paleta, componentes JCard y configuración nativa sin cambios. CI previo 45517399244 success; nueva revisión requiere CI e integración/publicación conforme a las autorizaciones. Launcher pendiente del siguiente APK consolidado.
+
 ## AUTH-HISTORIAL — contrato privado de Supabase (2026-11-24)
 
 - Base `development` 0662d4b3 (#117), CI 45480177364 success. Catálogo de JobIn en solo lectura: 12 filas de historial, cero verificadas, clave única `(owner_id, client_id)` y RLS de titular. La tabla complementaria y el RPC de guardado existen únicamente como candidato de repositorio. El catálogo tampoco registra un despliegue de esos objetos.
