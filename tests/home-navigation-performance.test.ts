@@ -142,6 +142,7 @@ test("returning to Home requests the current audience and never displays revoked
  const state:unknown[]=[],refs:{current:unknown}[]=[];
  const focusEffects:(()=>void|(()=>void))[]=[];
  let cursor=0,refCursor=0,requests=0,filterQueries=0;
+ let appStateChanged:(state:string)=>void=()=>{};
  let activeScope:MessageScope={owner:a,session:"A"};
  let request=deferred<FeedPost[]>();
  const jsx=(type:string,props:object)=>({type,props});
@@ -152,6 +153,9 @@ test("returning to Home requests the current audience and never displays revoked
    return [state[i],(value:unknown)=>{state[i]=value;}];
   },useRef:(initial:unknown)=>refs[refCursor++]??(refs[refCursor-1]={current:initial}),useCallback:(fn:unknown)=>fn},
   "react/jsx-runtime":{jsx,jsxs:jsx},
+  "react-native":{AppState:{currentState:"active",addEventListener:(_event:string,listener:typeof appStateChanged)=>{
+   appStateChanged=listener;return {remove(){}};
+  }}},
   "expo-router":{useFocusEffect:(fn:()=>void|(()=>void))=>focusEffects.push(fn)},
   "../state/ThemeProvider":{useTheme:()=>({theme:"light"})},"../theme/jobeen":{jobeenTokens:()=>({})},
   "../lib/message-session":{captureMessageScope:async()=>activeScope,assertMessageScope:async(origin:MessageScope)=>{
@@ -173,6 +177,9 @@ test("returning to Home requests the current audience and never displays revoked
  assert.match(JSON.stringify(render()),/fixture-post/);
  focusEffects[1]();
  assert.equal(filterQueries,0);
+ appStateChanged("background");
+ assert.doesNotMatch(JSON.stringify(render()),/fixture-post/);
+ appStateChanged("active");
  firstFocus?.();
  request=deferred();
  render();

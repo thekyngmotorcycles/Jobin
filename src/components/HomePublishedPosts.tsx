@@ -2,7 +2,7 @@ import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import * as Linking from "expo-linking";
 import {useCallback,useEffect,useRef,useState} from "react";
-import {ActivityIndicator,Pressable,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,AppState,Pressable,Text,TextInput,View} from "react-native";
 import {BottomSheet} from "./social-ui";
 import {PhotoCarousel,PostEngagementRow} from "./PostCard";
 import {PostCaption} from "./PostCaption";
@@ -192,7 +192,16 @@ export function HomePublishedPosts({filter="all",featuredPostId=""}:{filter?:Hom
    }catch(e){if(live())setError(e instanceof Error?e.message:"No se pudieron cargar las publicaciones.");}
    finally{clearTimeout(timeout);if(live())setLoading(false);}
   })();
-  return()=>{active=false;clearTimeout(timeout);revision.current++;setScope(null);setPosts([]);setSavedIds([]);};
+  let wasBackground=AppState.currentState==="background";
+  const app=AppState.addEventListener("change",state=>{
+   if(state==="background"){
+    wasBackground=true;active=false;clearTimeout(timeout);
+    setScope(null);setPosts([]);setSavedIds([]);
+   }else if(state==="active"&&wasBackground){
+    wasBackground=false;setRequest(++refreshRevision.current);
+   }
+  });
+  return()=>{app.remove();active=false;clearTimeout(timeout);revision.current++;setScope(null);setPosts([]);setSavedIds([]);};
  },[request]);
  useFocusEffect(reload);
 
