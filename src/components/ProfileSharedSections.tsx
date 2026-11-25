@@ -9,7 +9,8 @@ import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {JOBEEN_TYPE} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
-import type {BusinessCardData} from "../lib/jcard";
+import type {BusinessCardData,CardData} from "../lib/jcard";
+import {LanguageRing, languageLabel} from "./LanguageRing";
 import {BusinessAwards} from "./JobinCard";
 import {readBusinessExcellence} from "../lib/jcard-cloud";
 import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
@@ -83,6 +84,21 @@ export function ProfileAboutSelector({side,onSelect,personalAvailable=true,busin
  </View>;
 }
 
+export function ProfilePersonalLanguages({languages}:{languages:CardData["languages"]}){
+ const {theme}=useTheme(),jt=jobeenTokens(theme);
+ if(!languages.length)return null;
+ return <View style={{gap:8,padding:14,borderWidth:1,borderColor:jt.line,borderRadius:14,backgroundColor:jt.surface}}>
+  <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.input,fontWeight:"700",color:jt.ink}}>Idiomas</Text>
+  {languages.map(({name,fluency},index)=><View key={name+index} style={{flexDirection:"row",alignItems:"center",gap:8,minHeight:JOBEEN_CONTROL.touchTarget}}>
+   <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <LanguageRing name={name} value={fluency} color={jt.ink} track={jt.line} size={32}/>
+   </View>
+   <Text style={{flex:1,fontSize:JOBEEN_TYPE.input,color:jt.ink}}>{name}</Text>
+   <Text style={{flexShrink:1,textAlign:"right",color:jt.ink2}}>{languageLabel(fluency)} · {Math.round(fluency)}%</Text>
+  </View>)}
+ </View>;
+}
+
 /** Business fields come from the authorized face. Review aggregates load only here. */
 export function ProfileBusinessAbout({business,onEdit,target,scope}:{business?:BusinessCardData|null;onEdit?:()=>void;target?:string;scope?:MessageScope|null}){
  const {theme}=useTheme(),jt=jobeenTokens(theme);
@@ -153,12 +169,12 @@ export function ProfileMediaGrid({items,emptyMessage}:{items:ProfileTile[];empty
 }
 
 /** Hero moves out of view while ProfileSectionTabs remain pinned. */
-export function ProfileIdentityHeader({card,actions,trust,profileUserId,contactsMenuRef,countsInCard=false,expectedScope}:{
- card:ReactNode;actions?:ReactNode;trust?:ReactNode;profileUserId?:string;contactsMenuRef?:Ref<ProfileContactsHandle>;countsInCard?:boolean;expectedScope?:MessageScope|null;
+export function ProfileIdentityHeader({card,actions,trust,profileUserId,contactsMenuRef,countsInCard=false,expectedScope,actionsInset=0}:{
+ card:ReactNode;actions?:ReactNode;trust?:ReactNode;profileUserId?:string;contactsMenuRef?:Ref<ProfileContactsHandle>;countsInCard?:boolean;expectedScope?:MessageScope|null;actionsInset?:number;
 }){
  return <View style={{gap:14}}>
   {countsInCard&&profileUserId?<ProfileFollowCounts userId={profileUserId} contactsMenuRef={contactsMenuRef} expectedScope={expectedScope} countsInCard>{card}</ProfileFollowCounts>:<>{card}{!!profileUserId&&<ProfileFollowCounts userId={profileUserId} contactsMenuRef={contactsMenuRef}/>}</>}
-  {actions}
+  {actions&&actionsInset>0?<View style={{width:"100%",maxWidth:1180,alignSelf:"center",paddingHorizontal:actionsInset}}>{actions}</View>:actions}
   {trust}
  </View>;
 }

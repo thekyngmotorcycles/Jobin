@@ -91,7 +91,7 @@ function ScopedJCardSharedCover({target,scope,editable=false,height}:SharedCover
  return <>
   <View style={{height,backgroundColor:t.line,overflow:"hidden"}}>
    {!!current?.url&&<Image key={current.url} source={{uri:current.url}} resizeMode="cover" style={{width:"100%",height:"100%"}}/>}
-   {owner&&<Pressable accessibilityRole="button" accessibilityLabel="Editar portada compartida" onPress={()=>{setOpen(true);setDraft(null);}} style={{position:"absolute",right:4,top:4,width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
+   {owner&&<Pressable accessibilityRole="button" accessibilityLabel="Editar portada compartida" onPress={()=>{setOpen(true);setDraft(null);}} style={{position:"absolute",left:4,top:4,width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
     <View style={{width:34,height:34,borderRadius:17,backgroundColor:t.surface,alignItems:"center",justifyContent:"center"}}><Ionicons name="camera-outline" size={19} color={t.ink}/></View>
    </Pressable>}
   </View>

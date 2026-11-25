@@ -37,14 +37,14 @@ test("Business card groups contacts between heading and non-overlapping medals w
 });
 test("Personal contact button is raised clear of language badges without resizing the card",()=>{
  assert.ok(business.includes('marginBottom:theme==="light"?12:0,transform:[{translateY:theme==="light"?-6:0}]'));
- assert.ok(business.includes('const {height:cardHeight}=jcardSurfaceSize('));
+ assert.ok(business.includes('const surface=jcardSurfaceSize('));
 });
 test("Conversation uses exactly one screen header for the recipient",()=>{
  assert.ok(routes.includes('<Stack.Screen name="message" options={{headerShown:false}}/>'));
  assert.ok(message.includes('{name||"Mensaje"}'));
  assert.ok(message.includes('accessibilityLabel="Volver"'));
 });
-test("Public profile has the lowered header and only three bottom actions",()=>{
+test("Public profile has the overlay header and only three bottom actions",()=>{
  assert.ok(profile.includes('top:insets.top,left:0,right:0,zIndex:10,height:NAVIGATION_ROW_HEIGHT'));
  assert.ok(profile.includes('accessibilityLabel="Opciones del perfil"'));
  assert.ok(profile.includes('menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}'));

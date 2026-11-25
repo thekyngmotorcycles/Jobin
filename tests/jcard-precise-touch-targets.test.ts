@@ -11,8 +11,10 @@ function between(source:string,from:string,to:string){
  return source.slice(a,b+to.length);
 }
 
-test("Business location pressable matches icon and text, never stretching to the card edge",()=>{
- const section=between(card(),'!!b?.location&&<Pressable','</Pressable>');
+test("Standalone business location pressable matches icon and text, never stretching to the card edge",()=>{
+ const source=card();
+ const legacyLocation=source.lastIndexOf('!!b?.location&&<Pressable');
+ const section=between(source.slice(legacyLocation),'!!b?.location&&<Pressable','</Pressable>');
  assert.ok(section.includes('alignSelf:"flex-start"'));
  assert.ok(section.includes('maxWidth:"100%"'));
  assert.ok(section.includes('minHeight:44'));
@@ -26,7 +28,7 @@ test("Business location pressable matches icon and text, never stretching to the
 test("Business email, phones, WhatsApp and sharing have precise independent touch actions",()=>{
  const source=card();
  const email=between(source,'<Pressable key={"business-email"+i}','</Pressable>');
- const phoneRow=between(source,'visibility.business_show_phone&&','</View>}');
+ const phoneRow=between(source.slice(source.indexOf('key={"business-email"+i}')),'visibility.business_show_phone&&','</View>}');
  assert.ok(email.includes('alignSelf:"flex-start"'));
  assert.ok(email.includes('minHeight:44'));
  assert.ok(phoneRow.includes('accessibilityLabel="Llamar al teléfono principal del negocio"'));
@@ -57,7 +59,7 @@ test("Personal JCard languages, links and identity badges avoid swallowing empty
  assert.ok(lightLanguages.includes('style={{alignSelf:"center",maxWidth:"100%",minHeight:44'));
  assert.ok(!lightLanguages.includes('style={{flex:1,minWidth:0,minHeight:44'));
  assert.ok(source.includes('accessibilityLabel={"Ver empresa "+employerLink.name}'));
- assert.ok(source.includes('style={{alignSelf:"flex-start",maxWidth:"100%"}}'));
+ assert.ok(source.includes('alignSelf:profilePortrait?"center":"flex-start",maxWidth:"100%"'));
  assert.ok(source.includes('hitSlop={{top:6,bottom:6,right:6,left:0}}'));
  assert.ok(!source.includes('accessibilityLabel="Ampliar código QR personal"'));
  assert.ok(source.includes('onPress={()=>void share(back?"business":"personal")}'));

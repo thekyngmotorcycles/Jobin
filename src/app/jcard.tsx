@@ -8,9 +8,10 @@ import {useTabClearance} from "../theme/navigation";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
 import {Ionicons} from "@expo/vector-icons";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {NAVIGATION_ROW_HEIGHT} from "../theme/navigation";
 import {jobeenTokens} from "../theme/jobeen";
-import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,type ProfileSection,type ProfileAboutSide} from "../components/ProfileSharedSections";
+import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,ProfilePersonalLanguages,type ProfileSection,type ProfileAboutSide} from "../components/ProfileSharedSections";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfilePublicPosts} from "../components/ProfileOwnedPosts";
 import {router,Stack,useFocusEffect} from "expo-router";
@@ -195,7 +196,7 @@ export default function PublicJCard(){
  return <>
   <Stack.Screen options={{headerShown:false}}/>
   <SafeAreaView edges={["top","left","right"]} style={[s.screen,{backgroundColor:jt.bg}]}>
-   <Animated.View pointerEvents={tabsPinned?"none":"auto"}
+   <Animated.View pointerEvents={tabsPinned?"none":"box-none"}
     style={{position:"absolute",top:insets.top,left:0,right:0,zIndex:10,height:NAVIGATION_ROW_HEIGHT,
      flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:16,paddingVertical:8,
      transform:[{translateY:topHeaderOffset}],opacity:topHeaderOpacity}}>
@@ -216,19 +217,19 @@ export default function PublicJCard(){
      </Svg>
     </View>
     <Pressable accessibilityRole="button" accessibilityLabel="Volver" onPress={()=>router.back()}
-     style={{width:44,height:44,alignItems:"center",justifyContent:"center",opacity:.62}}>
+     style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center",opacity:.62}}>
      <Ionicons name="arrow-back" size={26} color={colors.ink}/>
     </Pressable>
-    <View style={{flex:1}}/>
+    <View pointerEvents="none" style={{flex:1}}/>
     {!!resource.data&&<Pressable accessibilityRole="button" accessibilityLabel="Opciones del perfil"
-     onPress={()=>setProfileMenuOpen(true)} style={{width:44,height:44,alignItems:"center",justifyContent:"center",borderRadius:22}}>
+     onPress={()=>setProfileMenuOpen(true)} style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center",borderRadius:22}}>
      <Ionicons name="ellipsis-horizontal" size={23} color={colors.ink}/>
     </Pressable>}
    </Animated.View>
    <Animated.ScrollView ref={profileScroll} stickyHeaderIndices={resource.data?[1]:undefined}
     scrollEventThrottle={16} showsVerticalScrollIndicator={false}
     style={{flex:1}} overScrollMode="never" bounces={false} alwaysBounceVertical={false}
-    contentContainerStyle={{paddingTop:NAVIGATION_ROW_HEIGHT+12,paddingBottom:contentBottom,width:"100%",maxWidth:1180,alignSelf:"center"}}
+    contentInsetAdjustmentBehavior="never" contentContainerStyle={{paddingBottom:contentBottom}}
     onScroll={Animated.event([{nativeEvent:{contentOffset:{y:profileScrollY}}}],{
      useNativeDriver:true,
      listener:(event:NativeSyntheticEvent<NativeScrollEvent>)=>{
@@ -236,25 +237,26 @@ export default function PublicJCard(){
       setTabsPinned(previous=>previous===pinned?previous:pinned);
      }
     })}>
-   <Animated.View style={{gap:14,paddingHorizontal:20,paddingBottom:20,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
+   <Animated.View style={{paddingBottom:12,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
     {resource.data?<ProfileIdentityHeader
-     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={publicBusiness&&(card==="business"||!cardVisibility.personal_enabled)?"business":"personal"} onActiveSideChange={setActiveCardSide} awardsInAbout publicVisibility={cardVisibility} publicScope={snapshot?.scope}/>}
-     actions={<ProfileCommunityActions user={resource.data.id} name={cardVisibility.personal_enabled?resource.data.name:publicBusiness?.name??""} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
+     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={publicBusiness&&(card==="business"||!cardVisibility.personal_enabled)?"business":"personal"} onActiveSideChange={setActiveCardSide} awardsInAbout profileInset={20} publicVisibility={cardVisibility} publicScope={snapshot?.scope}/>}
+     actionsInset={20} actions={<ProfileCommunityActions user={resource.data.id} name={cardVisibility.personal_enabled?resource.data.name:publicBusiness?.name??""} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
       onToggleSaved={savedReady&&cardVisibilityReady&&sideIsPublic?()=>void toggleSaved():undefined}
       savedJCard={cardSaved} savingJCard={savingCard} visibleCardSide={activeCardSide}/>}
-     trust={<ProfessionalTrustMark worker={resource.data.id}/>}
+     trust={<ProfessionalTrustMark worker={resource.data.id} inset={20}/>}
      profileUserId={resource.data.id} countsInCard expectedScope={publicScope}
-    />:<JCardLoadState loading={resource.loading} error={resource.error} retry={resource.reload}/>}
+    />:<JCardLoadState loading={resource.loading} error={resource.error} retry={resource.reload} profileInset={20}/>}
    </Animated.View>
    {!!resource.data&&<View onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}
-    style={{zIndex:3,backgroundColor:jt.bg,borderTopLeftRadius:18,borderTopRightRadius:18}}>
+    style={{zIndex:3,backgroundColor:jt.bg,borderTopLeftRadius:18,borderTopRightRadius:18,width:"100%",maxWidth:1180,alignSelf:"center"}}>
     <ProfileSectionTabs section={section} onSelect={selectSection} pinned={tabsPinned}/>
    </View>}
-   {!!resource.data&&<View style={{gap:14,paddingHorizontal:20,paddingTop:20,paddingBottom:20,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
+   {!!resource.data&&<View style={{width:"100%",maxWidth:1180,alignSelf:"center",gap:14,paddingHorizontal:20,paddingTop:20,paddingBottom:20,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
 
     {section==="cv"&&<ProfileAboutSelector side={aboutSide} onSelect={setAboutPreference} personalAvailable={cardVisibility.personal_enabled} businessAvailable={!!publicBusiness}/>}
     {section==="cv"&&aboutSide==="business"&&cardVisibility.business_enabled&&publicBusiness&&<ProfileBusinessAbout business={publicBusiness} target={resource.data.id} scope={publicScope}/>}
     {section==="cv"&&aboutSide==="personal"&&cardVisibility.personal_enabled&&<View style={{marginVertical:4,gap:10}}>
+      <ProfilePersonalLanguages languages={resource.data.languages}/>
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,minHeight:48,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
        <Text style={{fontWeight:"700",color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text>
       </Pressable>

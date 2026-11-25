@@ -1,5 +1,11 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-FRONT — frente del perfil aprobado (2026-11-25)
+
+- Rama `feature/profile-front-layout` sobre `development` en `23a14071`, con PR #130 integrado. Portada a todo el ancho bajo el área segura, con la altura responsiva anterior y los controles superiores superpuestos. Las dos caras comparten altura medida, centran la identidad respecto al ancho completo y mantienen el 25% de solape de los retratos. El esqueleto acompaña la nueva geometría.
+- Personal conserva seguidores y contactos y traslada idiomas a Acerca de > Personal. Negocio ordena reseñas y contactos empresariales y utiliza la lista de servicios existente en Acerca de > Negocio. Las acciones de perfil, giros, gestos y pestañas se conservan. El alcance es de presentación JS y reglas visuales.
+- Verificación local con TypeScript, lint sin errores, 507 pruebas y exportación JavaScript de Android, iOS y web. La cobertura incluye geometría a 320, 360, 414 y 768 dp, escalado de texto, carga, orden de datos y navegación propia/visitante. La revisión física en Jelly 2 queda pendiente.
+
 ## JCARD-COMPACT — validación HTTP de lectura revocable en Security Pilot (2026-11-25)
 
 - PR #130, SHA probado `343e67cc`, CI [45703582020](https://github.com/thekyngmotorcycles/Jobin/actions/runs/45703582020) aprobado. Ensayo dirigido contra `jcard-cover-read` v1 y migración `20261125212059`, con cuentas sintéticas SEC06 A/B/C. Salida 0, 14 solicitudes Edge y 13 comprobaciones de descarga/firma en Storage. Se repitió el mismo POST, con la misma sesión y el mismo cuerpo, sin cambiar la URL ni añadir un parámetro para evitar la caché.

@@ -11,7 +11,7 @@ test("Skeleton and real JCard share identical responsive sizing calculations",()
  assert.ok(theme.includes("lightHeight:330, darkHeight:400"));
  assert.ok(theme.includes("compactThreshold:350"));
  assert.ok(real.includes("jcardSurfaceSize({screenWidth:width,measuredWidth:measuredCardWidth,fontScale"));
- assert.ok(skeleton.includes("jcardSurfaceSize({screenWidth,measuredWidth,fontScale,theme,profile:{}})"));
+ assert.ok(skeleton.includes("jcardSurfaceSize({screenWidth,measuredWidth,fontScale,theme,profile:true,horizontalInset:profileInset})"));
  assert.ok(real.includes("setMeasuredCardWidth("));
  assert.ok(skeleton.includes("setMeasuredWidth("));
  assert.ok(real.includes("jcardSurfaceMetrics.maxWidth"));
@@ -20,16 +20,16 @@ test("Skeleton and real JCard share identical responsive sizing calculations",()
  assert.ok(skeleton.includes('accessibilityLabel="Cargando JCard"'));
 });
 
-test("Skeleton mirrors the frameless portrait and chip/language layout with the hexagonal gears loader",()=>{
+test("Skeleton mirrors the frameless portrait and centered summary with the hexagonal gears loader",()=>{
  const skeleton=source("src/components/JCardLoadingSkeleton.tsx");
  const gears=source("src/components/JobinLoadingGears.tsx");
- assert.ok(skeleton.includes("<JobinLoadingGears size={35} mode=\"loading\"/>"));
+ assert.ok(skeleton.includes("<JobinLoadingGears size={30} mode=\"loading\"/>"));
  assert.ok(skeleton.includes("height:portrait.height,borderRadius:portrait.radius"));
  assert.ok(!skeleton.includes("borderRadius:44,borderWidth:3"));
  assert.ok(!skeleton.includes(">JCard</Text>"));
- assert.ok(skeleton.includes("minHeight:80"));
- assert.ok(skeleton.includes("height:35,borderRadius:18"));
- assert.ok(skeleton.includes("minHeight:43"));
+ assert.ok(skeleton.includes("style={titleSpace}"));
+ assert.ok(skeleton.includes('justifyContent:"space-evenly"'));
+ assert.ok(!skeleton.includes("Idiomas"));
  assert.ok(gears.includes('mode="loading"'));
  assert.ok(gears.includes("useReducedMotion()"));
  assert.ok(gears.includes('if(mode!=="loading"||reducedMotion)return;'));
@@ -81,34 +81,75 @@ test("Profile portraits use a common exact quarter overlap and fixed non-rotatin
  assert.ok(card.includes("<JCardSharedCover target={ownerId}")&&!card.includes("source={{uri:card.business.bannerUrl}}"));
  assert.ok(flip.includes("height:totalHeight")&&flip.includes("marginTop:topInset,shadowColor"));
  assert.ok(flip.includes("{frontPortrait}")&&flip.includes("{backPortrait}"));
- assert.ok(skeleton.includes("top:portrait.coverHeight-portrait.overlap"));
+ assert.ok(skeleton.includes("top:-portrait.overlap"));
 });
 
 
-test("Compact profile geometry has a shared baseline, grows for real content, and does not resize legacy previews",async()=>{
+test("Profile faces share a compact floor, grow with type, and fit the widest rendered face",async()=>{
  const {jcardSurfaceSize,jcardProfileBodyHeight}=await import("../src/theme/jcard.ts");
  for(const width of [250,288,310,390,520]){
   for(const theme of ["light","dark"] as const){
    const base={screenWidth:width+32,measuredWidth:width,fontScale:1,theme};
-   const skeleton=jcardSurfaceSize({...base,profile:{}});
-   assert.equal(skeleton.height,jcardProfileBodyHeight(width,theme,1));
-   assert.equal(skeleton.height,width<350?328:320);
-   const ordinary={personal:{languageCount:2,secondarySealCount:0,saveContact:false,employerLink:false}};
-   const visitor={personal:{...ordinary.personal,saveContact:true,employerLink:true}};
-   const dense={personal:{languageCount:8,secondarySealCount:6,saveContact:true,employerLink:true},business:{contactRows:4,services:true,saveContact:true}};
-   assert.ok(jcardSurfaceSize({...base,profile:ordinary}).height>=skeleton.height);
-   assert.ok(jcardSurfaceSize({...base,profile:visitor}).height>jcardSurfaceSize({...base,profile:ordinary}).height);
-   assert.ok(jcardSurfaceSize({...base,profile:dense}).height>=jcardSurfaceSize({...base,profile:visitor}).height);
-   assert.ok(jcardSurfaceSize({...base,fontScale:1.5,profile:dense}).height>jcardSurfaceSize({...base,profile:dense}).height);
+   const skeleton=jcardSurfaceSize({...base,profile:true});
+   assert.equal(skeleton.height,jcardProfileBodyHeight(width,1));
+   assert.ok(skeleton.height<(width<350?328:320));
+   assert.ok(jcardSurfaceSize({...base,profile:true,fontScale:1.5}).height>skeleton.height);
    assert.equal(jcardSurfaceSize(base).height,(theme==="light"?330:400)+(width<350?8:0));
   }
  }
  const card=source("src/components/JobinCard.tsx");
- assert.ok(card.includes("profile:profileSizing"));
+ assert.match(card,/Math\.max\(surface.height,showPersonal\?personalHeight:0,showBusiness\?businessHeight:0\)/);
  assert.match(card,/<BusinessCard3D\s+height=\{cardHeight\}/);
  assert.match(card,/back=\{<View\s+style=\{\{height:cardHeight\}\}>/);
- assert.ok(card.includes("secondarySealCount:secondaryCardSeals(card).length"));
- assert.ok(card.includes("visibility.business_show_email?")&&card.includes("visibility.business_show_phone&&"));
- assert.ok(card.includes("minHeight:profilePortrait?44:28"));
- assert.ok(card.includes("height:undefined,minHeight:66,flexShrink:0"));
+ assert.ok(card.includes("onProfileLayout={measurePersonal}")&&card.includes("onProfileLayout={measureBusiness}"));
+});
+
+test("Full-width banner preserves previous heights on own and visitor profiles", async()=>{
+ const {jcardSurfaceSize,jcardProfilePortraitMetrics}=await import("../src/theme/jcard.ts");
+ for(const [screenWidth,ownHeight,publicHeight] of [[320,86,84],[360,98,96],[414,115,112],[768,148,148]]){
+  for(const [horizontalInset,height] of [[16,ownHeight],[20,publicHeight]]){
+   const size=jcardSurfaceSize({screenWidth,fontScale:1,theme:"light",profile:true,horizontalInset});
+   assert.equal(jcardProfilePortraitMetrics(size.width).coverHeight,height);
+  }
+ }
+ const card=source("src/components/JobinCard.tsx");
+ assert.ok(card.includes('width:"100%",height:profilePortrait.coverHeight,marginBottom:-profilePortrait.overlap'));
+ const owner=source("src/app/(tabs)/profile.tsx"),visitor=source("src/app/jcard.tsx");
+ for(const [screen,inset] of [[owner,16],[visitor,20]] as const){
+  assert.ok(screen.includes('contentInsetAdjustmentBehavior="never"'));
+  assert.ok(!screen.includes('paddingTop:NAVIGATION_ROW_HEIGHT+12'));
+  assert.ok(screen.includes(`profileInset={${inset}}`));
+ }
+});
+
+test("Both centered name areas clear the portrait with wide or vertically offset placement",async()=>{
+ const {jcardProfilePortraitMetrics,jcardProfileIdentitySpace}=await import("../src/theme/jcard.ts");
+ for(const width of [250,280,288,328,390,520]){
+  const portrait=jcardProfilePortraitMetrics(width);
+  for(const nameLength of [8,18,42]){
+   for(const fontScale of [1,1.3,2]){
+    const name=jcardProfileIdentitySpace(portrait,nameLength,17,fontScale);
+    const gutter=portrait.inset+portrait.width;
+    const clearance=portrait.height-portrait.overlap;
+    assert.ok(name.paddingHorizontal>gutter||name.paddingTop>clearance);
+    assert.ok(name.paddingHorizontal*2<width);
+    assert.ok(name.minHeight>=clearance);
+   }
+  }
+ }
+});
+
+test("Profile faces show personal counts only and present languages and services in About",()=>{
+ const card=source("src/components/JobinCard.tsx");
+ const personal=card.slice(card.indexOf("{profilePortrait&&identitySpace?"),card.indexOf("export function BusinessFace"));
+ const business=card.slice(card.indexOf("export function BusinessFace"),card.indexOf("export function JobinCard"));
+ assert.ok(personal.includes("<ProfileConnectionCountRow"));
+ assert.ok(!business.includes("<ProfileConnectionCountRow"));
+ assert.match(business,/profilePortrait&&identitySpace\?[\s\S]*?profileName[\s\S]*?profileCategory[\s\S]*?reseñas[\s\S]*?\{contactRows\}/);
+ assert.ok(card.includes('resizeMode="contain"'));
+ for(const path of ["src/app/(tabs)/profile.tsx","src/app/jcard.tsx"]){
+  const app=source(path);
+  assert.ok(app.includes("<ProfilePersonalLanguages languages={"));
+  assert.ok(app.includes("<ProfileBusinessAbout business={"));
+ }
 });

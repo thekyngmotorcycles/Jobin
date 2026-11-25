@@ -1,6 +1,7 @@
 import { composite,opacity,contrastRatio,secondaryText } from "./color.ts";
 import type { ThemeName } from "../state/ThemeProvider";
 import type { JCardTier } from "../lib/jcard";
+import { JOBEEN_CONTROL } from "./control-metrics.ts";
 
 /** JCard-specific tokens. Existing global theme palettes remain unchanged. */
 const silver = {
@@ -28,51 +29,38 @@ export const jcardSurfaceMetrics={
  lightHeight:330, darkHeight:400, compactHeightExtra:8,
  maxFontScale:1.3, fontScaleExtra:40, radius:30,
 } as const;
-export type JCardProfileContent={
- personal?:{languageCount:number;secondarySealCount:number;saveContact:boolean;employerLink:boolean};
- business?:{contactRows:number;services:boolean;saveContact:boolean};
-};
-/** Common baseline for both rotating faces; reserve more only for content actually rendered.
- * The skeleton uses the same baseline when no content has arrived. Legacy previews are unchanged.
- */
-export function jcardProfileBodyHeight(width:number,theme:ThemeName,fontScale:number,content:JCardProfileContent={}){
- const compact=width<jcardSurfaceMetrics.compactThreshold;
- const baseline=320+(compact?8:0);
- const scale=Math.max(1,Math.min(2,Number.isFinite(fontScale)?fontScale:1));
- const p=content.personal,b=content.business;
- let personal=0,business=0;
- if(p){
-  const diameter=Math.max(p.languageCount,Math.min(p.secondarySealCount,5))>12?24:
-   Math.max(p.languageCount,Math.min(p.secondarySealCount,5))>8?29:
-   Math.max(p.languageCount,Math.min(p.secondarySealCount,5))>4?32:36;
-  const columns=Math.max(1,Math.floor((width-40)/(diameter+8)));
-  const languageRows=Math.max(1,Math.ceil(p.languageCount/columns));
-  const sealRows=Math.max(1,Math.ceil(Math.min(p.secondarySealCount,5)/columns));
-  const footer=theme==="light"?66:Math.max(66,25+languageRows*(diameter+8))+
-   (p.secondarySealCount>0?Math.max(70,32+sealRows*(diameter+8))+(p.secondarySealCount>5?22:0):0);
-  personal=28+104+48+44+footer+20+(p.saveContact?44:0)+(p.employerLink?44:0);
- }
- if(b){
-  const rows=Math.max(0,Math.min(4,b.contactRows));
-  business=34+88+48+18+(b.services?30:0)+rows*49+(b.saveContact?44:0);
- }
- // Extra text space grows with the user's font preference without shrinking touch targets.
- return Math.max(baseline,personal,business)+Math.round((scale-1)*100);
+// Shared floor for the loading card and both live faces. Wrapped live content
+// can increase the common height without changing either face's footprint.
+export function jcardProfileBodyHeight(width:number,fontScale:number){
+ const scale=Math.max(1,Number.isFinite(fontScale)?fontScale:1);
+ return (width<jcardSurfaceMetrics.compactThreshold?226:220)+Math.round((scale-1)*84);
 }
-export function jcardSurfaceSize(args:{screenWidth:number;measuredWidth?:number;fontScale:number;theme:ThemeName;profile?:JCardProfileContent}){
+export function jcardSurfaceSize(args:{screenWidth:number;measuredWidth?:number;fontScale:number;theme:ThemeName;profile?:boolean;horizontalInset?:number}){
  const m=jcardSurfaceMetrics;
- const width=args.measuredWidth&&args.measuredWidth>0?args.measuredWidth:Math.min(Math.max(args.screenWidth-m.horizontalScreenInset,0),m.maxWidth);
+ const inset=args.horizontalInset===undefined?m.horizontalScreenInset:args.horizontalInset*2;
+ const width=args.measuredWidth&&args.measuredWidth>0?args.measuredWidth:Math.min(Math.max(args.screenWidth-inset,0),m.maxWidth);
  const compact=width<m.compactThreshold;
- const height=args.profile?jcardProfileBodyHeight(width,args.theme,args.fontScale,args.profile):(args.theme==="light"?m.lightHeight:m.darkHeight)+(compact?m.compactHeightExtra:0)+
+ const height=args.profile?jcardProfileBodyHeight(width,args.fontScale):(args.theme==="light"?m.lightHeight:m.darkHeight)+(compact?m.compactHeightExtra:0)+
   Math.round(Math.max(0,Math.min(args.fontScale,m.maxFontScale)-1)*m.fontScaleExtra);
  return {width,height,compact,radius:m.radius};
 }
 export function jcardProfilePortraitMetrics(cardWidth:number){
  const width=Math.max(60,Math.min(86,Math.round(cardWidth*.24)));
  const height=Math.round(width*1.1);
- return {width,height,overlap:height/4,inset:14,radius:14,coverHeight:Math.max(82,Math.min(148,Math.round(cardWidth*.30)))};
+ return {width,height,overlap:height/4,inset:14,radius:14,cardWidth,coverHeight:Math.max(82,Math.min(148,Math.round(cardWidth*.30)))};
 }
 export type JCardProfilePortraitMetrics=ReturnType<typeof jcardProfilePortraitMetrics>;
+export function jcardProfileIdentitySpace(portrait:JCardProfilePortraitMetrics,nameLength:number,fontSize:number,fontScale:number){
+ const clearance=portrait.height-portrait.overlap;
+ const gutter=portrait.inset+portrait.width+6;
+ const available=portrait.cardWidth-2*gutter;
+ const besidePortrait=available>=104&&Math.max(12,nameLength)*fontSize*Math.max(1,fontScale)*0.55<=(available-24)*2;
+ return {
+  paddingTop:Math.ceil(besidePortrait?Math.max(6,clearance-JOBEEN_CONTROL.touchTarget):clearance+6),
+  paddingHorizontal:besidePortrait?gutter:12,
+  minHeight:Math.max(JOBEEN_CONTROL.touchTarget,Math.ceil(clearance)),
+ };
+}
 export const proficiencyColors = {low:'#d84b54',middle:'#e4af42',high:'#219765'};
 export const businessCardAccents = {name:"#151B24",category:"#465B6C",contact:"#354553",icon:"#416477"};
 export const businessCardPaper = { background:"#ffffff", ink:"#111111", secondary:"#5d6165", border:"#dedede", muted:"#f5f5f5", outerBorder:"#e5e5e5" }; 
