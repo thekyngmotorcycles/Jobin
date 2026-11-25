@@ -266,4 +266,55 @@ select pg_temp.cv_assert(not exists(select 1 from public.jobeen_employment_priva
 select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
 select pg_temp.cv_assert((select contact='updated synthetic contact' from public.jobeen_employment_private_contact where client_id='a-own'),'A contact survived B deletion');
 select pg_temp.cv_assert((select count(*)=2 from public.jcard_employment_history),'A history survived B deletion');
+reset role;
+-- Recreate the audited legacy pattern with synthetic records only.
+insert into public.jcard_employment_history(owner_id,client_id,company,role,from_year,from_month,updated_at)
+select u.id,'legacy-'||n,'Shared fixture','Fixture trade',2020,1,'2026-11-15 00:00:00+00'
+from auth.users u cross join generate_series(1,4) n
+where u.id in ('a1111111-1111-4111-8111-111111111111','b2222222-2222-4222-8222-222222222222','c3333333-3333-4333-8333-333333333333');
+insert into public.jobeen_employment_private_contact(owner_id,client_id,address,contact)
+values ('a1111111-1111-4111-8111-111111111111','legacy-1','fixture address','fixture contact');
+insert into public.jcard_employment_history(owner_id,client_id,company,role,from_year,from_month,updated_at)
+values ('a1111111-1111-4111-8111-111111111111','unique-history','Unique fixture','Fixture trade',2020,1,'2026-11-15 00:00:00+00');
+-- Match the hosted CV implementation before applying the targeted incident candidate.
+create or replace function public.read_approved_employment(p_owner uuid)
+returns table(company text,role text,professions text[],from_year integer,from_month integer,to_year integer,to_month integer)
+language sql stable security definer set search_path='' as $cv$
+ select h.company,h.role,h.professions,h.from_year,h.from_month,h.to_year,h.to_month
+ from public.jcard_employment_history h
+ where h.owner_id=p_owner and (p_owner=(select auth.uid()) or exists(
+ select 1 from public.employment_access_requests a where a.owner_id=p_owner and a.requester_id=(select auth.uid()) and a.status='approved'))
+ and (select auth.uid()) is not null
+$cv$;
+
+-- The same persisted copies were visible in A and B despite the owner predicate.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+select pg_temp.cv_assert((select count(*)=4 from public.jcard_employment_history where client_id like 'legacy-%'),'legacy copies visible in A before containment');
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.cv_assert((select count(*)=4 from public.jcard_employment_history where client_id like 'legacy-%'),'same copies visible in B before containment');
+reset role;
+\ir ../supabase/security-review/employment-legacy-ownership-hold.sql
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+select pg_temp.cv_assert(not exists(select 1 from public.jcard_employment_history where client_id like 'legacy-%'),'legacy copies contained for A');
+select pg_temp.cv_assert(not exists(select 1 from public.jobeen_employment_private_contact where client_id='legacy-1'),'linked contact contained');
+select pg_temp.cv_assert(exists(select 1 from public.jcard_employment_history where client_id='unique-history'),'unique history still visible');
+select pg_temp.cv_assert(public.jobeen_own_employment_review_pending(),'A sees own pending review');
+select pg_temp.cv_assert(not exists(select 1 from public.read_approved_employment(auth.uid()) where company='Shared fixture'),'owner CV cannot bypass containment');
+select set_config('request.jwt.claim.sub','b2222222-2222-4222-8222-222222222222',true);
+select pg_temp.cv_assert(not exists(select 1 from public.jcard_employment_history where client_id like 'legacy-%'),'legacy copies contained for B');
+select pg_temp.cv_assert(not exists(select 1 from public.read_approved_employment('a1111111-1111-4111-8111-111111111111') where company='Shared fixture'),'approved CV cannot bypass containment');
+select pg_temp.cv_assert(exists(select 1 from public.read_approved_employment('a1111111-1111-4111-8111-111111111111') where company='Unique fixture'),'approved CV still includes known history');
+select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+with removed as (delete from public.jcard_employment_history where client_id='legacy-1' returning id)
+select pg_temp.cv_assert(not exists(select 1 from removed),'held history cannot be deleted from owner client');
+select public.jobeen_save_private_employment(auth.uid(),'new-history','New fixture','Fixture trade','{}',2020,1,2021,12,'fixture','fixture');
+select pg_temp.cv_assert(exists(select 1 from public.jcard_employment_history where client_id='new-history'),'A still writes and reads legitimate new history');
+select set_config('request.jwt.claim.sub','',true);
+select pg_temp.cv_assert(not public.jobeen_own_employment_review_pending(),'missing identity never sees review status');
+reset role;
+select pg_temp.cv_assert((select count(*)=12 from public.jcard_employment_history where ownership_review_pending),'all 12 selected rows preserved');
+select pg_temp.cv_assert(not has_column_privilege('authenticated','public.jcard_employment_history','ownership_review_pending','UPDATE'),'client cannot unquarantine');
+select pg_temp.cv_assert(not has_function_privilege('anon','public.jobeen_own_employment_review_pending()','EXECUTE'),'review status requires authentication');
 rollback;

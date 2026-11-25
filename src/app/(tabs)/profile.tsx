@@ -189,6 +189,7 @@ export default function Profile() {
   const [historyState,setHistoryState]=useState<({owner:string;session:string}&Awaited<ReturnType<typeof loadCloudHistory>>)|null>(null);
   const ownHistory=historyState&&historyState.owner===ownerId&&historyState.session===workspaceSession?historyState:null;
   const history=ownHistory?.rows??[];
+  const experienceKnown=ownHistory&&!ownHistory.reviewPending;
   const historyEditable=ownHistory?.contactsAvailable===true;
   const retryHistory=()=>setHistoryRetry(v=>v+1);
   useFocusEffect(useCallback(()=>{
@@ -343,18 +344,18 @@ export default function Profile() {
   const seals: JCardSeal[] = workspace.data?.card.seals.map(seal=>{
     const key=professionKey(seal.profession);
     const matchingHistory=history.filter(entry=>(entry.professions?.length?entry.professions:[entry.role]).some(value=>professionKey(value)===key));
-    const months=ownHistory?employmentMonths(matchingHistory):undefined;
+    const months=experienceKnown?employmentMonths(matchingHistory):undefined;
     return {...seal,months};
   })??[];
   const uniqueSeals=seals.filter((seal,index)=>seals.findIndex(other=>professionKey(other.profession)===professionKey(seal.profession))===index);
   const primaryProfessionKey=workspace.data?.professions.find(p=>p.primary_profession)?.profession_code??professionKey(workspace.data?.card.role??"");
   const primaryEntries=history.filter(entry=>(entry.professions?.length?entry.professions:[entry.role]).some(value=>professionKey(value)===primaryProfessionKey));
-  const primaryExperienceMonths=ownHistory?employmentMonths(primaryEntries):undefined;
+  const primaryExperienceMonths=experienceKnown?employmentMonths(primaryEntries):undefined;
   const secondaryProfessions=(workspace.data?.professions??[]).filter(profession=>!profession.primary_profession).map(profession=>{
     const catalog=catalogProfessions.find(item=>item.code===profession.profession_code);
     const matchingHistory=history.filter(entry=>(entry.professions?.length?entry.professions:[entry.role]).some(value=>professionKey(value)===profession.profession_code));
     const matchedSeal=uniqueSeals.find(seal=>professionKey(seal.profession)===profession.profession_code);
-    return {code:profession.profession_code,name:profession.label,icon:(matchedSeal?.icon??catalog?.icon??"briefcase-outline") as JCardSeal["icon"],months:ownHistory?employmentMonths(matchingHistory):undefined,verified:matchedSeal?.verified??false};
+    return {code:profession.profession_code,name:profession.label,icon:(matchedSeal?.icon??catalog?.icon??"briefcase-outline") as JCardSeal["icon"],months:experienceKnown?employmentMonths(matchingHistory):undefined,verified:matchedSeal?.verified??false};
   });
 
   return (
@@ -450,10 +451,11 @@ export default function Profile() {
         {mode === "cv" && (
           <View style={{ gap: 14 }}>
             <Text style={s.h2}>Historial profesional</Text>
-            {ownHistory&&<Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}.</Text>}
+            {experienceKnown&&<Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}.</Text>}
             {ownerId&&!ownHistory&&!historyError&&<PageState kind="loading" message="Cargando historial profesional…"/>}
             {ownHistory&&!historyEditable&&<PageState kind="error" message="Los contactos privados y la edición del historial no están disponibles." actionLabel="Reintentar" onAction={retryHistory}/>}
-            {ownHistory&&history.length===0&&<Text style={s.muted}>Todavía no agregaste empleos.</Text>}
+            {ownHistory?.reviewPending&&<PageState kind="info" message="Parte de tu historial está en revisión de titularidad."/>}
+            {experienceKnown&&history.length===0&&<Text style={s.muted}>Todavía no agregaste empleos.</Text>}
             {history.map(entry => (
               <View key={entry.id} style={[s.panel, { flexDirection: "row", gap: 12, alignItems: "center" }]}>
                 <View style={{ flex: 1, gap: 4 }}>

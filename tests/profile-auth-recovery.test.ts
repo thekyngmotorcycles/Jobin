@@ -29,8 +29,13 @@ test("a missing private contact table leaves the verified employment history rea
  let live=true;
  let historyError:object|null=null;
  let contactError:object|null={code:"PGRST205"};
+ let reviewPending=false;
+ let reviewError:object|null=null;
  const record={owner_id:owner,client_id:"own",company:"Fixture",role:"HVAC",from_year:2020,from_month:1,to_year:2021,to_month:12};
- const db={from:(table:string)=>({select:()=>({eq:(column:string,id:string)=>{
+ const db={rpc:(name:string)=>{
+  assert.equal(name,"jobeen_own_employment_review_pending");
+  return {data:reviewError?null:reviewPending,error:reviewError};
+ },from:(table:string)=>({select:()=>({eq:(column:string,id:string)=>{
   assert.equal(column,"owner_id");assert.equal(id,owner);
   return table==="jcard_employment_history"
    ?{error:historyError,data:historyError?null:[record,{...record,owner_id:other,client_id:"foreign"}]}
@@ -47,6 +52,13 @@ test("a missing private contact table leaves the verified employment history rea
  assert.equal(employmentMonths(rows),24);
  contactError=null;
  assert.equal((await cloud.loadCloudHistory(owner,scope)).rows[0].contact,undefined);
+ reviewPending=true;
+ assert.equal((await cloud.loadCloudHistory(owner,scope)).reviewPending,true);
+ reviewError={code:"PGRST202"};
+ assert.equal((await cloud.loadCloudHistory(owner,scope)).reviewPending,false);
+ reviewError={code:"PGRST301"};
+ await assert.rejects(cloud.loadCloudHistory(owner,scope),/comprobar el estado/);
+ reviewError=null;
  historyError={code:"PGRST301"};
  await assert.rejects(cloud.loadCloudHistory(owner,scope),cause=>cause===historyError);
  historyError=null;
@@ -178,7 +190,7 @@ test("profile loading settles on no verified identity, retries, and keeps authen
   useEffect:(effect:()=>void)=>{init=effect;},
   useCallback:(callback:unknown)=>callback
  };
- const session=(id:string)=>({user:{id},access_token:marker(id)});
+ const session=(id:string,sessionMarker=sessionId)=>({user:{id},access_token:"fixture."+btoa(JSON.stringify({sub:id,session_id:sessionMarker}))+".fixture"});
  let current:ReturnType<typeof session>|null=null;
  let loader=async()=>({card:{id:owner}});
  const {useProfessionalData}=load<typeof import("../src/state/useProfessionalData")>("src/state/useProfessionalData.ts",{
@@ -208,6 +220,31 @@ test("profile loading settles on no verified identity, retries, and keeps authen
  assert.equal(render().data?.card.id,owner);
 
  second?.();
+ let finishA!: (value:{card:{id:string}})=>void;
+ loader=()=>new Promise(resolve=>{finishA=resolve;});
+ render();
+ const pendingA=focus();
+ await settle();
+ loader=async()=>({card:{id:other}});
+ current=session(other);onAuth("SIGNED_IN",current);
+ render();
+ const loadedB=focus();
+ await settle();
+ finishA({card:{id:owner}});
+ await settle();
+ assert.equal(render().data?.card.id,other,"late A cannot overwrite B");
+ pendingA?.();loadedB?.();
+ const newSessionId="00000000-0000-0000-0000-000000000004";
+ loader=async()=>({card:{id:owner}});
+ current=session(owner,newSessionId);onAuth("SIGNED_IN",current);
+ render();
+ const returnedA=focus();
+ await settle();
+ assert.equal(render().data?.card.id,owner);
+ assert.equal(render().scope?.session,lifetime.sessionMarkerKey(owner,current.access_token));
+ assert.notEqual(render().scope?.session,scope.session);
+ returnedA?.();
+
  loader=()=>new Promise(()=>{});
  current=session(other);onAuth("SIGNED_IN",current);
  render();
