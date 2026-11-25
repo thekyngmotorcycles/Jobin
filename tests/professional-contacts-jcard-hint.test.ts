@@ -132,3 +132,19 @@ test("About switches independently of the card and respects both public faces",(
  const about=shared.slice(shared.indexOf("export function ProfileBusinessAbout"),shared.indexOf("export type ProfileTile"));
  assert.ok(!about.includes("fetch(")&&!about.includes("requireSupabase")&&!about.includes("business.email")&&!about.includes("business.phone"));
 });
+
+
+test("Business medals move to About on both profiles while legacy card previews keep their medal renderer",()=>{
+ const card=source("src/components/JobinCard.tsx"),shared=source("src/components/ProfileSharedSections.tsx"),owner=source("src/app/(tabs)/profile.tsx"),visitor=source("src/app/jcard.tsx"),cloud=source("src/lib/jcard-cloud.ts");
+ assert.ok(card.includes("export function BusinessAwards"));
+ assert.ok(card.includes("!awardsInAbout&&<BusinessAwards"));
+ assert.ok(owner.includes("awardsInAbout ownerQuickActions")&&visitor.includes("awardsInAbout publicVisibility"));
+ assert.ok(!owner.includes("readBusinessExcellence("));
+ assert.ok(shared.includes("readBusinessExcellence(target,origin)"));
+ assert.ok(shared.includes("awardState.scope.session===scope?.session"));
+ assert.ok(shared.includes("reviewCount:aggregate.excellenceReviewCount"));
+ assert.ok(card.includes("standalone&&(!b||b.excellenceReviewCount===undefined||!b.excellenceVotes)"));
+ const api=cloud.slice(cloud.indexOf("export async function readBusinessExcellence"),cloud.indexOf("/** Company handles"));
+ assert.ok(api.includes("captureMessageScope(expectedScope)")&&api.includes("await assertMessageScope(scope)"));
+ assert.ok(visitor.includes('cardVisibility.business_enabled&&publicBusiness&&<ProfileBusinessAbout'));
+});

@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-COMPACT — sellos del negocio en Acerca de (2026-11-25)
+
+- CI 45660824007 y 45661176496 success. Se reutiliza arte, reglas de medallas y explicación existentes mediante BusinessAwards; perfil propio y visitante dejan de mostrar los cinco sellos dentro del giro, las vistas previas restantes conservan su presentación anterior. Acerca de > Negocio consulta el agregado existente solo al abrir esa sección y valida sesión de origen y destino, sin cargar listas de reseñas ni contactos. Catálogo alojado consultado en solo lectura: jcard_business_excellence es security_invoker y agrega exclusivamente reseñas publicadas/en disputa; no se cambia ninguna política. Estado desconocido no simula medallas de cero. Se mantiene la proyección autorizada de negocio como condición del visitante. Pruebas dirigidas añadidas. CI del candidato pendiente; portada, foto/logo 25%, geometría definitiva y contadores dentro de la tarjeta pendientes. Sin merge, OTA, APK ni escrituras alojadas.
+
 ## JCARD-COMPACT — corrección de carga y sección Acerca de (2026-11-25)
 
 - PR #130: CI 45658626296 falló exclusivamente por cuatro colores literales del shimmer. Commit `33c2a1d1` deriva el efecto de Royal Hive y CI 45660648884 success; no cambia el reloj, la geometría ni la red.

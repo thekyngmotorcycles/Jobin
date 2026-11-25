@@ -238,7 +238,7 @@ export default function PublicJCard(){
     })}>
    <Animated.View style={{gap:14,paddingHorizontal:20,paddingBottom:20,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
     {resource.data?<ProfileIdentityHeader
-     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={publicBusiness&&(card==="business"||!cardVisibility.personal_enabled)?"business":"personal"} onActiveSideChange={setActiveCardSide} publicVisibility={cardVisibility} publicScope={snapshot?.scope}/>}
+     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={publicBusiness&&(card==="business"||!cardVisibility.personal_enabled)?"business":"personal"} onActiveSideChange={setActiveCardSide} awardsInAbout publicVisibility={cardVisibility} publicScope={snapshot?.scope}/>}
      actions={<ProfileCommunityActions user={resource.data.id} name={cardVisibility.personal_enabled?resource.data.name:publicBusiness?.name??""} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
       onToggleSaved={savedReady&&cardVisibilityReady&&sideIsPublic?()=>void toggleSaved():undefined}
       savedJCard={cardSaved} savingJCard={savingCard} visibleCardSide={activeCardSide}/>}
@@ -253,7 +253,7 @@ export default function PublicJCard(){
    {!!resource.data&&<View style={{gap:14,paddingHorizontal:20,paddingTop:20,paddingBottom:20,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
 
     {section==="cv"&&<ProfileAboutSelector side={aboutSide} onSelect={setAboutPreference} personalAvailable={cardVisibility.personal_enabled} businessAvailable={!!publicBusiness}/>}
-    {section==="cv"&&aboutSide==="business"&&cardVisibility.business_enabled&&publicBusiness&&<ProfileBusinessAbout business={publicBusiness}/>}
+    {section==="cv"&&aboutSide==="business"&&cardVisibility.business_enabled&&publicBusiness&&<ProfileBusinessAbout business={publicBusiness} target={resource.data.id} scope={publicScope}/>}
     {section==="cv"&&aboutSide==="personal"&&cardVisibility.personal_enabled&&<View style={{marginVertical:4,gap:10}}>
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,minHeight:48,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
        <Text style={{fontWeight:"700",color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text>

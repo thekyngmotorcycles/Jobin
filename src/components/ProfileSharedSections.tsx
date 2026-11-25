@@ -10,6 +10,10 @@ import {jobeenTokens} from "../theme/jobeen";
 import {JOBEEN_TYPE} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import type {BusinessCardData} from "../lib/jcard";
+import {BusinessAwards} from "./JobinCard";
+import {readBusinessExcellence} from "../lib/jcard-cloud";
+import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
+import {useFocusEffect} from "expo-router";
 
 export type ProfileSection="grid"|"jcards"|"cv"|"videos"|"live";
 const tabs=[
@@ -79,9 +83,23 @@ export function ProfileAboutSelector({side,onSelect,personalAvailable=true,busin
  </View>;
 }
 
-/** Only already-projected business fields; no private contact reads, demos or new requests. */
-export function ProfileBusinessAbout({business,onEdit}:{business?:BusinessCardData|null;onEdit?:()=>void}){
+/** Business fields come from the authorized face. Review aggregates load only here. */
+export function ProfileBusinessAbout({business,onEdit,target,scope}:{business?:BusinessCardData|null;onEdit?:()=>void;target?:string;scope?:MessageScope|null}){
  const {theme}=useTheme(),jt=jobeenTokens(theme);
+ const [awardState,setAwardState]=useState<{target:string;scope:MessageScope;data:Awaited<ReturnType<typeof readBusinessExcellence>>}|null>(null);
+ const [awardLoading,setAwardLoading]=useState(false);
+ useFocusEffect(useCallback(()=>{
+  let active=true;setAwardState(null);setAwardLoading(false);
+  if(!target||!scope||!business?.name.trim())return()=>{active=false;};
+  setAwardLoading(true);
+  void(async()=>{try{
+   const origin=await captureMessageScope(scope);if(!active)return;
+   const data=await readBusinessExcellence(target,origin);await assertMessageScope(origin);
+   if(active)setAwardState({target,scope:origin,data});
+  }catch{/* Unavailable must not become zero medals. */}finally{if(active)setAwardLoading(false);}})();
+  return()=>{active=false;setAwardState(null);setAwardLoading(false);};
+ },[target,scope?.owner,scope?.session,business?.name]));
+ const aggregate=awardState&&awardState.target===target&&awardState.scope.owner===scope?.owner&&awardState.scope.session===scope?.session?awardState.data:null;
  const services=business?.services?.map(service=>service.trim()).filter(Boolean)??[];
  return <View style={{gap:12,padding:14,borderWidth:1,borderColor:jt.line,borderRadius:14,backgroundColor:jt.surface}}>
   {!!business?.name.trim()&&<Text style={{fontWeight:"700",fontSize:JOBEEN_TYPE.input,color:jt.ink}}>{business.name}</Text>}
@@ -90,6 +108,7 @@ export function ProfileBusinessAbout({business,onEdit}:{business?:BusinessCardDa
    {services.map((service,index)=><View key={index} style={{maxWidth:"100%",paddingHorizontal:10,paddingVertical:7,borderRadius:14,borderWidth:1,borderColor:jt.line}}><Text style={{color:jt.ink}}>{service}</Text></View>)}
   </View></View>}
   {!business?.name.trim()&&!services.length&&<Text style={{color:jt.ink2}}>Información del negocio no disponible.</Text>}
+  {!!business?.name.trim()&&<View style={{gap:8}}><Text style={{color:jt.ink,fontWeight:"700"}}>Sellos del negocio</Text>{awardLoading?<Text accessibilityLiveRegion="polite" style={{color:jt.ink2}}>Cargando sellos…</Text>:<BusinessAwards theme={theme} standalone business={aggregate?{...business,...aggregate,reviewCount:aggregate.excellenceReviewCount}:undefined}/>}</View>}
   {onEdit&&<Pressable accessibilityRole="button" onPress={onEdit} style={{minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center",alignItems:"center",borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:jt.outline}}><Text style={{color:jt.ink,fontWeight:"700"}}>Editar negocio</Text></Pressable>}
  </View>;
 }
