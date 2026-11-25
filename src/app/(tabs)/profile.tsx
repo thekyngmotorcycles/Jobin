@@ -16,7 +16,7 @@ import { useTabClearance } from "../../theme/navigation";
 import {opacity} from "../../theme/color";
 import {useRef} from "react";
 import type {ProfileContactsHandle} from "../../components/ProfileFollowCounts";
-import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../../components/ProfileSharedSections";
+import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,type ProfileSection,type ProfileAboutSide} from "../../components/ProfileSharedSections";
 import {SavedJCardsGallery} from "../../components/SavedJCardsGallery";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfileOwnedPosts} from "../../components/ProfileOwnedPosts";
@@ -59,6 +59,7 @@ function validPhoneLabel(value:string):boolean{
 export default function Profile() {
   const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme);const {contentBottom}=useTabClearance();const {view,card}=useLocalSearchParams<{view?:string;card?:string}>();
   const [mode,setMode]=useState<Mode>("grid");
+  const [aboutSide,setAboutSide]=useState<ProfileAboutSide>("personal");
   const activeCardSide=useRef<"personal"|"business">(card==="business"?"business":"personal");
   const rememberCardSide=useCallback((side:"personal"|"business")=>{activeCardSide.current=side;},[]);
   const profileScroll=useRef<ScrollView|null>(null);
@@ -179,6 +180,7 @@ export default function Profile() {
   const workspace = useProfessionalData(loadWorkspace,true);
   const ownerId=workspace.data?.card.id;
   const workspaceSession=workspace.scope?.session;
+  useEffect(()=>setAboutSide("personal"),[ownerId,workspaceSession]);
   const media=useProfessionalData(loadMyMedia,false,true,!!ownerId&&!!workspaceSession);
   const currentLive=hasActiveOwnLive({ownerId,workspaceScope:workspace.scope,mediaScope:media.scope,error:!!media.error||media.loading,media:media.data});
   function openOwnEditor(){
@@ -191,7 +193,7 @@ export default function Profile() {
   const ownHistory=historyState&&historyState.owner===ownerId&&historyState.session===workspaceSession?historyState:null;
   const history=ownHistory?.rows??[];
   const experienceKnown=ownHistory&&!ownHistory.reviewPending;
-  const needsHistoryDetails=mode==="cv";
+  const needsHistoryDetails=mode==="cv"&&aboutSide==="personal";
   const [historyLoading,setHistoryLoading]=useState(false);
   const historyEditable=needsHistoryDetails&&!historyLoading&&ownHistory?.contactsAvailable===true;
   const retryHistory=()=>setHistoryRetry(v=>v+1);
@@ -453,7 +455,9 @@ export default function Profile() {
             <Text style={s.muted}>Sin transmisión activa verificada</Text>
           </View>
         </View>}
-        {mode === "cv" && (
+        {mode === "cv" && <ProfileAboutSelector side={aboutSide} onSelect={setAboutSide}/>}
+        {mode==="cv"&&aboutSide==="business"&&ownerId&&<ProfileBusinessAbout business={businessOwner===ownerId&&businessScope.current?.owner===ownerId&&businessScope.current?.session===workspaceSession?business:undefined} onEdit={editBusiness}/>}
+        {mode === "cv" && aboutSide==="personal" && (
           <View style={{ gap: 14 }}>
             <Text style={s.h2}>Historial profesional</Text>
             {experienceKnown&&<Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}.</Text>}

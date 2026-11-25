@@ -1,5 +1,5 @@
 import {Ionicons} from "@expo/vector-icons";
-import {Image,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
+import {Animated,Image,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {useReducedMotion} from "react-native-reanimated";
 import type {ReactNode,ComponentProps,Ref} from "react";
@@ -8,6 +8,8 @@ import {MediaThumbnail} from "./MediaThumbnail";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {JOBEEN_TYPE} from "../theme/typography";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
+import type {BusinessCardData} from "../lib/jcard";
 
 export type ProfileSection="grid"|"jcards"|"cv"|"videos"|"live";
 const tabs=[
@@ -47,6 +49,48 @@ export function ProfileSectionTabs({section,onSelect,pinned=false,showPrivateJCa
     </Pressable>;
    })}
   </ScrollView>
+ </View>;
+}
+
+
+export type ProfileAboutSide="personal"|"business";
+
+/** Separate from the rotating card: only switches the already-authorized About content. */
+export function ProfileAboutSelector({side,onSelect,personalAvailable=true,businessAvailable=true}:{side:ProfileAboutSide;onSelect:(side:ProfileAboutSide)=>void;personalAvailable?:boolean;businessAvailable?:boolean}){
+ const {theme}=useTheme(),jt=jobeenTokens(theme),reducedMotion=useReducedMotion();
+ const [width,setWidth]=useState(0);
+ const position=useRef(new Animated.Value(side==="business"?1:0)).current;
+ const destination=side==="business"?1:0;
+ useEffect(()=>{
+  if(reducedMotion||!width){position.setValue(destination);return;}
+  const transition=Animated.timing(position,{toValue:destination,duration:180,useNativeDriver:true});
+  transition.start();return()=>transition.stop();
+ },[destination,position,reducedMotion,width]);
+ if(!personalAvailable||!businessAvailable)return null;
+ const half=Math.max(0,(width-8)/2);
+ return <View accessibilityRole="tablist" onLayout={event=>setWidth(Math.round(event.nativeEvent.layout.width))}
+  style={{flexDirection:"row",padding:4,minHeight:JOBEEN_CONTROL.touchTarget+8,borderRadius:28,backgroundColor:jt.surface,borderWidth:1,borderColor:jt.line}}>
+  {half>0&&<Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+   style={{position:"absolute",left:4,top:4,bottom:4,width:half,borderRadius:24,backgroundColor:jt.ink,transform:[{translateX:position.interpolate({inputRange:[0,1],outputRange:[0,half]})}]}}/>}
+  {(["personal","business"] as const).map(option=><Pressable key={option} accessibilityRole="tab" accessibilityState={{selected:side===option}}
+   onPress={()=>onSelect(option)} style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center",borderRadius:24,backgroundColor:half===0&&side===option?jt.ink:undefined}}>
+   <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:JOBEEN_TYPE.input,fontWeight:side===option?"700":"600",color:side===option?jt.surface:jt.ink}}>{option==="personal"?"Personal":"Negocio"}</Text>
+  </Pressable>)}
+ </View>;
+}
+
+/** Only already-projected business fields; no private contact reads, demos or new requests. */
+export function ProfileBusinessAbout({business,onEdit}:{business?:BusinessCardData|null;onEdit?:()=>void}){
+ const {theme}=useTheme(),jt=jobeenTokens(theme);
+ const services=business?.services?.map(service=>service.trim()).filter(Boolean)??[];
+ return <View style={{gap:12,padding:14,borderWidth:1,borderColor:jt.line,borderRadius:14,backgroundColor:jt.surface}}>
+  {!!business?.name.trim()&&<Text style={{fontWeight:"700",fontSize:JOBEEN_TYPE.input,color:jt.ink}}>{business.name}</Text>}
+  {!!business?.category?.trim()&&<Text style={{color:jt.ink2,fontSize:JOBEEN_TYPE.input}}>{business.category}</Text>}
+  {services.length>0&&<View style={{gap:6}}><Text style={{color:jt.ink,fontWeight:"700"}}>Servicios</Text><View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}>
+   {services.map((service,index)=><View key={index} style={{maxWidth:"100%",paddingHorizontal:10,paddingVertical:7,borderRadius:14,borderWidth:1,borderColor:jt.line}}><Text style={{color:jt.ink}}>{service}</Text></View>)}
+  </View></View>}
+  {!business?.name.trim()&&!services.length&&<Text style={{color:jt.ink2}}>Información del negocio no disponible.</Text>}
+  {onEdit&&<Pressable accessibilityRole="button" onPress={onEdit} style={{minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center",alignItems:"center",borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:jt.outline}}><Text style={{color:jt.ink,fontWeight:"700"}}>Editar negocio</Text></Pressable>}
  </View>;
 }
 

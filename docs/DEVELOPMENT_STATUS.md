@@ -1,5 +1,11 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-COMPACT — corrección de carga y sección Acerca de (2026-11-25)
+
+- PR #130: CI 45658626296 falló exclusivamente por cuatro colores literales del shimmer. Commit `33c2a1d1` deriva el efecto de Royal Hive y CI 45660648884 success; no cambia el reloj, la geometría ni la red.
+- Commit `5733f48e`: los contadores solicitan únicamente seguidores y contactos una vez por foco, sin consulta inútil de siguiendo; conservan la lista de siguiendo a demanda, validación de sesión, listas privadas del titular y estado desconocido en vez de cero cuando falta el conteo. CI de este commit pendiente de confirmación al registrar.
+- Continuación: selector Personal/Negocio animado únicamente en Acerca de, movimiento reducido y área táctil vigente; sección de negocio reutiliza datos autorizados, no vuelve a consultar contactos privados ni muestra una cara oculta al visitante. Historial privado del titular solo carga detalles cuando selecciona Personal. Los sellos siguen accesibles en la tarjeta hasta migrarlos con las dimensiones finales; no eliminar antes de completar el traslado. Portada pública elegida por titular y geometría de 25%, contadores dentro de la tarjeta y traslado de sellos siguen pendientes. No publicar banner empresarial legado. Pruebas dirigidas añadidas; CI y validación física pendientes. Sin merge, OTA, APK ni cambios alojados.
+
 ## JCARD-COMPACT — opción 3 aprobada (2026-11-25)
 
 - PR #129 integrado en 2ff0959f con CI previo 45646924671 success (488 pruebas); CI posterior 45653422590 pendiente. Historial #128 restaurado y titular confirma que vuelve a mostrar experiencia en Android.

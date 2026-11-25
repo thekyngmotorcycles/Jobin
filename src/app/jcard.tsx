@@ -10,7 +10,7 @@ import {useTheme} from "../state/ThemeProvider";
 import {Ionicons} from "@expo/vector-icons";
 import {NAVIGATION_ROW_HEIGHT} from "../theme/navigation";
 import {jobeenTokens} from "../theme/jobeen";
-import {ProfileIdentityHeader,ProfileSectionTabs,type ProfileSection} from "../components/ProfileSharedSections";
+import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,type ProfileSection,type ProfileAboutSide} from "../components/ProfileSharedSections";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfilePublicPosts} from "../components/ProfileOwnedPosts";
 import {router,Stack,useFocusEffect} from "expo-router";
@@ -92,6 +92,9 @@ export default function PublicJCard(){
  },[user,card,publicRetry]));
  const resource={data:snapshot?.data??null,loading:publicLoading,error:publicError,reload:()=>setPublicRetry(v=>v+1)};
  const [section,setSection]=useState<ProfileSection>("grid");
+ const [aboutPreference,setAboutPreference]=useState<ProfileAboutSide>("personal");
+ const aboutSide:ProfileAboutSide=!cardVisibility.personal_enabled?"business":!publicBusiness?"personal":aboutPreference;
+ useEffect(()=>setAboutPreference("personal"),[user,publicScope?.session]);
  const profileScroll=useRef<ScrollView|null>(null);
  const profileScrollY=useRef(new Animated.Value(0)).current;
  const [tabOffset,setTabOffset]=useState(0);
@@ -249,7 +252,9 @@ export default function PublicJCard(){
    </View>}
    {!!resource.data&&<View style={{gap:14,paddingHorizontal:20,paddingTop:20,paddingBottom:20,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
 
-    {section==="cv"&&<View style={{marginVertical:4,gap:10}}>
+    {section==="cv"&&<ProfileAboutSelector side={aboutSide} onSelect={setAboutPreference} personalAvailable={cardVisibility.personal_enabled} businessAvailable={!!publicBusiness}/>}
+    {section==="cv"&&aboutSide==="business"&&cardVisibility.business_enabled&&publicBusiness&&<ProfileBusinessAbout business={publicBusiness}/>}
+    {section==="cv"&&aboutSide==="personal"&&cardVisibility.personal_enabled&&<View style={{marginVertical:4,gap:10}}>
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,minHeight:48,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
        <Text style={{fontWeight:"700",color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text>
       </Pressable>

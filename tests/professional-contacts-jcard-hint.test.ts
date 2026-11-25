@@ -103,3 +103,32 @@ test("Royal Hive contact confirmation preserves the captured account and single 
  assert.ok(network.includes('visible={sheet&&pendingRemove!==null}'));
  assert.ok(network.includes('busy={!!busy} onCancel={()=>{if(!contactMutation.current)'));
 });
+
+
+test("Connection counts request only displayed aggregates once per focus and clear the old scope",()=>{
+ const network=source("src/components/ProfileFollowCounts.tsx");
+ const refresh=network.slice(network.indexOf(" const refreshCounts="),network.indexOf(" const isOwner="));
+ assert.equal((refresh.match(/count:"exact"/g)??[]).length,1);
+ assert.equal((refresh.match(/void refreshCounts\(\)/g)??[]).length,1);
+ assert.ok(refresh.includes("contactCount(userId)"));
+ assert.ok(refresh.includes("await assertMessageScope(scope)"));
+ assert.ok(refresh.includes("setSummary(null)"));
+ assert.ok(network.includes("summary?.target===userId?summary:null"));
+ assert.ok(network.includes('item.value==null?"—"'));
+});
+
+test("About switches independently of the card and respects both public faces",()=>{
+ const shared=source("src/components/ProfileSharedSections.tsx"),owner=source("src/app/(tabs)/profile.tsx"),visitor=source("src/app/jcard.tsx");
+ assert.ok(shared.includes("export function ProfileAboutSelector"));
+ assert.ok(shared.includes("if(!personalAvailable||!businessAvailable)return null"));
+ assert.ok(shared.includes("if(reducedMotion||!width)"));
+ assert.ok(shared.includes("accessibilityState={{selected:side===option}}"));
+ assert.ok(shared.includes("useNativeDriver:true"));
+ assert.ok(owner.includes('mode==="cv"&&aboutSide==="personal"'));
+ assert.ok(owner.includes("businessScope.current?.session===workspaceSession"));
+ assert.ok(visitor.includes('aboutSide==="personal"&&cardVisibility.personal_enabled'));
+ assert.ok(visitor.includes('aboutSide==="business"&&cardVisibility.business_enabled&&publicBusiness'));
+ assert.ok(visitor.includes("businessAvailable={!!publicBusiness}"));
+ const about=shared.slice(shared.indexOf("export function ProfileBusinessAbout"),shared.indexOf("export type ProfileTile"));
+ assert.ok(!about.includes("fetch(")&&!about.includes("requireSupabase")&&!about.includes("business.email")&&!about.includes("business.phone"));
+});
