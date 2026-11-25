@@ -101,7 +101,8 @@ export default function Profile() {
    const generation=++cvRevision.current;
    cvScope.current=null;setIncomingCV([]);
    try{
-    const scope=await captureMessageScope(expected);
+    if(!ownerId||!workspaceSession)return;
+    const scope=await captureMessageScope(expected??{owner:ownerId,session:workspaceSession});
     if(scope.owner!==ownerId)throw Error("La sesión cambió.");
     const rows=await cvRequests(scope);
     await assertMessageScope(scope);
@@ -178,7 +179,7 @@ export default function Profile() {
   const workspace = useProfessionalData(loadWorkspace,true);
   const ownerId=workspace.data?.card.id;
   const workspaceSession=workspace.scope?.session;
-  const media=useProfessionalData(loadMyMedia,false,true);
+  const media=useProfessionalData(loadMyMedia,false,true,!!ownerId&&!!workspaceSession);
   const currentLive=hasActiveOwnLive({ownerId,workspaceScope:workspace.scope,mediaScope:media.scope,error:!!media.error||media.loading,media:media.data});
   function openOwnEditor(){
     if(!ownerId||workspace.scope?.owner!==ownerId)return;
@@ -190,28 +191,32 @@ export default function Profile() {
   const ownHistory=historyState&&historyState.owner===ownerId&&historyState.session===workspaceSession?historyState:null;
   const history=ownHistory?.rows??[];
   const experienceKnown=ownHistory&&!ownHistory.reviewPending;
-  const historyEditable=ownHistory?.contactsAvailable===true;
+  const needsHistoryDetails=mode==="cv";
+  const [historyLoading,setHistoryLoading]=useState(false);
+  const historyEditable=needsHistoryDetails&&!historyLoading&&ownHistory?.contactsAvailable===true;
   const retryHistory=()=>setHistoryRetry(v=>v+1);
   useFocusEffect(useCallback(()=>{
    let active=true;const generation=++historyRevision.current;
    const valid=()=>active&&historyRevision.current===generation;
    historyScope.current=null;historyFormScope.current=null;
-   setHistoryState(null);setHistoryError(false);setAddOpen(false);setEditingId(null);
+   setHistoryState(previous=>needsHistoryDetails&&previous&&previous.owner===ownerId&&previous.session===workspaceSession&&!previous.contactsAvailable?previous:null);
+   setHistoryError(false);setAddOpen(false);setEditingId(null);
+   setHistoryLoading(!!ownerId&&!!workspaceSession);
    if(!ownerId||!workspaceSession)return()=>{active=false;};
    const owner=ownerId;
-   const timeout=setTimeout(()=>{if(valid()){active=false;setHistoryError(true);}},20_000);
+   const timeout=setTimeout(()=>{if(valid()){active=false;setHistoryError(true);setHistoryLoading(false);}},20_000);
    void(async()=>{
     try{
      const scope=await captureMessageScope({owner,session:workspaceSession});
      if(!valid())return;
-     const result=await loadCloudHistory(owner,scope);
+     const result=await loadCloudHistory(owner,scope,needsHistoryDetails);
      if(!valid())return;
      historyScope.current=scope;setHistoryState({...scope,...result});
     }catch{if(valid())setHistoryError(true);}
-    finally{clearTimeout(timeout);}
+    finally{clearTimeout(timeout);if(valid())setHistoryLoading(false);}
    })();
    return()=>{active=false;clearTimeout(timeout);historyRevision.current++;historyScope.current=null;historyFormScope.current=null;};
-  },[ownerId,workspaceSession,historyRetry]));
+  },[ownerId,workspaceSession,historyRetry,needsHistoryDetails]));
   useEffect(()=>{setHistoryState(null);setAddOpen(false);setEditingId(null);setCvShareOpen(false);setBusinessOpen(false);setBusinessRating({rating:null,count:0});setBusinessExcellence({});setEmployerLink(null);setVerifiedIdentity(false);setIncomingCV([]);},[ownerId]);
 
  useFocusEffect(useCallback(()=>{
@@ -219,11 +224,11 @@ export default function Profile() {
   let active=true;
   const valid=()=>active&&businessRevision.current===generation;
   businessScope.current=null;setBusinessOwner("");setBusiness(EMPTY_BUSINESS_CARD);
-  if(!owner)return()=>{active=false;};
+  if(!owner||!workspaceSession)return()=>{active=false;};
   void(async()=>{
    let scope:MessageScope|null=null;
    try{
-    scope={owner,session:await assertAccountOwner(owner)};
+    scope={owner,session:await assertAccountOwner(owner,workspaceSession)};
     if(!valid())return;
     if(consumePersonalPhotoChange(scope))void workspace.reload();
     const cached=await readScopedBusinessCard(owner,scope);
@@ -247,18 +252,18 @@ export default function Profile() {
    }
   })();
   return()=>{active=false;businessScope.current=null;};
- },[workspace.reload,workspace.data?.card.id]));
+ },[workspace.reload,workspace.data?.card.id,workspaceSession]));
   useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void identityVerified(id).then(v=>{if(live)setVerifiedIdentity(v);}).catch(()=>{if(live)setVerifiedIdentity(false);});return()=>{live=false;};},[workspace.data?.card.id]);
-  const professionCatalog=useProfessionalData(loadCatalog);
+  const professionCatalog=useProfessionalData(loadCatalog,false,false,!!ownerId&&(!!ownHistory||needsHistoryDetails||businessOpen));
   const [showEmploymentProfessionPicker,setShowEmploymentProfessionPicker]=useState(false);
   const catalogProfessions=professionCatalog.data?.professions??[];
   const findCatalogProfession=(value:string)=>catalogProfessions.find(p=>p.code===value||p.label.toLocaleLowerCase("es")===value.trim().toLocaleLowerCase("es"));
   const selectedEmploymentProfession=findCatalogProfession(draft.profession||draft.role);
   useFocusEffect(useCallback(()=>{
    let live=true;setEmployerLink(null);
-   const owner=ownerId;if(!owner)return()=>{live=false;};
+   const owner=ownerId;if(!owner||!workspaceSession)return()=>{live=false;};
    void(async()=>{try{
-    const scope=await captureMessageScope();
+    const scope=await captureMessageScope({owner,session:workspaceSession});
     if(scope.owner!==owner)throw Error("La cuenta cambió.");
     const rows=await getEmployerLinks(scope);
     await assertMessageScope(scope);
@@ -266,10 +271,10 @@ export default function Profile() {
     if(live)setEmployerLink(verified?{owner,id:verified.company_id,name:verified.name,handle:verified.handle}:null);
    }catch{if(live)setEmployerLink(null);}})();
    return()=>{live=false;setEmployerLink(null);};
-  },[ownerId]));
-  useEffect(()=>{let live=true;void readBusinessRating(workspace.data?.card.id??"").then(value=>{if(live)setBusinessRating(value);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
+  },[ownerId,workspaceSession]));
+  useEffect(()=>{if(!ownerId)return;let live=true;void readBusinessRating(ownerId).then(value=>{if(live)setBusinessRating(value);}).catch(()=>{});return()=>{live=false;};},[ownerId]);
   useEffect(()=>{const id=workspace.data?.card.id;if(!id)return;let live=true;void readBusinessExcellence(id).then(data=>{if(live)setBusinessExcellence(data);}).catch(()=>{});return()=>{live=false;};},[workspace.data?.card.id]);
-  useFocusEffect(useCallback(()=>{if(ownerId)void refreshCV();return()=>{cvRevision.current++;cvScope.current=null;setIncomingCV([]);};},[ownerId]));
+  useFocusEffect(useCallback(()=>{if(ownerId&&workspaceSession&&needsHistoryDetails)void refreshCV();return()=>{cvRevision.current++;cvScope.current=null;setIncomingCV([]);};},[ownerId,workspaceSession,needsHistoryDetails]));
   const p = DEMO_PROFILE;
 
   function send(company: string) {
@@ -452,8 +457,8 @@ export default function Profile() {
           <View style={{ gap: 14 }}>
             <Text style={s.h2}>Historial profesional</Text>
             {experienceKnown&&<Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}.</Text>}
-            {ownerId&&!ownHistory&&!historyError&&<PageState kind="loading" message="Cargando historial profesional…"/>}
-            {ownHistory&&!historyEditable&&<PageState kind="error" message="Los contactos privados y la edición del historial no están disponibles." actionLabel="Reintentar" onAction={retryHistory}/>}
+            {ownerId&&historyLoading&&!historyError&&<PageState kind="loading" message="Cargando historial profesional…"/>}
+            {ownHistory&&!historyLoading&&!historyEditable&&<PageState kind="error" message="Los contactos privados y la edición del historial no están disponibles." actionLabel="Reintentar" onAction={retryHistory}/>}
             {ownHistory?.reviewPending&&<PageState kind="info" message="Parte de tu historial está en revisión de titularidad."/>}
             {experienceKnown&&history.length===0&&<Text style={s.muted}>Todavía no agregaste empleos.</Text>}
             {history.map(entry => (
@@ -477,9 +482,9 @@ export default function Profile() {
           </View>
         )}
 
-        {mode==="grid"&&<ProfileOwnedPosts filter="all"/>}
-        {mode==="videos"&&<ProfileOwnedPosts filter="videos"/>}
-        {mode==="live"&&<ProfileOwnedPosts filter="live"/>}
+        {mode==="grid"&&ownerId&&<ProfileOwnedPosts filter="all"/>}
+        {mode==="videos"&&ownerId&&<ProfileOwnedPosts filter="videos"/>}
+        {mode==="live"&&ownerId&&<ProfileOwnedPosts filter="live"/>}
         </View>
       </Animated.ScrollView>
 

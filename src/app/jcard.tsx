@@ -15,8 +15,7 @@ import {useReducedMotion} from "react-native-reanimated";
 import {ProfilePublicPosts} from "../components/ProfileOwnedPosts";
 import {router,Stack,useFocusEffect} from "expo-router";
 import { approvedCV,cvRequests,requestCV } from "../lib/cv-access";
-import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
-import { requireSupabase } from "../lib/supabase";
+import {assertMessageScope,captureMessageScope,readMessageScope,type MessageScope} from "../lib/message-session";
 import {identityVerified} from "../lib/identity-status";
 import { useLocalSearchParams } from "expo-router";
 
@@ -35,13 +34,14 @@ export default function PublicJCard(){
  const insets=useSafeAreaInsets();const {contentBottom}=useTabClearance();
  const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;
  const {height:screenHeight}=useWindowDimensions();
- const [viewer,setViewer]=useState("");
  const [profileMenuOpen,setProfileMenuOpen]=useState(false);
  const [activeCardSide,setActiveCardSide]=useState<SavedJCardSide>(card==="business"?"business":"personal");
  const publicRevision=useRef(0);
  const [publicSnapshot,setPublicSnapshot]=useState<{target:string;scope:MessageScope;data:Awaited<ReturnType<typeof loadPublicCard>>;visibility:Awaited<ReturnType<typeof readJCardVisibility>>;business:BusinessCardData|null}|null>(null);
  const [publicLoading,setPublicLoading]=useState(true),[publicError,setPublicError]=useState(""),[publicRetry,setPublicRetry]=useState(0);
  const snapshot=publicSnapshot?.target===user?publicSnapshot:null;
+ const publicScope=snapshot?.scope??null;
+ const viewer=publicScope?.owner??"";
  const cardVisibility=snapshot?.visibility??{...DEFAULT_JCARD_VISIBILITY,personal_enabled:false,business_enabled:false};
  const cardVisibilityReady=!!snapshot;
  const publicBusiness=cardVisibility.business_enabled?snapshot?.business??null:null;
@@ -55,7 +55,14 @@ export default function PublicJCard(){
   void(async()=>{
    try{
     if(!user||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user))throw Error("Enlace de JCard inválido.");
-    const scope=await captureMessageScope();
+    // Both required reads verify the same scope independently. Their concurrent
+    // getUser checks share a flight; the local hint is never used to render.
+    const scope=await readMessageScope();
+    if(scope.owner===user){
+     await captureMessageScope(scope);
+     if(publicRevision.current===generation)router.replace({pathname:"/(tabs)/profile",params:card==="business"?{card:"business"}:{}});
+     return;
+    }
     const [data,visibility]=await Promise.all([loadPublicCard(user,scope),readJCardVisibility(user,scope)]);
     await assertMessageScope(scope);
     if(publicRevision.current!==generation)return;
@@ -82,7 +89,7 @@ export default function PublicJCard(){
    finally{if(publicRevision.current===generation)setPublicLoading(false);}
   })();
   return()=>{publicRevision.current++;setPublicSnapshot(null);};
- },[user,publicRetry]));
+ },[user,card,publicRetry]));
  const resource={data:snapshot?.data??null,loading:publicLoading,error:publicError,reload:()=>setPublicRetry(v=>v+1)};
  const [section,setSection]=useState<ProfileSection>("grid");
  const profileScroll=useRef<ScrollView|null>(null);
@@ -107,28 +114,27 @@ export default function PublicJCard(){
   if(tabOffset>0)profileScroll.current?.scrollTo({y:tabOffset,animated:!reducedMotion});
  }
  const [verifiedIdentity,setVerifiedIdentity]=useState(false);
- useEffect(()=>{if(!user)return;let live=true;void identityVerified(user).then(v=>{if(live)setVerifiedIdentity(v);}).catch(()=>{if(live)setVerifiedIdentity(false);});return()=>{live=false;};},[user]);
- const [followerCount,setFollowerCount]=useState<number|null>(null);
- useEffect(()=>{if(!user)return;let live=true;void requireSupabase().from("profile_follows" as never).select("*",{count:"exact",head:true}).eq("followed_id",user).then(({count})=>{if(live)setFollowerCount(count??0);});return()=>{live=false;};},[user]);
- useEffect(()=>{if(user&&viewer&&user===viewer)router.replace({pathname:"/(tabs)/profile",params:card==="business"?{card:"business"}:{}});},[user,viewer,card]);
+ useEffect(()=>{
+  setVerifiedIdentity(false);
+  if(!user||!publicScope)return;
+  let live=true;
+  void identityVerified(user).then(async value=>{
+   await assertMessageScope(publicScope);if(live)setVerifiedIdentity(value);
+  }).catch(()=>{});
+  return()=>{live=false;};
+ },[user,publicScope]);
  const cvScope=useRef<MessageScope|null>(null),cvRevision=useRef(0),cvTarget=useRef("");
  const [cvStatus,setCvStatus]=useState("");
  const [cvRows,setCvRows]=useState<{company:string;role:string;from_year:number;to_year:number|null}[]>([]);
  const [cvMessage,setCvMessage]=useState("");
  const [cvOpen,setCvOpen]=useState(false);
  useFocusEffect(useCallback(()=>{
-  const generation=++cvRevision.current;
-  cvTarget.current=user??"";cvScope.current=null;setViewer("");setCvStatus("");setCvRows([]);setCvMessage("");setCvOpen(false);
-  void(async()=>{try{
-   const scope=await captureMessageScope();
-   const requests=user&&user!==scope.owner?await cvRequests(scope):[];
-   await assertMessageScope(scope);
-   if(cvRevision.current!==generation)return;
-   cvScope.current=scope;setViewer(scope.owner);
-   setCvStatus(requests.find(r=>r.owner_id===user&&r.requester_id===scope.owner)?.status??"");
-  }catch{if(cvRevision.current===generation){setViewer("");setCvRows([]);}}})();
+  cvRevision.current++;
+  cvTarget.current=publicScope?user??"":"";
+  cvScope.current=publicScope;
+  setCvStatus("");setCvRows([]);setCvMessage("");setCvOpen(false);
   return()=>{cvRevision.current++;cvScope.current=null;cvTarget.current="";setCvRows([]);setCvOpen(false);};
- },[user]));
+ },[user,publicScope]));
  async function openCV(){
   const scope=cvScope.current,generation=++cvRevision.current;
   if(!scope||!user||cvTarget.current!==user||scope.owner!==viewer)return;
@@ -155,19 +161,19 @@ export default function PublicJCard(){
   const generation=++savedRevision.current;
   savedScope.current=null;setSavedReady(false);setCardSaved(false);setProfileMenuOpen(false);
   if(!user||!viewer||viewer===user||!cardVisibilityReady||!sideIsPublic)return;
-  const origin=cvScope.current;
-  if(!origin||origin.owner!==viewer||cvTarget.current!==user)return;
+  const origin=publicScope;
+  if(!origin||origin.owner!==viewer)return;
   void(async()=>{
    try{
-    const scope=await captureMessageScope(origin);
+    const scope=origin;
     const saved=await isSavedJCard(user,activeCardSide,viewer,scope);
     await assertMessageScope(scope);
-    if(savedRevision.current!==generation||cvScope.current!==origin)return;
+    if(savedRevision.current!==generation)return;
     savedScope.current={scope,target:user,side:activeCardSide,generation};setCardSaved(saved);setSavedReady(true);
    }catch{if(savedRevision.current===generation){setSavedReady(false);setCardSaved(false);}}
   })();
   return()=>{savedRevision.current++;savedScope.current=null;setSavedReady(false);setCardSaved(false);};
- },[user,viewer,activeCardSide,cardVisibilityReady,sideIsPublic]));
+ },[user,viewer,publicScope,activeCardSide,cardVisibilityReady,sideIsPublic]));
  const toggleSaved=async()=>{
   const origin=savedScope.current;
   if(!origin||!savedReady||!user||origin.target!==user||origin.side!==activeCardSide||origin.scope.owner!==viewer||!cardVisibilityReady||!sideIsPublic||saveGuard.current)return;

@@ -7,12 +7,12 @@ export async function cloudOwner(){const db=requireSupabase();const {data,error}
 export async function readCloudHistory(expectedOwner?:string,expectedScope?:MessageScope):Promise<EmploymentEntry[]>{
  return (await loadCloudHistory(expectedOwner,expectedScope)).rows;
 }
-export async function loadCloudHistory(expectedOwner?:string,expectedScope?:MessageScope):Promise<{rows:EmploymentEntry[];contactsAvailable:boolean;reviewPending:boolean}>{
+export async function loadCloudHistory(expectedOwner?:string,expectedScope?:MessageScope,includeContacts=true):Promise<{rows:EmploymentEntry[];contactsAvailable:boolean;reviewPending:boolean}>{
  const db=requireSupabase(),scope=await captureMessageScope(expectedScope),owner=scope.owner;
  if(expectedOwner&&expectedOwner!==owner)throw Error("La sesión cambió.");
  const [history,details,review]=await Promise.all([
   (db as any).from("jcard_employment_history").select("owner_id,client_id,company,role,professions,from_year,from_month,to_year,to_month,verified_by").eq("owner_id",owner),
-  (db as any).from("jobeen_employment_private_contact").select("owner_id,client_id,address,contact").eq("owner_id",owner),
+  includeContacts?(db as any).from("jobeen_employment_private_contact").select("owner_id,client_id,address,contact").eq("owner_id",owner):null,
   db.rpc("jobeen_own_employment_review_pending")
  ]);
  if(history.error)throw history.error;
@@ -21,7 +21,7 @@ export async function loadCloudHistory(expectedOwner?:string,expectedScope?:Mess
  await assertMessageScope(scope);
  // The contacts table is supplemental and may not exist on the current backend.
  // Never read legacy contact columns or enable edits when these details are unavailable.
- const contactsAvailable=!details.error&&Array.isArray(details.data);
+ const contactsAvailable=!!details&&!details.error&&Array.isArray(details.data);
  const contacts=new Map<string,{address:string;contact:string}>((contactsAvailable?details.data:[]).filter((r:any)=>r.owner_id===owner).map((r:any)=>[r.client_id,{address:r.address,contact:r.contact}]));
  if(!Array.isArray(history.data))throw Error("El historial privado no está disponible.");
  const rows=history.data.filter((r:any)=>r.owner_id===owner).map((r:any)=>({id:r.client_id,company:r.company,role:r.role,professions:r.professions,from:r.from_year,fromMonth:r.from_month,to:r.to_year,toMonth:r.to_month,status:r.verified_by?"approved":"pending",verifiedBy:r.verified_by,...contacts.get(r.client_id)}));

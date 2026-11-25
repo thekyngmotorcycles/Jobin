@@ -21,6 +21,9 @@ export function createWorkspaceSessionCache(){
    entry={scope:{...scope},value};
    return true;
   },
+  retain(scope:MessageScope|null){
+   if(entry&&(!scope||scope.owner!==entry.scope.owner||scope.session!==entry.scope.session))entry=null;
+  },
   clear(){entry=null;}
  };
 }

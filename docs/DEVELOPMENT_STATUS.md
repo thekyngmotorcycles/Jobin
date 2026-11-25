@@ -1,5 +1,12 @@
 # Jobin — registro central de desarrollo
 
+## JCARDS-RENDIMIENTO — carga inicial y retorno (2026-11-25)
+
+- Continuación del PR #129 sobre `development` 4ccb3b4e. Propietario confirma en Android que el historial se recuperó. Se incorporó #128 con su SQL y pruebas intactos.
+- Perfil propio: el workspace valida la sesión de origen y evita lecturas locales redundantes. Los recursos independientes y sus fallos dejan de invalidar su memoria; el cierre de sesión y el cambio de ámbito impiden reutilizar un snapshot previo. La tarjeta usa el resumen de experiencia; contactos y solicitudes CV se consultan al entrar en Acerca de. El catálogo y el contenido secundario se cargan después de la identidad. Perfil visitante: identidad y visibilidad comparten el `getUser` en curso, la cara empresarial conserva su carga independiente, el CV se consulta al abrirlo y se retira un conteo de seguidores duplicado y sin consumidor.
+- Medición de siete ejecuciones por versión sobre los módulos reales con Supabase simulado (40 ms remotos, 3 ms para sesión local). Mediana hasta snapshot y solicitudes remotas antes de mostrarlo: propia en frío 103 → 97 ms y 2 → 2 solicitudes, con lecturas locales 7 → 5. Retorno propio con memoria de la misma sesión y un recurso independiente suscrito 102 → 6 ms y 2 → 0 antes del snapshot, seguido de una actualización del servidor. Visitante personal 141 → 98 ms y 7 → 3 solicitudes. Resumen de experiencia 4 → 3 consultas remotas, con el mismo resultado de meses. Las cifras excluyen renderizado nativo y servicios alojados.
+- Casos dirigidos: aislamiento UUID/session_id, fallo de recurso independiente, CV diferido y resumen sin contactos. Pendientes CI del commit actualizado y medición en teléfono.
+
 ## HOME-ESTABILIDAD — entrada y solicitudes del feed (2026-11-25)
 
 - Base `132c0f51` (#126), CI 45543439438 success. El propietario ya comprobó físicamente Google en tres cuentas, perfiles desde el feed y contención #124. El resolvedor de Expo Router SDK 54 reproduce que `jobin:///` cae en `+not-found` cuando el guard retira `(tabs)`. La ruta de índice dentro del grupo se publica como raíz, por lo que `/(tabs)/index` también cae en `+not-found` aun con sesión autorizada.

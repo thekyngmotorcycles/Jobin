@@ -29,7 +29,7 @@ function mount(config:{
 }={}){
  const state:unknown[]=[],refs:{current:unknown}[]=[];
  const effects:(()=>void|(()=>void))[]=[];
- let cursor=0,refCursor=0,businessReads=0;
+ let cursor=0,refCursor=0,businessReads=0,cvReads=0;
  let currentScope={owner:config.viewer??stranger,session:"viewer-session"};
  const route={user:author,card:config.requestedSide};
  const visibility={personal_enabled:config.personal??true,business_enabled:config.businessVisible??true};
@@ -55,6 +55,7 @@ function mount(config:{
   "../state/ThemeProvider":{useTheme:()=>({theme:"light"})},
   "../components/ui":{useUi:()=>({s:{},colors:{}})},
   "../lib/message-session":{
+   readMessageScope:async()=>currentScope,
    captureMessageScope:async()=>currentScope,
    assertMessageScope:async(expected:typeof currentScope)=>{
     if(expected!==currentScope)throw Error("La sesión cambió.");
@@ -68,6 +69,7 @@ function mount(config:{
    if(config.visibilityError)throw config.visibilityError;
    return visibility;
   }},
+  "../lib/cv-access":{cvRequests:async()=>{cvReads++;return [];}},
   "../lib/jcard-cloud":{readPublicBusinessCard:async()=>{
    businessReads++;
    return config.loadBusiness?config.loadBusiness():business;
@@ -79,16 +81,17 @@ function mount(config:{
  function render(){cursor=0;refCursor=0;effects.length=0;return Page();}
  render();
  const close=effects[0]();
+ const closeCV=effects[1]();
  return {
   read:()=>{
    const screen=render();
    const header=find(screen,"ProfileIdentityHeader");
    return {card:header?.props.card as Element|undefined,actions:header?.props.actions as Element|undefined,
     error:find(screen,"JCardLoadState")?.props.error,posts:find(screen,"ProfilePublicPosts")?.props.userId,
-    businessReads};
+    businessReads,cvReads};
   },
   switchSession:()=>{currentScope={owner:follower,session:"another-session"};},
-  close:()=>{close?.();}
+  close:()=>{close?.();closeCV?.();}
  };
 }
 
@@ -105,6 +108,7 @@ test("an unrelated feed viewer gets the authorized personal profile before a 42P
  const after=page.read();
  assert.equal(after.posts,author);
  assert.equal(after.businessReads,1);
+ assert.equal(after.cvReads,0);
  assert.equal((after.card?.props.publicVisibility as {business_enabled:boolean}).business_enabled,false);
  assert.equal((after.card?.props.card as {business?:unknown}).business,undefined);
  page.close();

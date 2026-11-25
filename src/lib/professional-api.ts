@@ -50,12 +50,17 @@ export async function loadCatalog():Promise<ProfessionalCatalog> {
  return {...catalog,professions:catalog.professions.map(p=>({...p,label:professionDisplayName(p.code,p.label)}))};
 }
 export async function loadWorkspace(expectedScope?:MessageScope):Promise<ProfessionalWorkspace|null> {
- const client=requireSupabase();const {data:{session},error:sessionError}=await client.auth.getSession();
- if(sessionError)throw sessionError;
- if(!session&&!expectedScope)return null;
+ const client=requireSupabase();
+ let owner=expectedScope?.owner;
+ if(!expectedScope){
+  const {data:{session},error}=await client.auth.getSession();
+  if(error)throw error;
+  if(!session)return null;
+  owner=session.user.id;
+ }
  const scope=await captureMessageScope(expectedScope);
  const user={id:scope.owner};
- if(session?.user.id!==user.id)throw Error("La sesión cambió.");
+ if(owner!==user.id)throw Error("La sesión cambió.");
  const {data,error}=await client.rpc("jobin_professional_workspace");
  const result=decode<ProfessionalWorkspace>(data,error);
  if(!result.card)throw new Error("El perfil no está disponible.");

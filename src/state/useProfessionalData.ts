@@ -23,7 +23,7 @@ function sameScope(a:MessageScope|null,b:MessageScope|null){
 
 /** Reload on focus and auth changes; never substitute fictional data for a failed request. */
 /** Show a matching in-memory workspace while refreshing within the same session. Never restore legacy disk snapshots. */
-export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=false,strict=false) {
+export function useProfessionalData<T>(loader:(scope?:MessageScope)=>Promise<T>,cacheWorkspace=false,strict=false,enabled=true) {
  const [data,setData]=useState<T|null>(null);
  const [scope,setScope]=useState<MessageScope|null>(null);
  const [error,setError]=useState("");
@@ -33,6 +33,7 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
  const observedScope=useRef<MessageScope|null>(null);
  const reload=useCallback(()=>setVersion(value=>value+1),[]);
  useEffect(()=>{
+  if(!enabled)return;
   const subscription=supabase?.auth.onAuthStateChange((event,session)=>{
    let nextScope:MessageScope|null=null;
    try{if(session)nextScope={owner:session.user.id,session:sessionMarkerKey(session.user.id,session.access_token)};}catch{/* Invalid metadata cannot retain a private scope. */}
@@ -40,14 +41,16 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
       (event==="TOKEN_REFRESHED"||event==="SIGNED_IN"||event==="INITIAL_SESSION"))return;
    observedScope.current=nextScope;
    generation.current++;
-   workspaceMemory.clear();
+   if(event==="SIGNED_OUT")workspaceMemory.clear();
+   else if(cacheWorkspace)workspaceMemory.retain(nextScope);
    setData(null);setScope(null);
    setLoading(true);
    reload();
   });
   return ()=>subscription?.data.subscription.unsubscribe();
- },[cacheWorkspace,reload]);
+ },[cacheWorkspace,reload,enabled]);
  useFocusEffect(useCallback(()=>{
+  if(!enabled)return;
   let current=true;
   const requestGeneration=generation.current;
   const valid=()=>current&&generation.current===requestGeneration;
@@ -63,15 +66,16 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
    const sameOwner=async()=>valid()&&sameScope(initial,await readScope())&&valid();
    try{
     if(cacheWorkspace){
-     if(!initial||!await sameOwner())throw Error("No se pudo verificar la sesión del perfil. Vuelve a intentarlo.");
+     if(!initial)throw Error("No se pudo verificar la sesión del perfil. Vuelve a intentarlo.");
      const memory=workspaceMemory.read(initial);
+     if(memory&&!await sameOwner())throw Error("No se pudo verificar la sesión del perfil. Vuelve a intentarlo.");
      setData(memory as T|null);setScope(memory?initial:null);
      if(memory)setLoading(false);
     }
     if(!valid())return;
-    const value=await loader();
+    const value=cacheWorkspace?await loader(initial??undefined):await loader();
     if(!await sameOwner()){
-     if(valid()){workspaceMemory.clear();setData(null);setScope(null);setError("La sesión cambió. Vuelve a cargar el perfil.");}
+     if(valid()){if(cacheWorkspace)workspaceMemory.clear();setData(null);setScope(null);setError("La sesión cambió. Vuelve a cargar el perfil.");}
      return;
     }
     if(cacheWorkspace){
@@ -87,14 +91,14 @@ export function useProfessionalData<T>(loader:()=>Promise<T>,cacheWorkspace=fals
      let stillCurrent=false;
      try{stillCurrent=await sameOwner();}catch{/* Fail closed when identity cannot be read. */}
      if(!valid())return;
-     if(!stillCurrent||strict){workspaceMemory.clear();setData(null);setScope(null);}
+     if(!stillCurrent||strict){if(cacheWorkspace)workspaceMemory.clear();setData(null);setScope(null);}
      setError(cause instanceof Error?cause.message:String(cause));
     }
    }finally{if(valid())setLoading(false);}
-  })().catch(cause=>{if(valid()){workspaceMemory.clear();setData(null);setScope(null);setError(cause instanceof Error?cause.message:String(cause));setLoading(false);}}).finally(()=>clearTimeout(timeout));
+  })().catch(cause=>{if(valid()){if(cacheWorkspace)workspaceMemory.clear();setData(null);setScope(null);setError(cause instanceof Error?cause.message:String(cause));setLoading(false);}}).finally(()=>clearTimeout(timeout));
   return ()=>{current=false;clearTimeout(timeout);};
- },[loader,version,cacheWorkspace,strict]));
- return {data,error,loading,reload,scope};
+ },[loader,version,cacheWorkspace,strict,enabled]));
+ return {data:enabled?data:null,error:enabled?error:"",loading:enabled&&loading,reload,scope:enabled?scope:null};
 }
 export function useProfessionalAction(reload:()=>void) {
  const guard=useRef(false);const [busy,setBusy]=useState(false);const [notice,setNotice]=useState("");
