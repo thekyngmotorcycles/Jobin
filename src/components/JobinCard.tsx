@@ -31,7 +31,7 @@ import {loadPublicContact,loadVisiblePersonalContactDetails,type PersonalContact
 import { experienceLabel } from "../lib/employment";
 import {ProfessionGlyph} from "./ProfessionGlyph";
 import { LanguageRing, languageLabel, LANGUAGE_LEVELS } from "./LanguageRing";
-import { businessCardAccents, businessCardPaper, businessInformationSurface, jcardCommon, jcardFloating, jcardReviewGlass, jcardLayout, jcardTokens, jcardSurfaceSize, jcardSurfaceMetrics, jcardProfilePortraitMetrics,jcardBusinessLogoMetrics,JCARD_BUSINESS_COLUMN_INSET,jcardProfilePillWidth,type JCardProfilePortraitMetrics } from "../theme/jcard";
+import { businessCardAccents, businessCardPaper, businessInformationSurface, jcardCommon, jcardFloating, jcardReviewGlass, jcardLayout, jcardTokens, jcardSurfaceSize, jcardSurfaceMetrics, jcardProfilePortraitMetrics,jcardBusinessLogoMetrics,JCARD_BUSINESS_COLUMN_INSET,type JCardProfilePortraitMetrics } from "../theme/jcard";
 import {businessCategoryArt} from "../lib/business-category-art";
 import {wrapBusinessCardName} from "../lib/business-card-layout";
 import {categoryGlyph} from "../lib/category-icons";
@@ -137,18 +137,19 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
   const working=card.status==="ACTIVE";
   const {fontScale:profileFontScale}=useWindowDimensions();
   const pillHeight=Math.max(28,Math.ceil(26*profileFontScale));
-  const profilePill={height:pillHeight,borderRadius:pillHeight/2,alignItems:"center" as const,justifyContent:"center" as const,paddingHorizontal:5,width:"100%" as const};
-  const profilePillTouch={minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center" as const,width:jcardProfilePillWidth(profilePortrait?.cardWidth??0),flexGrow:0,flexShrink:0};
-  const experienceAndAvailability=profilePortrait?<View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8,width:"100%"}}>
+  const profilePill={height:pillHeight,borderRadius:pillHeight/2,alignItems:"center" as const,justifyContent:"center" as const,paddingHorizontal:9,maxWidth:"100%" as const};
+  // Intrinsic label width + padding; neither capsule grows into the other.
+  const profilePillTouch={minHeight:JOBEEN_CONTROL.touchTarget,minWidth:JOBEEN_CONTROL.touchTarget,alignItems:"center" as const,justifyContent:"center" as const,maxWidth:"100%" as const,flexGrow:0,flexShrink:0};
+  const experienceAndAvailability=profilePortrait?<View style={{flexDirection:"row",flexWrap:"wrap",alignItems:"center",justifyContent:"center",gap:8,width:"100%"}}>
    {months!==undefined&&<Pressable accessibilityRole="button" accessibilityLabel={"Ver experiencia por profesión: "+experience} onPress={event=>{event.stopPropagation();setExperienceOpen(true);}} style={profilePillTouch}>
     <View style={{...profilePill,backgroundColor:jobeen.cream,borderColor:jobeen.yellow,borderWidth:1}}>
-     <Text numberOfLines={2} style={{fontSize:11,lineHeight:12,includeFontPadding:false,fontWeight:"600",textAlign:"center",color:jobeen.ink}}>{experience}</Text>
+     <Text numberOfLines={1} ellipsizeMode="tail" style={{fontSize:11,lineHeight:12,includeFontPadding:false,fontWeight:"600",textAlign:"center",color:jobeen.ink}}>{experience}</Text>
     </View>
    </Pressable>}
-   <Pressable accessibilityRole="button" accessibilityLabel="Información sobre disponibilidad" onPress={event=>{event.stopPropagation();setInfo(working?"Trabajando actualmente\\nLa persona indica que tiene un trabajo activo.":"Disponible para trabajar\\nLa persona indica que está abierta a nuevas oportunidades laborales o solicitudes de clientes.");}} style={profilePillTouch}>
+   <Pressable accessibilityRole="button" accessibilityLabel="Información sobre disponibilidad" onPress={event=>{event.stopPropagation();setInfo(working?"Trabajando actualmente\nLa persona indica que tiene un trabajo activo. Esto no significa que Jobin haya confirmado su relación laboral.":"Disponible para trabajar\nLa persona indica que está abierta a nuevas oportunidades laborales o solicitudes de clientes.");}} style={profilePillTouch}>
     <View style={{...profilePill,flexDirection:"row",gap:5,backgroundColor:jobeen.okBackground}}>
      <View style={{width:7,height:7,borderRadius:4,backgroundColor:jobeen.okDot}}/>
-     <Text numberOfLines={1} style={{flexShrink:1,fontSize:11,lineHeight:12,includeFontPadding:false,fontWeight:"600",color:jobeen.okText}}>{working?"Trabajando":"Disponible"}</Text>
+     <Text numberOfLines={1} ellipsizeMode="tail" style={{flexShrink:1,fontSize:11,lineHeight:12,includeFontPadding:false,fontWeight:"600",color:jobeen.okText}}>{working?"Trabajando":"Disponible"}</Text>
     </View>
    </Pressable>
   </View>:<View style={{

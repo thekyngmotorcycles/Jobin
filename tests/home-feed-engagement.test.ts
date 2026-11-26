@@ -103,13 +103,13 @@ test("All Home post types use author-first structure and inline expandable capti
  assert.ok(demo.includes('marginLeft:"auto"'));
 });
 
-test("Creator profiles show Todo, Videos, En vivo and Acerca de; private JCards for owners",()=>{
+test("Creator profiles show Acerca de, Todo, En vivo and Videos; private JCards last for owners",()=>{
  const sections=source("src/components/ProfileSharedSections.tsx");
  const own=source("src/app/(tabs)/profile.tsx");
  const visitor=source("src/app/jcard.tsx");
  const grid=source("src/components/ProfileOwnedPosts.tsx");
  const api=source("src/lib/social-content.ts");
- const order=['id:"grid"','id:"jcards"','id:"videos"','id:"live"','id:"cv"'].map(key=>sections.indexOf(key));
+ const order=['id:"cv"','id:"grid"','id:"live"','id:"videos"','id:"jcards"'].map(key=>sections.indexOf(key));
  assert.ok(order.every((position,index)=>position>0&&(index===0||position>order[index-1])));
  assert.ok(own.includes('useState<Mode>("grid")'));
  assert.ok(visitor.includes('useState<ProfileSection>("grid")'));

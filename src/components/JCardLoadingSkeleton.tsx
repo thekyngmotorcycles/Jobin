@@ -4,7 +4,7 @@ import {JobinLoadingGears} from "./JobinLoadingGears";
 import {JCardProfileLayers} from "./JCardProfileLayers";
 import {useTheme} from "../state/ThemeProvider";
 import {jcardArtTokens} from "../theme/jobeen";
-import {businessCardPaper,jcardCommon,jcardSurfaceMetrics,jcardSurfaceSize,jcardProfilePortraitMetrics,jcardProfileIdentitySpace,jcardProfilePillWidth} from "../theme/jcard";
+import {businessCardPaper,jcardCommon,jcardSurfaceMetrics,jcardSurfaceSize,jcardProfilePortraitMetrics,jcardProfileIdentitySpace} from "../theme/jcard";
 
 export function JCardLoadingSkeleton({profileInset=16}:{profileInset?:number}){
  const {theme}=useTheme(),t=jcardArtTokens(theme);
@@ -30,7 +30,7 @@ export function JCardLoadingSkeleton({profileInset=16}:{profileInset?:number}){
       {line("51%",13)}
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:12}}>{line("30%",11)}<View style={{width:1,height:18,backgroundColor:t.line}}/>{line("30%",11)}</View>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8}}>
-       {[0,1].map(i=><View key={i} style={{width:jcardProfilePillWidth(width),height:28,borderRadius:16,backgroundColor:t.cream,alignItems:"center",justifyContent:"center"}}>{line("74%",10)}</View>)}
+       {[0.55,0.32].map((ratio,i)=><View key={i} style={{width:Math.floor((width-26)*ratio),height:28,borderRadius:14,backgroundColor:t.cream,alignItems:"center",justifyContent:"center"}}>{line("74%",10)}</View>)}
       </View>
       <JobinLoadingGears size={30} mode="loading"/>
      </View>

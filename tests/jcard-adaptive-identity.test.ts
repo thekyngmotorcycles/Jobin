@@ -32,7 +32,7 @@ test("Shared static header keeps fixed subtitle and inline badge without identit
  assert.ok(!/Pressable|onPress|JobeenNoticeDialog|Modal/.test(header));
  assert.ok(header.includes("accessibilityLabel={name+"));
 });
-test("Standard private footprint is content independent with compact contacts and equal pills",()=>{
+test("Standard private footprint is content independent with compact contacts and equal pill heights",()=>{
  const card=source("src/components/JobinCard.tsx");
  assert.ok(card.includes("const cardHeight=surface.height;"));
  assert.ok(!/measurePersonal|measureBusiness|personalHeight|businessHeight/.test(card));
@@ -42,21 +42,23 @@ test("Standard private footprint is content independent with compact contacts an
 });
 
 
-test("Equal fixed pill widths cannot be redistributed by label length; business column clears logo",async()=>{
- const {jcardProfilePillWidth,jcardProfileIdentitySpace,jcardProfilePortraitMetrics,JCARD_BUSINESS_COLUMN_INSET}=await import("../src/theme/jcard.ts");
+test("Pills use intrinsic label width without flex redistribution; business column clears logo",async()=>{
+ const {jcardProfileIdentitySpace,jcardProfilePortraitMetrics,JCARD_BUSINESS_COLUMN_INSET}=await import("../src/theme/jcard.ts");
  for(const width of [250,288,328,382,520]){
-  const pill=jcardProfilePillWidth(width);
-  assert.ok(2*pill+8<=width-26);
-  assert.ok(pill>=108);
   const portrait=jcardProfilePortraitMetrics(width),business=jcardProfileIdentitySpace(portrait,1,"business");
   assert.equal(business.paddingLeft,JCARD_BUSINESS_COLUMN_INSET);
   assert.ok(business.paddingRight>portrait.inset+portrait.width);
  }
  const card=source("src/components/JobinCard.tsx"),header=source("src/components/JCardProfileIdentity.tsx");
- const pill=card.slice(card.indexOf("const profilePillTouch="),card.indexOf("  </View>:<View style={{",card.indexOf("const profilePillTouch=")));
+ const pill=card.slice(card.indexOf("const profilePill="),card.indexOf("  </View>:<View style={{",card.indexOf("const profilePill=")));
  assert.ok(pill.includes("flexGrow:0,flexShrink:0"));
  assert.equal((pill.match(/style=\{profilePillTouch\}/g)??[]).length,2);
- assert.ok(!pill.includes("adjustsFontSizeToFit"));
+ assert.ok(!pill.includes("adjustsFontSizeToFit")&&!pill.includes("width:jcardProfilePillWidth"));
+ assert.ok(pill.includes('paddingHorizontal:9,maxWidth:"100%"'));
+ assert.ok(pill.includes("height:pillHeight,borderRadius:pillHeight/2"));
+ assert.ok(pill.includes('flexWrap:"wrap",alignItems:"center",justifyContent:"center",gap:8'));
+ assert.equal((pill.match(/numberOfLines=\{1\} ellipsizeMode="tail"/g)??[]).length,2);
+ assert.ok(!pill.includes("flex:1")&&!pill.includes("numberOfLines={2}"));
  assert.ok(card.includes("profilePadding=profilePortrait?JCARD_BUSINESS_COLUMN_INSET"));
  assert.ok(card.includes('contentContainerStyle={{alignItems:"stretch",gap:2}}'));
  assert.ok(header.includes('const align="left"')&&header.includes('const justify="flex-start"'));
