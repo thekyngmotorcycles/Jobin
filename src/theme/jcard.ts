@@ -1,4 +1,4 @@
-import {JCARD_PERSONAL_PORTRAIT_HEIGHT_RATIO} from "../lib/avatar-editor-geometry";
+import {JCARD_PERSONAL_PORTRAIT_HEIGHT_RATIO} from "../lib/avatar-editor-geometry.ts";
 import { composite,opacity,contrastRatio,secondaryText } from "./color.ts";
 import type { ThemeName } from "../state/ThemeProvider";
 import type { JCardTier } from "../lib/jcard";
