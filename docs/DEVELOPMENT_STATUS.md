@@ -1,5 +1,11 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-PARITY — igualdad de perfil y editor de retrato (2026-11-25)
+
+- Base `be9006ff`, PR #136 integrado y OTA Android 45735426432 exitosa; revisión física del propietario confirma portada 5:2 y solape. Nuevo bloque autorizado: quitar Guardar contacto de las caras del visitante, conservarlo en menú (separado de colección JCards) con lecturas autorizadas de la cara visible, igualar inset 16 dp y mantener cálculo compartido. Editor personal 10:11 y negocio 1:1 con esquinas redondeadas; recorte real y exportación proporcionales, sin modificar datos anteriores ni permisos.
+- Pruebas de geometría y contrato incorporadas. CI, merge/OTA por autorización separada y revisión física pendientes. No cambios de banner, tipografías, datos internos restantes, backend ni APK.
+
+
 ## JCARD-COVER-5x2 — portada fija y capas independientes (2026-11-25)
 
 - Alcance aprobado: únicamente banner y su composición con JCard propia/visitante. Base development `5205e52f`, PR #134 integrado y OTA anterior publicada. Nuevo contenedor compartido por carga y tarjeta real; portada absoluta fija, tarjeta en flujo con origen vertical calculado. Proporción 5:2 sobre el ancho real; conserva el solape de retratos, giro y acciones. Editor y recorte nuevos usan 5:2, sin modificar portadas existentes, seguridad ni límites de archivo.

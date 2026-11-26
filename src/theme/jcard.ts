@@ -1,3 +1,4 @@
+import {JCARD_PERSONAL_PORTRAIT_HEIGHT_RATIO} from "../lib/avatar-editor-geometry.ts";
 import { composite,opacity,contrastRatio,secondaryText } from "./color.ts";
 import type { ThemeName } from "../state/ThemeProvider";
 import type { JCardTier } from "../lib/jcard";
@@ -46,7 +47,7 @@ export function jcardSurfaceSize(args:{screenWidth:number;measuredWidth?:number;
 }
 export function jcardProfilePortraitMetrics(cardWidth:number){
  const width=Math.max(60,Math.min(86,Math.round(cardWidth*.24)));
- const height=Math.round(width*1.1);
+ const height=Math.round(width*JCARD_PERSONAL_PORTRAIT_HEIGHT_RATIO);
  const overlap=height/4;
  return {width,height,overlap,coverOverlap:Math.round(overlap/2),inset:14,radius:14,cardWidth};
 }

@@ -28,6 +28,8 @@ import {readPublicBusinessCard} from "../lib/jcard-cloud";
 import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import {isSavedJCard,removeSavedJCard,saveVisibleJCard,type SavedJCardSide} from "../lib/saved-jcards";
 import type {BusinessCardData} from "../lib/jcard";
+import {loadPublicContact,loadVisiblePersonalContactDetails} from "../lib/jcard-contact";
+import {presentJCardContact,type JCardContact} from "../lib/jcard-save-contact";
 export default function PublicJCard(){
  const {user,card}=useLocalSearchParams<{user?:string;card?:string}>();
  const {colors,s}=useUi();
@@ -49,6 +51,35 @@ export default function PublicJCard(){
  const [cardSaved,setCardSaved]=useState(false);
  const [savingCard,setSavingCard]=useState(false);
  const sideIsPublic=activeCardSide==="personal"?cardVisibility.personal_enabled:cardVisibility.business_enabled&&!!publicBusiness;
+ const contactTarget=useRef({snapshot,side:activeCardSide});
+ contactTarget.current={snapshot,side:activeCardSide};
+ const contactSaveGuard=useRef<object|null>(null);
+ const saveVisibleContact=async()=>{
+  const current=contactTarget.current,origin=current.snapshot,target=origin?.target;
+  if(!origin||!target||target!==user||origin.scope.owner===target||!sideIsPublic||contactSaveGuard.current)return;
+  const generation=publicRevision.current,operation={};
+  contactSaveGuard.current=operation;
+  const valid=()=>contactSaveGuard.current===operation&&publicRevision.current===generation&&contactTarget.current.snapshot===origin&&contactTarget.current.side===current.side;
+  try{
+   await captureMessageScope(origin.scope);
+   const visibility=await readJCardVisibility(target,origin.scope);
+   if(!valid())return;
+   let contact:JCardContact;
+   if(current.side==="business"){
+    if(!visibility.business_enabled)throw Error("La JCard de negocio ya no está disponible.");
+    const business=await readPublicBusinessCard(target,origin.scope);
+    if(!business)throw Error("La JCard de negocio ya no está disponible.");
+    contact={name:business.name,phone:visibility.business_show_phone?(business.phone||business.phoneSecondary):null,email:visibility.business_show_email?(business.email||business.emailSecondary):null};
+   }else{
+    if(!visibility.personal_enabled)throw Error("La JCard personal ya no está disponible.");
+    const [base,details]=await Promise.all([loadPublicContact(target,origin.scope),loadVisiblePersonalContactDetails(target,origin.scope)]);
+    contact={name:origin.data.name,phone:details.phone_primary||details.phone_secondary||base.phone,email:details.email_primary||details.email_secondary||base.email};
+   }
+   await assertMessageScope(origin.scope);
+   if(valid())await presentJCardContact(contact);
+  }catch(e){if(valid())Alert.alert("Guardar contacto",e instanceof Error?e.message:"No se pudo abrir el contacto.");}
+  finally{if(contactSaveGuard.current===operation)contactSaveGuard.current=null;}
+ };
  useEffect(()=>setActiveCardSide(card==="business"?"business":"personal"),[card,user]);
  useFocusEffect(useCallback(()=>{
   const generation=++publicRevision.current;
@@ -239,13 +270,14 @@ export default function PublicJCard(){
     })}>
    <Animated.View style={{paddingBottom:12,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
     {resource.data?<ProfileIdentityHeader
-     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={publicBusiness&&(card==="business"||!cardVisibility.personal_enabled)?"business":"personal"} onActiveSideChange={setActiveCardSide} awardsInAbout profileInset={20} publicVisibility={cardVisibility} publicScope={snapshot?.scope}/>}
-     actionsInset={20} actions={<ProfileCommunityActions user={resource.data.id} name={cardVisibility.personal_enabled?resource.data.name:publicBusiness?.name??""} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
+     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={publicBusiness&&(card==="business"||!cardVisibility.personal_enabled)?"business":"personal"} onActiveSideChange={setActiveCardSide} awardsInAbout profileInset={16} publicVisibility={cardVisibility} publicScope={snapshot?.scope}/>}
+     actionsInset={16} actions={<ProfileCommunityActions user={resource.data.id} name={cardVisibility.personal_enabled?resource.data.name:publicBusiness?.name??""} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
       onToggleSaved={savedReady&&cardVisibilityReady&&sideIsPublic?()=>void toggleSaved():undefined}
+      onSaveContact={cardVisibilityReady&&sideIsPublic?()=>void saveVisibleContact():undefined}
       savedJCard={cardSaved} savingJCard={savingCard} visibleCardSide={activeCardSide}/>}
      trust={<ProfessionalTrustMark worker={resource.data.id} inset={20}/>}
      profileUserId={resource.data.id} countsInCard expectedScope={publicScope}
-    />:<JCardLoadState loading={resource.loading} error={resource.error} retry={resource.reload} profileInset={20}/>}
+    />:<JCardLoadState loading={resource.loading} error={resource.error} retry={resource.reload} profileInset={16}/>}
    </Animated.View>
    {!!resource.data&&<View onLayout={event=>setTabOffset(event.nativeEvent.layout.y)}
     style={{zIndex:3,backgroundColor:jt.bg,borderTopLeftRadius:18,borderTopRightRadius:18,width:"100%",maxWidth:1180,alignSelf:"center"}}>
