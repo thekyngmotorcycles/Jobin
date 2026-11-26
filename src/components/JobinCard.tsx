@@ -2,6 +2,7 @@ import {presentJCardContact} from "../lib/jcard-save-contact";
 import {BusinessCard3D,CardFlipInteractionContext} from "./BusinessCard3D";
 import {ProfileConnectionCountRow} from "./ProfileFollowCounts";
 import {JCardSharedCover} from "./JCardSharedCover";
+import {JCardProfileLayers} from "./JCardProfileLayers";
 import {jobeenTokens,jcardArtTokens} from "../theme/jobeen";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {personalAvatarUrl} from "../lib/personal-jcard-photo";
@@ -556,10 +557,8 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const sideLink=(side:"personal"|"business")=>card.profileUrl+(card.profileUrl.includes("?")?"&":"?")+"card="+side;
  const sideLabel=(side:"personal"|"business")=>side==="business"?(card.business?.name?.trim()||card.name):card.name;
  return <>
-  {!!profilePortrait&&<View style={{width:"100%",height:profilePortrait.coverHeight,marginBottom:-(profilePortrait.overlap+profilePortrait.coverOverlap),borderRadius:18,overflow:"hidden",backgroundColor:cardColors.line}}>
-   <JCardSharedCover target={ownerId} scope={profileCoverScope??publicScope} editable={showOwnerActions} height={profilePortrait.coverHeight}/>
-  </View>}
-  <View style={{width:"100%",paddingHorizontal:profilePortrait?profileInset:0}}>
+  <JCardProfileLayers portrait={profilePortrait} cover={height=><JCardSharedCover target={ownerId} scope={profileCoverScope??publicScope} editable={showOwnerActions} height={height}/>}>
+  <View pointerEvents="box-none" style={{width:"100%",paddingHorizontal:profilePortrait?profileInset:0}}>
   <View onLayout={event=>{
    const next=Math.round(event.nativeEvent.layout.width);
    if(next>0)setMeasuredCardWidth(previous=>previous!==next?next:previous);
@@ -594,6 +593,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
    </View>}
   </View>
   </View>
+  </JCardProfileLayers>
   <JCardShareSheet visible={shareSide!==null} onClose={()=>setShareSide(null)}
   label={sideLabel(shareSide??(back?"business":"personal"))}
   link={sideLink(shareSide??(back?"business":"personal"))} side={shareSide??(back?"business":"personal")} theme={cardTheme}/>

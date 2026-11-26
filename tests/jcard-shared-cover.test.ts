@@ -9,6 +9,7 @@ test("Shared cover is one explicit owner-approved upload, independent of the JCa
  assert.ok(card.indexOf("<JCardSharedCover ")<card.indexOf("<BusinessCard3D height={cardHeight}"));
  assert.ok(!editor.includes("bannerUrl")&&!api.includes("getPublicUrl"));
  assert.ok(editor.includes("context.crop(")&&editor.includes("context.resize({width:1024})"));
+ assert.ok(editor.includes("ratio=JCARD_PROFILE_COVER_RATIO")&&editor.includes("aspectRatio:JCARD_PROFILE_COVER_RATIO"));
  assert.ok(editor.includes('title="Publicar portada"')&&editor.includes("if(!candidate||!current)return;"));
  assert.ok(editor.includes("target===scope?.owner")&&editor.includes("revision.current===generation"));
  assert.ok(api.includes('READER="jcard-cover-read"')&&api.includes("db.functions.invoke<SharedCover>(READER"));

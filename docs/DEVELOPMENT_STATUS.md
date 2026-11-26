@@ -1,5 +1,10 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-COVER-5x2 — portada fija y capas independientes (2026-11-25)
+
+- Alcance aprobado: únicamente banner y su composición con JCard propia/visitante. Base development `5205e52f`, PR #134 integrado y OTA anterior publicada. Nuevo contenedor compartido por carga y tarjeta real; portada absoluta fija, tarjeta en flujo con origen vertical calculado. Proporción 5:2 sobre el ancho real; conserva el solape de retratos, giro y acciones. Editor y recorte nuevos usan 5:2, sin modificar portadas existentes, seguridad ni límites de archivo.
+- Pruebas de geometría y contrato actualizadas. CI, integración autorizada por separado y comprobación física del giro y portada en Jelly 2 pendientes. Sin OTA, APK ni cambios alojados en esta etapa.
+
 ## JCARD-FRONT — correcciones tras la revisión en Jelly 2 (2026-11-26)
 
 - Rama `fix/profile-front-jelly` sobre `development` en `07101084`, con el PR #132 integrado. El cuerpo de la JCard vuelve a solapar la portada con la misma altura y posición del banner. El esqueleto comparte el solape. La cara Negocio recupera la estrella, el patrón de reseñas y los círculos de contacto. El texto usa una escala ligeramente menor y el nombre conserva su eje central. El logo adapta su marco a la proporción original y sobresale un 25%.

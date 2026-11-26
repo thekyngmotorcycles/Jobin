@@ -67,16 +67,16 @@ test("No persistent flip handle or hand tutorial remains",()=>{
 
 
 test("Profile portraits use a common exact quarter overlap and fixed non-rotating cover region",async()=>{
- const {jcardProfilePortraitMetrics,jcardBusinessLogoMetrics}=await import("../src/theme/jcard.ts");
+ const {jcardProfilePortraitMetrics,jcardBusinessLogoMetrics,jcardProfileCoverGeometry}=await import("../src/theme/jcard.ts");
  for(const width of [250,288,310,390,520]){
   const m=jcardProfilePortraitMetrics(width);
   assert.equal(m.overlap,m.height/4);
   assert.ok(m.width>=60&&m.width<=86);
-  const frameTop=m.coverHeight-(m.overlap+m.coverOverlap);
-  const bodyTop=frameTop+m.overlap;
+  const {coverHeight,frameTop,bodyTop}=jcardProfileCoverGeometry(width+32,m);
   assert.ok(frameTop>=52,"Portrait stays clear of the cover editor");
-  assert.equal(bodyTop,m.coverHeight-m.coverOverlap);
-  assert.ok(bodyTop<m.coverHeight);
+  assert.equal(frameTop+m.overlap,bodyTop);
+  assert.equal(bodyTop,coverHeight-m.coverOverlap);
+  assert.ok(bodyTop<coverHeight);
   for(const ratio of [0.5,1,1.5,3]){
    const logo=jcardBusinessLogoMetrics(m,ratio);
    assert.ok(logo.width<=m.width&&logo.height<=m.height);
@@ -87,11 +87,17 @@ test("Profile portraits use a common exact quarter overlap and fixed non-rotatin
  const card=source("src/components/JobinCard.tsx"),flip=source("src/components/BusinessCard3D.tsx"),skeleton=source("src/components/JCardLoadingSkeleton.tsx");
  assert.ok(card.includes("jcardProfilePortraitMetrics(")&&skeleton.includes("jcardProfilePortraitMetrics(width)"));
  assert.ok(card.includes("left:profilePortrait.inset")&&card.includes("right:portrait.inset"));
- assert.ok(card.indexOf("height:profilePortrait.coverHeight")<card.indexOf("<BusinessCard3D height={cardHeight}"));
+ assert.ok(card.indexOf("<JCardProfileLayers")<card.indexOf("<BusinessCard3D height={cardHeight}"));
  assert.ok(card.includes("<JCardSharedCover target={ownerId}")&&!card.includes("source={{uri:card.business.bannerUrl}}"));
  assert.ok(flip.includes("height:totalHeight")&&flip.includes("marginTop:topInset,shadowColor"));
  assert.ok(flip.includes("{frontPortrait}")&&flip.includes("{backPortrait}"));
- assert.ok(skeleton.includes("top:-portrait.overlap")&&skeleton.includes("marginBottom:-portrait.coverOverlap"));
+ assert.ok(skeleton.includes("paddingTop:portrait.overlap")&&skeleton.includes("top:0,width:portrait.width"));
+ const layers=source("src/components/JCardProfileLayers.tsx");
+ assert.ok(layers.includes('position:"absolute",top:0,left:0,right:0,height:geometry.coverHeight'));
+ assert.ok(layers.includes("paddingTop:geometry.frameTop,zIndex:1"));
+ assert.ok(layers.includes("{cover(geometry.coverHeight)}")&&layers.includes("{children}"));
+ assert.ok(!layers.includes("marginBottom")&&!layers.includes("BusinessCard3D"));
+ assert.ok(card.includes("<JCardProfileLayers")&&skeleton.includes("<JCardProfileLayers"));
 });
 
 
@@ -114,16 +120,22 @@ test("Profile faces share a compact floor, grow with type, and fit the widest re
  assert.ok(card.includes("onProfileLayout={measurePersonal}")&&card.includes("onProfileLayout={measureBusiness}"));
 });
 
-test("Full-width banner preserves previous heights on own and visitor profiles", async()=>{
- const {jcardSurfaceSize,jcardProfilePortraitMetrics}=await import("../src/theme/jcard.ts");
- for(const [screenWidth,ownHeight,publicHeight] of [[320,86,84],[360,98,96],[414,115,112],[768,148,148]]){
-  for(const [horizontalInset,height] of [[16,ownHeight],[20,publicHeight]]){
+test("Full-width 5:2 cover has independent geometry on own and visitor profiles", async()=>{
+ const {jcardSurfaceSize,jcardProfilePortraitMetrics,jcardProfileCoverGeometry,JCARD_PROFILE_COVER_RATIO}=await import("../src/theme/jcard.ts");
+ assert.equal(JCARD_PROFILE_COVER_RATIO,2.5);
+ for(const [screenWidth,height] of [[320,128],[360,144],[390,156],[414,166],[768,307]]){
+  for(const horizontalInset of [16,20]){
    const size=jcardSurfaceSize({screenWidth,fontScale:1,theme:"light",profile:true,horizontalInset});
-   assert.equal(jcardProfilePortraitMetrics(size.width).coverHeight,height);
+   const portrait=jcardProfilePortraitMetrics(size.width);
+   const geometry=jcardProfileCoverGeometry(screenWidth,portrait);
+   assert.equal(geometry.coverHeight,height);
+   assert.equal(geometry.bodyTop,height-portrait.coverOverlap);
+   assert.equal(geometry.frameTop+portrait.overlap,geometry.bodyTop);
   }
  }
  const card=source("src/components/JobinCard.tsx");
- assert.ok(card.includes('width:"100%",height:profilePortrait.coverHeight,marginBottom:-(profilePortrait.overlap+profilePortrait.coverOverlap)'));
+ assert.ok(card.includes("<JCardProfileLayers portrait={profilePortrait}"));
+ assert.ok(!card.includes("marginBottom:-(profilePortrait.overlap"));
  const owner=source("src/app/(tabs)/profile.tsx"),visitor=source("src/app/jcard.tsx");
  for(const [screen,inset] of [[owner,16],[visitor,20]] as const){
   assert.ok(screen.includes('contentInsetAdjustmentBehavior="never"'));

@@ -7,6 +7,7 @@ import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
+import {JCARD_PROFILE_COVER_RATIO} from "../theme/jcard";
 import {captureMessageScope,assertMessageScope,type MessageScope} from "../lib/message-session";
 import {readSharedCover,publishSharedCover,removeSharedCover,type SharedCover} from "../lib/jcard-shared-cover";
 import {Button} from "./ui";
@@ -20,7 +21,7 @@ async function pickCover():Promise<string|null>{
  const picker=await import("expo-image-picker");
  const result=await picker.launchImageLibraryAsync({mediaTypes:["images"],allowsMultipleSelection:false,quality:0.8});
  if(result.canceled||!result.assets.length)return null;
- const photo=result.assets[0],ratio=10/3;
+ const photo=result.assets[0],ratio=JCARD_PROFILE_COVER_RATIO;
  if(!photo.width||!photo.height)throw Error("No se pudo verificar el tamaño de la imagen.");
  const w=Math.max(1,Math.min(photo.width,Math.floor(photo.height*ratio)));
  const h=Math.max(1,Math.min(photo.height,Math.floor(w/ratio)));
@@ -100,7 +101,7 @@ function ScopedJCardSharedCover({target,scope,editable=false,height}:SharedCover
     <View accessibilityViewIsModal style={{maxHeight:"100%",borderRadius:modal.radius.dialog,backgroundColor:modal.surface,borderWidth:1,borderColor:modal.border,padding:16}}>
      <ScrollView contentContainerStyle={{gap:12}} keyboardShouldPersistTaps="handled">
       <Text accessibilityRole="header" style={{fontSize:18,fontWeight:"700",color:modal.text}}>Portada compartida</Text>
-      <View style={{width:"100%",aspectRatio:10/3,borderRadius:12,overflow:"hidden",backgroundColor:t.line}}>
+      <View style={{width:"100%",aspectRatio:JCARD_PROFILE_COVER_RATIO,borderRadius:12,overflow:"hidden",backgroundColor:t.line}}>
        {!!(candidate||current?.url)&&<Image source={{uri:candidate||current!.url!}} resizeMode="cover" style={{width:"100%",height:"100%"}}/>}
       </View>
       <Text style={{color:modal.muted,lineHeight:19}}>La portada será visible para quienes puedan visitar tu perfil, independientemente de la cara de JCard que muestres. Solo se publica al confirmar.</Text>

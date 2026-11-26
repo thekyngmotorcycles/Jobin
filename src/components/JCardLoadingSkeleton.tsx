@@ -1,6 +1,7 @@
 import {useState} from "react";
 import {View,useWindowDimensions,type DimensionValue} from "react-native";
 import {JobinLoadingGears} from "./JobinLoadingGears";
+import {JCardProfileLayers} from "./JCardProfileLayers";
 import {useTheme} from "../state/ThemeProvider";
 import {jcardArtTokens} from "../theme/jobeen";
 import {businessCardPaper,jcardCommon,jcardSurfaceMetrics,jcardSurfaceSize,jcardProfilePortraitMetrics,jcardProfileIdentitySpace} from "../theme/jcard";
@@ -16,9 +17,9 @@ export function JCardLoadingSkeleton({profileInset=16}:{profileInset?:number}){
  const muted=light?businessCardPaper.border:t.silver;
  const line=(width:DimensionValue,height=12)=><View style={{width,height,borderRadius:Math.min(8,height/2),backgroundColor:muted,opacity:light?0.42:0.26}}/>;
  return <View accessibilityRole="progressbar" accessibilityLabel="Cargando JCard">
-  <View style={{height:portrait.coverHeight,marginBottom:-portrait.coverOverlap,borderRadius:18,backgroundColor:muted,opacity:0.25}}/>
+  <JCardProfileLayers portrait={portrait} cover={height=><View style={{height,backgroundColor:muted,opacity:0.25}}/>}>
   <View style={{paddingHorizontal:profileInset}}>
-   <View style={{width:"100%",maxWidth:jcardSurfaceMetrics.maxWidth,alignSelf:"center"}}
+   <View style={{width:"100%",maxWidth:jcardSurfaceMetrics.maxWidth,alignSelf:"center",paddingTop:portrait.overlap}}
     onLayout={event=>{const current=Math.round(event.nativeEvent.layout.width);if(current>0)setMeasuredWidth(old=>old!==current?current:old);}}>
     <View style={{height,borderRadius:radius,borderWidth:1,borderColor:t.line,backgroundColor:fill,
      paddingBottom:8,shadowColor:jcardCommon.cardShadowColor,shadowOffset:{width:0,height:6},shadowOpacity:0.10,shadowRadius:12,elevation:3}}>
@@ -33,8 +34,9 @@ export function JCardLoadingSkeleton({profileInset=16}:{profileInset?:number}){
       <JobinLoadingGears size={30} mode="loading"/>
      </View>
     </View>
-    <View pointerEvents="none" style={{position:"absolute",left:portrait.inset,top:-portrait.overlap,width:portrait.width,height:portrait.height,borderRadius:portrait.radius,backgroundColor:muted,opacity:0.8,zIndex:3}}/>
+    <View pointerEvents="none" style={{position:"absolute",left:portrait.inset,top:0,width:portrait.width,height:portrait.height,borderRadius:portrait.radius,backgroundColor:muted,opacity:0.8,zIndex:3}}/>
    </View>
   </View>
+  </JCardProfileLayers>
  </View>;
 }
