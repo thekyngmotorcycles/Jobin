@@ -48,9 +48,17 @@ export function jcardProfilePortraitMetrics(cardWidth:number){
  const width=Math.max(60,Math.min(86,Math.round(cardWidth*.24)));
  const height=Math.round(width*1.1);
  const overlap=height/4;
- return {width,height,overlap,coverOverlap:Math.round(overlap/2),inset:14,radius:14,cardWidth,coverHeight:Math.max(82,Math.min(148,Math.round(cardWidth*.30)))};
+ return {width,height,overlap,coverOverlap:Math.round(overlap/2),inset:14,radius:14,cardWidth};
 }
 export type JCardProfilePortraitMetrics=ReturnType<typeof jcardProfilePortraitMetrics>;
+/** The shared cover follows its own full-width 5:2 aspect ratio, not the card width. */
+export const JCARD_PROFILE_COVER_RATIO=5/2;
+export function jcardProfileCoverGeometry(coverWidth:number,portrait:JCardProfilePortraitMetrics){
+ const coverHeight=Math.round(Math.max(0,coverWidth)/JCARD_PROFILE_COVER_RATIO);
+ const bodyTop=Math.max(0,coverHeight-portrait.coverOverlap);
+ const frameTop=Math.max(0,bodyTop-portrait.overlap);
+ return {coverHeight,bodyTop,frameTop};
+}
 export function jcardProfileIdentitySpace(portrait:JCardProfilePortraitMetrics,nameLength:number,fontSize:number,fontScale:number){
  const clearance=portrait.height-portrait.overlap;
  const gutter=portrait.inset+portrait.width+6;
