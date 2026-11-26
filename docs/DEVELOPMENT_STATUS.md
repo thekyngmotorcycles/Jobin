@@ -1,10 +1,16 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-FRONT — correcciones tras la revisión en Jelly 2 (2026-11-26)
+
+- Rama `fix/profile-front-jelly` sobre `development` en `07101084`, con el PR #132 integrado. El cuerpo de la JCard vuelve a solapar la portada con la misma altura y posición del banner. El esqueleto comparte el solape. La cara Negocio recupera la estrella, el patrón de reseñas y los círculos de contacto. El texto usa una escala ligeramente menor y el nombre conserva su eje central. El logo adapta su marco a la proporción original y sobresale un 25%.
+- En Chromium con React Native Web y perfiles sintéticos, «Acerca de» terminaba en 370,9 px sobre un viewport de 320 px en la base. Con el ajuste termina en 316 px y las cinco etiquetas del perfil propio caben en una línea. Se comprobaron los perfiles propio y visitante a 320, 360, 414 y 768 px en ambas apariencias. El texto ampliado conserva el desplazamiento horizontal. La colección JCards conserva su acceso exclusivo desde el perfil propio.
+- En la misma comprobación a 320 px, el contenido de la cara Negocio pasó de 247 a 242 px con un caso de correo, teléfono y dirección. Nombre centrado en x = 160, estrella presente aun con cero reseñas y tres círculos alineados de 26 × 26 px. TypeScript, lint sin errores y 508 pruebas locales aprobadas. Validación física de este ajuste pendiente en Jelly 2.
+
 ## JCARD-FRONT — frente del perfil aprobado (2026-11-25)
 
 - Rama `feature/profile-front-layout` sobre `development` en `23a14071`, con PR #130 integrado. Portada a todo el ancho bajo el área segura, con la altura responsiva anterior y los controles superiores superpuestos. Las dos caras comparten altura medida, centran la identidad respecto al ancho completo y mantienen el 25% de solape de los retratos. El esqueleto acompaña la nueva geometría.
 - Personal conserva seguidores y contactos y traslada idiomas a Acerca de > Personal. Negocio ordena reseñas y contactos empresariales y utiliza la lista de servicios existente en Acerca de > Negocio. Las acciones de perfil, giros, gestos y pestañas se conservan. El alcance es de presentación JS y reglas visuales.
-- Verificación local con TypeScript, lint sin errores, 507 pruebas y exportación JavaScript de Android, iOS y web. La cobertura incluye geometría a 320, 360, 414 y 768 dp, escalado de texto, carga, orden de datos y navegación propia/visitante. La revisión física en Jelly 2 queda pendiente.
+- Verificación local con TypeScript, lint sin errores, 507 pruebas y exportación JavaScript de Android, iOS y web. La cobertura incluye geometría a 320, 360, 414 y 768 dp, escalado de texto, carga, orden de datos y navegación propia/visitante. La revisión física del propietario en Jelly 2 motivó los ajustes registrados arriba.
 
 ## JCARD-COMPACT — validación HTTP de lectura revocable en Security Pilot (2026-11-25)
 

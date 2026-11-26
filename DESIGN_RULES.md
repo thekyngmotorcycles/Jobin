@@ -70,3 +70,10 @@ Opción 3 refinada: una portada única pública y elegida expresamente por su ti
 - En Personal van nombre e insignia, usuario, profesión, seguidores y contactos. Experiencia y disponibilidad se equilibran a izquierda y derecha dentro del mismo grupo centrado. Los idiomas se consultan en Acerca de > Personal.
 - En Negocio van nombre, categoría, reseñas, correo, teléfono y dirección, con los iconos de contacto alineados. Los servicios permanecen en Acerca de > Negocio. Las métricas personales pertenecen únicamente a Personal.
 - El esqueleto sigue la portada, el retrato y la geometría compacta. Las caras crecen juntas si el contenido o el tamaño de letra lo requieren. Mantener Royal Hive Light y Dark, objetivos táctiles de 48 dp, la barra inferior fija y las acciones principales inmediatamente después de la JCard. El Jelly 2 es la referencia de ancho compacto.
+
+### Ajustes del frente tras la revisión en Jelly 2 (2026-11-26)
+
+- El cuerpo de la JCard se solapa sobre la parte inferior de la portada. Mantener la altura responsiva y la posición del banner, también durante la carga. El solape de la tarjeta y el 25% del retrato son medidas independientes.
+- En Negocio, centrar la identidad respecto a la tarjeta completa. Conservar palabras enteras y equilibrar el nombre cuando use dos líneas. Mostrar estrella, puntuación cuando esté disponible y número de reseñas. Correo, teléfono y dirección usan círculos Jobin del mismo tamaño y una columna de iconos alineados, con objetivos táctiles de 48 dp.
+- Ajustar el marco redondeado del logo a la proporción de la imagen. Mantener el 25% de solape y mostrar el contenido completo. Usar la misma jerarquía visual del retrato personal.
+- En ancho compacto, las cinco pestañas del perfil propio caben en una línea a escala de texto normal. Reducir el espaciado horizontal y un punto de tipografía, conservar el desplazamiento cuando haga falta por escala de texto y mantener la colección JCards en el perfil del titular.

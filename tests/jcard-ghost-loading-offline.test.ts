@@ -67,21 +67,31 @@ test("No persistent flip handle or hand tutorial remains",()=>{
 
 
 test("Profile portraits use a common exact quarter overlap and fixed non-rotating cover region",async()=>{
- const {jcardProfilePortraitMetrics}=await import("../src/theme/jcard.ts");
+ const {jcardProfilePortraitMetrics,jcardBusinessLogoMetrics}=await import("../src/theme/jcard.ts");
  for(const width of [250,288,310,390,520]){
   const m=jcardProfilePortraitMetrics(width);
   assert.equal(m.overlap,m.height/4);
   assert.ok(m.width>=60&&m.width<=86);
-  assert.ok(m.coverHeight>m.overlap);
+  const frameTop=m.coverHeight-(m.overlap+m.coverOverlap);
+  const bodyTop=frameTop+m.overlap;
+  assert.ok(frameTop>=52,"Portrait stays clear of the cover editor");
+  assert.equal(bodyTop,m.coverHeight-m.coverOverlap);
+  assert.ok(bodyTop<m.coverHeight);
+  for(const ratio of [0.5,1,1.5,3]){
+   const logo=jcardBusinessLogoMetrics(m,ratio);
+   assert.ok(logo.width<=m.width&&logo.height<=m.height);
+   assert.ok(Math.abs(logo.width/logo.height-ratio)<1e-6);
+   assert.ok(Math.abs(m.overlap-logo.top-logo.height/4)<1e-6);
+  }
  }
  const card=source("src/components/JobinCard.tsx"),flip=source("src/components/BusinessCard3D.tsx"),skeleton=source("src/components/JCardLoadingSkeleton.tsx");
  assert.ok(card.includes("jcardProfilePortraitMetrics(")&&skeleton.includes("jcardProfilePortraitMetrics(width)"));
- assert.ok(card.includes("left:profilePortrait.inset")&&card.includes("right:profilePortrait.inset"));
+ assert.ok(card.includes("left:profilePortrait.inset")&&card.includes("right:portrait.inset"));
  assert.ok(card.indexOf("height:profilePortrait.coverHeight")<card.indexOf("<BusinessCard3D height={cardHeight}"));
  assert.ok(card.includes("<JCardSharedCover target={ownerId}")&&!card.includes("source={{uri:card.business.bannerUrl}}"));
  assert.ok(flip.includes("height:totalHeight")&&flip.includes("marginTop:topInset,shadowColor"));
  assert.ok(flip.includes("{frontPortrait}")&&flip.includes("{backPortrait}"));
- assert.ok(skeleton.includes("top:-portrait.overlap"));
+ assert.ok(skeleton.includes("top:-portrait.overlap")&&skeleton.includes("marginBottom:-portrait.coverOverlap"));
 });
 
 
@@ -113,7 +123,7 @@ test("Full-width banner preserves previous heights on own and visitor profiles",
   }
  }
  const card=source("src/components/JobinCard.tsx");
- assert.ok(card.includes('width:"100%",height:profilePortrait.coverHeight,marginBottom:-profilePortrait.overlap'));
+ assert.ok(card.includes('width:"100%",height:profilePortrait.coverHeight,marginBottom:-(profilePortrait.overlap+profilePortrait.coverOverlap)'));
  const owner=source("src/app/(tabs)/profile.tsx"),visitor=source("src/app/jcard.tsx");
  for(const [screen,inset] of [[owner,16],[visitor,20]] as const){
   assert.ok(screen.includes('contentInsetAdjustmentBehavior="never"'));
@@ -139,6 +149,19 @@ test("Both centered name areas clear the portrait with wide or vertically offset
  }
 });
 
+test("Business profile restores the review star and aligned branded contact circles",()=>{
+ const card=source("src/components/JobinCard.tsx");
+ const contactIcon=card.slice(card.indexOf("function BusinessContactIcon"),card.indexOf("function BusinessProfileLogo"));
+ assert.ok(contactIcon.includes("backgroundColor:colors.yellow")&&contactIcon.includes("color={colors.onYellow}"));
+ const face=card.slice(card.indexOf("const contactRows=profilePortrait?"),card.indexOf(' </View>:<View style={{gap:theme='));
+ for(const icon of ["mail","call","location"]){
+  assert.ok(face.includes(`<BusinessContactIcon name="${icon}-outline" theme={theme}/>`));
+ }
+ const profile=card.slice(card.indexOf("const displayedProfileName"),card.indexOf('   </View>:<>',card.indexOf("const displayedProfileName")));
+ assert.ok(profile.includes("wrapBusinessCardName(profileName,nameLineLength,true)"));
+ assert.ok(profile.includes('color:jcardCommon.businessGold}}>★</Text> {ratingUnlocked?rating!.toFixed(1):"—"}'));
+ assert.ok(profile.includes('· ({reviewCount}'));
+});
 test("Profile faces show personal counts only and present languages and services in About",()=>{
  const card=source("src/components/JobinCard.tsx");
  const personal=card.slice(card.indexOf("{profilePortrait&&identitySpace?"),card.indexOf("export function BusinessFace"));
