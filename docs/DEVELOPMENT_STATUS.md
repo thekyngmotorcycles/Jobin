@@ -1,5 +1,11 @@
 # Jobin — registro central de desarrollo
 
+## REPUTACION-GOOGLE — decisión futura aprobada (2026-11-26)
+
+- Propietario autoriza registrar Master Plan §1.7: reputación de Google opcional, separada de Jobin en Acerca de > Negocio, exclusiva de Business Premium; un establecimiento, cupo inicial candidato de 100 consultas/mes y presupuesto máximo USD 2/mes por empresa, sujeto a revalidación económica y políticas antes de activación. Autofinanciación, límites en servidor, suspensión al agotar cupo/presupuesto o vencer suscripción, enlace directo como alternativa. No alterar sellos/puntuaciones internas. Implementación pospuesta hasta fase de servicios externos e ingresos suficientes, con autorización expresa.
+- Solo documentación. No contratar, activar API, modificar código, datos alojados, APK ni OTA. Integración documental pendiente de aprobación separada.
+
+
 ## JCARD-COLUMN — pastillas, sangría Negocio y pestañas (2026-11-26)
 
 - Base `2e16c1f7`, PR #142 integrado y OTA 45757149980 exitosa. Revisión física muestra pastilla de experiencia comprimida y disponibilidad extendida; corrección aprobada: misma altura normal 28 dp, ancho intrínseco distinto por contenido (experiencia más larga), fuente 11 sp en una línea, conjunto centrado y gap 8 dp; sin autoajuste diminuto ni redistribución flex. Si no caben por escala accesible/ancho, admitir salto de fila del conjunto. Se actualiza prueba de orden anterior y se refuerza en AGENTS.md la autorización explícita antes de ejecutar o enviar órdenes a Codex. Negocio usa columna común izquierda 22 dp y respeta logo a derecha. Orden medio Acerca de, Todo, En vivo, Videos, JCards (colección privada solo titular). Conserva selección inicial, geometría exterior, retratos, portada, giro y acciones.
