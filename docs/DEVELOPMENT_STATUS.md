@@ -1,5 +1,10 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-IDENTITY — sangría y nombre adaptable (2026-11-25)
+
+- Base `e0299cb9`, PR #138 integrado, CI aprobado. Bloque autorizado: encabezado común propio/visitante y personal/negocio, sangría junto al retrato, 16–14/17–15 sp, máximo dos líneas ancladas, elipsis, diálogo de identidad completa, usuario/categoría fijo, insignia final. Esqueleto actualizado. Estimación inicial de ancho con límite nativo de texto. Pendiente comprobación física de fuentes y elipsis; CI, integración y OTA por separado. Sin cambios de portada, retratos, demás datos, backend o dependencias.
+
+
 ## JCARD-PARITY — igualdad de perfil y editor de retrato (2026-11-25)
 
 - Base `be9006ff`, PR #136 integrado y OTA Android 45735426432 exitosa; revisión física del propietario confirma portada 5:2 y solape. Nuevo bloque autorizado: quitar Guardar contacto de las caras del visitante, conservarlo en menú (separado de colección JCards) con lecturas autorizadas de la cara visible, igualar inset 16 dp y mantener cálculo compartido. Editor personal 10:11 y negocio 1:1 con esquinas redondeadas; recorte real y exportación proporcionales, sin modificar datos anteriores ni permisos.

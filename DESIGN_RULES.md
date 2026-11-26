@@ -87,3 +87,7 @@ Opción 3 refinada: una portada única pública y elegida expresamente por su ti
 
 - Perfil propio y visitante comparten margen lateral de 16 dp, cálculo de altura y solape. No mostrar Guardar contacto dentro de ninguna cara del perfil visitante, ni reservar su espacio. Conservar Guardar contacto en el menú de tres puntos, separado de Guardar JCard, con datos autorizados de la cara visible. Las diferencias reales de contenido y privacidad pueden exigir crecimiento compartido de ambas caras; no cortar información para imponer altura fija.
 - Editor personal con marco rectangular redondeado de ancho:alto 10:11, igual al retrato de la JCard. Negocio con marco cuadrado redondeado 1:1. Vista previa, desplazamiento, zoom, recorte y dimensiones guardadas coherentes. No cambiar avatares circulares de publicaciones/mensajes, portada ni archivos existentes.
+
+### Encabezado JCard con sangría y nombre adaptable — aprobación del propietario (2026-11-25)
+
+- Sustituye el centrado simétrico y el descenso bajo retrato. Personal: alineación izquierda a partir de la foto más 10 dp. Negocio: alineación derecha desde el logo hacia el extremo izquierdo; verificación siempre a la derecha de la última línea. Componente común para propio y visitante. Nombre 16–14 sp compacto, 17–15 sp mayor, una línea si cabe, máximo dos ancladas abajo; elipsis y diálogo con nombre completo y estado de verificación. Usuario/categoría de una línea en espacio fijo. Mismo piso de altura, crecimiento únicamente por otros datos o accesibilidad. Portada, retratos, giro y acciones intactos.

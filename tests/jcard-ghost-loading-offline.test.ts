@@ -144,19 +144,17 @@ test("Full-width 5:2 cover has independent geometry on own and visitor profiles"
  }
 });
 
-test("Both centered name areas clear the portrait with wide or vertically offset placement",async()=>{
+test("Mirrored fixed identity slots clear portraits",async()=>{
  const {jcardProfilePortraitMetrics,jcardProfileIdentitySpace}=await import("../src/theme/jcard.ts");
  for(const width of [250,280,288,328,390,520]){
   const portrait=jcardProfilePortraitMetrics(width);
-  for(const nameLength of [8,18,42]){
-   for(const fontScale of [1,1.3,2]){
-    const name=jcardProfileIdentitySpace(portrait,nameLength,17,fontScale);
-    const gutter=portrait.inset+portrait.width;
-    const clearance=portrait.height-portrait.overlap;
-    assert.ok(name.paddingHorizontal>gutter||name.paddingTop>clearance);
-    assert.ok(name.paddingHorizontal*2<width);
-    assert.ok(name.minHeight>=clearance);
-   }
+  for(const fontScale of [1,1.3,2]){
+   const p=jcardProfileIdentitySpace(portrait,fontScale,"personal"),b=jcardProfileIdentitySpace(portrait,fontScale,"business");
+   assert.ok(p.paddingLeft>portrait.inset+portrait.width);
+   assert.equal(p.paddingLeft,b.paddingRight);assert.equal(p.paddingRight,b.paddingLeft);
+   assert.equal(p.minHeight,b.minHeight);assert.equal(p.nameHeight,b.nameHeight);assert.equal(p.subtitleHeight,b.subtitleHeight);
+   assert.ok(p.width>0&&p.minHeight>=portrait.height-portrait.overlap);
+   assert.ok(p.paddingLeft+p.paddingRight<width);
   }
  }
 });
@@ -169,18 +167,18 @@ test("Business profile restores the review star and aligned branded contact circ
  for(const icon of ["mail","call","location"]){
   assert.ok(face.includes(`<BusinessContactIcon name="${icon}-outline" theme={theme}/>`));
  }
- const profile=card.slice(card.indexOf("const displayedProfileName"),card.indexOf('   </View>:<>',card.indexOf("const displayedProfileName")));
- assert.ok(profile.includes("wrapBusinessCardName(profileName,nameLineLength,true)"));
+ const profile=card.slice(card.indexOf("const profileName="),card.indexOf('   </View>:<>',card.indexOf("const profileName=")));
+ assert.ok(profile.includes('<JCardProfileIdentity portrait={profilePortrait} side="business"'));
  assert.ok(profile.includes('color:jcardCommon.businessGold}}>★</Text> {ratingUnlocked?rating!.toFixed(1):"—"}'));
  assert.ok(profile.includes('· ({reviewCount}'));
 });
 test("Profile faces show personal counts only and present languages and services in About",()=>{
  const card=source("src/components/JobinCard.tsx");
- const personal=card.slice(card.indexOf("{profilePortrait&&identitySpace?"),card.indexOf("export function BusinessFace"));
+ const personal=card.slice(card.indexOf("{profilePortrait?<View onLayout={onProfileLayout}"),card.indexOf("export function BusinessFace"));
  const business=card.slice(card.indexOf("export function BusinessFace"),card.indexOf("export function JobinCard"));
  assert.ok(personal.includes("<ProfileConnectionCountRow"));
  assert.ok(!business.includes("<ProfileConnectionCountRow"));
- assert.match(business,/profilePortrait&&identitySpace\?[\s\S]*?profileName[\s\S]*?profileCategory[\s\S]*?reseñas[\s\S]*?\{contactRows\}/);
+ assert.match(business,/profilePortrait\?<View onLayout=\{onProfileLayout\}[\s\S]*?profileName[\s\S]*?profileCategory[\s\S]*?reseñas[\s\S]*?\{contactRows\}/);
  assert.ok(card.includes('resizeMode="contain"'));
  for(const path of ["src/app/(tabs)/profile.tsx","src/app/jcard.tsx"]){
   const app=source(path);
