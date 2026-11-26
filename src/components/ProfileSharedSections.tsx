@@ -31,6 +31,7 @@ export function ProfileSectionTabs({section,onSelect,pinned=false,showPrivateJCa
  const {theme}=useTheme();const jt=jobeenTokens(theme);
  const {width}=useWindowDimensions();const reducedMotion=useReducedMotion();
  const [viewportWidth,setViewportWidth]=useState(width);
+ const compact=viewportWidth<380;
  const scroller=useRef<ScrollView|null>(null);
  const tabLayouts=useRef<Partial<Record<ProfileSection,{x:number;width:number}>>>({});
  const scrollToSection=useCallback((id:ProfileSection)=>{
@@ -42,15 +43,16 @@ export function ProfileSectionTabs({section,onSelect,pinned=false,showPrivateJCa
   elevation:pinned?3:0,shadowColor:jt.ink,shadowOffset:{width:0,height:2},shadowOpacity:pinned?0.09:0,
   shadowRadius:pinned?5:0,zIndex:5}}>
   <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always"
-   onLayout={event=>setViewportWidth(event.nativeEvent.layout.width)} ref={scroller} contentContainerStyle={{flexGrow:1,alignItems:"center",paddingHorizontal:4,gap:4}}>
+   onLayout={event=>setViewportWidth(event.nativeEvent.layout.width)} ref={scroller} contentContainerStyle={{flexGrow:1,alignItems:"center",paddingHorizontal:4,gap:compact?0:4}}>
    {(showPrivateJCards?tabs:visitorTabs).map(tab=>{
     const selected=section===tab.id;
     return <Pressable key={tab.id} accessibilityRole="tab" accessibilityLabel={tab.label}
-      accessibilityState={{selected}} onPress={()=>onSelect(tab.id)}
+      accessibilityState={{selected}} aria-selected={selected} onPress={()=>onSelect(tab.id)}
       onLayout={event=>{tabLayouts.current[tab.id]=event.nativeEvent.layout;if(selected)scrollToSection(tab.id);}}
-      style={{minHeight:50,minWidth:54,flexGrow:1,paddingHorizontal:9,alignItems:"center",justifyContent:"center",
+      style={{minHeight:50,minWidth:compact?JOBEEN_CONTROL.touchTarget:54,flexGrow:1,flexShrink:0,
+       paddingHorizontal:compact?4:9,alignItems:"center",justifyContent:"center",
        borderBottomWidth:3,borderBottomColor:selected?jt.yellow:jt.bg}}>
-     <Text numberOfLines={2} style={{fontSize:JOBEEN_TYPE.input,fontWeight:selected?"700":"600",color:jt.ink,textAlign:"center"}}>{tab.label}</Text>
+     <Text style={{fontSize:compact?JOBEEN_TYPE.input-1:JOBEEN_TYPE.input,fontWeight:selected?"700":"600",color:jt.ink,textAlign:"center"}}>{tab.label}</Text>
     </Pressable>;
    })}
   </ScrollView>

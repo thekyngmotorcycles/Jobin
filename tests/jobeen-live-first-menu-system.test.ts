@@ -42,11 +42,11 @@ test("Creator profile section strip has five text-only choices while global bott
  const sections=src("src/components/ProfileSharedSections.tsx");
  const global=src("src/components/JobinTabIcon.tsx");
  const layout=src("src/app/(tabs)/_layout.tsx");
- const chunk=sections.slice(sections.indexOf("const tabs=["),sections.indexOf("export type ProfileTile"));
+ const chunk=sections.slice(sections.indexOf("const tabs=["),sections.indexOf("export type ProfileAboutSide"));
  const matches=chunk.match(/label:"(?:Todo|JCards|Videos|En vivo|Acerca de)"/g)??[];
  assert.equal(matches.length,5);
- assert.ok(chunk.includes("minWidth:54,flexGrow:1"));
- assert.ok(chunk.includes("numberOfLines={2}"),"Long text labels may wrap but not be hidden on Jelly");
+ assert.ok(chunk.includes("minWidth:compact?JOBEEN_CONTROL.touchTarget:54,flexGrow:1,flexShrink:0"));
+ assert.ok(chunk.includes("<ScrollView horizontal")&&!chunk.includes("numberOfLines"),"Large text remains reachable by horizontal scrolling");
  assert.ok(chunk.includes("onLayout={event=>{tabLayouts.current[tab.id]"),"Keep scrolling to measured selected tab");
  assert.ok(!chunk.includes('name={tab.icon}'),"No decorative icons in five creator tabs");
  assert.ok(global.includes('JobeenMessageIcon'),"Global tab icon language stays unchanged");

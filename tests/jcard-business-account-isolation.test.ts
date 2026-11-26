@@ -53,6 +53,9 @@ test("Business category is selected from a searchable catalog, never free-text",
  assert.ok(editor.includes('key==="category"?<View'));
 });
 test("Business title preserves word boundaries and fixes cramped service/contact rows",()=>{
+ assert.equal(wrapBusinessCardName("Climas Sierra Norte",20,true),"Climas Sierra Norte");
+ assert.equal(wrapBusinessCardName("Soluciones Aire Uno",14,true),"Soluciones\nAire Uno");
+ assert.equal(wrapBusinessCardName("Industria de Refrigeración",8,true),"Industria de Refrigeración");
  assert.equal(wrapBusinessCardName("The kyng motorcycles"),"The kyng\nmotorcycles");
  assert.equal(wrapBusinessCardName("The Cooling Guy"),"The Cooling Guy");
  assert.ok(wrapBusinessCardName("Long multi word business title").split("\n").every(x=>x.length<=15));

@@ -29,7 +29,7 @@ import {loadPublicContact,loadVisiblePersonalContactDetails,type PersonalContact
 import { experienceLabel } from "../lib/employment";
 import {ProfessionGlyph} from "./ProfessionGlyph";
 import { LanguageRing, languageLabel, LANGUAGE_LEVELS } from "./LanguageRing";
-import { businessCardAccents, businessCardPaper, businessInformationSurface, jcardCommon, jcardFloating, jcardReviewGlass, jcardLayout, jcardTokens, jcardSurfaceSize, jcardSurfaceMetrics, jcardProfilePortraitMetrics,jcardProfileIdentitySpace,type JCardProfilePortraitMetrics } from "../theme/jcard";
+import { businessCardAccents, businessCardPaper, businessInformationSurface, jcardCommon, jcardFloating, jcardReviewGlass, jcardLayout, jcardTokens, jcardSurfaceSize, jcardSurfaceMetrics, jcardProfilePortraitMetrics,jcardProfileIdentitySpace,jcardBusinessLogoMetrics,type JCardProfilePortraitMetrics } from "../theme/jcard";
 import {businessCategoryArt} from "../lib/business-category-art";
 import {wrapBusinessCardName} from "../lib/business-card-layout";
 import {categoryGlyph} from "../lib/category-icons";
@@ -195,7 +195,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
     {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
     {theme==="light"&&appearance==="original"&&<JobeenHoneycomb color={jobeen.bizBorder} compact={artSize.width>0&&artSize.width<360}/> }
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:25,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
-    {profilePortrait&&identitySpace?<View onLayout={onProfileLayout} style={{flexShrink:0,paddingBottom:8}}>
+    {profilePortrait&&identitySpace?<View onLayout={onProfileLayout} style={{flexShrink:0,paddingBottom:4}}>
       <View style={identitySpace}>
         <Pressable accessibilityRole="button" accessibilityLabel={fullDisplayName+(card.identityVerified?", persona verificada":", persona sin verificar")}
          onPress={()=>setInfo(card.identityVerified?"Identidad verificada por Jobin.":"Identidad sin verificar.")}
@@ -348,8 +348,36 @@ export function BusinessAwards({business:b,theme,finish:providedFinish,standalon
 
 const profileFaceStyles=StyleSheet.create({
  contactRow:{alignSelf:"flex-start",maxWidth:"100%",flexDirection:"row",alignItems:"center",minHeight:JOBEEN_CONTROL.touchTarget},
- contactIcon:{width:28,textAlign:"left",flexShrink:0},
+ contactIcon:{width:26,height:26,borderRadius:13,alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:6},
 });
+
+function BusinessContactIcon({name,theme}:{name:"mail-outline"|"call-outline"|"location-outline";theme:ThemeName}){
+ const colors=jobeenTokens(theme);
+ return <View aria-hidden style={[profileFaceStyles.contactIcon,{backgroundColor:colors.yellow}]}>
+  <Ionicons name={name} size={15} color={colors.onYellow}/>
+ </View>;
+}
+
+function BusinessProfileLogo({uri,portrait,theme,onEdit}:{uri?:string|null;portrait:JCardProfilePortraitMetrics;theme:ThemeName;onEdit?:()=>void}){
+ const [aspectRatio,setAspectRatio]=useState(1);
+ const colors=jobeenTokens(theme);
+ const {width,height,top,radius}=jcardBusinessLogoMetrics(portrait,aspectRatio);
+ return <Pressable disabled={!onEdit} accessibilityRole={onEdit?"button":undefined} accessibilityLabel="Foto del negocio"
+  onPress={event=>{event.stopPropagation();onEdit?.();}}
+  style={{position:"absolute",top,right:portrait.inset,minWidth:JOBEEN_CONTROL.touchTarget,
+   minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"flex-end",zIndex:3}}>
+   {uri?<Image source={{uri}} resizeMode="contain" style={{width,height,borderRadius:radius}}
+    onLoad={({nativeEvent})=>{
+     // Native returns a source size. React Native Web forwards the image load event.
+     const browserImage=(nativeEvent as unknown as {target?:{naturalWidth:number;naturalHeight:number}}).target;
+     const sourceWidth=nativeEvent.source?.width??browserImage?.naturalWidth;
+     const sourceHeight=nativeEvent.source?.height??browserImage?.naturalHeight;
+     if(sourceWidth&&sourceHeight)setAspectRatio(sourceWidth/sourceHeight);
+    }}/>:<View style={{width,height,borderRadius:radius,backgroundColor:colors.cream,alignItems:"center",justifyContent:"center"}}>
+    <Ionicons name="person-outline" size={27} color={colors.ink}/>
+   </View>}
+ </Pressable>;
+}
 
 export function BusinessFace({card,theme,appearance="original",contact,onShare,onSaveContact,canEditMedia=false,onEditMedia,visibility=DEFAULT_JCARD_VISIBILITY,awardsInAbout=false,profilePortrait,onProfileLayout}:{card:CardData;theme:ThemeName;appearance?:JCardPremiumBackgroundId;contact?:{email:string|null;phone:string|null};onShare?:()=>void;onSaveContact?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void;visibility?:typeof DEFAULT_JCARD_VISIBILITY;awardsInAbout?:boolean;profilePortrait?:JCardProfilePortraitMetrics;onProfileLayout?:(event:LayoutChangeEvent)=>void}){
  const b=card.business;const jobeen=jcardArtTokens(theme);const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=false;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:premium?.base??jobeen.biz,end:premium?.base??jobeen.biz,text:premium?.ink??jobeen.ink,secondary:premium?.ink??jobeen.textSoft,line:premium?.line??jobeen.bizBorder,sealFill:jobeen.surface};
@@ -363,9 +391,14 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
  const refrigerationCategory=/refrigeraci/i.test(category)&&!/climatiz/i.test(category);
  const categoryIcon=hvacCategory?categoryGlyph("climate"):refrigerationCategory?categoryGlyph("refrigeration"):art.icon;
  const {fontScale}=useWindowDimensions();
- const profileNameSize=profilePortrait&&profilePortrait.cardWidth<jcardSurfaceMetrics.compactThreshold?15:16;
+ const profileNameSize=profilePortrait&&profilePortrait.cardWidth<jcardSurfaceMetrics.compactThreshold?14:15;
  const profileName=businessName||"Cargando negocio…";
  const identitySpace=profilePortrait?jcardProfileIdentitySpace(profilePortrait,profileName.length,profileNameSize,fontScale):undefined;
+ const profilePadding=theme==="light"?10:14;
+ const nameWidth=profilePortrait&&identitySpace
+  ?profilePortrait.cardWidth-2*Math.max(profilePadding,identitySpace.paddingHorizontal)-20:0;
+ const nameLineLength=Math.max(1,Math.floor(nameWidth/(profileNameSize*Math.max(1,fontScale)*0.55)));
+ const displayedProfileName=company?wrapBusinessCardName(profileName,nameLineLength,true):profileName;
  const profileCategory=b?.category?.trim()||"Servicios profesionales";
  const businessContactInk=premium?finish.text:jobeen.ink;
  const businessIconInk=premium?finish.text:jobeen.ink;
@@ -373,17 +406,17 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
    {(visibility.business_show_email?(theme==="light"?[b?.email??b?.emailSecondary]:[b?.email,b?.emailSecondary]):[]).filter(Boolean).map((email,index)=>
      <Pressable key={index} accessibilityRole="link" accessibilityLabel={"Enviar correo a "+email}
       onPress={event=>{event.stopPropagation();void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>{});}} style={profileFaceStyles.contactRow}>
-       <Ionicons name="mail-outline" size={17} color={businessIconInk} style={profileFaceStyles.contactIcon}/>
-       <Text style={{flexShrink:1,fontSize:13,color:businessContactInk}}>{email}</Text>
+       <BusinessContactIcon name="mail-outline" theme={theme}/>
+       <Text style={{flexShrink:1,fontSize:12,color:businessContactInk}}>{email}</Text>
      </Pressable>)}
    {visibility.business_show_phone&&!!(b?.phone||b?.phoneSecondary)&&<View style={{flexDirection:"row",alignItems:"center"}}>
-     <Ionicons name="call-outline" size={17} color={businessIconInk} style={profileFaceStyles.contactIcon}/>
+     <BusinessContactIcon name="call-outline" theme={theme}/>
      <View style={{flex:1,minWidth:0,flexDirection:"row",flexWrap:"wrap",columnGap:12}}>
        {[{number:b?.phone,label:b?.phoneLabel},{number:b?.phoneSecondary,label:b?.phoneSecondaryLabel}].filter(item=>item.number).map(({number,label},index)=>
          <Pressable key={index} accessibilityRole="link" accessibilityLabel={"Llamar al número "+number}
           onPress={event=>{event.stopPropagation();void Linking.openURL("tel:"+number!.replace(/[^+\d]/g,"")).catch(()=>{});}}
           style={{minWidth:JOBEEN_CONTROL.touchTarget,minHeight:JOBEEN_CONTROL.touchTarget,maxWidth:"100%",justifyContent:"center"}}>
-           <Text style={{fontSize:13,color:businessContactInk}}>{label?label+" ":""}{number}</Text>
+           <Text style={{fontSize:12,color:businessContactInk}}>{label?label+" ":""}{number}</Text>
          </Pressable>)}
      </View>
      {theme==="light"&&<Pressable accessibilityRole="link" accessibilityLabel="Abrir WhatsApp del negocio"
@@ -395,8 +428,8 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
    {!!b?.location&&<Pressable accessibilityRole="link" accessibilityLabel={"Abrir ubicación en Google Maps: "+b.location}
     onPress={event=>{event.stopPropagation();void Linking.openURL("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(b.location!.trim())).catch(()=>Alert.alert("Google Maps","No se pudo abrir el mapa. Comprueba que tengas un navegador o Google Maps disponible."));}}
     style={profileFaceStyles.contactRow}>
-     <Ionicons name="location-outline" size={17} color={businessIconInk} style={profileFaceStyles.contactIcon}/>
-     <Text style={{flexShrink:1,fontSize:13,color:businessContactInk}}>{b.location}</Text>
+     <BusinessContactIcon name="location-outline" theme={theme}/>
+     <Text style={{flexShrink:1,fontSize:12,color:businessContactInk}}>{b.location}</Text>
    </Pressable>}
  </View>:<View style={{gap:theme==="light"?1:5,alignSelf:"stretch"}}>
      {(visibility.business_show_email?(theme==="light"?[b?.email??b?.emailSecondary]:[b?.email,b?.emailSecondary]):[]).filter(Boolean).map((email,i)=><Pressable key={"business-email"+i} accessibilityRole="link" accessibilityLabel={"Enviar correo a "+email} onPress={event=>{event.stopPropagation();void Linking.openURL("mailto:"+encodeURIComponent(email!)).catch(()=>{});}} style={{flexDirection:"row",alignItems:"center",gap:6,alignSelf:"flex-start",maxWidth:"100%",minHeight:44,paddingRight:5}}><View style={{width:theme==="light"?30:14,height:theme==="light"?30:14,borderRadius:15,backgroundColor:theme==="light"?jobeen.yellow:undefined,alignItems:"center",justifyContent:"center"}}><Ionicons name="mail-outline" size={14} color={businessIconInk}/></View><Text numberOfLines={1} ellipsizeMode="tail" style={{flexShrink:1,fontSize:11,color:businessContactInk}}>{email}</Text></Pressable>)}
@@ -416,27 +449,28 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
 
   {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
   <View style={{flex:1,paddingHorizontal:0,paddingTop:0,paddingBottom:0,gap:0}}>
-   <View style={{flex:1,marginTop:0,borderTopLeftRadius:26,borderTopRightRadius:26,backgroundColor:finish.start,overflow:"hidden",paddingHorizontal:theme==="light"?10:14,paddingTop:profilePortrait?0:theme==="light"?14:16,paddingBottom:profilePortrait?0:theme==="light"?8:9,gap:theme==="light"?3:5,zIndex:2}}>
+   <View style={{flex:1,marginTop:0,borderTopLeftRadius:26,borderTopRightRadius:26,backgroundColor:finish.start,overflow:"hidden",paddingHorizontal:profilePadding,paddingTop:profilePortrait?0:theme==="light"?14:16,paddingBottom:profilePortrait?0:theme==="light"?8:9,gap:theme==="light"?3:5,zIndex:2}}>
    {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
    {theme==="light"&&appearance==="original"&&<JobeenHoneycomb color={jobeen.bizBorder} compact={artSize.width>0&&artSize.width<360}/>}
 
    {profilePortrait&&identitySpace?<View onLayout={onProfileLayout} style={{flexShrink:0,paddingBottom:8}}>
-    <View style={{...identitySpace,paddingHorizontal:Math.max(0,identitySpace.paddingHorizontal-(theme==="light"?10:14))}}>
+    <View style={{...identitySpace,paddingHorizontal:Math.max(0,identitySpace.paddingHorizontal-profilePadding)}}>
      <Pressable accessibilityRole="button" accessibilityLabel={profileName+", verificación de empresa"} onPress={()=>setShowBusinessVerification(true)}
       style={{minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:4}}>
-       <Text style={{flexShrink:1,textAlign:"center",fontSize:profileNameSize,fontWeight:"700",color:finish.text}}>{profileName}</Text>
+       <Text textBreakStrategy="balanced" style={{flexShrink:1,textAlign:"center",fontSize:profileNameSize,fontWeight:"700",color:finish.text}}>{displayedProfileName}</Text>
        <Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={16}
         color={b?.licenseVerified?jcardCommon.verifiedBubble:jcardCommon.unverifiedBubble}/>
      </Pressable>
     </View>
-    <View style={{alignItems:"center",gap:4,paddingHorizontal:2}}>
+    <View style={{alignItems:"center",gap:2,paddingHorizontal:2}}>
      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:4}}>
       <Ionicons name={categoryIcon} size={15} color={businessIconInk}/>
-      <Text style={{flexShrink:1,textAlign:"center",fontSize:13,color:finish.secondary}}>{company?profileCategory:"JCard de negocio"}</Text>
+      <Text style={{flexShrink:1,textAlign:"center",fontSize:12,color:finish.secondary}}>{company?profileCategory:"JCard de negocio"}</Text>
      </View>
-     <Text style={{fontSize:12,color:finish.text,textAlign:"center"}}>
-      {ratingUnlocked?<Text style={{fontWeight:"700"}}><Text style={{color:jcardCommon.businessGold}}>★</Text> {rating!.toFixed(1)} · </Text>:null}
-      {reviewCount} {reviewCount===1?"reseña":"reseñas"}
+     <Text style={{fontSize:11,color:finish.secondary,textAlign:"center"}}>
+      <Text style={{color:finish.text,fontWeight:"700"}}>
+       <Text style={{color:jcardCommon.businessGold}}>★</Text> {ratingUnlocked?rating!.toFixed(1):"—"}
+      </Text> · ({reviewCount} {reviewCount===1?"reseña":"reseñas"})
      </Text>
      {contactRows}
      {onSaveContact&&<Pressable accessibilityRole="button" accessibilityLabel="Guardar contacto del negocio" onPress={onSaveContact}
@@ -522,7 +556,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const sideLink=(side:"personal"|"business")=>card.profileUrl+(card.profileUrl.includes("?")?"&":"?")+"card="+side;
  const sideLabel=(side:"personal"|"business")=>side==="business"?(card.business?.name?.trim()||card.name):card.name;
  return <>
-  {!!profilePortrait&&<View style={{width:"100%",height:profilePortrait.coverHeight,marginBottom:-profilePortrait.overlap,borderRadius:18,overflow:"hidden",backgroundColor:cardColors.line}}>
+  {!!profilePortrait&&<View style={{width:"100%",height:profilePortrait.coverHeight,marginBottom:-(profilePortrait.overlap+profilePortrait.coverOverlap),borderRadius:18,overflow:"hidden",backgroundColor:cardColors.line}}>
    <JCardSharedCover target={ownerId} scope={profileCoverScope??publicScope} editable={showOwnerActions} height={profilePortrait.coverHeight}/>
   </View>}
   <View style={{width:"100%",paddingHorizontal:profilePortrait?profileInset:0}}>
@@ -533,7 +567,9 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
    <BusinessCard3D height={cardHeight} topInset={profilePortrait?.overlap??0} enabled={canFlip} initialSide={initialSide} side={back?"business":"personal"}
      onSideChange={side=>setBack(side==="business")} shadowColor={jcardCommon.cardShadowColor}
      frontPortrait={profilePortrait&&(showOwnerActions||visibility.personal_enabled)?<Pressable disabled={!showOwnerActions||!onEditPersonalPhoto} accessibilityRole={showOwnerActions&&onEditPersonalPhoto?"button":undefined} accessibilityLabel="Foto de JCard personal" onPress={event=>{event.stopPropagation();onEditPersonalPhoto?.();}} style={{position:"absolute",top:0,left:profilePortrait.inset,width:profilePortrait.width,height:profilePortrait.height,borderRadius:profilePortrait.radius,overflow:"hidden",zIndex:3}}><Avatar uri={personalAvatarUrl(card.avatar)} name={card.name} size={profilePortrait.width} height={profilePortrait.height} shape="portrait" framed={false}/></Pressable>:undefined}
-     backPortrait={profilePortrait&&(showOwnerActions||visibility.business_enabled)?<Pressable disabled={!showOwnerActions||!onEditBusinessMedia} accessibilityRole={showOwnerActions&&onEditBusinessMedia?"button":undefined} accessibilityLabel="Foto del negocio" onPress={event=>{event.stopPropagation();onEditBusinessMedia?.("avatar");}} style={{position:"absolute",top:0,right:profilePortrait.inset,width:profilePortrait.width,height:profilePortrait.height,borderRadius:profilePortrait.radius,overflow:"hidden",backgroundColor:cardColors.surface,alignItems:"center",justifyContent:"center",zIndex:3}}>{card.business?.avatarUrl?<Image source={{uri:card.business.avatarUrl}} resizeMode="contain" style={{width:"100%",height:"100%"}}/>:<Ionicons name="person-outline" size={27} color={cardColors.ink}/>}</Pressable>:undefined}
+     backPortrait={profilePortrait&&(showOwnerActions||visibility.business_enabled)?
+      <BusinessProfileLogo key={card.business?.avatarUrl} uri={card.business?.avatarUrl} portrait={profilePortrait} theme={cardTheme}
+       onEdit={showOwnerActions&&onEditBusinessMedia?()=>onEditBusinessMedia("avatar"):undefined}/>:undefined}
      front={(showOwnerActions||visibility.personal_enabled)?<CardFace card={card} theme={cardTheme} profilePortrait={profilePortrait} onProfileLayout={measurePersonal} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onEditPhoto={showOwnerActions?onEditPersonalPhoto:undefined} onSaveContact={!showOwnerActions?(onDemoSaveContact??(ownerId?savePersonal:undefined)):undefined} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>:null}
      back={<View style={{height:cardHeight}}>{(showOwnerActions||visibility.business_enabled)&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onSaveContact={!showOwnerActions?(onDemoSaveContact??(ownerId?saveBusiness:undefined)):undefined} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} onProfileLayout={measureBusiness} visibility={visibility} awardsInAbout={awardsInAbout} profilePortrait={profilePortrait}/>}</View>}
    />

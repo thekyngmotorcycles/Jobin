@@ -47,7 +47,8 @@ export function jcardSurfaceSize(args:{screenWidth:number;measuredWidth?:number;
 export function jcardProfilePortraitMetrics(cardWidth:number){
  const width=Math.max(60,Math.min(86,Math.round(cardWidth*.24)));
  const height=Math.round(width*1.1);
- return {width,height,overlap:height/4,inset:14,radius:14,cardWidth,coverHeight:Math.max(82,Math.min(148,Math.round(cardWidth*.30)))};
+ const overlap=height/4;
+ return {width,height,overlap,coverOverlap:Math.round(overlap/2),inset:14,radius:14,cardWidth,coverHeight:Math.max(82,Math.min(148,Math.round(cardWidth*.30)))};
 }
 export type JCardProfilePortraitMetrics=ReturnType<typeof jcardProfilePortraitMetrics>;
 export function jcardProfileIdentitySpace(portrait:JCardProfilePortraitMetrics,nameLength:number,fontSize:number,fontScale:number){
@@ -60,6 +61,13 @@ export function jcardProfileIdentitySpace(portrait:JCardProfilePortraitMetrics,n
   paddingHorizontal:besidePortrait?gutter:12,
   minHeight:Math.max(JOBEEN_CONTROL.touchTarget,Math.ceil(clearance)),
  };
+}
+/** Fit the logo frame to the source instead of letterboxing the image inside the portrait. */
+export function jcardBusinessLogoMetrics(portrait:JCardProfilePortraitMetrics,aspectRatio=1){
+ const ratio=Number.isFinite(aspectRatio)&&aspectRatio>0?aspectRatio:1;
+ const width=Math.min(portrait.width,portrait.height*ratio);
+ const height=width/ratio;
+ return {width,height,top:portrait.overlap-height/4,radius:Math.min(portrait.radius,width/2,height/2)};
 }
 export const proficiencyColors = {low:'#d84b54',middle:'#e4af42',high:'#219765'};
 export const businessCardAccents = {name:"#151B24",category:"#465B6C",contact:"#354553",icon:"#416477"};

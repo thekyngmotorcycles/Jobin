@@ -19,9 +19,12 @@ test("Creator profiles use a scrollable five-section tab bar with accessible nam
  assert.ok(tabs.includes("accessibilityState={{selected}}"));
  assert.ok(tabs.includes("minHeight:50"));
  assert.ok(tabs.includes("borderBottomWidth:3,borderBottomColor:selected?jt.yellow:jt.bg"),"Selection must not move icons or labels vertically");
- assert.ok(tabs.includes('fontSize:JOBEEN_TYPE.input,fontWeight:selected?"700":"600",color:jt.ink,textAlign:"center"'),"Profile labels keep existing typography and align centrally");
+ assert.ok(tabs.includes('fontSize:compact?JOBEEN_TYPE.input-1:JOBEEN_TYPE.input,fontWeight:selected?"700":"600",color:jt.ink,textAlign:"center"'),"Only narrow tab strips reduce the font by one point");
  assert.ok(!tabs.includes("name={tab.icon}"),"Profile section tabs are text-only, without decorative icons");
- assert.ok(tabs.includes("minWidth:54,flexGrow:1,paddingHorizontal:9"),"Five profile labels stay compact and share available width");
+ assert.ok(tabs.includes("const compact=viewportWidth<380"));
+ assert.ok(tabs.includes("gap:compact?0:4"));
+ assert.ok(tabs.includes("minWidth:compact?JOBEEN_CONTROL.touchTarget:54,flexGrow:1,flexShrink:0"));
+ assert.ok(tabs.includes("paddingHorizontal:compact?4:9"),"Compact tabs save horizontal space and retain their touch targets");
  assert.ok(tabs.includes("tabLayouts=useRef<Partial<Record<ProfileSection,{x:number;width:number}>>>"),"Measure actual tab widths");
  assert.ok(tabs.includes("layout.x+layout.width/2-viewportWidth/2"),"Center using real button position and scroll viewport width");
  assert.ok(tabs.includes("onLayout={event=>setViewportWidth(event.nativeEvent.layout.width)}"),"Measure actual viewport rather than assuming full screen width");

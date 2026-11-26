@@ -16,7 +16,7 @@ export function JCardLoadingSkeleton({profileInset=16}:{profileInset?:number}){
  const muted=light?businessCardPaper.border:t.silver;
  const line=(width:DimensionValue,height=12)=><View style={{width,height,borderRadius:Math.min(8,height/2),backgroundColor:muted,opacity:light?0.42:0.26}}/>;
  return <View accessibilityRole="progressbar" accessibilityLabel="Cargando JCard">
-  <View style={{height:portrait.coverHeight,borderRadius:18,backgroundColor:muted,opacity:0.25}}/>
+  <View style={{height:portrait.coverHeight,marginBottom:-portrait.coverOverlap,borderRadius:18,backgroundColor:muted,opacity:0.25}}/>
   <View style={{paddingHorizontal:profileInset}}>
    <View style={{width:"100%",maxWidth:jcardSurfaceMetrics.maxWidth,alignSelf:"center"}}
     onLayout={event=>{const current=Math.round(event.nativeEvent.layout.width);if(current>0)setMeasuredWidth(old=>old!==current?current:old);}}>
