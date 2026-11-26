@@ -6,8 +6,8 @@ const tabs=source("src/components/ProfileSharedSections.tsx");
 const owner=source("src/app/(tabs)/profile.tsx");
 const visitor=source("src/app/jcard.tsx");
 const gallery=source("src/components/SavedJCardsGallery.tsx");
-test("Owner tabs are Todo, JCards, Videos, En vivo, Acerca de in that order",()=>{
- const values=['id:"grid"','id:"jcards"','id:"videos"','id:"live"','id:"cv"'].map(id=>tabs.indexOf(id));
+test("Owner tabs are Acerca de, Todo, En vivo, Videos, JCards in that order",()=>{
+ const values=['id:"cv"','id:"grid"','id:"live"','id:"videos"','id:"jcards"'].map(id=>tabs.indexOf(id));
  assert.ok(values.every((x,i)=>x>0&&(i===0||x>values[i-1])));
  assert.ok(!tabs.includes('label:"Inicio"'));
  assert.ok(tabs.includes('label:"JCards"'));

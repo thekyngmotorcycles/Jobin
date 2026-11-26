@@ -1,5 +1,11 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-COLUMN — pastillas, sangría Negocio y pestañas (2026-11-26)
+
+- Base `2e16c1f7`, PR #142 integrado y OTA 45757149980 exitosa. Revisión física muestra pastilla de experiencia comprimida y disponibilidad extendida; corrección aprobada: misma altura normal 28 dp, ancho intrínseco distinto por contenido (experiencia más larga), fuente 11 sp en una línea, conjunto centrado y gap 8 dp; sin autoajuste diminuto ni redistribución flex. Si no caben por escala accesible/ancho, admitir salto de fila del conjunto. Se actualiza prueba de orden anterior y se refuerza en AGENTS.md la autorización explícita antes de ejecutar o enviar órdenes a Codex. Negocio usa columna común izquierda 22 dp y respeta logo a derecha. Orden medio Acerca de, Todo, En vivo, Videos, JCards (colección privada solo titular). Conserva selección inicial, geometría exterior, retratos, portada, giro y acciones.
+- Pruebas de contrato y geometría añadidas/actualizadas. CI y verificación física pendientes. Merge y OTA por autorización separada. Sin cambios nativos ni de backend.
+
+
 ## JCARD-COMPACT — dimensiones únicas y tipografía (2026-11-25)
 
 - Base `327a7aeb`, PR #140 integrado y OTA 45746966600 exitosa. Propietario confirma nueva sangría y autoriza fijar dimensiones de la tarjeta privada (~784 × 610 px de captura) como estándar. 226 dp compacto a escala normal; eliminar medición por cara, mantener escala accesible y ancho responsivo. Dos teléfonos en fila y desplazamiento interno inferior solo cuando el contenido desborde; conservar acciones y privacidad. Identidad estática de una línea, 20 caracteres visibles, 15–13 sp, usuario 12 sp. Pastillas de experiencia y disponibilidad iguales visualmente con objetivo táctil 48 dp. Sin cambios de banner, retratos, giro, backend ni dependencias.
