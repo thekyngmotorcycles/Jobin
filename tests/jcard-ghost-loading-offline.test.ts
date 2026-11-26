@@ -159,7 +159,7 @@ test("Fixed identity slots clear portraits with the approved business left colum
  }
 });
 
-test("Business profile restores the review star and aligned branded contact circles",()=>{
+test("Business profile restores the five-star review row and aligned branded contact circles",()=>{
  const card=source("src/components/JobinCard.tsx");
  const contactIcon=card.slice(card.indexOf("function BusinessContactIcon"),card.indexOf("function BusinessProfileLogo"));
  assert.ok(contactIcon.includes("backgroundColor:colors.yellow")&&contactIcon.includes("color={colors.onYellow}"));
@@ -169,8 +169,9 @@ test("Business profile restores the review star and aligned branded contact circ
  }
  const profile=card.slice(card.indexOf("const profileName="),card.indexOf('   </View>:<>',card.indexOf("const profileName=")));
  assert.ok(profile.includes('<JCardProfileIdentity portrait={profilePortrait} side="business"'));
- assert.ok(profile.includes('color:jcardCommon.businessGold}}>★</Text> {ratingUnlocked?rating!.toFixed(1):"—"}'));
- assert.ok(profile.includes('· ({reviewCount}'));
+ assert.ok(profile.includes('<BusinessReviewSummary rating={rating} reviewCount={reviewCount} ink={finish.text} muted={finish.secondary}/>'));
+ const review=source("src/components/BusinessReviewSummary.tsx");
+ assert.ok(review.includes("review.stars.map")&&review.includes('"star-half"')&&review.includes('"star-outline"')&&review.includes("review.countLabel"));
 });
 test("Profile faces show personal counts only and present languages and services in About",()=>{
  const card=source("src/components/JobinCard.tsx");
@@ -178,7 +179,7 @@ test("Profile faces show personal counts only and present languages and services
  const business=card.slice(card.indexOf("export function BusinessFace"),card.indexOf("export function JobinCard"));
  assert.ok(personal.includes("<ProfileConnectionCountRow"));
  assert.ok(!business.includes("<ProfileConnectionCountRow"));
- assert.match(business,/profilePortrait\?<View style=\{\{flex:1,minHeight:0,paddingBottom:4\}\}>[\s\S]*?profileName[\s\S]*?profileCategory[\s\S]*?reseñas[\s\S]*?\{contactRows\}/);
+ assert.match(business,/profilePortrait\?<View style=\{\{flex:1,minHeight:0,paddingBottom:4\}\}>[\s\S]*?profileName[\s\S]*?profileCategory[\s\S]*?BusinessReviewSummary[\s\S]*?\{contactRows\}/);
  assert.ok(card.includes('resizeMode="contain"'));
  for(const path of ["src/app/(tabs)/profile.tsx","src/app/jcard.tsx"]){
   const app=source(path);

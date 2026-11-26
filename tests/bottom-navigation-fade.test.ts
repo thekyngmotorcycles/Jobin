@@ -25,3 +25,13 @@ test("bottom navigation retains the exact original fade above the five-icon row"
   for(let y=100;y<=height;y++)assert.ok(alpha(stops,y/height)+1e-10>=alpha(original,y/height));
  }
 });
+
+
+test("Profiles keep a soft upper gradient but the complete icon row is opaque",()=>{
+ for(const inset of [0,12,24,48]){
+  const {height,stops}=bottomNavigationFade(58,inset,.65,true);
+  assert.equal(alpha(stops,0),0);
+  assert.ok(alpha(stops,50/height)>0&&alpha(stops,50/height)<1);
+  for(let y=100;y<=height;y++)assert.equal(alpha(stops,y/height),1);
+ }
+});

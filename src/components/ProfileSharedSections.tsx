@@ -9,6 +9,7 @@ import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {JOBEEN_TYPE} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
+import {jcardSurfaceMetrics} from "../theme/jcard";
 import type {BusinessCardData,CardData} from "../lib/jcard";
 import {LanguageRing, languageLabel} from "./LanguageRing";
 import {BusinessAwards} from "./JobinCard";
@@ -174,9 +175,9 @@ export function ProfileMediaGrid({items,emptyMessage}:{items:ProfileTile[];empty
 export function ProfileIdentityHeader({card,actions,trust,profileUserId,contactsMenuRef,countsInCard=false,expectedScope,actionsInset=0}:{
  card:ReactNode;actions?:ReactNode;trust?:ReactNode;profileUserId?:string;contactsMenuRef?:Ref<ProfileContactsHandle>;countsInCard?:boolean;expectedScope?:MessageScope|null;actionsInset?:number;
 }){
- return <View style={{gap:14}}>
+ return <View style={{gap:actionsInset>0?10:14}}>
   {countsInCard&&profileUserId?<ProfileFollowCounts userId={profileUserId} contactsMenuRef={contactsMenuRef} expectedScope={expectedScope} countsInCard>{card}</ProfileFollowCounts>:<>{card}{!!profileUserId&&<ProfileFollowCounts userId={profileUserId} contactsMenuRef={contactsMenuRef}/>}</>}
-  {actions&&actionsInset>0?<View style={{width:"100%",maxWidth:1180,alignSelf:"center",paddingHorizontal:actionsInset}}>{actions}</View>:actions}
+  {actions&&actionsInset>0?<View style={{width:"100%",maxWidth:jcardSurfaceMetrics.maxWidth+2*actionsInset,alignSelf:"center",paddingHorizontal:actionsInset}}>{actions}</View>:actions}
   {trust}
  </View>;
 }

@@ -27,7 +27,7 @@ export function ProfileConnectionCountRow({ink,muted,line}:{ink?:string;muted?:s
  if(!context)return null;
  const {counts,isOwner,openList}=context;
  return <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:6,minHeight:JOBEEN_CONTROL.touchTarget}}>
-  {([{id:"followers",label:"Seguidores",value:counts?.followers},{id:"contacts",label:"Contactos",value:counts?.contacts}] as const).map((item,index)=>
+  {([{id:"followers",label:counts?.followers===1?"Seguidor":"Seguidores",value:counts?.followers},{id:"contacts",label:counts?.contacts===1?"Contacto":"Contactos",value:counts?.contacts}] as const).map((item,index)=>
    <View key={item.id} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:5}}>
     {index>0&&<View style={{width:1,height:18,backgroundColor:line??jt.line}}/>}
     <Pressable accessibilityRole={isOwner?"button":undefined} accessibilityLabel={item.label+": "+(item.value??"no disponible")+(isOwner?", ver lista":"")}

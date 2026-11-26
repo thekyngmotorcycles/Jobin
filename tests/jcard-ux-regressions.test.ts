@@ -48,7 +48,7 @@ test("Public profile has the overlay header and only three bottom actions",()=>{
  assert.ok(profile.includes('top:insets.top,left:0,right:0,zIndex:10,height:NAVIGATION_ROW_HEIGHT'));
  assert.ok(profile.includes('accessibilityLabel="Opciones del perfil"'));
  assert.ok(profile.includes('menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}'));
- assert.ok(actions.includes('width:52,height:52'));
+ assert.ok(actions.includes('width:JOBEEN_CONTROL.touchTarget,minHeight:JOBEEN_CONTROL.touchTarget'));
  assert.ok(actions.includes('<Ionicons name="paper-plane-outline" size={22}'));
  assert.ok(!actions.includes('fontWeight:"700",fontSize:12}}>Mensaje</Text>'));
  assert.ok(actions.includes('<Modal visible={menuOpen}'));
