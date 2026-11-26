@@ -215,13 +215,13 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         </Pressable>
         <View style={{width:"100%",maxWidth:320}}><ProfileConnectionCountRow ink={finish.text} muted={finish.secondary} line={finish.line}/></View>
         {experienceAndAvailability}
-        <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",alignItems:"center",columnGap:8}}>
+        {(card.status==="ACTIVE"&&!!employerLink||theme!=="light"&&!!onShare)&&<View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",alignItems:"center",columnGap:8}}>
           {personalActions}
           {theme!=="light"&&onShare&&<Pressable accessibilityRole="button" accessibilityLabel="Compartir JCard personal"
            onPress={onShare} style={{width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
             <Ionicons name="share-social-outline" size={20} color={finish.text}/>
           </Pressable>}
-        </View>
+        </View>}
         {secondaryProfessions}
       </View>
     </View>:
@@ -569,8 +569,8 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
      backPortrait={profilePortrait&&(showOwnerActions||visibility.business_enabled)?
       <BusinessProfileLogo key={card.business?.avatarUrl} uri={card.business?.avatarUrl} portrait={profilePortrait} theme={cardTheme}
        onEdit={showOwnerActions&&onEditBusinessMedia?()=>onEditBusinessMedia("avatar"):undefined}/>:undefined}
-     front={(showOwnerActions||visibility.personal_enabled)?<CardFace card={card} theme={cardTheme} profilePortrait={profilePortrait} onProfileLayout={measurePersonal} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onEditPhoto={showOwnerActions?onEditPersonalPhoto:undefined} onSaveContact={!showOwnerActions?(onDemoSaveContact??(ownerId?savePersonal:undefined)):undefined} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>:null}
-     back={<View style={{height:cardHeight}}>{(showOwnerActions||visibility.business_enabled)&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onSaveContact={!showOwnerActions?(onDemoSaveContact??(ownerId?saveBusiness:undefined)):undefined} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} onProfileLayout={measureBusiness} visibility={visibility} awardsInAbout={awardsInAbout} profilePortrait={profilePortrait}/>}</View>}
+     front={(showOwnerActions||visibility.personal_enabled)?<CardFace card={card} theme={cardTheme} profilePortrait={profilePortrait} onProfileLayout={measurePersonal} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onEditPhoto={showOwnerActions?onEditPersonalPhoto:undefined} onSaveContact={!profilePortrait&&!showOwnerActions?(onDemoSaveContact??(ownerId?savePersonal:undefined)):undefined} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>:null}
+     back={<View style={{height:cardHeight}}>{(showOwnerActions||visibility.business_enabled)&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onSaveContact={!profilePortrait&&!showOwnerActions?(onDemoSaveContact??(ownerId?saveBusiness:undefined)):undefined} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} onProfileLayout={measureBusiness} visibility={visibility} awardsInAbout={awardsInAbout} profilePortrait={profilePortrait}/>}</View>}
    />
    {showOwnerActions&&ownerQuickActions&&<View style={{flexDirection:"row",gap:8,paddingTop:10,alignItems:"stretch"}}>
      <Pressable accessibilityRole="button" accessibilityLabel="Panel" onPress={ownerQuickActions.onPanel} style={({pressed})=>({flex:1,minWidth:48,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,paddingHorizontal:5,paddingVertical:10,borderRadius:JOBEEN_CONTROL.buttonRadius,backgroundColor:cardColors.ink,opacity:pressed?0.8:1})}>

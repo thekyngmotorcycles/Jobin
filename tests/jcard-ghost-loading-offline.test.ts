@@ -137,7 +137,7 @@ test("Full-width 5:2 cover has independent geometry on own and visitor profiles"
  assert.ok(card.includes("<JCardProfileLayers portrait={profilePortrait}"));
  assert.ok(!card.includes("marginBottom:-(profilePortrait.overlap"));
  const owner=source("src/app/(tabs)/profile.tsx"),visitor=source("src/app/jcard.tsx");
- for(const [screen,inset] of [[owner,16],[visitor,20]] as const){
+ for(const [screen,inset] of [[owner,16],[visitor,16]] as const){
   assert.ok(screen.includes('contentInsetAdjustmentBehavior="never"'));
   assert.ok(!screen.includes('paddingTop:NAVIGATION_ROW_HEIGHT+12'));
   assert.ok(screen.includes(`profileInset={${inset}}`));

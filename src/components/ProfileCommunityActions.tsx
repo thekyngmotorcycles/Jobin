@@ -13,7 +13,7 @@ import {useTheme} from "../state/ThemeProvider";
 import {JobeenShareSheet} from "./JCardShareSheet";
 import {JobeenNoticeDialog} from "./JobeenNoticeDialog";
 import {SettingsMenuRow} from "./SettingsMenuRow";
-export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose,onToggleSaved,savedJCard=false,savingJCard=false,visibleCardSide="personal"}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void;onToggleSaved?:()=>void;savedJCard?:boolean;savingJCard?:boolean;visibleCardSide?:"personal"|"business"}){
+export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose,onToggleSaved,onSaveContact,savedJCard=false,savingJCard=false,visibleCardSide="personal"}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void;onToggleSaved?:()=>void;onSaveContact?:()=>void;savedJCard?:boolean;savingJCard?:boolean;visibleCardSide?:"personal"|"business"}){
  const {s,colors}=useUi();const {theme}=useTheme();const modal=jobeenModalTokens(theme);const insets=useSafeAreaInsets();const {width,height}=useWindowDimensions();const jobeen=jobeenTokens("light");const [shareOpen,setShareOpen]=useState(false);const [confirm,setConfirm]=useState<"remove"|"block"|null>(null);const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
  const scopeRef=useRef<MessageScope|null>(null);
  const [contact,setContact]=useState<ContactRequest|null>(null),[viewer,setViewer]=useState("");
@@ -99,6 +99,7 @@ export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClos
      backgroundColor:modal.surface,borderRadius:modal.radius.popover,maxHeight:Math.max(0,height-insets.top-insets.bottom-81)}}>
      <ScrollView keyboardShouldPersistTaps="handled" style={{flexShrink:1}} contentContainerStyle={{gap:2}}>
      {onToggleSaved&&<SettingsMenuRow variant="action" title={savingJCard?"Actualizando…":savedJCard?"Quitar de mis JCards":visibleCardSide==="business"?"Guardar JCard empresarial":"Guardar JCard personal"} icon={savedJCard?"bookmark":"bookmark-outline"} disabled={savingJCard} onPress={()=>{onMenuClose?.();onToggleSaved();}}/>}
+     {onSaveContact&&<SettingsMenuRow variant="action" title="Guardar contacto" icon="person-add-outline" onPress={()=>{onMenuClose?.();onSaveContact();}}/>}
      <SettingsMenuRow variant="action" title="Compartir perfil"
       icon="share-social-outline"
       onPress={()=>{onMenuClose?.();setTimeout(()=>setShareOpen(true),350);}}/>

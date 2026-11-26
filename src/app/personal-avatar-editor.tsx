@@ -1,4 +1,5 @@
 import {avatarEditorColors} from "../theme/jcard";
+import {avatarEditorFrame,avatarEditorLayout,avatarEditorCrop} from "../lib/avatar-editor-geometry";
 import {useEffect,useMemo,useRef,useState} from "react";
 import {ActivityIndicator,Alert,Animated,Dimensions,FlatList,Image,PanResponder,Pressable,StyleSheet,Text,View} from "react-native";
 import {useLocalSearchParams,useRouter} from "expo-router";
@@ -19,17 +20,19 @@ export default function PersonalAvatarEditor(){
  const router=useRouter();
  const {target}=useLocalSearchParams<{target?:string}>();
  const businessAvatar=target==="business";
+ const frame=useMemo(()=>avatarEditorFrame(SIZE,businessAvatar),[businessAvatar]);
+ const previewExtent=frame.height+40;
  const insets=useSafeAreaInsets();
  const [photos,setPhotos]=useState<Photo[]>([]);
  const [albums,setAlbums]=useState<MediaLibrary.Album[]>([]);
  const [album,setAlbum]=useState<MediaLibrary.Album|null>(null);
  const [albumMenu,setAlbumMenu]=useState(false);
  const [galleryExpanded,setGalleryExpanded]=useState(false);
- const previewHeight=useRef(new Animated.Value(SIZE+40)).current;
+ const previewHeight=useRef(new Animated.Value(previewExtent)).current;
  const galleryExpandedRef=useRef(false);
- const dragStartHeight=useRef(SIZE+40);
- function setGalleryOpen(open:boolean){galleryExpandedRef.current=open;setGalleryExpanded(open);setAlbumMenu(false);Animated.spring(previewHeight,{toValue:open?0:SIZE+40,useNativeDriver:false,tension:90,friction:12}).start();}
- const galleryDrag=useMemo(()=>PanResponder.create({onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dy)>4,onPanResponderGrant:()=>{dragStartHeight.current=galleryExpandedRef.current?0:SIZE+40;},onPanResponderMove:(_,g)=>{previewHeight.setValue(Math.max(0,Math.min(SIZE+40,dragStartHeight.current+g.dy)));},onPanResponderRelease:(_,g)=>{setGalleryOpen(g.dy< -45?true:g.dy>45?false:galleryExpandedRef.current);},onPanResponderTerminate:()=>setGalleryOpen(galleryExpandedRef.current)}),[previewHeight]);
+ const dragStartHeight=useRef(previewExtent);
+ function setGalleryOpen(open:boolean){galleryExpandedRef.current=open;setGalleryExpanded(open);setAlbumMenu(false);Animated.spring(previewHeight,{toValue:open?0:previewExtent,useNativeDriver:false,tension:90,friction:12}).start();}
+ const galleryDrag=useMemo(()=>PanResponder.create({onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dy)>4,onPanResponderGrant:()=>{dragStartHeight.current=galleryExpandedRef.current?0:previewExtent;},onPanResponderMove:(_,g)=>{previewHeight.setValue(Math.max(0,Math.min(previewExtent,dragStartHeight.current+g.dy)));},onPanResponderRelease:(_,g)=>{setGalleryOpen(g.dy< -45?true:g.dy>45?false:galleryExpandedRef.current);},onPanResponderTerminate:()=>setGalleryOpen(galleryExpandedRef.current)}),[previewHeight,previewExtent]);
  const [loadingAlbum,setLoadingAlbum]=useState(false);
  const [selected,setSelected]=useState<Photo|null>(null);
  const [permissionDenied,setPermissionDenied]=useState(false);
@@ -40,7 +43,7 @@ export default function PersonalAvatarEditor(){
  useEffect(()=>{let live=true;editorLive.current=true;void captureMessageScope().then(scope=>{if(live)setEditorScope(scope);}).catch(()=>{});return()=>{live=false;editorLive.current=false;};},[]);
  const [zoom,setZoom]=useState(1);
  const [offset,setOffset]=useState({x:0,y:0});
- const [dimensions,setDimensions]=useState({width:SIZE,height:SIZE});
+ const dimensions=useMemo(()=>({width:selected?.width||SIZE,height:selected?.height||SIZE}),[selected?.width,selected?.height]);
  const offsetRef=useRef(offset);offsetRef.current=offset;
  const zoomRef=useRef(zoom);zoomRef.current=zoom;
  const gesture=useRef({x:0,y:0,zoom:1,distance:0,centerX:0,centerY:0});
@@ -66,9 +69,7 @@ export default function PersonalAvatarEditor(){
     }
     const nextZoom=Math.max(1,Math.min(4,gesture.current.zoom*distance/gesture.current.distance));
     setZoom(nextZoom);
-    const baseScale=Math.max(SIZE/dimensions.width,SIZE/dimensions.height);
-    const maxX=Math.max(0,(dimensions.width*baseScale*nextZoom-SIZE)/2);
-    const maxY=Math.max(0,(dimensions.height*baseScale*nextZoom-SIZE)/2);
+    const {maxX,maxY}=avatarEditorLayout(frame,dimensions,nextZoom,{x:0,y:0});
     const nextX=gesture.current.x+((a.pageX+b.pageX)/2-gesture.current.centerX);
     const nextY=gesture.current.y+((a.pageY+b.pageY)/2-gesture.current.centerY);
     setOffset({x:Math.max(-maxX,Math.min(maxX,nextX)),y:Math.max(-maxY,Math.min(maxY,nextY))});
@@ -77,15 +78,13 @@ export default function PersonalAvatarEditor(){
      gesture.current={x:offsetRef.current.x,y:offsetRef.current.y,zoom:zoomRef.current,distance:0,centerX:0,centerY:0};
      return;
     }
-    const baseScale=Math.max(SIZE/dimensions.width,SIZE/dimensions.height);
-    const maxX=Math.max(0,(dimensions.width*baseScale*zoomRef.current-SIZE)/2);
-    const maxY=Math.max(0,(dimensions.height*baseScale*zoomRef.current-SIZE)/2);
+    const {maxX,maxY}=avatarEditorLayout(frame,dimensions,zoomRef.current,{x:0,y:0});
     setOffset({x:Math.max(-maxX,Math.min(maxX,gesture.current.x+g.dx)),y:Math.max(-maxY,Math.min(maxY,gesture.current.y+g.dy))});
    }
   }
- }),[dimensions.width,dimensions.height,selected?.id]);
+ }),[dimensions.width,dimensions.height,selected?.id,frame]);
  useEffect(()=>{let live=true;(async()=>{const p=await MediaLibrary.requestPermissionsAsync(false,["photo"]);if(!p.granted){if(live)setPermissionDenied(true);return;}const result=await MediaLibrary.getAssetsAsync({mediaType:"photo",first:80,sortBy:[["creationTime",false]]});const folders=await MediaLibrary.getAlbumsAsync({includeSmartAlbums:true});if(live){setPhotos(result.assets);setAlbums(folders);setSelected(result.assets[0]??null);}})().catch(e=>Alert.alert("Galería",String(e)));return()=>{live=false;};},[]);
- useEffect(()=>{if(!selected)return;setZoom(1);setOffset({x:0,y:0});Image.getSize(selected.uri,(width,height)=>setDimensions({width,height}),()=>setDimensions({width:SIZE,height:SIZE}));},[selected?.id]);
+ useEffect(()=>{setZoom(1);setOffset({x:0,y:0});},[selected?.id,businessAvatar]);
  async function chooseAlbum(next:MediaLibrary.Album|null){
   setAlbumMenu(false);setLoadingAlbum(true);
   try{
@@ -94,10 +93,7 @@ export default function PersonalAvatarEditor(){
   }catch(e){Alert.alert("No se pudo abrir la carpeta",e instanceof Error?e.message:String(e));}
   finally{setLoadingAlbum(false);}
  }
- const scale=Math.max(SIZE/dimensions.width,SIZE/dimensions.height)*zoom;
- const displayWidth=dimensions.width*scale,displayHeight=dimensions.height*scale;
- const maxX=Math.max(0,(displayWidth-SIZE)/2),maxY=Math.max(0,(displayHeight-SIZE)/2);
- const dx=Math.max(-maxX,Math.min(maxX,offset.x)),dy=Math.max(-maxY,Math.min(maxY,offset.y));
+ const {displayWidth,displayHeight,dx,dy}=avatarEditorLayout(frame,dimensions,zoom,offset);
  function closeWithoutSaving(){
   if(busy)return;
   if(router.canGoBack())router.back();
@@ -113,14 +109,11 @@ export default function PersonalAvatarEditor(){
    // metadata on Android can require ACCESS_MEDIA_LOCATION for EXIF GPS data,
    // which is unnecessary for cropping and saving a profile photograph.
    const uri=selected.uri;
-   const sourceW=selected.width||dimensions.width,sourceH=selected.height||dimensions.height;
-   const factor=Math.max(SIZE/sourceW,SIZE/sourceH)*zoom;
-   const cropSize=Math.floor(SIZE/factor);
-   const originX=Math.max(0,Math.min(sourceW-cropSize,Math.round((sourceW-cropSize)/2-dx/factor)));
-   const originY=Math.max(0,Math.min(sourceH-cropSize,Math.round((sourceH-cropSize)/2-dy/factor)));
+   if(!selected.width||!selected.height)throw Error("No se pudo verificar el tamaño de la imagen.");
+   const crop=avatarEditorCrop(frame,dimensions,zoom,offset);
    const context=ImageManipulator.ImageManipulator.manipulate(uri);
-   context.crop({originX,originY,width:Math.min(cropSize,sourceW),height:Math.min(cropSize,sourceH)});
-   context.resize({width:512,height:512});
+   context.crop(crop);
+   context.resize(avatarEditorFrame(512,businessAvatar));
    const rendered=await context.renderAsync();
    const result=await rendered.saveAsync({format:ImageManipulator.SaveFormat.JPEG,compress:0.75,base64:true});
    await assertMessageScope(scope);
@@ -142,7 +135,7 @@ export default function PersonalAvatarEditor(){
  }
  return <View style={s.root}>
   <View style={[s.top,{paddingTop:Math.max(insets.top,16),height:64+Math.max(insets.top,16)}]}><Pressable accessibilityRole="button" accessibilityLabel="Cerrar sin guardar" hitSlop={12} disabled={busy} onPress={closeWithoutSaving} style={s.closeButton}><Ionicons name="close" size={19} color={avatarEditorColors.text}/></Pressable><Pressable disabled={!selected||busy||!editorScope} onPress={()=>void save()}><Text style={s.save}>{busy?"Guardando":"Guardar"}</Text></Pressable></View>
-  <Animated.View style={[s.previewArea,{height:previewHeight,overflow:"hidden",marginTop:0}]}>{selected?<View style={{width:SIZE,height:SIZE,borderRadius:SIZE/2,overflow:"hidden",backgroundColor:avatarEditorColors.preview}} {...pan.panHandlers}><Image source={{uri:selected.uri}} style={{width:displayWidth,height:displayHeight,position:"absolute",left:(SIZE-displayWidth)/2+dx,top:(SIZE-displayHeight)/2+dy}} resizeMode="stretch"/><View pointerEvents="none" style={StyleSheet.absoluteFill}><View style={{position:"absolute",left:"33.333%",top:0,bottom:0,width:1,backgroundColor:avatarEditorColors.guide}}/><View style={{position:"absolute",left:"66.666%",top:0,bottom:0,width:1,backgroundColor:avatarEditorColors.guide}}/><View style={{position:"absolute",top:"33.333%",left:0,right:0,height:1,backgroundColor:avatarEditorColors.guide}}/><View style={{position:"absolute",top:"66.666%",left:0,right:0,height:1,backgroundColor:avatarEditorColors.guide}}/></View></View>:<ActivityIndicator/>}</Animated.View>
+  <Animated.View style={[s.previewArea,{height:previewHeight,overflow:"hidden",marginTop:0}]}>{selected?<View style={{width:frame.width,height:frame.height,borderRadius:Math.round(frame.width*0.18),overflow:"hidden",backgroundColor:avatarEditorColors.preview}} {...pan.panHandlers}><Image source={{uri:selected.uri}} style={{width:displayWidth,height:displayHeight,position:"absolute",left:(frame.width-displayWidth)/2+dx,top:(frame.height-displayHeight)/2+dy}} resizeMode="stretch"/><View pointerEvents="none" style={StyleSheet.absoluteFill}><View style={{position:"absolute",left:"33.333%",top:0,bottom:0,width:1,backgroundColor:avatarEditorColors.guide}}/><View style={{position:"absolute",left:"66.666%",top:0,bottom:0,width:1,backgroundColor:avatarEditorColors.guide}}/><View style={{position:"absolute",top:"33.333%",left:0,right:0,height:1,backgroundColor:avatarEditorColors.guide}}/><View style={{position:"absolute",top:"66.666%",left:0,right:0,height:1,backgroundColor:avatarEditorColors.guide}}/></View></View>:<ActivityIndicator/>}</Animated.View>
   {!!saveError&&<Text accessibilityLiveRegion="polite" style={s.message}>No se pudo guardar: {saveError}</Text>}
   <View style={s.galleryHeader}>
    <View {...galleryDrag.panHandlers} style={{position:"absolute",top:0,left:0,right:0,height:20,alignItems:"center",justifyContent:"center",zIndex:2}}><View style={{width:46,height:5,borderRadius:3,backgroundColor:avatarEditorColors.text,opacity:0.3}}/></View>
