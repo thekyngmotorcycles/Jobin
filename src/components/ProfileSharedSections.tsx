@@ -18,11 +18,11 @@ import {useFocusEffect} from "expo-router";
 
 export type ProfileSection="grid"|"jcards"|"cv"|"videos"|"live";
 const tabs=[
+ {id:"cv",label:"Acerca de"},
  {id:"grid",label:"Todo"},
- {id:"jcards",label:"JCards"},
- {id:"videos",label:"Videos"},
  {id:"live",label:"En vivo"},
- {id:"cv",label:"Acerca de"}
+ {id:"videos",label:"Videos"},
+ {id:"jcards",label:"JCards"}
 ] as const;
 const visitorTabs=tabs.filter(tab=>tab.id!=="jcards");
 

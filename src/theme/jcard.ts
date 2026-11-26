@@ -61,10 +61,14 @@ export function jcardProfileCoverGeometry(coverWidth:number,portrait:JCardProfil
  const frameTop=Math.max(0,bodyTop-portrait.overlap);
  return {coverHeight,bodyTop,frameTop};
 }
-/** Mirrored header; its height never depends on name length. */
+/** Common business row inset, measured from the card edge. */
+export const JCARD_BUSINESS_COLUMN_INSET=22;
+/** Equal physical pill columns, without content-driven flex sizing. */
+export function jcardProfilePillWidth(cardWidth:number){return Math.max(1,Math.floor((cardWidth-26-8)/2));}
+/** Portrait clearance and fixed identity height, independent of name length. */
 export function jcardProfileIdentitySpace(portrait:JCardProfilePortraitMetrics,fontScale:number,side:"personal"|"business"="personal"){
  const scale=Math.max(1,Number.isFinite(fontScale)?fontScale:1);
- const gutter=portrait.inset+portrait.width+10,edge=14;
+ const gutter=portrait.inset+portrait.width+10,edge=side==="business"?JCARD_BUSINESS_COLUMN_INSET:14;
  const {max}=jcardProfileNameLimits(portrait.cardWidth);
  const lineHeight=max+3;
  const nameHeight=Math.ceil(lineHeight*scale),subtitleHeight=Math.ceil(16*scale);

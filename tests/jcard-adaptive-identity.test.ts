@@ -40,3 +40,24 @@ test("Standard private footprint is content independent with compact contacts an
  assert.ok(card.includes("profilePillTouch")&&card.includes("...profilePill,backgroundColor:jobeen.cream")&&card.includes("...profilePill,flexDirection:"));
  assert.ok((card.match(/<ScrollView nestedScrollEnabled style=\{\{flex:1,minHeight:0\}\}/g)??[]).length>=2);
 });
+
+
+test("Equal fixed pill widths cannot be redistributed by label length; business column clears logo",async()=>{
+ const {jcardProfilePillWidth,jcardProfileIdentitySpace,jcardProfilePortraitMetrics,JCARD_BUSINESS_COLUMN_INSET}=await import("../src/theme/jcard.ts");
+ for(const width of [250,288,328,382,520]){
+  const pill=jcardProfilePillWidth(width);
+  assert.ok(2*pill+8<=width-26);
+  assert.ok(pill>=108);
+  const portrait=jcardProfilePortraitMetrics(width),business=jcardProfileIdentitySpace(portrait,1,"business");
+  assert.equal(business.paddingLeft,JCARD_BUSINESS_COLUMN_INSET);
+  assert.ok(business.paddingRight>portrait.inset+portrait.width);
+ }
+ const card=source("src/components/JobinCard.tsx"),header=source("src/components/JCardProfileIdentity.tsx");
+ const pill=card.slice(card.indexOf("const profilePillTouch="),card.indexOf("  </View>:<View style={{",card.indexOf("const profilePillTouch=")));
+ assert.ok(pill.includes("flexGrow:0,flexShrink:0"));
+ assert.equal((pill.match(/style=\{profilePillTouch\}/g)??[]).length,2);
+ assert.ok(!pill.includes("adjustsFontSizeToFit"));
+ assert.ok(card.includes("profilePadding=profilePortrait?JCARD_BUSINESS_COLUMN_INSET"));
+ assert.ok(card.includes('contentContainerStyle={{alignItems:"stretch",gap:2}}'));
+ assert.ok(header.includes('const align="left"')&&header.includes('const justify="flex-start"'));
+});

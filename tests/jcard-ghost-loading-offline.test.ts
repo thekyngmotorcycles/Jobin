@@ -144,14 +144,14 @@ test("Full-width 5:2 cover has independent geometry on own and visitor profiles"
  }
 });
 
-test("Mirrored fixed identity slots clear portraits",async()=>{
- const {jcardProfilePortraitMetrics,jcardProfileIdentitySpace}=await import("../src/theme/jcard.ts");
+test("Fixed identity slots clear portraits with the approved business left column",async()=>{
+ const {jcardProfilePortraitMetrics,jcardProfileIdentitySpace,JCARD_BUSINESS_COLUMN_INSET}=await import("../src/theme/jcard.ts");
  for(const width of [250,280,288,328,390,520]){
   const portrait=jcardProfilePortraitMetrics(width);
   for(const fontScale of [1,1.3,2]){
    const p=jcardProfileIdentitySpace(portrait,fontScale,"personal"),b=jcardProfileIdentitySpace(portrait,fontScale,"business");
    assert.ok(p.paddingLeft>portrait.inset+portrait.width);
-   assert.equal(p.paddingLeft,b.paddingRight);assert.equal(p.paddingRight,b.paddingLeft);
+   assert.equal(p.paddingLeft,b.paddingRight);assert.equal(b.paddingLeft,JCARD_BUSINESS_COLUMN_INSET);assert.ok(b.paddingLeft>p.paddingRight);
    assert.equal(p.minHeight,b.minHeight);assert.equal(p.nameHeight,b.nameHeight);assert.equal(p.subtitleHeight,b.subtitleHeight);
    assert.ok(p.width>0&&p.minHeight>=portrait.height-portrait.overlap);
    assert.ok(p.paddingLeft+p.paddingRight<width);

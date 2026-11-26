@@ -8,8 +8,8 @@ export function JCardProfileIdentity({portrait,side,name,subtitle,ink,muted,badg
  const {fontScale}=useWindowDimensions();
  const space=jcardProfileIdentitySpace(portrait,fontScale,side);
  const fit=fitJCardProfileName(name,space.width,portrait.cardWidth,fontScale);
- const align=side==="personal"?"left":"right";
- const justify=side==="personal"?"flex-start":"flex-end";
+ const align="left";
+ const justify="flex-start";
  return <View style={{paddingLeft:Math.max(0,space.paddingLeft-parentPadding),paddingRight:Math.max(0,space.paddingRight-parentPadding),
     paddingTop:space.paddingTop,paddingBottom:space.paddingBottom,minHeight:space.minHeight,flexShrink:0,justifyContent:"center"}}>
    <View accessible accessibilityLabel={name+", "+verification} style={{height:space.nameHeight,flexDirection:"row",justifyContent:justify,alignItems:"center",gap:JCARD_NAME_BADGE_GAP}}>
