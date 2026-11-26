@@ -31,8 +31,8 @@ export const jcardSurfaceMetrics={
  lightHeight:330, darkHeight:400, compactHeightExtra:8,
  maxFontScale:1.3, fontScaleExtra:40, radius:30,
 } as const;
-// Shared floor for the loading card and both live faces. Wrapped live content
-// can increase the common height without changing either face's footprint.
+// Fixed responsive body size shared by both faces, owner, visitor and skeleton.
+ // Content never determines the outer footprint.
 export function jcardProfileBodyHeight(width:number,fontScale:number){
  const scale=Math.max(1,Number.isFinite(fontScale)?fontScale:1);
  return (width<jcardSurfaceMetrics.compactThreshold?226:220)+Math.round((scale-1)*84);
@@ -67,8 +67,8 @@ export function jcardProfileIdentitySpace(portrait:JCardProfilePortraitMetrics,f
  const gutter=portrait.inset+portrait.width+10,edge=14;
  const {max}=jcardProfileNameLimits(portrait.cardWidth);
  const lineHeight=max+3;
- const nameHeight=2*Math.ceil(lineHeight*scale),subtitleHeight=Math.ceil(16*scale);
- const paddingTop=3,paddingBottom=2;
+ const nameHeight=Math.ceil(lineHeight*scale),subtitleHeight=Math.ceil(16*scale);
+ const paddingTop=12,paddingBottom=2;
  return {paddingLeft:side==="personal"?gutter:edge,paddingRight:side==="business"?gutter:edge,
   paddingTop,paddingBottom,nameHeight,subtitleHeight,lineHeight,width:Math.max(1,portrait.cardWidth-gutter-edge-2),
   minHeight:Math.max(JOBEEN_CONTROL.touchTarget,Math.ceil(portrait.height-portrait.overlap),paddingTop+nameHeight+subtitleHeight+paddingBottom)};

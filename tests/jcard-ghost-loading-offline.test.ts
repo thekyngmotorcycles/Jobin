@@ -101,7 +101,7 @@ test("Profile portraits use a common exact quarter overlap and fixed non-rotatin
 });
 
 
-test("Profile faces share a compact floor, grow with type, and fit the widest rendered face",async()=>{
+test("Profile faces share the fixed compact footprint and grow only with accessibility scale",async()=>{
  const {jcardSurfaceSize,jcardProfileBodyHeight}=await import("../src/theme/jcard.ts");
  for(const width of [250,288,310,390,520]){
   for(const theme of ["light","dark"] as const){
@@ -114,10 +114,10 @@ test("Profile faces share a compact floor, grow with type, and fit the widest re
   }
  }
  const card=source("src/components/JobinCard.tsx");
- assert.match(card,/Math\.max\(surface.height,showPersonal\?personalHeight:0,showBusiness\?businessHeight:0\)/);
+ assert.ok(card.includes("const cardHeight=surface.height;"));
  assert.match(card,/<BusinessCard3D\s+height=\{cardHeight\}/);
  assert.match(card,/back=\{<View\s+style=\{\{height:cardHeight\}\}>/);
- assert.ok(card.includes("onProfileLayout={measurePersonal}")&&card.includes("onProfileLayout={measureBusiness}"));
+ assert.ok(!card.includes("measurePersonal")&&!card.includes("measureBusiness"));
 });
 
 test("Full-width 5:2 cover has independent geometry on own and visitor profiles", async()=>{
@@ -174,11 +174,11 @@ test("Business profile restores the review star and aligned branded contact circ
 });
 test("Profile faces show personal counts only and present languages and services in About",()=>{
  const card=source("src/components/JobinCard.tsx");
- const personal=card.slice(card.indexOf("{profilePortrait?<View onLayout={onProfileLayout}"),card.indexOf("export function BusinessFace"));
+ const personal=card.slice(card.indexOf("{profilePortrait?<View style={{flex:1,minHeight:0,paddingBottom:4}}>"),card.indexOf("export function BusinessFace"));
  const business=card.slice(card.indexOf("export function BusinessFace"),card.indexOf("export function JobinCard"));
  assert.ok(personal.includes("<ProfileConnectionCountRow"));
  assert.ok(!business.includes("<ProfileConnectionCountRow"));
- assert.match(business,/profilePortrait\?<View onLayout=\{onProfileLayout\}[\s\S]*?profileName[\s\S]*?profileCategory[\s\S]*?reseñas[\s\S]*?\{contactRows\}/);
+ assert.match(business,/profilePortrait\?<View style=\{\{flex:1,minHeight:0,paddingBottom:4\}\}>[\s\S]*?profileName[\s\S]*?profileCategory[\s\S]*?reseñas[\s\S]*?\{contactRows\}/);
  assert.ok(card.includes('resizeMode="contain"'));
  for(const path of ["src/app/(tabs)/profile.tsx","src/app/jcard.tsx"]){
   const app=source(path);

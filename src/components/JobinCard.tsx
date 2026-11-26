@@ -16,7 +16,7 @@ import {JCardPremiumTexture} from "./JCardPremiumTexture";
 import {BUSINESS_BADGE_NEUTRAL,BUSINESS_MEDAL_COLORS} from "../theme/business-medals";
 import { memo, useCallback, useContext, useEffect, useId, useRef, useState } from "react";
 import { router } from "expo-router";
-import { Alert, Animated, Image, Linking, Modal, Pressable as NativePressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from "react-native";
+import { Alert, Animated, Image, Linking, Modal, Pressable as NativePressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import {JCardShareSheet} from "./JCardShareSheet";
 
 import { Ionicons } from "@expo/vector-icons";
@@ -97,7 +97,7 @@ function secondaryCardSeals(card:CardData){
  const primaryProfession=primaryCardProfession(card);
  return card.seals.filter(seal=>!(/hvac/i.test(primaryProfession)&&/hvac|aire acondicionado/i.test(seal.profession))&&seal.profession.trim().toLocaleLowerCase()!==primaryProfession.toLocaleLowerCase());
 }
-function CardFace({ card, theme, appearance="original", expanded = false, onEdit, onShare, onEditPhoto, onSaveContact, contact, employerLink,profilePortrait,onProfileLayout }: { card: CardData; theme: ThemeName; appearance?:JCardPremiumBackgroundId; expanded?: boolean; onEdit?: () => void; onShare?: () => void; onEditPhoto?: () => void; onSaveContact?:()=>void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null;profilePortrait?:JCardProfilePortraitMetrics;onProfileLayout?:(event:LayoutChangeEvent)=>void }) {
+function CardFace({ card, theme, appearance="original", expanded = false, onEdit, onShare, onEditPhoto, onSaveContact, contact, employerLink,profilePortrait }: { card: CardData; theme: ThemeName; appearance?:JCardPremiumBackgroundId; expanded?: boolean; onEdit?: () => void; onShare?: () => void; onEditPhoto?: () => void; onSaveContact?:()=>void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null;profilePortrait?:JCardProfilePortraitMetrics }) {
   const { s, fs } = useUi();
   const inlineIdentity=theme==="light";
   const jobeen=jcardArtTokens(theme);
@@ -135,7 +135,23 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
     ? years+((months??0)%12?"+":"")+(years===1?" Año de experiencia":" Años de experiencia")
     : months&&months>0?months+(months===1?" Mes de experiencia":" Meses de experiencia"):"Sin experiencia";
   const working=card.status==="ACTIVE";
-  const experienceAndAvailability=<View style={{
+  const {fontScale:profileFontScale}=useWindowDimensions();
+  const pillHeight=Math.max(28,Math.ceil(26*profileFontScale));
+  const profilePill={height:pillHeight,borderRadius:pillHeight/2,alignItems:"center" as const,justifyContent:"center" as const,paddingHorizontal:5,width:"100%" as const};
+  const profilePillTouch={minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center" as const,flex:1,minWidth:0,maxWidth:"100%" as const};
+  const experienceAndAvailability=profilePortrait?<View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8,width:"100%"}}>
+   {months!==undefined&&<Pressable accessibilityRole="button" accessibilityLabel={"Ver experiencia por profesión: "+experience} onPress={event=>{event.stopPropagation();setExperienceOpen(true);}} style={profilePillTouch}>
+    <View style={{...profilePill,backgroundColor:jobeen.cream,borderColor:jobeen.yellow,borderWidth:1}}>
+     <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.9} style={{fontSize:11,lineHeight:12,fontWeight:"600",textAlign:"center",color:jobeen.ink}}>{experience}</Text>
+    </View>
+   </Pressable>}
+   <Pressable accessibilityRole="button" accessibilityLabel="Información sobre disponibilidad" onPress={event=>{event.stopPropagation();setInfo(working?"Trabajando actualmente\\nLa persona indica que tiene un trabajo activo.":"Disponible para trabajar\\nLa persona indica que está abierta a nuevas oportunidades laborales o solicitudes de clientes.");}} style={{...profilePillTouch,flex:months===undefined?0:1,minWidth:months===undefined?124:0}}>
+    <View style={{...profilePill,flexDirection:"row",gap:5,backgroundColor:jobeen.okBackground}}>
+     <View style={{width:7,height:7,borderRadius:4,backgroundColor:jobeen.okDot}}/>
+     <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.9} style={{flexShrink:1,fontSize:11,fontWeight:"600",color:jobeen.okText}}>{working?"Trabajando":"Disponible"}</Text>
+    </View>
+   </Pressable>
+  </View>:<View style={{
     flexDirection:"row",flexWrap:profilePortrait?"wrap":"nowrap",alignItems:"center",justifyContent:"center",
     gap:8,minWidth:0,width:"100%",marginTop:!profilePortrait&&theme==="light"?10:0
   }}>
@@ -194,11 +210,11 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
     {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
     {theme==="light"&&appearance==="original"&&<JobeenHoneycomb color={jobeen.bizBorder} compact={artSize.width>0&&artSize.width<360}/> }
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:25,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
-    {profilePortrait?<View onLayout={onProfileLayout} style={{flexShrink:0,paddingBottom:4}}>
+    {profilePortrait?<View style={{flex:1,minHeight:0,paddingBottom:4}}>
       <JCardProfileIdentity portrait={profilePortrait} side="personal" name={fullDisplayName} subtitle={"@"+card.handle}
        ink={finish.text} muted={finish.secondary} verification={card.identityVerified?"Identidad verificada por Jobin.":"Identidad sin verificar."}
        badge={<View style={{transform:[{scale:0.72}]}}><IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/></View>}/>
-      <View style={{paddingHorizontal:12,alignItems:"center"}}>
+      <ScrollView nestedScrollEnabled style={{flex:1,minHeight:0}} contentContainerStyle={{paddingHorizontal:12,alignItems:"center"}} keyboardShouldPersistTaps="handled">
         <Pressable accessibilityRole="button" accessibilityLabel={"Detalles de la profesión principal: "+primaryProfession}
          onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nEspecialidades: "+(card.primarySpecialties?.length?card.primarySpecialties.join(", "):"No declaradas")+"\nExperiencia en esta profesión: "+(primarySealMonths===undefined?"No disponible":experienceLabel(primarySealMonths)))}
          style={{minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center",alignItems:"center",flexDirection:"row",gap:5,maxWidth:"100%"}}>
@@ -215,7 +231,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
           </Pressable>}
         </View>}
         {secondaryProfessions}
-      </View>
+      </ScrollView>
     </View>:
     <View style={{ padding:theme==="light"?12:jcardLayout.padding, gap:theme==="light"?5:8, flex:1, justifyContent:"space-between" }}>
       <View style={{ paddingTop:8, flexDirection:"row", alignItems:"flex-start", justifyContent:"space-between" }}>
@@ -372,7 +388,7 @@ function BusinessProfileLogo({uri,portrait,theme,onEdit}:{uri?:string|null;portr
  </Pressable>;
 }
 
-export function BusinessFace({card,theme,appearance="original",contact,onShare,onSaveContact,canEditMedia=false,onEditMedia,visibility=DEFAULT_JCARD_VISIBILITY,awardsInAbout=false,profilePortrait,onProfileLayout}:{card:CardData;theme:ThemeName;appearance?:JCardPremiumBackgroundId;contact?:{email:string|null;phone:string|null};onShare?:()=>void;onSaveContact?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void;visibility?:typeof DEFAULT_JCARD_VISIBILITY;awardsInAbout?:boolean;profilePortrait?:JCardProfilePortraitMetrics;onProfileLayout?:(event:LayoutChangeEvent)=>void}){
+export function BusinessFace({card,theme,appearance="original",contact,onShare,onSaveContact,canEditMedia=false,onEditMedia,visibility=DEFAULT_JCARD_VISIBILITY,awardsInAbout=false,profilePortrait}:{card:CardData;theme:ThemeName;appearance?:JCardPremiumBackgroundId;contact?:{email:string|null;phone:string|null};onShare?:()=>void;onSaveContact?:()=>void;canEditMedia?:boolean;onEditMedia?:(slot:"banner"|"avatar")=>void;visibility?:typeof DEFAULT_JCARD_VISIBILITY;awardsInAbout?:boolean;profilePortrait?:JCardProfilePortraitMetrics}){
  const b=card.business;const jobeen=jcardArtTokens(theme);const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=false;const finish={...jcardTokens(theme,jcardTier(b?.rating??null,b?.reviewCount??0)),start:premium?.base??jobeen.biz,end:premium?.base??jobeen.biz,text:premium?.ink??jobeen.ink,secondary:premium?.ink??jobeen.textSoft,line:premium?.line??jobeen.bizBorder,sealFill:jobeen.surface};
  const [showBusinessVerification,setShowBusinessVerification]=useState(false);
  const [artSize,setArtSize]=useState({width:0,height:0});
@@ -388,6 +404,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
  const profileCategory=b?.category?.trim()||"Servicios profesionales";
  const businessContactInk=premium?finish.text:jobeen.ink;
  const businessIconInk=premium?finish.text:jobeen.ink;
+ const profilePhones=[{number:b?.phone,label:b?.phoneLabel},{number:b?.phoneSecondary,label:b?.phoneSecondaryLabel}].filter(item=>item.number);
  const contactRows=profilePortrait?<View style={{alignSelf:"center",width:"100%",maxWidth:320}}>
    {(visibility.business_show_email?(theme==="light"?[b?.email??b?.emailSecondary]:[b?.email,b?.emailSecondary]):[]).filter(Boolean).map((email,index)=>
      <Pressable key={index} accessibilityRole="link" accessibilityLabel={"Enviar correo a "+email}
@@ -397,12 +414,13 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
      </Pressable>)}
    {visibility.business_show_phone&&!!(b?.phone||b?.phoneSecondary)&&<View style={{flexDirection:"row",alignItems:"center"}}>
      <BusinessContactIcon name="call-outline" theme={theme}/>
-     <View style={{flex:1,minWidth:0,flexDirection:"row",flexWrap:"wrap",columnGap:12}}>
-       {[{number:b?.phone,label:b?.phoneLabel},{number:b?.phoneSecondary,label:b?.phoneSecondaryLabel}].filter(item=>item.number).map(({number,label},index)=>
+     <View style={{flex:1,minWidth:0,flexDirection:"row",columnGap:6}}>
+       {profilePhones.map(({number,label},index)=>
          <Pressable key={index} accessibilityRole="link" accessibilityLabel={"Llamar al número "+number}
           onPress={event=>{event.stopPropagation();void Linking.openURL("tel:"+number!.replace(/[^+\d]/g,"")).catch(()=>{});}}
-          style={{minWidth:JOBEEN_CONTROL.touchTarget,minHeight:JOBEEN_CONTROL.touchTarget,maxWidth:"100%",justifyContent:"center"}}>
-           <Text style={{fontSize:12,color:businessContactInk}}>{label?label+" ":""}{number}</Text>
+          style={{flex:1,minWidth:0,minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center"}}>
+           {profilePhones.length>1&&!!label&&<Text numberOfLines={1} style={{fontSize:10,color:businessContactInk}}>{label}</Text>}
+           <Text numberOfLines={profilePhones.length>1?1:undefined} adjustsFontSizeToFit={profilePhones.length>1} minimumFontScale={0.85} style={{fontSize:12,color:businessContactInk}}>{profilePhones.length===1&&label?label+" ":""}{number}</Text>
          </Pressable>)}
      </View>
      {theme==="light"&&<Pressable accessibilityRole="link" accessibilityLabel="Abrir WhatsApp del negocio"
@@ -439,14 +457,14 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
    {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
    {theme==="light"&&appearance==="original"&&<JobeenHoneycomb color={jobeen.bizBorder} compact={artSize.width>0&&artSize.width<360}/>}
 
-   {profilePortrait?<View onLayout={onProfileLayout} style={{flexShrink:0,paddingBottom:8}}>
+   {profilePortrait?<View style={{flex:1,minHeight:0,paddingBottom:4}}>
      <JCardProfileIdentity portrait={profilePortrait} side="business" name={profileName} subtitle={company?profileCategory:"JCard de negocio"}
       parentPadding={profilePadding} ink={finish.text} muted={finish.secondary}
       verification={b?.licenseVerified?"Empresa verificada por Jobin.":"Empresa sin verificar."}
       badge={<Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={16}
        color={b?.licenseVerified?jcardCommon.verifiedBubble:jcardCommon.unverifiedBubble}/>}
       subtitleIcon={<Ionicons name={categoryIcon} size={15} color={businessIconInk}/>}/>
-     <View style={{alignItems:"center",gap:2,paddingHorizontal:2}}>
+     <ScrollView nestedScrollEnabled style={{flex:1,minHeight:0}} contentContainerStyle={{alignItems:"center",gap:2,paddingHorizontal:2}} keyboardShouldPersistTaps="handled">
      <Text style={{fontSize:11,color:finish.secondary,textAlign:"center"}}>
       <Text style={{color:finish.text,fontWeight:"700"}}>
        <Text style={{color:jcardCommon.businessGold}}>★</Text> {ratingUnlocked?rating!.toFixed(1):"—"}
@@ -459,7 +477,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
         <Ionicons name="person-add-outline" size={16} color={jobeen.ink}/>
        </View>
      </Pressable>}
-    </View>
+    </ScrollView>
    </View>:<>
    <View style={{flexDirection:"row",alignItems:"center",gap:9,marginTop:5,paddingRight:5}}>
     <Pressable disabled={!canEditMedia} accessibilityLabel="Foto del negocio" onPress={event=>{event.stopPropagation();onEditMedia?.("avatar");}} style={{width:64,height:70.4,borderRadius:14,backgroundColor:jobeen.surface,alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>{b?.avatarUrl?<Image source={{uri:b.avatarUrl}} resizeMode="cover" style={{width:60,height:66,borderRadius:11}}/>:<Ionicons name="person-outline" size={27} color={businessIconInk}/>}</Pressable>
@@ -521,14 +539,8 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const surface=jcardSurfaceSize({screenWidth:width,measuredWidth:measuredCardWidth,fontScale,theme:cardTheme,
   profile:awardsInAbout,horizontalInset:awardsInAbout?profileInset:undefined});
  const profilePortrait=awardsInAbout?jcardProfilePortraitMetrics(surface.width):undefined;
- const showPersonal=showOwnerActions||visibility.personal_enabled;
- const showBusiness=showOwnerActions||visibility.business_enabled;
- const [personalHeight,setPersonalHeight]=useState(0);
- const [businessHeight,setBusinessHeight]=useState(0);
- const measurePersonal=useCallback((event:LayoutChangeEvent)=>setPersonalHeight(Math.ceil(event.nativeEvent.layout.height)+2),[]);
- const measureBusiness=useCallback((event:LayoutChangeEvent)=>setBusinessHeight(Math.ceil(event.nativeEvent.layout.height)),[]);
- // Measure the unshrunk content of both visible faces so wrapping cannot change the flip footprint.
- const cardHeight=profilePortrait?Math.max(surface.height,showPersonal?personalHeight:0,showBusiness?businessHeight:0):surface.height;
+ // Identical outer footprint for both faces, independent of profile content.
+ const cardHeight=surface.height;
  useEffect(()=>{if(!canFlip)setBack(activeBusiness);},[canFlip,activeBusiness]);
  const savePersonal=()=>void presentJCardContact({name:card.name,phone:contact.details?.phone_primary||contact.details?.phone_secondary||contact.phone,email:contact.details?.email_primary||contact.details?.email_secondary||contact.email});
  const saveBusiness=()=>void presentJCardContact({name:card.business?.name?.trim()||card.name,phone:visibility.business_show_phone?(card.business?.phone||card.business?.phoneSecondary):null,email:visibility.business_show_email?(card.business?.email||card.business?.emailSecondary):null});
@@ -548,8 +560,8 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
      backPortrait={profilePortrait&&(showOwnerActions||visibility.business_enabled)?
       <BusinessProfileLogo key={card.business?.avatarUrl} uri={card.business?.avatarUrl} portrait={profilePortrait} theme={cardTheme}
        onEdit={showOwnerActions&&onEditBusinessMedia?()=>onEditBusinessMedia("avatar"):undefined}/>:undefined}
-     front={(showOwnerActions||visibility.personal_enabled)?<CardFace card={card} theme={cardTheme} profilePortrait={profilePortrait} onProfileLayout={measurePersonal} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onEditPhoto={showOwnerActions?onEditPersonalPhoto:undefined} onSaveContact={!profilePortrait&&!showOwnerActions?(onDemoSaveContact??(ownerId?savePersonal:undefined)):undefined} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>:null}
-     back={<View style={{height:cardHeight}}>{(showOwnerActions||visibility.business_enabled)&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onSaveContact={!profilePortrait&&!showOwnerActions?(onDemoSaveContact??(ownerId?saveBusiness:undefined)):undefined} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} onProfileLayout={measureBusiness} visibility={visibility} awardsInAbout={awardsInAbout} profilePortrait={profilePortrait}/>}</View>}
+     front={(showOwnerActions||visibility.personal_enabled)?<CardFace card={card} theme={cardTheme} profilePortrait={profilePortrait} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onEditPhoto={showOwnerActions?onEditPersonalPhoto:undefined} onSaveContact={!profilePortrait&&!showOwnerActions?(onDemoSaveContact??(ownerId?savePersonal:undefined)):undefined} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>:null}
+     back={<View style={{height:cardHeight}}>{(showOwnerActions||visibility.business_enabled)&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onSaveContact={!profilePortrait&&!showOwnerActions?(onDemoSaveContact??(ownerId?saveBusiness:undefined)):undefined} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} visibility={visibility} awardsInAbout={awardsInAbout} profilePortrait={profilePortrait}/>}</View>}
    />
    {showOwnerActions&&ownerQuickActions&&<View style={{flexDirection:"row",gap:8,paddingTop:10,alignItems:"stretch"}}>
      <Pressable accessibilityRole="button" accessibilityLabel="Panel" onPress={ownerQuickActions.onPanel} style={({pressed})=>({flex:1,minWidth:48,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,paddingHorizontal:5,paddingVertical:10,borderRadius:JOBEEN_CONTROL.buttonRadius,backgroundColor:cardColors.ink,opacity:pressed?0.8:1})}>

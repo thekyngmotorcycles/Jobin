@@ -1,5 +1,11 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-COMPACT — dimensiones únicas y tipografía (2026-11-25)
+
+- Base `327a7aeb`, PR #140 integrado y OTA 45746966600 exitosa. Propietario confirma nueva sangría y autoriza fijar dimensiones de la tarjeta privada (~784 × 610 px de captura) como estándar. 226 dp compacto a escala normal; eliminar medición por cara, mantener escala accesible y ancho responsivo. Dos teléfonos en fila y desplazamiento interno inferior solo cuando el contenido desborde; conservar acciones y privacidad. Identidad estática de una línea, 20 caracteres visibles, 15–13 sp, usuario 12 sp. Pastillas de experiencia y disponibilidad iguales visualmente con objetivo táctil 48 dp. Sin cambios de banner, retratos, giro, backend ni dependencias.
+- Pruebas actualizadas; CI y comprobación física pendientes. Integración/OTA por autorización separada.
+
+
 ## JCARD-IDENTITY — sangría y nombre adaptable (2026-11-25)
 
 - Base `e0299cb9`, PR #138 integrado, CI aprobado. Bloque autorizado: encabezado común propio/visitante y personal/negocio, sangría junto al retrato, 16–14/17–15 sp, máximo dos líneas ancladas, elipsis, diálogo de identidad completa, usuario/categoría fijo, insignia final. Esqueleto actualizado. Estimación inicial de ancho con límite nativo de texto. Pendiente comprobación física de fuentes y elipsis; CI, integración y OTA por separado. Sin cambios de portada, retratos, demás datos, backend o dependencias.
