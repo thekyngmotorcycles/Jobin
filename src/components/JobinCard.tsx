@@ -3,6 +3,7 @@ import {BusinessCard3D,CardFlipInteractionContext} from "./BusinessCard3D";
 import {ProfileConnectionCountRow} from "./ProfileFollowCounts";
 import {JCardSharedCover} from "./JCardSharedCover";
 import {JCardProfileLayers} from "./JCardProfileLayers";
+import {JCardProfileIdentity} from "./JCardProfileIdentity";
 import {jobeenTokens,jcardArtTokens} from "../theme/jobeen";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {personalAvatarUrl} from "../lib/personal-jcard-photo";
@@ -30,7 +31,7 @@ import {loadPublicContact,loadVisiblePersonalContactDetails,type PersonalContact
 import { experienceLabel } from "../lib/employment";
 import {ProfessionGlyph} from "./ProfessionGlyph";
 import { LanguageRing, languageLabel, LANGUAGE_LEVELS } from "./LanguageRing";
-import { businessCardAccents, businessCardPaper, businessInformationSurface, jcardCommon, jcardFloating, jcardReviewGlass, jcardLayout, jcardTokens, jcardSurfaceSize, jcardSurfaceMetrics, jcardProfilePortraitMetrics,jcardProfileIdentitySpace,jcardBusinessLogoMetrics,type JCardProfilePortraitMetrics } from "../theme/jcard";
+import { businessCardAccents, businessCardPaper, businessInformationSurface, jcardCommon, jcardFloating, jcardReviewGlass, jcardLayout, jcardTokens, jcardSurfaceSize, jcardSurfaceMetrics, jcardProfilePortraitMetrics,jcardBusinessLogoMetrics,type JCardProfilePortraitMetrics } from "../theme/jcard";
 import {businessCategoryArt} from "../lib/business-category-art";
 import {wrapBusinessCardName} from "../lib/business-card-layout";
 import {categoryGlyph} from "../lib/category-icons";
@@ -100,7 +101,6 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
   const { s, fs } = useUi();
   const inlineIdentity=theme==="light";
   const jobeen=jcardArtTokens(theme);
-  const { fontScale } = useWindowDimensions();
   const gradientId = "jcard" + useId().replace(/[^a-zA-Z0-9]/g, "");
   const shineId=gradientId+"shine";
   const premium=appearance==="original"?null:getPremiumBackground(appearance);const showDecorativeCurves=false;
@@ -129,8 +129,6 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
   const sealGap = sealCount > 8 ? 2 : 4;
   const bodySize = Math.max(12, fs(expanded ? 14 : 13));
   const lineStyle = { color:finish.text, fontSize:bodySize, lineHeight:bodySize * 1.5 };
-  const compactNameFont=profilePortrait&&profilePortrait.cardWidth<jcardSurfaceMetrics.compactThreshold?17:18;
-  const identitySpace=profilePortrait?jcardProfileIdentitySpace(profilePortrait,fullDisplayName.length,compactNameFont,fontScale):undefined;
   const months=card.primaryExperienceMonths;
   const years=Math.floor((months??0)/12);
   const experience=years>0
@@ -196,17 +194,11 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
     {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
     {theme==="light"&&appearance==="original"&&<JobeenHoneycomb color={jobeen.bizBorder} compact={artSize.width>0&&artSize.width<360}/> }
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject,{borderRadius:25,borderWidth:1,borderColor:finish.line,margin:4,opacity:0.42}]}/>
-    {profilePortrait&&identitySpace?<View onLayout={onProfileLayout} style={{flexShrink:0,paddingBottom:4}}>
-      <View style={identitySpace}>
-        <Pressable accessibilityRole="button" accessibilityLabel={fullDisplayName+(card.identityVerified?", persona verificada":", persona sin verificar")}
-         onPress={()=>setInfo(card.identityVerified?"Identidad verificada por Jobin.":"Identidad sin verificar.")}
-         style={{minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:4}}>
-          <Text style={{flexShrink:1,textAlign:"center",fontSize:compactNameFont,fontWeight:"700",color:finish.text}}>{fullDisplayName}</Text>
-          <View style={{width:19,alignItems:"center",transform:[{scale:0.72}]}}><IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/></View>
-        </Pressable>
-      </View>
+    {profilePortrait?<View onLayout={onProfileLayout} style={{flexShrink:0,paddingBottom:4}}>
+      <JCardProfileIdentity portrait={profilePortrait} side="personal" name={fullDisplayName} subtitle={"@"+card.handle}
+       ink={finish.text} muted={finish.secondary} verification={card.identityVerified?"Identidad verificada por Jobin.":"Identidad sin verificar."}
+       badge={<View style={{transform:[{scale:0.72}]}}><IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/></View>}/>
       <View style={{paddingHorizontal:12,alignItems:"center"}}>
-        <Text style={{color:finish.secondary,fontSize:12,textAlign:"center"}}>@{card.handle}</Text>
         <Pressable accessibilityRole="button" accessibilityLabel={"Detalles de la profesión principal: "+primaryProfession}
          onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nEspecialidades: "+(card.primarySpecialties?.length?card.primarySpecialties.join(", "):"No declaradas")+"\nExperiencia en esta profesión: "+(primarySealMonths===undefined?"No disponible":experienceLabel(primarySealMonths)))}
          style={{minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center",alignItems:"center",flexDirection:"row",gap:5,maxWidth:"100%"}}>
@@ -391,15 +383,8 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
  const hvacCategory=/hvac|climatiz|aire acondicionado/i.test(category)&&!/refrigeraci/i.test(category);
  const refrigerationCategory=/refrigeraci/i.test(category)&&!/climatiz/i.test(category);
  const categoryIcon=hvacCategory?categoryGlyph("climate"):refrigerationCategory?categoryGlyph("refrigeration"):art.icon;
- const {fontScale}=useWindowDimensions();
- const profileNameSize=profilePortrait&&profilePortrait.cardWidth<jcardSurfaceMetrics.compactThreshold?14:15;
- const profileName=businessName||"Cargando negocio…";
- const identitySpace=profilePortrait?jcardProfileIdentitySpace(profilePortrait,profileName.length,profileNameSize,fontScale):undefined;
+ const profileName=b?.name.trim()||"Cargando negocio…";
  const profilePadding=theme==="light"?10:14;
- const nameWidth=profilePortrait&&identitySpace
-  ?profilePortrait.cardWidth-2*Math.max(profilePadding,identitySpace.paddingHorizontal)-20:0;
- const nameLineLength=Math.max(1,Math.floor(nameWidth/(profileNameSize*Math.max(1,fontScale)*0.55)));
- const displayedProfileName=company?wrapBusinessCardName(profileName,nameLineLength,true):profileName;
  const profileCategory=b?.category?.trim()||"Servicios profesionales";
  const businessContactInk=premium?finish.text:jobeen.ink;
  const businessIconInk=premium?finish.text:jobeen.ink;
@@ -454,20 +439,14 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
    {premium&&artSize.width>0&&<View pointerEvents="none" style={StyleSheet.absoluteFill}><JCardPremiumTexture id={appearance} width={artSize.width} height={artSize.height}/></View>}
    {theme==="light"&&appearance==="original"&&<JobeenHoneycomb color={jobeen.bizBorder} compact={artSize.width>0&&artSize.width<360}/>}
 
-   {profilePortrait&&identitySpace?<View onLayout={onProfileLayout} style={{flexShrink:0,paddingBottom:8}}>
-    <View style={{...identitySpace,paddingHorizontal:Math.max(0,identitySpace.paddingHorizontal-profilePadding)}}>
-     <Pressable accessibilityRole="button" accessibilityLabel={profileName+", verificación de empresa"} onPress={()=>setShowBusinessVerification(true)}
-      style={{minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:4}}>
-       <Text textBreakStrategy="balanced" style={{flexShrink:1,textAlign:"center",fontSize:profileNameSize,fontWeight:"700",color:finish.text}}>{displayedProfileName}</Text>
-       <Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={16}
-        color={b?.licenseVerified?jcardCommon.verifiedBubble:jcardCommon.unverifiedBubble}/>
-     </Pressable>
-    </View>
-    <View style={{alignItems:"center",gap:2,paddingHorizontal:2}}>
-     <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:4}}>
-      <Ionicons name={categoryIcon} size={15} color={businessIconInk}/>
-      <Text style={{flexShrink:1,textAlign:"center",fontSize:12,color:finish.secondary}}>{company?profileCategory:"JCard de negocio"}</Text>
-     </View>
+   {profilePortrait?<View onLayout={onProfileLayout} style={{flexShrink:0,paddingBottom:8}}>
+     <JCardProfileIdentity portrait={profilePortrait} side="business" name={profileName} subtitle={company?profileCategory:"JCard de negocio"}
+      parentPadding={profilePadding} ink={finish.text} muted={finish.secondary}
+      verification={b?.licenseVerified?"Empresa verificada por Jobin.":"Empresa sin verificar."}
+      badge={<Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={16}
+       color={b?.licenseVerified?jcardCommon.verifiedBubble:jcardCommon.unverifiedBubble}/>}
+      subtitleIcon={<Ionicons name={categoryIcon} size={15} color={businessIconInk}/>}/>
+     <View style={{alignItems:"center",gap:2,paddingHorizontal:2}}>
      <Text style={{fontSize:11,color:finish.secondary,textAlign:"center"}}>
       <Text style={{color:finish.text,fontWeight:"700"}}>
        <Text style={{color:jcardCommon.businessGold}}>★</Text> {ratingUnlocked?rating!.toFixed(1):"—"}

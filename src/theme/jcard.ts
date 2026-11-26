@@ -3,6 +3,7 @@ import { composite,opacity,contrastRatio,secondaryText } from "./color.ts";
 import type { ThemeName } from "../state/ThemeProvider";
 import type { JCardTier } from "../lib/jcard";
 import { JOBEEN_CONTROL } from "./control-metrics.ts";
+import {jcardProfileNameLimits} from "../lib/jcard-profile-name.ts";
 
 /** JCard-specific tokens. Existing global theme palettes remain unchanged. */
 const silver = {
@@ -60,16 +61,17 @@ export function jcardProfileCoverGeometry(coverWidth:number,portrait:JCardProfil
  const frameTop=Math.max(0,bodyTop-portrait.overlap);
  return {coverHeight,bodyTop,frameTop};
 }
-export function jcardProfileIdentitySpace(portrait:JCardProfilePortraitMetrics,nameLength:number,fontSize:number,fontScale:number){
- const clearance=portrait.height-portrait.overlap;
- const gutter=portrait.inset+portrait.width+6;
- const available=portrait.cardWidth-2*gutter;
- const besidePortrait=available>=104&&Math.max(12,nameLength)*fontSize*Math.max(1,fontScale)*0.55<=(available-24)*2;
- return {
-  paddingTop:Math.ceil(besidePortrait?Math.max(6,clearance-JOBEEN_CONTROL.touchTarget):clearance+6),
-  paddingHorizontal:besidePortrait?gutter:12,
-  minHeight:Math.max(JOBEEN_CONTROL.touchTarget,Math.ceil(clearance)),
- };
+/** Mirrored header; its height never depends on name length. */
+export function jcardProfileIdentitySpace(portrait:JCardProfilePortraitMetrics,fontScale:number,side:"personal"|"business"="personal"){
+ const scale=Math.max(1,Number.isFinite(fontScale)?fontScale:1);
+ const gutter=portrait.inset+portrait.width+10,edge=14;
+ const {max}=jcardProfileNameLimits(portrait.cardWidth);
+ const lineHeight=max+3;
+ const nameHeight=2*Math.ceil(lineHeight*scale),subtitleHeight=Math.ceil(16*scale);
+ const paddingTop=3,paddingBottom=2;
+ return {paddingLeft:side==="personal"?gutter:edge,paddingRight:side==="business"?gutter:edge,
+  paddingTop,paddingBottom,nameHeight,subtitleHeight,lineHeight,width:Math.max(1,portrait.cardWidth-gutter-edge-2),
+  minHeight:Math.max(JOBEEN_CONTROL.touchTarget,Math.ceil(portrait.height-portrait.overlap),paddingTop+nameHeight+subtitleHeight+paddingBottom)};
 }
 /** Fit the logo frame to the source instead of letterboxing the image inside the portrait. */
 export function jcardBusinessLogoMetrics(portrait:JCardProfilePortraitMetrics,aspectRatio=1){
