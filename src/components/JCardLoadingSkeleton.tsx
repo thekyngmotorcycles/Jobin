@@ -13,7 +13,7 @@ export function JCardLoadingSkeleton({profileInset=16}:{profileInset?:number}){
  const {height,radius,width}=jcardSurfaceSize({screenWidth,measuredWidth,fontScale,theme,profile:true,horizontalInset:profileInset});
  const portrait=jcardProfilePortraitMetrics(width);
  const identity=jcardProfileIdentitySpace(portrait,fontScale);
- const titleSpace={paddingLeft:identity.paddingLeft,paddingRight:identity.paddingRight,paddingTop:identity.paddingTop,paddingBottom:identity.paddingBottom,minHeight:identity.minHeight};
+ const titleSpace={paddingLeft:identity.paddingLeft,paddingRight:identity.paddingRight,paddingTop:identity.paddingTop,paddingBottom:identity.paddingBottom,minHeight:identity.minHeight,justifyContent:"center" as const};
  const light=theme==="light",fill=light?businessCardPaper.background:t.ink;
  const muted=light?businessCardPaper.border:t.silver;
  const line=(width:DimensionValue,height=12)=><View style={{width,height,borderRadius:Math.min(8,height/2),backgroundColor:muted,opacity:light?0.42:0.26}}/>;
@@ -30,7 +30,7 @@ export function JCardLoadingSkeleton({profileInset=16}:{profileInset?:number}){
       {line("51%",13)}
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:12}}>{line("30%",11)}<View style={{width:1,height:18,backgroundColor:t.line}}/>{line("30%",11)}</View>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8}}>
-       {(["40%","31%"] as const).map(w=><View key={w} style={{width:w,height:28,borderRadius:16,backgroundColor:t.cream,alignItems:"center",justifyContent:"center"}}>{line("74%",10)}</View>)}
+       {(["43%","43%"] as const).map(w=><View key={w} style={{width:w,height:28,borderRadius:16,backgroundColor:t.cream,alignItems:"center",justifyContent:"center"}}>{line("74%",10)}</View>)}
       </View>
       <JobinLoadingGears size={30} mode="loading"/>
      </View>
