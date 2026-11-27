@@ -90,7 +90,7 @@ export function ProfileAboutSelector({side,onSelect,personalAvailable=true,busin
 }
 
 /** Only manually published contact fields; no private profile or auth fallback. */
-export function ProfilePersonalContact({target,scope}:{target:string;scope?:MessageScope|null}){
+export function ProfilePersonalContact({target,scope,previewDetails}:{target:string;scope?:MessageScope|null;previewDetails?:PersonalContactDetails}){
  const {theme}=useTheme(),jt=jobeenTokens(theme);
  const [loaded,setLoaded]=useState<{target:string;scope:MessageScope;details:PersonalContactDetails}|null>(null);
  useFocusEffect(useCallback(()=>{
@@ -105,12 +105,13 @@ export function ProfilePersonalContact({target,scope}:{target:string;scope?:Mess
   return()=>{active=false;setLoaded(null);};
  },[target,scope?.owner,scope?.session]));
  const current=loaded&&loaded.target===target&&loaded.scope.owner===scope?.owner&&loaded.scope.session===scope?.session?loaded.details:null;
- const rows=current?personalProfileContactRows(current):[];
+ const fixture=process.env.EXPO_PUBLIC_JOBEEN_VISUAL_PREVIEW==="1"&&previewDetails?previewDetails:null;
+ const rows=fixture?personalProfileContactRows(fixture):current?personalProfileContactRows(current):[];
  if(!rows.length)return null;
  return <View style={{gap:6,padding:14,borderWidth:1,borderColor:jt.line,borderRadius:14,backgroundColor:jt.surface}}>
   <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.input,fontWeight:"700",color:jt.ink}}>Información personal</Text>
   {rows.map(row=><Pressable key={row.key} accessibilityRole={row.uri?"link":undefined} accessibilityLabel={row.label+": "+row.value}
-   disabled={!row.uri} onPress={()=>{if(row.uri)void Linking.openURL(row.uri).catch(()=>{});}}
+   disabled={!!fixture||!row.uri} onPress={()=>{if(!fixture&&row.uri)void Linking.openURL(row.uri).catch(()=>{});}}
    style={{flexDirection:"row",alignItems:"center",gap:10,minHeight:JOBEEN_CONTROL.touchTarget,paddingVertical:5}}>
    <Ionicons name={row.kind==="email"?"mail-outline":"call-outline"} size={21} color={jt.ink}/>
    <View style={{flex:1,minWidth:0,gap:2}}>

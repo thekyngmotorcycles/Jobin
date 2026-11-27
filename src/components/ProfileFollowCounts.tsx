@@ -20,6 +20,10 @@ type Connection={id:string;name:string;following:boolean};
 export type ProfileContactsHandle={openContacts:(expectedOwner:string)=>void};
 type CountSummary={followers:number|null;contacts:number};
 const ProfileCountContext=createContext<{counts:CountSummary|null;isOwner:boolean;openList:(kind:ListType)=>void}|null>(null);
+/** Fixture-only context, used exclusively by the isolated web visual preview. */
+export function PreviewProfileCounts({children}:{children:ReactNode}){
+ return <ProfileCountContext.Provider value={{counts:{followers:2,contacts:1},isOwner:false,openList:()=>{}}}>{children}</ProfileCountContext.Provider>;
+}
 /** Two visual rows can share one provider; no network or private lists in either face. */
 export function ProfileConnectionCountRow({ink,muted,line}:{ink?:string;muted?:string;line?:string}){
  const context=useContext(ProfileCountContext),markInteractive=useContext(CardFlipInteractionContext);

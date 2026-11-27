@@ -12,7 +12,7 @@ import {ScrollNavigationProvider,useScrollNavigation} from "../state/ScrollNavig
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts,loadAsync } from "expo-font";
 import { useState,type ReactNode } from "react";
-import { ActivityIndicator,Pressable,Text,View } from "react-native";
+import { ActivityIndicator,Platform,Pressable,Text,View } from "react-native";
 import { SocialProvider } from "../state/SocialProvider";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -35,6 +35,9 @@ function Navigation() {
  const isBrowserPage=pathname==="/jcard"||pathname==="/search"||pathname==="/notifications"||pathname.startsWith("/post/")||pathname.startsWith("/work-media/")||pathname.startsWith("/jshop/item/")||pathname==="/jshop/favorites";
  return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:shellBackground},headerTintColor:colors.ink,headerTitleStyle:{fontSize:JOBEEN_TYPE.navigationTitle,fontWeight:"600"},contentStyle:{backgroundColor:shellBackground}}}>
  <Stack.Screen name="index" options={{headerShown:false}}/>
+ <Stack.Protected guard={Platform.OS==="web"&&process.env.EXPO_PUBLIC_JOBEEN_VISUAL_PREVIEW==="1"}>
+ <Stack.Screen name="visual-preview" options={{headerShown:false}}/>
+ </Stack.Protected>
  <Stack.Protected guard={phase==="checking"}>
  <Stack.Screen name="security-loading" options={{headerShown:false}}/>
  </Stack.Protected>

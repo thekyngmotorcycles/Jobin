@@ -12,5 +12,13 @@
       "fix/google-oauth-claim-timing": false,
       "fix/google-pkce-empty-authority": false
     }
-  }
+  },
+  "buildCommand": "EXPO_PUBLIC_JOBEEN_VISUAL_PREVIEW=1 npm run export:web",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/visual-preview",
+      "destination": "/index.html"
+    }
+  ]
 }
