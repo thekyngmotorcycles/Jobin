@@ -117,3 +117,8 @@ Opción 3 refinada: una portada única pública y elegida expresamente por su ti
 
 ### Contacto personal en Acerca de (aprobado 2026-11-27)
 - Mostrar Información personal antes de Idiomas, solo en Acerca de > Personal propio/visitante, con los correos y teléfonos manuales autorizados y no vacíos (hasta dos de cada tipo), enlaces de correo y teléfono. Ocultar sección vacía. Los textos de privacidad serán «Mostrar correo en mi perfil» y «Mostrar teléfono en mi perfil». No ampliar la JCard, tocar datos de acceso ni cambiar apariencia o reglas de Negocio.
+
+
+## Progreso profesional y superficies premium — aprobación 2026-11-27
+
+Mostrar avance real/declarado de forma clara, barras incompletas sin castigo, dorado de dominio declarado separado de verificación y certificados. No inducir a falsear habilidades; CTA de aprendizaje solo con función real, sin prometer formación inexistente. Las tarjetas temáticas de experiencia se asignan por familia profesional, mantienen texto legible y verificación real; nunca exigir imagen al usuario. Menú medio: una cápsula interior deslizante, contenedor flotante y cobertura opaca a todo ancho del acordeón. Validar ambos temas, 320–440 px, fuentes accesibles y privacidad CV.
