@@ -62,7 +62,8 @@ function mount(config:{
     if(expected!==currentScope)throw Error("La sesión cambió.");
    }
   },
-  "../lib/professional-api":{loadPublicCard:async(id:string)=>{
+  "../state/useProfessionalData":{useProfessionalData:()=>({data:null,scope:null,loading:false,error:""})},
+  "../lib/professional-api":{loadCatalog:async()=>({categories:[],professions:[]}),loadPublicCard:async(id:string)=>{
    if(config.cardError)throw config.cardError;
    return {id,name:"Personal profile",profileUrl:"jobin://jcard?user="+id};
   }},
