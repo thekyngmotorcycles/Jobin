@@ -1,6 +1,6 @@
 # Jobin — continuidad de catálogo e historial
 
-- CI 46072462868: success para 229dde2 (30 categorías oficiales y fallback neutro, asignación por código). Biblioteca final de 31 WebP ya generada en `jobin_banners_30_categorias.zip`, no generar más. Pendiente único de arte: trasladar los binarios al repositorio, activar imágenes locales con fallback y validar export/visor; no declarar integrado antes de verificar los archivos. No publicar OTA, no crear APK, no fusionar sin aprobación del propietario.
+- Los 31 WebP aprobados están incorporados en `feature/profile-premium-about` (PR #153), en `assets/images/employment/`, con el manifiesto original. Las exportaciones web y Android contienen los mismos bytes. El catálogo existente determina el fondo, con respaldo neutro para categorías sin resolución y vectorial si un archivo falla. La evidencia local de exportación, pruebas y vista a 320–440 px está en `DEVELOPMENT_STATUS.md`. La revisión física y cualquier integración o publicación requieren su aprobación correspondiente.
 
 # Jobeen — Continuidad del perfil premium
 
