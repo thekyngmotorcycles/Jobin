@@ -32,8 +32,8 @@ test("Follow and Connect are separate actions on public JCards",()=>{
 });
 test("Compact profile counts show Followers + Contacts with the third Following tab in My network",()=>{
  const counter=source("src/components/ProfileFollowCounts.tsx");
- assert.ok(counter.includes('label:"Seguidores"'));
- assert.ok(counter.includes('label:"Contactos"'));
+ assert.ok(counter.includes('label:counts?.followers===1?"Seguidor":"Seguidores"'));
+ assert.ok(counter.includes('label:counts?.contacts===1?"Contacto":"Contactos"'));
  assert.ok(counter.includes('["followers","following","contacts"]'));
  assert.ok(counter.includes('title="Mi red"'));
  assert.ok(counter.includes('contactCount(userId)'));

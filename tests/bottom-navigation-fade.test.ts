@@ -32,6 +32,7 @@ test("Profiles keep a soft upper gradient but the complete icon row is opaque",(
   const {height,stops}=bottomNavigationFade(58,inset,.65,true);
   assert.equal(alpha(stops,0),0);
   assert.ok(alpha(stops,50/height)>0&&alpha(stops,50/height)<1);
-  for(let y=100;y<=height;y++)assert.equal(alpha(stops,y/height),1);
+  assert.equal(stops.find(s=>s.offset===100/height)?.opacity,1);
+  for(let y=100;y<=height;y++)assert.ok(Math.abs(alpha(stops,y/height)-1)<1e-12);
  }
 });
