@@ -1,0 +1,255 @@
+{
+  "name": "Jobin",
+  "catalog_source": "Supabase profession_categories, 2026-11-27",
+  "official_categories": 30,
+  "assets": [
+    {
+      "code": "business",
+      "label": "Administración, oficina y negocios",
+      "file": "business.webp",
+      "bytes": 12702,
+      "sha256": "af4061da3085e3f97582bc1aa68f7549c4c9d841a3d6f73d86e3aa42d999c082",
+      "fallback": false
+    },
+    {
+      "code": "agriculture",
+      "label": "Agricultura, ganadería y pesca",
+      "file": "agriculture.webp",
+      "bytes": 19852,
+      "sha256": "df67b6ed8297b02458a89de5c970c8a6ff9aaa6736208306251cb012ae22bc4d",
+      "fallback": false
+    },
+    {
+      "code": "arts",
+      "label": "Arte y entretenimiento",
+      "file": "arts.webp",
+      "bytes": 19624,
+      "sha256": "b13350ed95aa2ccd6aa43615d5d1b2e7bbb7086713c6fe8bf9732eb9a0ca0b03",
+      "fallback": false
+    },
+    {
+      "code": "automotive",
+      "label": "Automotriz",
+      "file": "automotive.webp",
+      "bytes": 12182,
+      "sha256": "b38a512972d8c46db18689ca05cadfaf2b84da57e3dd7b54f4960ed6f94e225d",
+      "fallback": false
+    },
+    {
+      "code": "aviation",
+      "label": "Aviación",
+      "file": "aviation.webp",
+      "bytes": 13268,
+      "sha256": "07d4b524103a828cb44697f7e826cf498760fad590118be64320f0f33e6b292f",
+      "fallback": false
+    },
+    {
+      "code": "beauty",
+      "label": "Belleza y cuidado personal",
+      "file": "beauty.webp",
+      "bytes": 15110,
+      "sha256": "2ffe2c3c2e3cfdef456e5daf4d8d9862180d8c07d7a04d4f90e7016019e2c240",
+      "fallback": false
+    },
+    {
+      "code": "climate",
+      "label": "Climatización HVAC",
+      "file": "climate.webp",
+      "bytes": 19420,
+      "sha256": "9aa9f9fa440854722df9f284005d219acb7d5c184c64d404f9f61e65e8325e5c",
+      "fallback": false
+    },
+    {
+      "code": "commerce",
+      "label": "Comercio y ventas",
+      "file": "commerce.webp",
+      "bytes": 9568,
+      "sha256": "7d7ec822226c2aafa3dc3c5427b45db53db462cb3a05636d2652e1ecf753049c",
+      "fallback": false
+    },
+    {
+      "code": "construction",
+      "label": "Construcción y oficios",
+      "file": "construction.webp",
+      "bytes": 18608,
+      "sha256": "f083acacbab224e9a3d28864084b60a11753a1d32b15f2fb3dc80352e5257c62",
+      "fallback": false
+    },
+    {
+      "code": "sports",
+      "label": "Deportes y actividad física",
+      "file": "sports.webp",
+      "bytes": 13556,
+      "sha256": "04d2358bdc9ebe80ee449da1236f4b1cb419b6e29626f4f51abbc87594a78116",
+      "fallback": false
+    },
+    {
+      "code": "design",
+      "label": "Diseño y comunicación visual",
+      "file": "design.webp",
+      "bytes": 8492,
+      "sha256": "744c5da959739c21564b0f3ecc9aa94bb9e44a84c4b1eef0e4d2447380def363",
+      "fallback": false
+    },
+    {
+      "code": "education",
+      "label": "Educación y formación",
+      "file": "education.webp",
+      "bytes": 15924,
+      "sha256": "6ac23b5de936b8fee108c2a96dd9f1a275fa339ee41d5bc32b1a7fc25f1087f0",
+      "fallback": false
+    },
+    {
+      "code": "railway",
+      "label": "Ferroviaria",
+      "file": "railway.webp",
+      "bytes": 16342,
+      "sha256": "e88d02f24701423b338ec439aa837e4f028dcb3fe0db144f7a1f2de90cc951be",
+      "fallback": false
+    },
+    {
+      "code": "hospitality",
+      "label": "Gastronomía",
+      "file": "hospitality.webp",
+      "bytes": 12436,
+      "sha256": "1178333b005dac344bf91faf588e9adf0208da2547539ff332bb81d0213cb91f",
+      "fallback": false
+    },
+    {
+      "code": "hotels",
+      "label": "Hotelería y turismo",
+      "file": "hotels.webp",
+      "bytes": 8656,
+      "sha256": "5ee0ca19a890b9eb638fae787f0786502a31e56f92da89f9be75b09d625ea6c8",
+      "fallback": false
+    },
+    {
+      "code": "industry",
+      "label": "Industria y manufactura",
+      "file": "industry.webp",
+      "bytes": 13610,
+      "sha256": "164100e86952beb257b08a841a89fc4184cea3d1b11d36879540ccbe71a198fb",
+      "fallback": false
+    },
+    {
+      "code": "engineering",
+      "label": "Ingeniería y arquitectura",
+      "file": "engineering.webp",
+      "bytes": 18586,
+      "sha256": "c4e95992c0bcfffd0d66836ff4d4ca4d4f0229330ce80a28860d34a3600c80f0",
+      "fallback": false
+    },
+    {
+      "code": "logistics",
+      "label": "Logística y almacenes",
+      "file": "logistics.webp",
+      "bytes": 11714,
+      "sha256": "d8c97f56766f7fd274b1250e040be3d002a9124cd5f4512762bcb337fd71d8d0",
+      "fallback": false
+    },
+    {
+      "code": "maintenance",
+      "label": "Mantenimiento y servicios generales",
+      "file": "maintenance.webp",
+      "bytes": 10024,
+      "sha256": "68833aa6f9ebbc01bbe94d86a4fd249302cf1795fb2d7571ac6969cc9981c9b2",
+      "fallback": false
+    },
+    {
+      "code": "heavy_equipment",
+      "label": "Maquinaria pesada",
+      "file": "heavy_equipment.webp",
+      "bytes": 25308,
+      "sha256": "fc74b39374e8c93f13f4b64d1b6d53e45de346c7c7ef099b3f42b9940705921c",
+      "fallback": false
+    },
+    {
+      "code": "maritime",
+      "label": "Marítima y naval",
+      "file": "maritime.webp",
+      "bytes": 13784,
+      "sha256": "18858b65be32ed31732045600d5e5498dd070ae9c25c1bd9442aff928fa5ea8a",
+      "fallback": false
+    },
+    {
+      "code": "fashion",
+      "label": "Moda, artesanía y oficios textiles",
+      "file": "fashion.webp",
+      "bytes": 13570,
+      "sha256": "89ebece12eeeea52419bd4307ef888348d3805c586d0119d34829e4ffb7ad37a",
+      "fallback": false
+    },
+    {
+      "code": "motorcycles",
+      "label": "Motocicletas y vehículos recreativos",
+      "file": "motorcycles.webp",
+      "bytes": 15594,
+      "sha256": "925c7b02c5c81bcf8a8f2f852ed9cced756a5929a6bf326d255544cb3d0aa5d1",
+      "fallback": false
+    },
+    {
+      "code": "refrigeration",
+      "label": "Refrigeración",
+      "file": "refrigeration.webp",
+      "bytes": 16262,
+      "sha256": "5a349dd4df84412a4272874fa6effefe2b23407b08f7b20d45d003cb2048f32c",
+      "fallback": false
+    },
+    {
+      "code": "health",
+      "label": "Salud humana",
+      "file": "health.webp",
+      "bytes": 9722,
+      "sha256": "b2d724cbaca8ceb830b5b3e20bd4d5a9e2cd2189fc56889f6f13738931f47508",
+      "fallback": false
+    },
+    {
+      "code": "animals",
+      "label": "Salud y cuidado animal",
+      "file": "animals.webp",
+      "bytes": 14748,
+      "sha256": "75603e920d1e3c66e269101aee6493525b09a6009b533572a6f3f304a2de3b92",
+      "fallback": false
+    },
+    {
+      "code": "security",
+      "label": "Seguridad y servicio público",
+      "file": "security.webp",
+      "bytes": 12814,
+      "sha256": "a05fc4a431766778f45dc76e7c589f29bf32f7fa61d9d9d42c4dc4c0c0d5702c",
+      "fallback": false
+    },
+    {
+      "code": "legal",
+      "label": "Servicios legales",
+      "file": "legal.webp",
+      "bytes": 11512,
+      "sha256": "462a69105986512513e49287356185eeeeebb29078cb3f12e25a71be4dba93fa",
+      "fallback": false
+    },
+    {
+      "code": "technology",
+      "label": "Tecnología e informática",
+      "file": "technology.webp",
+      "bytes": 16672,
+      "sha256": "d0174c7107014056eeac5136afde3c69f114482cbf9d357f5b826d4a948572ad",
+      "fallback": false
+    },
+    {
+      "code": "transport",
+      "label": "Transporte y maquinaria",
+      "file": "transport.webp",
+      "bytes": 13212,
+      "sha256": "22e45c7c768f62bfe5ae59273cf32dc4ab130bca854b2823c7ab0d2ac8a9ce9e",
+      "fallback": false
+    },
+    {
+      "code": "generic",
+      "label": "Fondo neutro de respaldo (no es categoría)",
+      "file": "generic.webp",
+      "bytes": 2976,
+      "sha256": "0a2dae03291df37bf1f1b56e833774c878ab6b3b7cb10aae124395e59a193597",
+      "fallback": true
+    }
+  ]
+}

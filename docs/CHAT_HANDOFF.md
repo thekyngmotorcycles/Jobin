@@ -1,3 +1,17 @@
+# Jobin — continuidad de catálogo e historial
+
+- Los 31 WebP aprobados están incorporados en `feature/profile-premium-about` (PR #153), en `assets/images/employment/`, con el manifiesto original. Las exportaciones web y Android contienen los mismos bytes. El catálogo existente determina el fondo, con respaldo neutro para categorías sin resolución y vectorial si un archivo falla. La evidencia local de exportación, pruebas y vista a 320–440 px está en `DEVELOPMENT_STATUS.md`. La revisión física y cualquier integración o publicación requieren su aprobación correspondiente.
+
+# Jobeen — Continuidad del perfil premium
+
+- CI 46054697615 y visor 46054737015 completados con éxito; Vercel dpl_FqMAJDiGDpcLMUmYcJo3ftfJCv3a READY (a4a44b1). Propietario ordena título Historial profesional sin serif/cursiva; reutilizar s.h3 y escala semántica Royal Hive exclusivamente en el bloque nuevo. No modificar estilos globales ni partes aprobadas. 16 fondos WebP generados fuera del repo, 12 pendientes y transferencia binaria no confirmada. Revalidar antes de merge/OTA.
+
+# Jobeen — Perfil premium, progreso y menú medio
+
+## PROFILE-PREMIUM-ABOUT — bloque visual aprobado 2026-11-27
+
+- Base development c78d0116 y visor f998e23f. Reutilizar ProfileSectionTabs/ProfilePersonalLanguages y BottomSheet; cápsula flotante única animada, fondo opaco de ancho completo en acordeón, Light/Dark, progreso declarado con oro solo a 100 y guía local honesta de aprendizaje mientras no exista JAcademy; CTA solo propietario. Historial dos columnas, edición/alta con guardas existentes, detalle al tocar, acceso visitante únicamente CV autorizado. 24 familias del catálogo + distinciones HVAC, refrigeración, electricidad y genérica. Arte temático vectorial estático con objetos y sombreado (no raster WebP fotográfico todavía), fallback de color, sin red/dependencias. No modificar datos, permisos, fuentes ni JCard. Pruebas de regresión; validar export, contraste y tamaños 320–440 antes de aprobar. No OTA ni APK. Mantener prioridad de perfil.
+
 # Jobeen — Consolidación y prioridad de perfil (2026-11-27)
 
 ## CONSOLIDACIÓN-PARIDAD — aprobada 2026-11-27
