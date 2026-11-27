@@ -5,12 +5,20 @@
       "integration/security-pilot-native-20261122": false,
       "test/sec06-hosted-isolation-harness-20261122": false,
       "governance/security-foundation-20261122": false,
-      "development": false,
+      "development": true,
       "feature/security-pilot-apk-preflight": false,
       "fix/google-login-android-return": false,
       "fix/development-ota-android-option": false,
       "fix/google-oauth-claim-timing": false,
       "fix/google-pkce-empty-authority": false
     }
-  }
+  },
+  "buildCommand": "npm run export:web",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/((?!_expo/|assets/|api/|.*\\.).*)",
+      "destination": "/index.html"
+    }
+  ]
 }
