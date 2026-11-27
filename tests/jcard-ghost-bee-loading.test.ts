@@ -30,7 +30,7 @@ test("JCard does not auto-flip, store tutorial markers or display a flip control
  assert.ok(!card.includes("Toca o desliza para girar"));
  assert.ok(flip.includes("Gesture.Exclusive(pan,tap)"));
  assert.ok(flip.includes("CardFlipInteractionContext.Provider"));
- assert.ok(card.includes('onSideChange={side=>setBack(side==="business")}'));
+ assert.ok(card.includes('onSideChange={side=>{if(selectedSide===undefined)setLocalBack(side==="business");else onActiveSideChange?.(side);}}'));
 });
 test("Hexagonal gears share one animation clock, are monochrome and respect reduced motion/offline",()=>{
  const gears=src("src/components/JobinLoadingGears.tsx");
