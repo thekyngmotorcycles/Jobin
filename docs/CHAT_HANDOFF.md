@@ -1,3 +1,10 @@
+# Jobin — continuidad de OTA compatible
+
+## OTA-DEVELOPMENT — autorización permanente del propietario (2026-11-27)
+
+- PR #153 integrado en 4aa07442073f914564be2a448d9c30989b8e3cbb, CI 46075701856 success. OTA Android 46076730934 success, grupo f91b6e76-5d1f-4cca-90a8-c35fded5a07b, runtime jobeen-native-20261123-feed-4425bdf1. Validación física pendiente.
+- Propietario autoriza permanentemente las OTA Android compatibles de development. Candidato: reutilizar expo-development.yml desde check.yml después de validate/database exitosos y cambio en src/ o assets/, exclusivamente integración del propietario en development. Conservar comprobación de APK, árbol nativo, proyecto y SHA actual; no duplicar tests completos para la llamada automática. Documentación/CI solos no publican. Sin modificación de credenciales, canales, APK, Supabase ni producción. Activación tras CI del PR; no declarar validada una publicación automática hasta la siguiente modificación de aplicación.
+
 # Jobin — continuidad de catálogo e historial
 
 - Los 31 WebP aprobados están incorporados en `feature/profile-premium-about` (PR #153), en `assets/images/employment/`, con el manifiesto original. Las exportaciones web y Android contienen los mismos bytes. El catálogo existente determina el fondo, con respaldo neutro para categorías sin resolución y vectorial si un archivo falla. La evidencia local de exportación, pruebas y vista a 320–440 px está en `DEVELOPMENT_STATUS.md`. La revisión física y cualquier integración o publicación requieren su aprobación correspondiente.

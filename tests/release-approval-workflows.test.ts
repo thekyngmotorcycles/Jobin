@@ -28,7 +28,7 @@ test("the November APK runtime is limited to Android and the reviewed native sou
   assert.doesNotMatch(text, /config\.expo\.runtimeVersion = runtime/);
 });
 
-test("no EAS OTA publisher automatically runs on push and every publisher checks exact owner approval", () => {
+test("only the existing development publisher accepts automatic calls after owner integration", () => {
   const publishers = all.filter(name => /\b(?:eas|eas-cli@[^\s]+)\s+update\s+--branch\b/.test(workflow(name)));
   assert.deepEqual(publishers.sort(), ["approved-google-login-ota.yml", "expo-development.yml"]);
   for (const name of publishers) {
@@ -44,7 +44,8 @@ test("no EAS OTA publisher automatically runs on push and every publisher checks
       continue;
     }
     assert.match(text, /^on:\s*\n\s+workflow_dispatch:/m);
-    assert.doesNotMatch(text, /^  push:|^  pull_request:|^  schedule:/m);
+    assert.doesNotMatch(text, /^  push:|^  pull_request:|^  pull_request_target:|^  workflow_run:|^  schedule:/m);
+    assert.match(text, /^  workflow_call:/m);
     assert.match(text, ownerGuard);
     assert.match(text, /inputs\.approved_commit\s*==\s*github\.sha/);
     assert.match(text, /inputs\.confirm_ota\s*==\s*true/);
@@ -124,4 +125,46 @@ test("Consolidated Android APK OTA uses the same manual publisher and verifies n
  assert.ok(text.includes("build.runtime?.version!==runtime"));
  assert.ok(text.includes("config.expo.android.runtimeVersion = runtime"));
  assert.ok(text.indexOf("Match the consolidated feed APK runtime")<text.indexOf("Publish only the explicitly approved OTA"));
+});
+
+
+test("Automatic OTA is owner-only, current development, Android compatible, and follows both CI checks",()=>{
+ const ci=workflow("check.yml"), publisher=workflow("expo-development.yml");
+ const job=ci.slice(ci.indexOf("\n  development-ota:"));
+ for(const check of [
+  "needs: [validate, database]",
+  "github.repository == 'thekyngmotorcycles/Jobin'",
+  "github.event_name == 'push'",
+  "github.ref == 'refs/heads/development'",
+  "github.actor == 'thekyngmotorcycles'",
+  "github.triggering_actor == 'thekyngmotorcycles'",
+  "github.run_attempt == '1'",
+  "needs.validate.result == 'success'",
+  "needs.database.result == 'success'",
+  "needs.validate.outputs.ota_changed == 'true'",
+  "uses: ./.github/workflows/expo-development.yml",
+  "approved_commit: ${{ github.sha }}",
+  "confirm_ota: true",
+  "platform: android",
+  "android_runtime: jobeen-native-20261123-feed-4425bdf1",
+  "EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}",
+ ]) assert.ok(job.includes(check),check);
+ assert.doesNotMatch(job,/\balways\(\)|\bsecrets:\s*inherit\b|platform:\s*(?:all|ios)\b/);
+ assert.ok(ci.includes('git merge-base --is-ancestor "$BEFORE_SHA" "$GITHUB_SHA"'));
+ assert.ok(ci.includes('git diff --name-only "$BEFORE_SHA" "$GITHUB_SHA" -- src/ assets/'));
+ assert.ok(ci.includes("ota_changed: ${{ steps.ota_scope.outputs.changed }}"));
+ assert.ok(ci.includes('echo "changed=false" >> "$GITHUB_OUTPUT"'));
+ for(const check of [
+  "github.workflow_ref == 'thekyngmotorcycles/Jobin/.github/workflows/check.yml@refs/heads/development'",
+  "github.repository == 'thekyngmotorcycles/Jobin'",
+  "github.triggering_actor == 'thekyngmotorcycles'",
+  "github.run_attempt == '1'",
+  "inputs.platform == 'android'",
+  "inputs.android_runtime == 'jobeen-native-20261123-feed-4425bdf1'",
+  "if(ref.object?.sha!==process.env.GITHUB_SHA)throw Error",
+  "git diff --exit-code",
+  "build.runtime?.version!==runtime",
+ ]) assert.ok(publisher.includes(check),check);
+ assert.ok(publisher.indexOf("Verify the approved commit is still current development")<publisher.indexOf("Publish only the explicitly approved OTA"));
+ assert.doesNotMatch(publisher,/--branch\s+production|--environment\s+production|\beas-cli@[^\s]+\s+build\b/);
 });

@@ -7,12 +7,29 @@ permissions:
   contents: read
 jobs:
   validate:
+    outputs:
+      ota_changed: ${{ steps.ota_scope.outputs.changed }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Detect Android application changes for authorized development OTA
+        id: ota_scope
+        if: github.event_name == 'push' && github.ref == 'refs/heads/development' && github.actor == 'thekyngmotorcycles'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          [[ "$BEFORE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git merge-base --is-ancestor "$BEFORE_SHA" "$GITHUB_SHA"
+          changed=$(git diff --name-only "$BEFORE_SHA" "$GITHUB_SHA" -- src/ assets/)
+          if [[ -n "$changed" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -93,3 +110,24 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f tests/employer-links-authorization.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/security-integration.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/jcard-shared-cover.test.sql
+
+  development-ota:
+    needs: [validate, database]
+    if: >-
+      github.repository == 'thekyngmotorcycles/Jobin' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/development' &&
+      github.actor == 'thekyngmotorcycles' &&
+      github.triggering_actor == 'thekyngmotorcycles' &&
+      github.run_attempt == '1' &&
+      needs.validate.result == 'success' &&
+      needs.database.result == 'success' &&
+      needs.validate.outputs.ota_changed == 'true'
+    uses: ./.github/workflows/expo-development.yml
+    with:
+      approved_commit: ${{ github.sha }}
+      confirm_ota: true
+      platform: android
+      android_runtime: jobeen-native-20261123-feed-4425bdf1
+    secrets:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
