@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createAuthEntryBoundary, isGoogleCallbackUrl, parseGoogleCallback } from "../src/lib/auth-entry-boundary.ts";
+import { createAuthEntryBoundary, isGoogleCallbackUrl, parseGoogleCallback,googleWebRedirect,normalizeGoogleWebCallback } from "../src/lib/auth-entry-boundary.ts";
 
 function pendingStore(initial = NaN) {
   let deadline = initial;
@@ -101,4 +101,17 @@ test("ordinary app links preserve a pending attempt and an explicit malformed re
   assert.equal(await boundary.completeGoogle("jobin://#error=access_denied", async code => code ?? "invalid"), "invalid");
   assert.ok(Number.isNaN(await store.readDeadline()));
   assert.equal(await boundary.exclusive(async () => true), true);
+});
+
+test("Browser callback only accepts the same HTTPS origin and root path; native boundary stays strict",async()=>{
+ const origin="https://preview.example.test";
+ assert.equal(googleWebRedirect(origin),origin+"/");
+ const valid=normalizeGoogleWebCallback(origin+"/?code=browser-return",origin);
+ assert.equal(parseGoogleCallback(valid),"browser-return");
+ for(const url of ["https://other.example.test/?code=a",origin+"/profile?code=a","jobin://?code=a",origin+"/?foo=bar"])assert.equal(normalizeGoogleWebCallback(url,origin),null);
+ assert.equal(parseGoogleCallback(normalizeGoogleWebCallback(origin+"/?code=a&code=b",origin)),null);
+ const storage=pendingStore();await createAuthEntryBoundary(Date.now,storage).google(ready=>ready());
+ const restored=createAuthEntryBoundary(Date.now,storage);
+ assert.equal(await restored.completeGoogle(valid,async code=>code),"browser-return");
+ assert.equal(await restored.completeGoogle(valid,async()=>assert.fail("Replay")),null);
 });

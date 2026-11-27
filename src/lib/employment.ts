@@ -14,3 +14,10 @@ export function experienceLabel(months:number):string{
  if(years===0)return remaining+"M";
  return years+" "+(years===1?"Año":"Años")+(remaining?" + "+remaining+" M":"");
 }
+
+/** Empty or unknown history is not a negative public badge. */
+export function primaryExperiencePillLabel(months:number|undefined|null):string|null{
+ if(typeof months!=="number"||!Number.isSafeInteger(months)||months<=0)return null;
+ const years=Math.floor(months/12);
+ return years>0?years+(months%12?"+":"")+(years===1?" Año de experiencia":" Años de experiencia"):months+(months===1?" Mes de experiencia":" Meses de experiencia");
+}

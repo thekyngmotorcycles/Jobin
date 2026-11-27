@@ -1,5 +1,17 @@
 # Jobin — registro central de desarrollo
 
+## CONSOLIDACIÓN-PARIDAD — aprobada 2026-11-27
+
+- Reutilización exacta de los componentes compartidos y pruebas del visor validado `101a36790eb4dfb713126fcd8d75d79a2b968427` (CI 46046629654 success). PR #151 integra navegación/login web y JCard/experiencia/geometría; no incluye HTML/CSS/JS del visor ni su puente de retorno exclusivo. PR #149 ya integrado. RPC de experiencia pública instalada y comprobada; no repetir migración. PR #150 es publicador temporal de e60e313f con comprobación workflow fallida, no fusionar ni publicar esa versión antigua; conservar una futura entrega conjunta con SHA exacto aprobado. Sin nuevo cambio de apariencia, APK, OTA, main ni datos alojados. Propietario confirma equivalencia visual observada y solicita terminar perfil antes de STREAM-UI. Integración pendiente de CI del conjunto; mantener visor actualizado desde development conservando solo overlay privado y verificar igualdad de archivos comunes.
+
+## WEB-VIEWER-SCROLL / JCARD-EXPERIENCE-OPTIONAL — bloque aprobado (2026-11-27)
+
+- Flechas exteriores fijas sin superponer iframe, control de desplazamiento y accesibilidad. Pastilla de experiencia solo si meses enteros positivos; disponibilidad centrada en ausencia de experiencia. Supabase agregado público instalado tras CI 46045108013, comprobación de permisos aprobada. Rama privada PR #152; sin APK, OTA ni merge.
+
+## WEB-VIEWER-PARITY — bloque aprobado (2026-11-27)
+
+- Rama privada test/web-device-viewer: base development e60e313f, login retorno seguro y restauración de página, geometría JCard adaptativa, candidato SQL de experiencia pública (no aplicado), pruebas dirigidas. Sin cambio de APK, OTA, producción o DB alojada. Integrar development en visor después de cada cambio autorizado, comprobar ancestro y evitar divergencia. Ver docs/CHAT_HANDOFF.md.
+
 ## JCARD-PERSONAL-CONTACT-ABOUT — bloque combinado autorizado (2026-11-27)
 
 - Continuación PR #149 (184e3d6, CI 46033582254 success previo). Añadir Información personal antes de Idiomas solo en Acerca de > Personal, propio/visitante; 0–2 correos y 0–2 teléfonos manuales consentidos; enlaces y ocultación de sección vacía, sin alterar caras. Textos Mostrar correo/teléfono en mi perfil. Reutilizar proyección existente y scope autenticado, limpiar al salir y no leer datos de login. RPC alojada filtra preferencias pero conserva permiso anon y no comprueba bloqueo/visibilidad; no se modifica alojado sin autorización. Nuevo CI pendiente; una sola OTA tras aprobación, sin APK.

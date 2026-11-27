@@ -76,7 +76,11 @@ export async function loadPublicCard(id:string,expectedScope?:MessageScope):Prom
  const result=decode<RealCard>(data,error);
  await assertMessageScope(scope);
  if(result.id!==id)throw Error("El perfil no está disponible.");
- return result;
+ // Optional public aggregate; never request another account\'s private employment rows.
+ const experience=await requireSupabase().rpc("jobeen_public_primary_experience" as never,{p_target:id} as never);
+ await assertMessageScope(scope);
+ const months:unknown=experience.data;
+ return {...result,primaryExperienceMonths:!experience.error&&typeof months==="number"&&Number.isSafeInteger(months)&&months>=0?months:undefined};
 }
 export async function loadOrganization(id?:string):Promise<OrganizationData> {
  const {data,error}=await requireSupabase().rpc("jobin_organization_data",id?{target:id}:{});

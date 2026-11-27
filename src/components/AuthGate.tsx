@@ -7,7 +7,7 @@ import { supabase } from "../lib/supabase";
 import {exchangePendingGoogle,runAuthExit} from "../lib/auth-entry";
 import {sessionExitFence} from "../lib/session-exit-fence";
 import type {MessageScope} from "../lib/session-continuity";
-import {isGoogleCallbackUrl} from "../lib/auth-entry-boundary";
+import {isGoogleCallbackUrl,normalizeGoogleWebCallback} from "../lib/auth-entry-boundary";
 import { sessionMarkerKey,sessionLifetimeState } from "../lib/session-lifetime";
 
 const AuthNavigationContext=createContext<AuthNavigationPhase>("checking");
@@ -124,6 +124,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
    finally{clearTimeout(timeout);}
   }
   async function handleOAuthUrl(url:string|null,live:boolean){
+   const web=Platform.OS==="web"&&typeof window!=="undefined";
+   if(web)url=normalizeGoogleWebCallback(url,window.location.origin);
    if(!active||!isGoogleCallbackUrl(url))return false;
    if(oauthInFlight)return true;
    if(!live&&url===lastOAuthUrl)return false;
@@ -143,7 +145,10 @@ export function AuthGate({ children }: { children: ReactNode }) {
     });
     if(active&&result==="invalid")setOAuthError("Google regresó sin un código de acceso válido. Inténtalo de nuevo.");
    }catch{if(active)setOAuthError("Google no pudo completar la sesión. Vuelve a intentarlo.");}
-   finally{oauthInFlight=false;if(active){setHandlingOAuth(false);void check();}}
+   finally{
+    if(web&&normalizeGoogleWebCallback(window.location.href,window.location.origin)===url)window.history.replaceState(window.history.state,"",window.location.origin+"/");
+    oauthInFlight=false;if(active){setHandlingOAuth(false);void check();}
+   }
    return true;
   }
 
@@ -163,7 +168,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
    void handleLinkOrCheck(url,{live:true});
   });
   const cachedInitial=androidOAuthLink();
-  if(cachedInitial)void handleLinkOrCheck(cachedInitial,{initial:true});
+  if(Platform.OS==="web"&&typeof window!=="undefined")void handleLinkOrCheck(window.location.href,{initial:true});
+  else if(cachedInitial)void handleLinkOrCheck(cachedInitial,{initial:true});
   else void Linking.getInitialURL().then(url=>handleLinkOrCheck(androidOAuthLink()??(receivedLiveOAuthLink?null:url),{initial:true}))
    .catch(()=>handleLinkOrCheck(null,{initial:true}));
 

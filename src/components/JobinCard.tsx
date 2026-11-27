@@ -30,7 +30,7 @@ import { Button, useUi } from "./ui";
 import { useTheme, type ThemeName } from "../state/ThemeProvider";
 import { displayedRating, jcardTier, sealRows, type CardData, type BusinessCardData } from "../lib/jcard";
 import {loadPublicContact,loadVisiblePersonalContactDetails,type PersonalContactDetails} from "../lib/jcard-contact";
-import { experienceLabel } from "../lib/employment";
+import { experienceLabel, primaryExperiencePillLabel } from "../lib/employment";
 import {ProfessionGlyph} from "./ProfessionGlyph";
 import { LanguageRing, languageLabel, LANGUAGE_LEVELS } from "./LanguageRing";
 import { businessCardAccents, businessCardPaper, businessInformationSurface, jcardCommon, jcardFloating, jcardReviewGlass, jcardLayout, jcardTokens, jcardSurfaceSize, jcardSurfaceMetrics, jcardProfilePortraitMetrics,jcardBusinessLogoMetrics,JCARD_BUSINESS_COLUMN_INSET,type JCardProfilePortraitMetrics } from "../theme/jcard";
@@ -132,10 +132,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
   const bodySize = Math.max(12, fs(expanded ? 14 : 13));
   const lineStyle = { color:finish.text, fontSize:bodySize, lineHeight:bodySize * 1.5 };
   const months=card.primaryExperienceMonths;
-  const years=Math.floor((months??0)/12);
-  const experience=years>0
-    ? years+((months??0)%12?"+":"")+(years===1?" Año de experiencia":" Años de experiencia")
-    : months&&months>0?months+(months===1?" Mes de experiencia":" Meses de experiencia"):"Sin experiencia";
+  const experience=primaryExperiencePillLabel(months);
   const working=card.status==="ACTIVE";
   const {fontScale:profileFontScale}=useWindowDimensions();
   const pillHeight=Math.max(28,Math.ceil(26*profileFontScale));
@@ -143,7 +140,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
   // Intrinsic label width + padding; neither capsule grows into the other.
   const profilePillTouch={minHeight:JOBEEN_CONTROL.touchTarget,minWidth:JOBEEN_CONTROL.touchTarget,alignItems:"center" as const,justifyContent:"center" as const,maxWidth:"100%" as const,flexGrow:0,flexShrink:0};
   const experienceAndAvailability=profilePortrait?<View style={{flexDirection:"row",flexWrap:"wrap",alignItems:"center",justifyContent:"center",gap:8,width:"100%"}}>
-   {months!==undefined&&<Pressable accessibilityRole="button" accessibilityLabel={"Ver experiencia por profesión: "+experience} onPress={event=>{event.stopPropagation();setExperienceOpen(true);}} style={profilePillTouch}>
+   {experience!==null&&<Pressable accessibilityRole="button" accessibilityLabel={"Ver experiencia por profesión: "+experience} onPress={event=>{event.stopPropagation();setExperienceOpen(true);}} style={profilePillTouch}>
     <View style={{...profilePill,backgroundColor:jobeen.cream,borderColor:jobeen.yellow,borderWidth:1}}>
      <Text numberOfLines={1} ellipsizeMode="tail" style={{fontSize:11,lineHeight:12,includeFontPadding:false,fontWeight:"600",textAlign:"center",color:jobeen.ink}}>{experience}</Text>
     </View>
@@ -158,7 +155,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
     flexDirection:"row",flexWrap:profilePortrait?"wrap":"nowrap",alignItems:"center",justifyContent:"center",
     gap:8,minWidth:0,width:"100%",marginTop:!profilePortrait&&theme==="light"?10:0
   }}>
-    {months!==undefined&&<Pressable accessibilityRole="button" accessibilityLabel="Ver experiencia por profesión"
+    {experience!==null&&<Pressable accessibilityRole="button" accessibilityLabel="Ver experiencia por profesión"
      onPress={event=>{event.stopPropagation();setExperienceOpen(true);}}
      style={{flexShrink:1,maxWidth:"100%",backgroundColor:jobeen.cream,borderColor:jobeen.yellow,borderWidth:1,
       borderRadius:16,paddingHorizontal:10,paddingVertical:5,minHeight:profilePortrait?JOBEEN_CONTROL.touchTarget:40,
@@ -217,7 +214,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
       <JCardProfileIdentity portrait={profilePortrait} side="personal" name={fullDisplayName} subtitle={"@"+card.handle}
        ink={finish.text} muted={finish.secondary} verification={card.identityVerified?"Identidad verificada por Jobin.":"Identidad sin verificar."}
        badge={<View style={{transform:[{scale:0.72}]}}><IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/></View>}/>
-      <ScrollView nestedScrollEnabled style={{flex:1,minHeight:0}} contentContainerStyle={{paddingHorizontal:12,alignItems:"center"}} keyboardShouldPersistTaps="handled">
+      <ScrollView nestedScrollEnabled style={{flex:1,minHeight:0}} contentContainerStyle={{paddingHorizontal:12,alignItems:"center",paddingBottom:12}} keyboardShouldPersistTaps="handled">
         <Pressable accessibilityRole="button" accessibilityLabel={"Detalles de la profesión principal: "+primaryProfession}
          onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nEspecialidades: "+(card.primarySpecialties?.length?card.primarySpecialties.join(", "):"No declaradas")+"\nExperiencia en esta profesión: "+(primarySealMonths===undefined?"No disponible":experienceLabel(primarySealMonths)))}
          style={{minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center",alignItems:"center",flexDirection:"row",gap:5,maxWidth:"100%"}}>
@@ -286,7 +283,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
         {secondaryProfessions}
       </View>
     </View>}
-    <Modal visible={experienceOpen&&card.primaryExperienceMonths!==undefined} transparent animationType="fade" onRequestClose={()=>setExperienceOpen(false)}>
+    <Modal visible={experienceOpen&&experience!==null} transparent animationType="fade" onRequestClose={()=>setExperienceOpen(false)}>
       <View style={{flex:1,backgroundColor:jcardCommon.scrim,justifyContent:"center",padding:24}}>
         <View style={{backgroundColor:jcardCommon.qrPaper,borderRadius:18,padding:20,gap:12}}>
           <Text style={{fontSize:17,fontWeight:"700",color:jcardCommon.qrInk}}>Experiencia profesional</Text>

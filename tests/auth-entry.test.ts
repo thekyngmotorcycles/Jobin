@@ -37,10 +37,11 @@ function intentStorage() {
   };
 }
 
-function loadEntry(auth: unknown, asyncStorage: ReturnType<typeof intentStorage>) {
+function loadEntry(auth: unknown, asyncStorage: ReturnType<typeof intentStorage>, platform="android") {
   return loadSource<typeof import("../src/lib/auth-entry.ts")>("src/lib/auth-entry.ts", {
     "@react-native-async-storage/async-storage": asyncStorage,
     "./auth-entry-boundary": boundary,
+    "react-native":{Platform:{OS:platform}},
     "./supabase": { requireSupabase: () => ({ auth }) },
   });
 }
@@ -337,4 +338,18 @@ test("Supabase SDK exchanges the stored PKCE verifier once and a later Email Log
     null);
   assert.deepEqual(grants, ["pkce", "password"]);
   assert.equal((await auth.getSession()).data.session?.user.id, "email-owner");
+});
+
+ test("Browser Google starts on the same HTTPS origin and never opens a native intent",async()=>{
+ const previous=Object.getOwnPropertyDescriptor(globalThis,"window");
+ const navigations:string[]=[];
+ Object.defineProperty(globalThis,"window",{configurable:true,value:{location:{origin:"https://preview.example.test",assign:(url:string)=>navigations.push(url)}}});
+ try{
+  const entry=loadEntry({getSession:async()=>({data:{session:null},error:null}),signInWithOAuth:async(options:{options:{redirectTo:string}})=>{
+   assert.equal(options.options.redirectTo,"https://preview.example.test/");
+   return {data:{url:"https://example.test/authorize"},error:null};
+  }},intentStorage(),"web");
+  await entry.startGoogleAuth(async()=>assert.fail("Native opener used on web"));
+  assert.deepEqual(navigations,["https://example.test/authorize"]);
+ }finally{if(previous)Object.defineProperty(globalThis,"window",previous);else Reflect.deleteProperty(globalThis,"window");}
 });

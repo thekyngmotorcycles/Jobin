@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createAuthEntryBoundary, authRedirectScheme } from "./auth-entry-boundary";
+import { createAuthEntryBoundary, authRedirectScheme, googleWebRedirect } from "./auth-entry-boundary";
+import {Platform} from "react-native";
 import { requireSupabase } from "./supabase";
 
 const googlePendingKey = "jobeen:oauth:google-pending:v1";
@@ -30,16 +31,19 @@ export function runSignedOutAuth<T>(action: () => Promise<T>) {
 export function startGoogleAuth(open: (url: string) => Promise<unknown>) {
   return boundary.google(async ready => {
     await signedOut();
+    const web=Platform.OS==="web"&&typeof window!=="undefined";
+    const redirectTo=web?googleWebRedirect(window.location.origin):authRedirectScheme+"://";
     const { data, error } = await requireSupabase().auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: authRedirectScheme + "://", skipBrowserRedirect: true },
+      options: { redirectTo, skipBrowserRedirect: true },
     });
     if (error || !data.url) throw Error("No se pudo iniciar el acceso con Google.");
     const link = new URL(data.url);
     if (link.protocol !== "https:" || link.username || link.password) throw Error("Acceso con Google inválido.");
     await signedOut();
     await ready();
-    await open(data.url);
+    if(web)window.location.assign(data.url);
+    else await open(data.url);
   }, replacePendingGoogle);
 }
 

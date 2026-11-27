@@ -35,7 +35,10 @@ export const jcardSurfaceMetrics={
  // Content never determines the outer footprint.
 export function jcardProfileBodyHeight(width:number,fontScale:number){
  const scale=Math.max(1,Number.isFinite(fontScale)?fontScale:1);
- return (width<jcardSurfaceMetrics.compactThreshold?226:220)+Math.round((scale-1)*84);
+ const identity=jcardProfileIdentitySpace(jcardProfilePortraitMetrics(width),scale).minHeight;
+ // Reserve space for profession, connections and pills without shrinking touch targets.
+ const minimum=identity+3*JOBEEN_CONTROL.touchTarget+16;
+ return Math.max(226+Math.round((scale-1)*84),Math.ceil(minimum));
 }
 export function jcardSurfaceSize(args:{screenWidth:number;measuredWidth?:number;fontScale:number;theme:ThemeName;profile?:boolean;horizontalInset?:number}){
  const m=jcardSurfaceMetrics;
