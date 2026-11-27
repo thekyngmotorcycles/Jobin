@@ -1,6 +1,22 @@
 const GOOGLE_PENDING_TTL = 5 * 60 * 1000;
 export const authRedirectScheme = process.env.EXPO_PUBLIC_JOBEEN_SECURITY_PILOT === "1" ? "jobeen-security-pilot" : "jobin";
 
+/** The browser returns to its own HTTPS origin, never to a native app scheme. */
+export function googleWebRedirect(origin:string):string {
+ const parsed=new URL(origin);
+ if(parsed.origin!==origin||parsed.protocol!=="https:"||parsed.username||parsed.password)throw Error("Origen web de acceso inválido.");
+ return parsed.origin+"/";
+}
+export function normalizeGoogleWebCallback(url:string|null,origin:string):string|null{
+ if(!url||url.length>4096)return null;
+ try{
+  const expected=googleWebRedirect(origin),parsed=new URL(url);
+  if(parsed.origin+"/"!==expected||parsed.pathname!=="/"||parsed.username||parsed.password)return null;
+  const canonical=authRedirectScheme+"://"+parsed.search+parsed.hash;
+  return isGoogleCallbackUrl(canonical)?canonical:null;
+ }catch{return null;}
+}
+
 function callbackSuffix(url: string | null, scheme: string) {
   if (!url || url.length > 4096 || (scheme !== "jobin" && scheme !== "jobeen-security-pilot")) return null;
   const prefix = scheme + ":";
