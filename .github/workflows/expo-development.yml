@@ -1,4 +1,4 @@
-name: Expo development OTA (manual approval only)
+name: Expo development OTA (compatible Android auto and explicit manual)
 on:
   workflow_dispatch:
     inputs:
@@ -28,6 +28,23 @@ on:
           - jobeen-native-20261123
           - jobeen-native-20261123-feed-4425bdf1
         default: fingerprint
+  workflow_call:
+    inputs:
+      approved_commit:
+        required: true
+        type: string
+      confirm_ota:
+        required: true
+        type: boolean
+      platform:
+        required: true
+        type: string
+      android_runtime:
+        required: true
+        type: string
+    secrets:
+      EXPO_TOKEN:
+        required: true
 permissions:
   contents: read
 concurrency:
@@ -36,11 +53,18 @@ concurrency:
 jobs:
   publish:
     if: >-
-      github.event_name == 'workflow_dispatch' &&
+      github.repository == 'thekyngmotorcycles/Jobin' &&
       github.actor == 'thekyngmotorcycles' &&
       github.ref == 'refs/heads/development' &&
       inputs.confirm_ota == true &&
       inputs.approved_commit == github.sha &&
+      ((github.event_name == 'workflow_dispatch') ||
+       (github.event_name == 'push' &&
+        github.workflow_ref == 'thekyngmotorcycles/Jobin/.github/workflows/check.yml@refs/heads/development' &&
+        github.triggering_actor == 'thekyngmotorcycles' &&
+        github.run_attempt == '1' &&
+        inputs.platform == 'android' &&
+        inputs.android_runtime == 'jobeen-native-20261123-feed-4425bdf1')) &&
       (inputs.android_runtime == 'fingerprint' ||
        (inputs.android_runtime == 'jobeen-native-20261123' && inputs.platform == 'android') ||
        (inputs.android_runtime == 'jobeen-native-20261123-feed-4425bdf1' && inputs.platform == 'android'))
@@ -76,10 +100,15 @@ jobs:
           }
           JS
       - run: npm ci --no-audit --no-fund
+      # Automatic calls have already passed both CI jobs on the identical commit.
       - run: npx expo install --check
+        if: github.event_name == 'workflow_dispatch'
       - run: npm run lint
+        if: github.event_name == 'workflow_dispatch'
       - run: npm run typecheck
+        if: github.event_name == 'workflow_dispatch'
       - run: npm test
+        if: github.event_name == 'workflow_dispatch'
       - name: Match the November 23 Android APK runtime
         if: inputs.android_runtime == 'jobeen-native-20261123'
         env:
@@ -148,18 +177,30 @@ jobs:
             console.log('Android OTA runtime: '+result.runtimeVersion);
           }).catch(error=>{console.error(error.message);process.exitCode=1;});
           JS
+      - name: Verify the approved commit is still current development
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'JS'
+          const url='https://api.github.com/repos/thekyngmotorcycles/Jobin/git/ref/heads/development';
+          const res=await fetch(url,{headers:{Authorization:'Bearer '+process.env.GH_READ_TOKEN,Accept:'application/vnd.github+json'}});
+          if(!res.ok)throw Error('Unable to verify current development HEAD');
+          const ref=await res.json();
+          if(ref.object?.sha!==process.env.GITHUB_SHA)throw Error('Development advanced; stale OTA refused.');
+          JS
       - name: Publish only the explicitly approved OTA (no builds, Git pushes or channel changes)
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           OTA_PLATFORM: ${{ inputs.platform }}
         run: |
+          set -euo pipefail
           test -n "$EXPO_TOKEN" || { echo "::error::Missing EXPO_TOKEN"; exit 1; }
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA" || { echo "::error::Commit mismatch"; exit 1; }
           case "$OTA_PLATFORM" in
             android|all) ;;
             *) echo "::error::Invalid OTA platform"; exit 1 ;;
           esac
-          npx eas-cli@27.1.0 update --branch development --environment preview --platform "$OTA_PLATFORM" --message "Jobeen approved OTA $GITHUB_SHA" --non-interactive --json > "$RUNNER_TEMP/expo-update.json"
+          npx eas-cli@27.1.0 update --branch development --environment preview --platform "$OTA_PLATFORM" --message "Jobin approved OTA $GITHUB_SHA" --non-interactive --json > "$RUNNER_TEMP/expo-update.json"
           jq -c 'if type == "array" then .[] | {id, group, runtimeVersion, platform} else empty end' "$RUNNER_TEMP/expo-update.json"
       - uses: actions/upload-artifact@v4
         with:

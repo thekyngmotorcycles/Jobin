@@ -1,5 +1,10 @@
 # Jobin — registro central de desarrollo
 
+## OTA-DEVELOPMENT — autorización permanente del propietario (2026-11-27)
+
+- PR #153 integrado en 4aa07442073f914564be2a448d9c30989b8e3cbb, CI 46075701856 success. OTA Android 46076730934 success, grupo f91b6e76-5d1f-4cca-90a8-c35fded5a07b, runtime jobeen-native-20261123-feed-4425bdf1. Validación física pendiente.
+- Propietario autoriza permanentemente las OTA Android compatibles de development. Candidato: reutilizar expo-development.yml desde check.yml después de validate/database exitosos y cambio en src/ o assets/, exclusivamente integración del propietario en development. Conservar comprobación de APK, árbol nativo, proyecto y SHA actual; no duplicar tests completos para la llamada automática. Documentación/CI solos no publican. Sin modificación de credenciales, canales, APK, Supabase ni producción. Activación tras CI del PR; no declarar validada una publicación automática hasta la siguiente modificación de aplicación.
+
 ## PROFILE-PREMIUM-ABOUT — bloque visual aprobado 2026-11-27
 
 - Biblioteca gráfica incorporada en el PR #153 sobre `0c6d794c`, con CI base [46073668777](https://github.com/thekyngmotorcycles/Jobin/actions/runs/46073668777). Los 31 WebP originales de 384 × 384 px suman 435.848 bytes. Los tamaños y los SHA-256 coinciden con el manifiesto del ZIP, guardado con los archivos en `assets/images/employment/`.

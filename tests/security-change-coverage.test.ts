@@ -84,9 +84,12 @@ test("Shared cover SQL is executed only in the disposable local Postgres job wit
  const workflow=readFileSync(resolve(dirname(script),"../.github/workflows/check.yml"),"utf8");
  const marker="  database:\n";const jobs=workflow.indexOf(marker);
  assert.ok(jobs>0);
- const validation=workflow.slice(0,jobs),database=workflow.slice(jobs);
+ // Delimit the SQL job at the next top-level job, not at end of file.
+ const nextJob=/^  [a-zA-Z_][a-zA-Z0-9_-]*:\s*$/m.exec(workflow.slice(jobs+marker.length));
+ const end=nextJob?jobs+marker.length+nextJob.index:workflow.length;
+ const validation=workflow.slice(0,jobs),database=workflow.slice(jobs,end),following=workflow.slice(end);
  const coverStep="psql -v ON_ERROR_STOP=1 -f tests/jcard-shared-cover.test.sql";
- assert.ok(!validation.includes(coverStep));
+ assert.ok(!validation.includes(coverStep)&&!following.includes(coverStep));
  assert.equal(database.split(coverStep).length-1,1);
  assert.ok(database.includes("image: postgres:17")&&database.includes("PGHOST: localhost")&&database.includes("PGDATABASE: jobin_test"));
  assert.ok(database.indexOf("tests/database-bootstrap.sql")<database.indexOf(coverStep));
