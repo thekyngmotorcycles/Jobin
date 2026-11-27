@@ -1,16 +1,24 @@
 import type {Profession} from "./professional-types";
-/** Catalog families, not a separate asset for every trade. Split climate and electricity only for visual identity. */
-import type {BannerFamily} from "../theme/employment-art";
-const FAMILIES=new Set<string>(["hvac","refrigeration","electricity","construction","maintenance","climate","transport","automotive","technology","business","commerce","legal","health","animals","hospitality","hotels","beauty","sports","education","arts","design","engineering","fashion","security","industry","agriculture","logistics","generic"]);
+import {BANNER_PALETTES,type BannerFamily} from "../theme/employment-art.ts";
+
+/** Category is resolved from the existing catalog; artwork is not a second taxonomy.
+ * New records retain the selected profession code. Older authorized CV projections
+ * without a code may resolve an exact, unambiguous catalog name only.
+ */
 const normalize=(s:string)=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"_");
+function artworkFor(category:string|undefined):BannerFamily{
+ return category&&Object.prototype.hasOwnProperty.call(BANNER_PALETTES,category)?category as BannerFamily:"generic";
+}
 export function employmentBannerFamily(role:string,professions:readonly string[]=[],catalog:readonly Profession[]=[]):BannerFamily{
- const candidates=[role,...professions].map(normalize).filter(Boolean);
- const entry=catalog.find(p=>candidates.some(c=>[p.code,p.label,p.short_label].filter(Boolean).map(normalize).includes(c)));
- const keys=[...candidates,entry?normalize(entry.code):""];
- if(keys.some(k=>/^(refrigeracion|tecnico_en_refrigeracion|tecnico_refrigeracion|tecnico_frigorista)$/.test(k)))return "refrigeration";
- if(keys.some(k=>/hvac|aire_acondicionado|climatizacion/.test(k)))return "hvac";
- if(keys.some(k=>/electricista|electricidad/.test(k)))return "electricity";
- if(keys.some(k=>/handyman|mantenimiento_general|tecnico_de_mantenimiento/.test(k)))return "maintenance";
- const category=entry?.category;
- return category&&FAMILIES.has(category)?category as BannerFamily:"generic";
+ const selected=professions.filter(Boolean);
+ if(selected.length){
+  const matches=selected.map(code=>catalog.find(p=>p.code===code));
+  if(matches.some(p=>!p))return "generic";
+  const categories=new Set(matches.map(p=>p!.category));
+  return categories.size===1?artworkFor(matches[0]?.category):"generic";
+ }
+ const key=normalize(role);
+ if(!key)return "generic";
+ const matches=catalog.filter(p=>[p.code,p.label,p.short_label].filter(Boolean).some(value=>normalize(value)===key));
+ return matches.length===1?artworkFor(matches[0].category):"generic";
 }

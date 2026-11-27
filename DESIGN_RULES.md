@@ -126,3 +126,10 @@ Mostrar avance real/declarado de forma clara, barras incompletas sin castigo, do
 
 ### Refuerzo del propietario: tipografía y alcance (2026-11-27)
 - En cada nueva pantalla o cambio aprobado, aplicar `src/theme/typography.ts`, pesos y estilos semánticos ya homologados. Los títulos de sección del perfil, incluido Historial profesional, usan sans serif de la interfaz y peso de sección existente (`s.h3`), no el estilo artístico serif/cursivo de los encabezados heredados. No cambiar el arte de la JCard ni modificar globalmente estilos o pantallas previamente aprobados. Cambiar únicamente el área de la tarea autorizada y protegerla con pruebas de regresión.
+
+
+## Catálogo único, marca y ejecución por bloques — aprobación del propietario 2026-11-27
+
+- Nombre comercial vigente: **Jobin**, con una I, sin doble E. Usar en nuevos textos, propuestas y documentación. No renombrar identificadores técnicos, repositorio, dominio, paquete, runtime, claves, funciones ni textos históricos por sustitución masiva; cualquier migración de marca visible existente se planifica y aprueba por separado.
+- Fuente de verdad de categorías y profesiones: catálogo existente de Supabase (`profession_categories`, `profession_catalog`, RPC `jobin_professional_catalog`). No inventar categorías ni clasificaciones paralelas. JCard Negocio selecciona categoría; historial selecciona profesión por código del mismo catálogo y deriva su categoría. Fondos asignados por código oficial, nunca por coincidencia parcial de palabras. Los registros antiguos sin código pueden usar una coincidencia exacta y única del catálogo; si no hay resolución segura, mostrar fondo neutro, no inventar categoría. No modificar permisos o datos históricos para resolver apariencia.
+- Trabajar en bloques pequeños y ordenados: comprobar base, dependencias y riesgo de romper enlaces antes de editar; reutilizar lo aprobado, probar y registrar resultados del bloque; avisar al propietario de incompatibilidades antes de cambiar alcance. No mezclar rediseños, migraciones ni despliegues no autorizados. Mantener informes breves y aprobaciones separadas.

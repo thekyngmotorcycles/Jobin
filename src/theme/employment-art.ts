@@ -1,6 +1,6 @@
 export const BANNER_PALETTES={
- hvac:["#092A43","#3189B7"],refrigeration:["#251F45","#8C74C8"],electricity:["#482C0C","#D69A38"],
- construction:["#3A2D1C","#B89659"],maintenance:["#1E2B38","#8299A9"],climate:["#123644","#45B5BC"],
+ refrigeration:["#251F45","#8C74C8"],
+ construction:["#3A2D1C","#B89659"],maintenance:["#1E2B38","#8299A9"],climate:["#092A43","#3189B7"],
  transport:["#172D48","#6396B7"],automotive:["#371E21","#AC5848"],technology:["#10244C","#567DCF"],
  business:["#203344","#719EAA"],commerce:["#38274D","#A17EB7"],legal:["#30283E","#9E91BD"],
  health:["#163B3A","#67B9A9"],animals:["#313A28","#9AAE69"],hospitality:["#462B1C","#C08B59"],
@@ -8,6 +8,7 @@ export const BANNER_PALETTES={
  education:["#193A35","#5CA98C"],arts:["#3B274A","#A371BD"],design:["#293952","#7B9FDC"],
  engineering:["#203746","#7FB3C9"],fashion:["#403045","#C48CA9"],security:["#212D3B","#7B91A7"],
  industry:["#2E333B","#A2A8AF"],agriculture:["#2C3923","#99B76A"],logistics:["#2A374A","#85A1BD"],
+ aviation:["#142D48","#6797C9"],railway:["#283043","#7E91B2"],heavy_equipment:["#43321E","#C1934F"],maritime:["#142E46","#5486A6"],motorcycles:["#422B28","#AC6450"],
  generic:["#203043","#74899D"]
 } as const;
 export type BannerFamily=keyof typeof BANNER_PALETTES;
