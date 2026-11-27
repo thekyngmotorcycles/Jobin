@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import test from "node:test";
 import ts from "typescript";
+import {resolveProfileCardSide} from "../src/lib/jcard-profile-side.ts";
 
 const author="a1111111-1111-4111-8111-111111111111";
 const stranger="b2222222-2222-4222-8222-222222222222";
@@ -65,6 +66,7 @@ function mount(config:{
    if(config.cardError)throw config.cardError;
    return {id,name:"Personal profile",profileUrl:"jobin://jcard?user="+id};
   }},
+  "../lib/jcard-profile-side":{resolveProfileCardSide},
   "../lib/jcard-visibility":{DEFAULT_JCARD_VISIBILITY:{},readJCardVisibility:async()=>{
    if(config.visibilityError)throw config.visibilityError;
    return visibility;
@@ -88,8 +90,10 @@ function mount(config:{
    const header=find(screen,"ProfileIdentityHeader");
    return {card:header?.props.card as Element|undefined,actions:header?.props.actions as Element|undefined,
     error:find(screen,"JCardLoadState")?.props.error,posts:find(screen,"ProfilePublicPosts")?.props.userId,
+    selector:find(screen,"ProfileAboutSelector"),businessAbout:find(screen,"ProfileBusinessAbout"),personalAbout:find(screen,"ProfilePersonalLanguages"),personalContact:find(screen,"ProfilePersonalContact"),
     businessReads,cvReads};
   },
+  openAbout:()=>{const tabs=find(render(),"ProfileSectionTabs");assert.ok(tabs);(tabs.props.onSelect as (side:string)=>void)("cv");},
   switchSession:()=>{currentScope={owner:follower,session:"another-session"};},
   close:()=>{close?.();closeCV?.();}
  };
@@ -164,6 +168,37 @@ test("business arriving after a session change cannot complete the old snapshot"
  page.close();
 });
 
+test("Visitor About and actual JCard callback synchronize in both directions without opening a private face",async()=>{
+ const page=mount();
+ await settle();
+ page.openAbout();
+ let view=page.read();
+ assert.equal(view.card?.props.selectedSide,"personal");
+ assert.equal(view.selector?.props.side,"personal");
+ assert.ok(view.personalAbout);
+ assert.equal(view.personalContact?.props.target,author);
+ assert.equal(view.businessAbout,undefined);
+ (view.selector?.props.onSelect as (side:string)=>void)("business");
+ view=page.read();
+ assert.equal(view.card?.props.selectedSide,"business");
+ assert.equal(view.selector?.props.side,"business");
+ assert.ok(view.businessAbout);
+ assert.equal(view.personalAbout,undefined);
+ assert.equal(view.personalContact,undefined);
+ (view.card?.props.onActiveSideChange as (side:string)=>void)("personal");
+ view=page.read();
+ assert.equal(view.selector?.props.side,"personal");
+ assert.ok(view.personalAbout);
+ assert.equal(view.businessAbout,undefined);
+ page.close();
+ const restricted=mount({businessVisible:false,requestedSide:"business"});
+ await settle();restricted.openAbout();
+ const hidden=restricted.read();
+ assert.equal(hidden.card?.props.selectedSide,"personal");
+ assert.equal(hidden.selector?.props.businessAvailable,false);
+ assert.equal(hidden.businessAbout,undefined);
+ restricted.close();
+});
 test("the feed name and photo open the same author UUID from author_id",()=>{
  const feed=readFileSync("src/components/HomePublishedPosts.tsx","utf8");
  const social=readFileSync("src/lib/social-content.ts","utf8");

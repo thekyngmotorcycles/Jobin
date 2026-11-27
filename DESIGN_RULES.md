@@ -109,3 +109,11 @@ Opción 3 refinada: una portada única pública y elegida expresamente por su ti
 - Singular/plural de contactos y seguidores conforme al valor real. Normalizar visualmente únicamente abreviaturas ESP y ENG; no modificar etiquetas personalizadas ni valores almacenados.
 - Botones públicos con geometría privada: separación horizontal 8 dp, altura mínima y ancho del icono 48 dp, radio 12 dp, separación desde JCard 10 dp, ancho máximo igual a JCard. Conservar funciones, permisos y colores; sin margen vertical adicional. Mantener tipografía y acordeón.
 - Aumentar opacidad del fondo inferior solo en ambos perfiles: fila de iconos completamente opaca, degradado superior conservado; no cambiar animación de Casa ni otros menús. Sin cambios de banner, giro, medidas de tarjeta, pastillas o backend.
+
+
+### Sincronización JCard / Acerca de (aprobada 2026-11-27)
+- Personal/Negocio en Acerca de y la cara de JCard usan una única selección bidireccional en ambos perfiles: pulsar el selector gira la tarjeta; girarla con toque o gesto actualiza selector e información. Mantener animación 3D, composición, privacidad, caras públicas disponibles, enlaces y acordeón; no añadir controles ni cambiar dimensiones.
+
+
+### Contacto personal en Acerca de (aprobado 2026-11-27)
+- Mostrar Información personal antes de Idiomas, solo en Acerca de > Personal propio/visitante, con los correos y teléfonos manuales autorizados y no vacíos (hasta dos de cada tipo), enlaces de correo y teléfono. Ocultar sección vacía. Los textos de privacidad serán «Mostrar correo en mi perfil» y «Mostrar teléfono en mi perfil». No ampliar la JCard, tocar datos de acceso ni cambiar apariencia o reglas de Negocio.

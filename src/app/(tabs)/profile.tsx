@@ -16,7 +16,7 @@ import { useTabClearance } from "../../theme/navigation";
 import {opacity} from "../../theme/color";
 import {useRef} from "react";
 import type {ProfileContactsHandle} from "../../components/ProfileFollowCounts";
-import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,ProfilePersonalLanguages,type ProfileSection,type ProfileAboutSide} from "../../components/ProfileSharedSections";
+import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,ProfilePersonalContact,ProfilePersonalLanguages,type ProfileSection,type ProfileAboutSide} from "../../components/ProfileSharedSections";
 import {SavedJCardsGallery} from "../../components/SavedJCardsGallery";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfileOwnedPosts} from "../../components/ProfileOwnedPosts";
@@ -59,9 +59,7 @@ function validPhoneLabel(value:string):boolean{
 export default function Profile() {
   const { s, colors } = useUi();const insets=useSafeAreaInsets();const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;const {theme}=useTheme();const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme);const {contentBottom}=useTabClearance();const {view,card}=useLocalSearchParams<{view?:string;card?:string}>();
   const [mode,setMode]=useState<Mode>("grid");
-  const [aboutSide,setAboutSide]=useState<ProfileAboutSide>("personal");
-  const activeCardSide=useRef<"personal"|"business">(card==="business"?"business":"personal");
-  const rememberCardSide=useCallback((side:"personal"|"business")=>{activeCardSide.current=side;},[]);
+  const [aboutSide,setAboutSide]=useState<ProfileAboutSide>(card==="business"?"business":"personal");
   const profileScroll=useRef<ScrollView|null>(null);
   const profileScrollY=useRef(new Animated.Value(0)).current;
   const [tabOffset,setTabOffset]=useState(0);
@@ -179,13 +177,13 @@ export default function Profile() {
   const workspace = useProfessionalData(loadWorkspace,true);
   const ownerId=workspace.data?.card.id;
   const workspaceSession=workspace.scope?.session;
-  useEffect(()=>setAboutSide("personal"),[ownerId,workspaceSession]);
+  useEffect(()=>setAboutSide(card==="business"?"business":"personal"),[card,ownerId,workspaceSession]);
   const media=useProfessionalData(loadMyMedia,false,true,!!ownerId&&!!workspaceSession);
   const currentLive=hasActiveOwnLive({ownerId,workspaceScope:workspace.scope,mediaScope:media.scope,error:!!media.error||media.loading,media:media.data});
   function openOwnEditor(){
     if(!ownerId||workspace.scope?.owner!==ownerId)return;
     closeProfileMenu();
-    if(activeCardSide.current==="business")editBusiness();else router.push("/professional");
+    if(aboutSide==="business")editBusiness();else router.push("/professional");
   }
   useEffect(()=>{if(!profileToolsOpen&&contactsRequested){setContactsRequested(null);if(contactsRequested===ownerId)contactsMenuRef.current?.openContacts(contactsRequested);}},[profileToolsOpen,contactsRequested,ownerId]);
   const [historyState,setHistoryState]=useState<({owner:string;session:string}&Awaited<ReturnType<typeof loadCloudHistory>>)|null>(null);
@@ -428,7 +426,7 @@ export default function Profile() {
         showsVerticalScrollIndicator={false}>
         <Animated.View style={{paddingBottom:12,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
         <ProfileIdentityHeader
-          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),rating:businessRating.rating,reviewCount:businessRating.count},years:primaryExperienceMonths===undefined?workspace.data.card.years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} onActiveSideChange={rememberCardSide} awardsInAbout profileInset={16} profileCoverScope={workspace.scope} ownerQuickActions={{onPanel:()=>router.push("/panel"),onLive:()=>currentLive?router.push({pathname:"/live",params:{view:"studio"}}):router.push("/live"),liveLabel:currentLive?"Volver al Live":"En vivo"}} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink?.owner===ownerId?employerLink:null}/>
+          card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),rating:businessRating.rating,reviewCount:businessRating.count},years:primaryExperienceMonths===undefined?workspace.data.card.years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} selectedSide={aboutSide} onActiveSideChange={setAboutSide} awardsInAbout profileInset={16} profileCoverScope={workspace.scope} ownerQuickActions={{onPanel:()=>router.push("/panel"),onLive:()=>currentLive?router.push({pathname:"/live",params:{view:"studio"}}):router.push("/live"),liveLabel:currentLive?"Volver al Live":"En vivo"}} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink?.owner===ownerId?employerLink:null}/>
             {!!workspace.error&&isJCardConnectivityError(workspace.error)&&<View style={{marginTop:12,paddingHorizontal:16}}>
               <JCardOfflineNotice retry={workspace.reload} cached/>
             </View>}
@@ -459,6 +457,7 @@ export default function Profile() {
         {mode==="cv"&&aboutSide==="business"&&ownerId&&<ProfileBusinessAbout business={businessOwner===ownerId&&businessScope.current?.owner===ownerId&&businessScope.current?.session===workspaceSession?business:undefined} target={ownerId} scope={businessScope.current?.owner===ownerId&&businessScope.current?.session===workspaceSession?businessScope.current:null} onEdit={editBusiness}/>}
         {mode === "cv" && aboutSide==="personal" && (
           <View style={{ gap: 14 }}>
+            {ownerId&&workspace.scope?.owner===ownerId&&<ProfilePersonalContact target={ownerId} scope={workspace.scope}/>}
             {workspace.data?.card&&<ProfilePersonalLanguages languages={workspace.data.card.languages}/>}
             <Text style={s.h2}>Historial profesional</Text>
             {experienceKnown&&<Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}.</Text>}

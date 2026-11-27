@@ -117,7 +117,7 @@ test("Connection counts request only displayed aggregates once per focus and cle
  assert.ok(network.includes('item.value==null?"—"'));
 });
 
-test("About switches independently of the card and respects both public faces",()=>{
+test("About follows the JCard selection and respects both public faces",()=>{
  const shared=source("src/components/ProfileSharedSections.tsx"),owner=source("src/app/(tabs)/profile.tsx"),visitor=source("src/app/jcard.tsx");
  assert.ok(shared.includes("export function ProfileAboutSelector"));
  assert.ok(shared.includes("if(!personalAvailable||!businessAvailable)return null"));
@@ -126,8 +126,10 @@ test("About switches independently of the card and respects both public faces",(
  assert.ok(shared.includes("useNativeDriver:true"));
  assert.ok(owner.includes('mode==="cv"&&aboutSide==="personal"'));
  assert.ok(owner.includes("businessScope.current?.session===workspaceSession"));
- assert.ok(visitor.includes('aboutSide==="personal"&&cardVisibility.personal_enabled'));
- assert.ok(visitor.includes('aboutSide==="business"&&cardVisibility.business_enabled&&publicBusiness'));
+ assert.ok(visitor.includes('activeCardSide==="personal"&&cardVisibility.personal_enabled'));
+ assert.ok(visitor.includes('activeCardSide==="business"&&cardVisibility.business_enabled&&publicBusiness'));
+ assert.ok(visitor.includes('selectedSide={activeCardSide} onActiveSideChange={setActiveCardSide}'));
+ assert.ok(owner.includes('selectedSide={aboutSide} onActiveSideChange={setAboutSide}'));
  assert.ok(visitor.includes("businessAvailable={!!publicBusiness}"));
  const about=shared.slice(shared.indexOf("export function ProfileBusinessAbout"),shared.indexOf("export type ProfileTile"));
  assert.ok(!about.includes("fetch(")&&!about.includes("requireSupabase")&&!about.includes("business.email")&&!about.includes("business.phone"));

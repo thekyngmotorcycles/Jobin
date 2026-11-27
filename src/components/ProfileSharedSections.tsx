@@ -1,5 +1,5 @@
 import {Ionicons} from "@expo/vector-icons";
-import {Animated,Image,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
+import {Animated,Image,Linking,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {useReducedMotion} from "react-native-reanimated";
 import type {ReactNode,ComponentProps,Ref} from "react";
@@ -16,6 +16,8 @@ import {BusinessAwards} from "./JobinCard";
 import {readBusinessExcellence} from "../lib/jcard-cloud";
 import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
 import {useFocusEffect} from "expo-router";
+import {loadVisiblePersonalContactDetails,type PersonalContactDetails} from "../lib/jcard-contact";
+import {personalProfileContactRows} from "../lib/jcard-profile-contacts";
 
 export type ProfileSection="grid"|"jcards"|"cv"|"videos"|"live";
 const tabs=[
@@ -63,7 +65,7 @@ export function ProfileSectionTabs({section,onSelect,pinned=false,showPrivateJCa
 
 export type ProfileAboutSide="personal"|"business";
 
-/** Separate from the rotating card: only switches the already-authorized About content. */
+/** Controlled selector: the profile uses the same authorized side for About and the rotating JCard. */
 export function ProfileAboutSelector({side,onSelect,personalAvailable=true,businessAvailable=true}:{side:ProfileAboutSide;onSelect:(side:ProfileAboutSide)=>void;personalAvailable?:boolean;businessAvailable?:boolean}){
  const {theme}=useTheme(),jt=jobeenTokens(theme),reducedMotion=useReducedMotion();
  const [width,setWidth]=useState(0);
@@ -83,6 +85,38 @@ export function ProfileAboutSelector({side,onSelect,personalAvailable=true,busin
   {(["personal","business"] as const).map(option=><Pressable key={option} accessibilityRole="tab" accessibilityState={{selected:side===option}}
    onPress={()=>onSelect(option)} style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center",borderRadius:24,backgroundColor:half===0&&side===option?jt.ink:undefined}}>
    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:JOBEEN_TYPE.input,fontWeight:side===option?"700":"600",color:side===option?jt.surface:jt.ink}}>{option==="personal"?"Personal":"Negocio"}</Text>
+  </Pressable>)}
+ </View>;
+}
+
+/** Only manually published contact fields; no private profile or auth fallback. */
+export function ProfilePersonalContact({target,scope}:{target:string;scope?:MessageScope|null}){
+ const {theme}=useTheme(),jt=jobeenTokens(theme);
+ const [loaded,setLoaded]=useState<{target:string;scope:MessageScope;details:PersonalContactDetails}|null>(null);
+ useFocusEffect(useCallback(()=>{
+  let active=true;setLoaded(null);
+  if(!target||!scope)return()=>{active=false;};
+  void(async()=>{try{
+   const origin=await captureMessageScope(scope);if(!active)return;
+   const details=await loadVisiblePersonalContactDetails(target,origin);
+   await assertMessageScope(origin);
+   if(active)setLoaded({target,scope:origin,details});
+  }catch{/* Fail closed; do not substitute private contact information. */}})();
+  return()=>{active=false;setLoaded(null);};
+ },[target,scope?.owner,scope?.session]));
+ const current=loaded&&loaded.target===target&&loaded.scope.owner===scope?.owner&&loaded.scope.session===scope?.session?loaded.details:null;
+ const rows=current?personalProfileContactRows(current):[];
+ if(!rows.length)return null;
+ return <View style={{gap:6,padding:14,borderWidth:1,borderColor:jt.line,borderRadius:14,backgroundColor:jt.surface}}>
+  <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.input,fontWeight:"700",color:jt.ink}}>Información personal</Text>
+  {rows.map(row=><Pressable key={row.key} accessibilityRole={row.uri?"link":undefined} accessibilityLabel={row.label+": "+row.value}
+   disabled={!row.uri} onPress={()=>{if(row.uri)void Linking.openURL(row.uri).catch(()=>{});}}
+   style={{flexDirection:"row",alignItems:"center",gap:10,minHeight:JOBEEN_CONTROL.touchTarget,paddingVertical:5}}>
+   <Ionicons name={row.kind==="email"?"mail-outline":"call-outline"} size={21} color={jt.ink}/>
+   <View style={{flex:1,minWidth:0,gap:2}}>
+    <Text style={{color:jt.ink2,fontSize:11}}>{row.label}</Text>
+    <Text selectable={!row.uri} style={{color:jt.ink,fontSize:JOBEEN_TYPE.input}}>{row.value}</Text>
+   </View>
   </Pressable>)}
  </View>;
 }
