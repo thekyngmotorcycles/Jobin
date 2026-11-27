@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## WEB-VIEWER-SCROLL / JCARD-EXPERIENCE-OPTIONAL — bloque aprobado (2026-11-27)
+
+- Flechas exteriores fijas sin superponer iframe, control de desplazamiento y accesibilidad. Pastilla de experiencia solo si meses enteros positivos; disponibilidad centrada en ausencia de experiencia. Supabase agregado público instalado tras CI 46045108013, comprobación de permisos aprobada. Rama privada PR #152; sin APK, OTA ni merge.
+
 ## WEB-VIEWER-PARITY — bloque aprobado (2026-11-27)
 
 - Rama privada test/web-device-viewer: base development e60e313f, login retorno seguro y restauración de página, geometría JCard adaptativa, candidato SQL de experiencia pública (no aplicado), pruebas dirigidas. Sin cambio de APK, OTA, producción o DB alojada. Integrar development en visor después de cada cambio autorizado, comprobar ancestro y evitar divergencia. Ver docs/CHAT_HANDOFF.md.

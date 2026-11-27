@@ -32,3 +32,9 @@ device.addEventListener("change",()=>selectPreset(device.value));
 width.addEventListener("input",()=>{size();persist();});
 for(const button of presets)button.addEventListener("click",()=>selectPreset(button.dataset.preset));
 page.addEventListener("change",navigate);document.getElementById("reload").addEventListener("click",navigate);window.addEventListener("resize",size);size();navigate();
+
+// Scroll only the outer page; never forward input into the application iframe.
+const outer=document.getElementById("viewer-scroll"),up=document.getElementById("viewer-up"),down=document.getElementById("viewer-down");
+function updateOuterControls(){up.disabled=outer.scrollTop<=1;down.disabled=outer.scrollTop+outer.clientHeight>=outer.scrollHeight-1;}
+function scrollOuter(direction){const distance=Math.max(48,Math.round(outer.clientHeight*.55));outer.scrollBy({top:direction*distance,behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth"});}
+up.addEventListener("click",()=>scrollOuter(-1));down.addEventListener("click",()=>scrollOuter(1));outer.addEventListener("scroll",updateOuterControls,{passive:true});window.addEventListener("resize",updateOuterControls);if(typeof ResizeObserver!=="undefined"){const observer=new ResizeObserver(updateOuterControls);observer.observe(outer);observer.observe(shell);}updateOuterControls();

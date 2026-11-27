@@ -1,0 +1,22 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {readFileSync} from "node:fs";
+import {runInNewContext} from "node:vm";
+test("Viewer arrows move only the dedicated outer viewport; bounds and reduced motion",()=>{
+ const html=readFileSync("public/device-preview.html","utf8"),css=readFileSync("public/device-preview.css","utf8"),source=readFileSync("public/device-preview.js","utf8");
+ const script=source.slice(source.indexOf("// Scroll only the outer page"));
+ assert.ok(html.indexOf("</main>")<html.indexOf('class="viewer-scroll-controls"'));
+ assert.ok(css.includes("min-height:48px")&&css.includes("#viewer-scroll{flex:1;min-height:0"));
+ const events:Record<string,()=>void>={},calls:{top:number;behavior:string}[]=[];
+ const outer={scrollTop:0,clientHeight:300,scrollHeight:900,scrollBy(value:{top:number;behavior:string}){calls.push(value)},addEventListener(name:string,fn:()=>void){events[name]=fn}};
+ const up={disabled:false,addEventListener(_name:string,fn:()=>void){events.up=fn}};
+ const down={disabled:false,addEventListener(_name:string,fn:()=>void){events.down=fn}};
+ let reduced=false;
+ const nodes:Record<string,unknown>={"viewer-scroll":outer,"viewer-up":up,"viewer-down":down};
+ runInNewContext(script,{document:{getElementById:(id:string)=>nodes[id]},window:{matchMedia:()=>({matches:reduced}),addEventListener(){}},shell:{}});
+ assert.equal(up.disabled,true);assert.equal(down.disabled,false);
+ events.down();assert.equal(calls[0].top,165);assert.equal(calls[0].behavior,"smooth");
+ outer.scrollTop=600;events.scroll();assert.equal(down.disabled,true);assert.equal(up.disabled,false);
+ reduced=true;events.up();assert.equal(calls[1].top,-165);assert.equal(calls[1].behavior,"instant");
+ assert.ok(!script.includes("contentWindow")&&!script.includes("contentDocument"));
+});
