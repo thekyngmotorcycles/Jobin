@@ -63,3 +63,11 @@ test("Pills use intrinsic label width without flex redistribution; business colu
  assert.ok(card.includes('contentContainerStyle={{alignItems:"stretch",gap:2}}'));
  assert.ok(header.includes('const align="left"')&&header.includes('const justify="flex-start"'));
 });
+
+ test("All profile widths preserve a bottom margin after the minimum profession, connections and availability rows",async()=>{
+  const {jcardProfileBodyHeight}=await import("../src/theme/jcard.ts");
+  for(const screen of [320,360,390,402,440])for(const scale of [1,1.3,2]){
+   const width=screen-32,identity=jcardProfileIdentitySpace(jcardProfilePortraitMetrics(width),scale).minHeight;
+   assert.ok(jcardProfileBodyHeight(width,scale)>=identity+3*48+16);
+  }
+ });
