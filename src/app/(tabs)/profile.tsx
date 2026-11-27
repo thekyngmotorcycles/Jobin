@@ -460,7 +460,7 @@ export default function Profile() {
           <View style={{ gap: 14 }}>
             {ownerId&&workspace.scope?.owner===ownerId&&<ProfilePersonalContact target={ownerId} scope={workspace.scope}/>}
             {workspace.data?.card&&<ProfilePersonalLanguages languages={workspace.data.card.languages} key={ownerId+":"+workspaceSession} own/>}
-            <Text style={s.h2}>Historial profesional</Text>
+            <Text accessibilityRole="header" style={s.h3}>Historial profesional</Text>
             {experienceKnown&&<Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}.</Text>}
             {ownerId&&historyLoading&&!historyError&&<PageState kind="loading" message="Cargando historial profesional…"/>}
             {ownHistory&&!historyLoading&&!historyEditable&&<PageState kind="error" message="Los contactos privados y la edición del historial no están disponibles." actionLabel="Reintentar" onAction={retryHistory}/>}

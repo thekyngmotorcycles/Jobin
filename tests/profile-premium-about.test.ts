@@ -12,16 +12,22 @@ test("Language completion is bounded, does not round an incomplete level to 100"
  assert.ok(shared.includes('accessibilityRole="progressbar"')&&shared.includes("own&&!complete"));
  assert.ok(shared.includes("Nivel declarado")&&shared.includes("todavía no están disponibles"));
 });
-test("Families reuse catalog groups and distinguish technical trades with safe fallback",()=>{
- assert.equal(employmentBannerFamily("Técnico HVAC"),"hvac");
- assert.equal(employmentBannerFamily("Técnico HVAC",["tecnico_hvac_aire_acondicionado"]),"hvac");
- assert.equal(employmentBannerFamily("Refrigeración"),"refrigeration");
- assert.equal(employmentBannerFamily("Electricista"),"electricity");
- assert.equal(employmentBannerFamily("Técnico de mantenimiento general / Handyman"),"maintenance");
- assert.equal(employmentBannerFamily("Unknown"),"generic");
- const groups=["construction","maintenance","climate","transport","automotive","technology","business","commerce","legal","health","animals","hospitality","hotels","beauty","sports","education","arts","design","engineering","fashion","security","industry","agriculture","logistics"];
- for(const category of groups)assert.equal(employmentBannerFamily("fixture",[],[{code:"fixture",category,label:"fixture",short_label:"fixture",icon:"",active:true}]),category);
- assert.equal(Object.keys(BANNER_PALETTES).length,28);
+test("Official category codes drive art without a parallel profession taxonomy",()=>{
+ const categories=["business","agriculture","arts","automotive","aviation","beauty","climate","commerce","construction","sports","design","education","railway","hospitality","hotels","industry","engineering","logistics","maintenance","heavy_equipment","maritime","fashion","motorcycles","refrigeration","health","animals","security","legal","technology","transport"];
+ assert.deepEqual(Object.keys(BANNER_PALETTES).sort(),[...categories,"generic"].sort());
+ const profession=(code:string,category:string,label=code)=>({code,category,label,short_label:label,icon:"",active:true});
+ for(const category of categories)assert.equal(employmentBannerFamily("irrelevant",["fixture"],[profession("fixture",category)]),category);
+ const catalog=[profession("tecnico_hvac_aire_acondicionado","climate","Técnico HVAC"),profession("refrigeracion","refrigeration","Técnico en Refrigeración"),profession("electricista","construction","Electricista"),profession("electricista_naval","maritime","Electricista naval"),profession("electricista_motocicletas","motorcycles","Electricista de motocicletas"),profession("electricista_ferroviario","railway","Electricista ferroviario"),profession("ingeniero_electrico","engineering","Ingeniero eléctrico"),profession("electricista_automotriz","automotive","Electricista automotriz")];
+ assert.equal(employmentBannerFamily("Técnico HVAC",["tecnico_hvac_aire_acondicionado"],catalog),"climate");
+ assert.equal(employmentBannerFamily("Técnico HVAC",["refrigeracion"],catalog),"refrigeration");
+ for(const entry of catalog)assert.equal(employmentBannerFamily(entry.label,[entry.code],catalog),entry.category);
+ assert.equal(employmentBannerFamily("Electricista naval",[],catalog),"maritime");
+ assert.equal(employmentBannerFamily("Electricista",["missing"],catalog),"generic");
+ assert.equal(employmentBannerFamily("Electricista",["electricista","electricista_naval"],catalog),"generic");
+ assert.equal(employmentBannerFamily("Electricista",[],[...catalog,profession("other","technology","Electricista")]),"generic");
+ assert.equal(employmentBannerFamily("Electricista",[],[]),"generic");
+ assert.equal(employmentBannerFamily("fixture",["fixture"],[profession("fixture","new_category")]),"generic");
+ assert.equal(employmentBannerFamily("fixture",["fixture"],[profession("fixture","toString")]),"generic");
 });
 test("History uses two columns, actual verification, scoped owner edit and authorized visitor rows",()=>{
  const grid=source("src/components/ProfessionalHistoryGrid.tsx"),owner=source("src/app/(tabs)/profile.tsx"),visitor=source("src/app/jcard.tsx");
@@ -32,4 +38,16 @@ test("History uses two columns, actual verification, scoped owner edit and autho
  assert.ok(visitor.includes('user!==viewer&&cvStatus!=="approved"'));
  assert.ok(visitor.includes("cvRows.map((row,i)=>")&&!visitor.includes("onAdd={"));
  assert.ok(grid.includes("<EmploymentBanner family={family}/>"));
+});
+
+test("Premium About uses established Royal Hive typography and plain history title",()=>{
+ const owner=source("src/app/(tabs)/profile.tsx"),visitor=source("src/app/jcard.tsx"),grid=source("src/components/ProfessionalHistoryGrid.tsx"),shared=source("src/components/ProfileSharedSections.tsx");
+ assert.ok(owner.includes('<Text accessibilityRole="header" style={s.h3}>Historial profesional</Text>'));
+ assert.ok(!owner.includes('<Text style={s.h2}>Historial profesional</Text>'));
+ assert.ok(visitor.includes('fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,color:colors.ink}}>Historial profesional'));
+ assert.ok(grid.includes("fontSize:JOBEEN_TYPE.body")&&grid.includes("fontSize:JOBEEN_TYPE.caption")&&grid.includes("fontSize:JOBEEN_TYPE.micro"));
+ assert.ok(!/fontSize:\s*\d/.test(grid));
+ const languages=shared.slice(shared.indexOf("export function ProfilePersonalLanguages"),shared.indexOf("/** Business fields"));
+ assert.ok(languages.includes("fontSize:JOBEEN_TYPE.sectionTitle")&&languages.includes("fontSize:JOBEEN_TYPE.caption"));
+ assert.ok(!/fontSize:\s*\d/.test(languages));
 });

@@ -122,3 +122,18 @@ Opción 3 refinada: una portada única pública y elegida expresamente por su ti
 ## Progreso profesional y superficies premium — aprobación 2026-11-27
 
 Mostrar avance real/declarado de forma clara, barras incompletas sin castigo, dorado de dominio declarado separado de verificación y certificados. No inducir a falsear habilidades; CTA de aprendizaje solo con función real, sin prometer formación inexistente. Las tarjetas temáticas de experiencia se asignan por familia profesional, mantienen texto legible y verificación real; nunca exigir imagen al usuario. Menú medio: una cápsula interior deslizante, contenedor flotante y cobertura opaca a todo ancho del acordeón. Validar ambos temas, 320–440 px, fuentes accesibles y privacidad CV.
+
+
+### Refuerzo del propietario: tipografía y alcance (2026-11-27)
+- En cada nueva pantalla o cambio aprobado, aplicar `src/theme/typography.ts`, pesos y estilos semánticos ya homologados. Los títulos de sección del perfil, incluido Historial profesional, usan sans serif de la interfaz y peso de sección existente (`s.h3`), no el estilo artístico serif/cursivo de los encabezados heredados. No cambiar el arte de la JCard ni modificar globalmente estilos o pantallas previamente aprobados. Cambiar únicamente el área de la tarea autorizada y protegerla con pruebas de regresión.
+
+
+## Catálogo único, marca y ejecución por bloques — aprobación del propietario 2026-11-27
+
+- Nombre comercial vigente: **Jobin**, con una I, sin doble E. Usar en nuevos textos, propuestas y documentación. No renombrar identificadores técnicos, repositorio, dominio, paquete, runtime, claves, funciones ni textos históricos por sustitución masiva; cualquier migración de marca visible existente se planifica y aprueba por separado.
+- Fuente de verdad de categorías y profesiones: catálogo existente de Supabase (`profession_categories`, `profession_catalog`, RPC `jobin_professional_catalog`). No inventar categorías ni clasificaciones paralelas. JCard Negocio selecciona categoría; historial selecciona profesión por código del mismo catálogo y deriva su categoría. Fondos asignados por código oficial, nunca por coincidencia parcial de palabras. Los registros antiguos sin código pueden usar una coincidencia exacta y única del catálogo; si no hay resolución segura, mostrar fondo neutro, no inventar categoría. No modificar permisos o datos históricos para resolver apariencia.
+- Trabajar en bloques pequeños y ordenados: comprobar base, dependencias y riesgo de romper enlaces antes de editar; reutilizar lo aprobado, probar y registrar resultados del bloque; avisar al propietario de incompatibilidades antes de cambiar alcance. No mezclar rediseños, migraciones ni despliegues no autorizados. Mantener informes breves y aprobaciones separadas.
+
+## Recursos visuales aprobados y eficiencia — 2026-11-27
+
+Reutilizar exactamente las imágenes aprobadas por el propietario. Antes de generar, sustituir o modificar cualquier imagen, explicar motivo, beneficio y pedir autorización expresa; no generar variantes por iniciativa propia. Priorizar recursos existentes y evitar consumo innecesario de IA. No confundir una referencia aprobada con autorización de reemplazarla. El nombre comercial actual es Jobin.
