@@ -30,8 +30,35 @@ test("the November APK runtime is limited to Android and the reviewed native sou
 
 test("no EAS OTA publisher automatically runs on push and every publisher checks exact owner approval", () => {
   const publishers = all.filter(name => /\b(?:eas|eas-cli@[^\s]+)\s+update\s+--branch\b/.test(workflow(name)));
-  assert.deepEqual(publishers.sort(), ["approved-google-login-ota.yml", "expo-development.yml"]);
+  const oneShot = "approved-android-ota-owner-label.yml";
+  assert.deepEqual(publishers.sort(), ["approved-android-ota-owner-label.yml", "approved-google-login-ota.yml", "expo-development.yml"]);
+  const release = workflow(oneShot);
+  assert.match(release, /^on:\s*\n\s+pull_request:\s*\n\s+types: \[labeled\]/m);
+  assert.doesNotMatch(release, /^  (?:push|schedule|workflow_dispatch|pull_request_target):/m);
+  for (const guard of [
+    "github.repository == 'thekyngmotorcycles/Jobin'",
+    "github.event.pull_request.head.repo.full_name == github.repository",
+    "github.event.pull_request.head.ref == 'release/approved-ota-4aa07442'",
+    "github.event.pull_request.base.ref == 'development'",
+    "github.event.pull_request.base.sha == '4aa07442073f914564be2a448d9c30989b8e3cbb'",
+    "github.event.label.name == 'approve-android-ota-4aa07442'",
+    "github.actor == 'thekyngmotorcycles'",
+    "github.triggering_actor == 'thekyngmotorcycles'",
+    "github.event.sender.login == 'thekyngmotorcycles'",
+    "github.run_attempt == '1'",
+    "ref: '4aa07442073f914564be2a448d9c30989b8e3cbb'",
+    "git diff --exit-code",
+    "build.runtime?.version!==runtime",
+    "4497923f-9f26-47ae-bfd9-92864b677028",
+    "OTA_PLATFORM: android",
+    "persist-credentials: false",
+    "contents: read",
+  ]) assert.ok(release.includes(guard), guard);
+  assert.ok(release.includes("test \"$(git rev-parse HEAD)\" = '4aa07442073f914564be2a448d9c30989b8e3cbb'"));
+  assert.ok(release.indexOf("Match the consolidated feed APK runtime") < release.indexOf("Publish only the explicitly approved OTA"));
+  assert.doesNotMatch(release, /\bgit\s+push\b|\beas\s+channel:(?:create|edit)\b|eas-cli@[^\s]+\s+build\b/);
   for (const name of publishers) {
+    if (name === oneShot) continue; // verified above; temporary release PR only, never merge
     const text = workflow(name);
     if (name === "approved-google-login-ota.yml") {
       assert.match(text, /^on:\s*\n\s+push:/m);
