@@ -45,9 +45,9 @@ test("Creator profile section strip has five text-only choices while global bott
  const chunk=sections.slice(sections.indexOf("const tabs=["),sections.indexOf("export type ProfileAboutSide"));
  const matches=chunk.match(/label:"(?:Todo|JCards|Videos|En vivo|Acerca de)"/g)??[];
  assert.equal(matches.length,5);
- assert.ok(chunk.includes("minWidth:compact?JOBEEN_CONTROL.touchTarget:54,flexGrow:1,flexShrink:0"));
+ assert.ok(chunk.includes("minWidth:JOBEEN_CONTROL.touchTarget,flexGrow:1,flexShrink:0"));
  assert.ok(chunk.includes("<ScrollView horizontal")&&!chunk.includes("numberOfLines"),"Large text remains reachable by horizontal scrolling");
- assert.ok(chunk.includes("onLayout={event=>{tabLayouts.current[tab.id]"),"Keep scrolling to measured selected tab");
+ assert.ok(chunk.includes("onLayout={event=>{const {x,width}=event.nativeEvent.layout;setLayouts"),"Keep scrolling to measured selected tab");
  assert.ok(!chunk.includes('name={tab.icon}'),"No decorative icons in five creator tabs");
  assert.ok(global.includes('JobeenMessageIcon'),"Global tab icon language stays unchanged");
  assert.ok(layout.includes("JobinTabIcon"),"Global bottom navigation is preserved");

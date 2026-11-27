@@ -1,0 +1,104 @@
+import {useId,useState} from "react";
+import {Image,StyleSheet,View,type ImageSourcePropType} from "react-native";
+import Svg,{Defs,LinearGradient,RadialGradient,Stop,Rect,Path,Circle,Ellipse,G,Line} from "react-native-svg";
+import {BANNER_PALETTES,EMPLOYMENT_ART,type BannerFamily} from "../theme/employment-art";
+// Metro bundles the same files for Android and web from these literal references.
+/* eslint-disable @typescript-eslint/no-require-imports */
+const BANNER_IMAGES:Record<BannerFamily,ImageSourcePropType>={
+ business:require("../../assets/images/employment/business.webp"),
+ agriculture:require("../../assets/images/employment/agriculture.webp"),
+ arts:require("../../assets/images/employment/arts.webp"),
+ automotive:require("../../assets/images/employment/automotive.webp"),
+ aviation:require("../../assets/images/employment/aviation.webp"),
+ beauty:require("../../assets/images/employment/beauty.webp"),
+ climate:require("../../assets/images/employment/climate.webp"),
+ commerce:require("../../assets/images/employment/commerce.webp"),
+ construction:require("../../assets/images/employment/construction.webp"),
+ sports:require("../../assets/images/employment/sports.webp"),
+ design:require("../../assets/images/employment/design.webp"),
+ education:require("../../assets/images/employment/education.webp"),
+ railway:require("../../assets/images/employment/railway.webp"),
+ hospitality:require("../../assets/images/employment/hospitality.webp"),
+ hotels:require("../../assets/images/employment/hotels.webp"),
+ industry:require("../../assets/images/employment/industry.webp"),
+ engineering:require("../../assets/images/employment/engineering.webp"),
+ logistics:require("../../assets/images/employment/logistics.webp"),
+ maintenance:require("../../assets/images/employment/maintenance.webp"),
+ heavy_equipment:require("../../assets/images/employment/heavy_equipment.webp"),
+ maritime:require("../../assets/images/employment/maritime.webp"),
+ fashion:require("../../assets/images/employment/fashion.webp"),
+ motorcycles:require("../../assets/images/employment/motorcycles.webp"),
+ refrigeration:require("../../assets/images/employment/refrigeration.webp"),
+ health:require("../../assets/images/employment/health.webp"),
+ animals:require("../../assets/images/employment/animals.webp"),
+ security:require("../../assets/images/employment/security.webp"),
+ legal:require("../../assets/images/employment/legal.webp"),
+ technology:require("../../assets/images/employment/technology.webp"),
+ transport:require("../../assets/images/employment/transport.webp"),
+ generic:require("../../assets/images/employment/generic.webp"),
+};
+/* eslint-enable @typescript-eslint/no-require-imports */
+
+const white=EMPLOYMENT_ART.tone01;
+/** Static thematic vector artwork: illustrated tools, dimensional shading and satin light, no animation or network request. */
+function Motif({family,metal}:{family:BannerFamily;metal:string}){
+ const common={fill:metal,stroke:white,strokeOpacity:.5,strokeWidth:1.2};
+ switch(family){
+ case "climate":return <G transform="translate(84 24)"><Path d="M5 23L43 5 112 17 75 35Z" {...common}/><Path d="M75 35L112 17 112 111 75 132Z" fill={EMPLOYMENT_ART.tone02} stroke={white} strokeOpacity={.4}/><Rect x="5" y="23" width="70" height="109" rx="5" {...common}/>{Array.from({length:12},(_,i)=><Line key={i} x1="11" x2="69" y1={32+i*7} y2={32+i*7} stroke={EMPLOYMENT_ART.tone03} strokeOpacity=".7" strokeWidth="2"/>)}<Ellipse cx="40" cy="76" rx="29" ry="33" fill={EMPLOYMENT_ART.tone04} stroke={white} strokeWidth="2"/>{[0,60,120,180,240,300].map(a=><Path key={a} d="M40 76Q16 50 31 49Q51 50 40 76" fill={EMPLOYMENT_ART.tone05} transform={`rotate(${a} 40 76)`}/>)}<Circle cx="40" cy="76" r="6" {...common}/><Path d="M89 47V99M100 42V93" stroke={EMPLOYMENT_ART.tone06} strokeWidth="4"/></G>;
+ case "maintenance":return <G transform="translate(90 26)"><Path d="M17 6C2 13 3 33 19 41L65 112Q74 124 84 116Q94 109 84 97L38 29Q44 10 31 3L27 21 16 21Z" {...common}/><Circle cx="76" cy="108" r="5" fill={EMPLOYMENT_ART.tone14}/><Path d="M66 8L80 13 84 24 75 33 60 28 23 117 10 110 49 24 49 14Z" {...common}/></G>;
+ case "automotive":return <G transform="translate(82 29)"><Circle cx="60" cy="65" r="52" {...common}/><Circle cx="60" cy="65" r="43" fill={EMPLOYMENT_ART.tone15}/><Circle cx="60" cy="65" r="20" {...common}/>{[0,60,120,180,240,300].map(a=><Path key={a} d="M60 24L72 46 63 59 49 43Z" fill={metal} transform={`rotate(${a} 60 65)`}/>)}<Circle cx="60" cy="65" r="8" fill={EMPLOYMENT_ART.tone16}/></G>;
+ case "construction":case "engineering":return <G transform="translate(83 20)"><Path d="M12 130V8H26V130M5 130H78M26 17H104L112 28H26M25 26L65 7 105 26M85 28V80" fill="none" stroke={white} strokeOpacity=".85" strokeWidth="5"/><Path d="M85 80v12q-12 0-12 8t13 8" fill="none" stroke={white} strokeWidth="3"/>{[26,51,76,101].map(y=><Path key={y} d={`M12 ${y}l14 18m-14 0 14 -18`} stroke={EMPLOYMENT_ART.tone17} strokeWidth="2"/>)}<Path d="M40 124V77L60 61V124M60 124V91L82 78V124" {...common}/></G>;
+ case "technology":return <G transform="translate(93 25)"><Rect x="8" y="23" width="78" height="78" rx="8" {...common}/><Rect x="22" y="37" width="50" height="50" rx="5" fill={EMPLOYMENT_ART.tone18} stroke={white}/>{Array.from({length:7},(_,i)=><G key={i} stroke={white} strokeWidth="2"><Path d={`M${17+i*10} 23V8m0 93v15M8 ${32+i*10}H-6m92 0h14`}/></G>)}<Path d="M35 51L28 62 35 73M59 51L66 62 59 73M49 50L44 75" stroke={EMPLOYMENT_ART.tone19} strokeWidth="3" fill="none"/></G>;
+ case "transport":case "logistics":return <G transform="translate(81 42)"><Path d="M4 16H68V91H4Z" {...common}/><Path d="M68 42H94L111 66V91H68Z" {...common}/><Path d="M77 49H90L103 66H77Z" fill={EMPLOYMENT_ART.tone20}/>{[25,87].map(x=><G key={x}><Circle cx={x} cy="94" r="13" fill={EMPLOYMENT_ART.tone21} stroke={white}/><Circle cx={x} cy="94" r="5" {...common}/></G>)}<Path d="M15 30H56M15 42H56M15 54H56" stroke={white} strokeOpacity=".4"/></G>;
+ case "health":return <G transform="translate(91 23)"><Rect x="3" y="0" width="86" height="124" rx="12" {...common}/><Rect x="10" y="13" width="72" height="72" rx="6" fill={EMPLOYMENT_ART.tone22}/><Path d="M16 54H28L35 35 45 69 52 48 62 54H76" stroke={EMPLOYMENT_ART.tone23} strokeWidth="3" fill="none"/><Path d="M35 99H55M45 89V109" stroke={white} strokeWidth="5"/></G>;
+ case "hospitality":return <G transform="translate(86 31)"><Ellipse cx="53" cy="93" rx="51" ry="12" {...common}/><Path d="M8 88Q11 31 53 30Q94 31 98 88Z" {...common}/><Circle cx="53" cy="24" r="7" {...common}/><Path d="M26 65Q34 44 47 42" stroke={white} strokeWidth="4" fill="none"/><Path d="M10 106H95" stroke={EMPLOYMENT_ART.tone24} strokeWidth="3"/></G>;
+ case "hotels":return <G transform="translate(80 44)"><Rect x="5" y="6" width="100" height="57" rx="9" {...common}/><Rect x="12" y="29" width="36" height="25" rx="7" fill={EMPLOYMENT_ART.tone25}/><Rect x="59" y="29" width="36" height="25" rx="7" fill={EMPLOYMENT_ART.tone25}/><Rect x="0" y="56" width="110" height="36" rx="6" {...common}/><Path d="M7 92V108M103 92V108" stroke={white} strokeWidth="6"/></G>;
+ case "education":return <G transform="translate(87 30)"><Path d="M5 27L49 11 96 27 50 45Z" {...common}/><Path d="M23 36V64Q50 89 77 64V36" {...common}/><Path d="M94 28V72" stroke={white} strokeWidth="3"/><Path d="M5 89Q32 75 50 97Q68 75 96 89V127Q68 114 50 134Q32 114 5 127Z" {...common}/><Path d="M50 97V134" stroke={white}/></G>;
+ case "arts":return <G transform="translate(89 24)"><Path d="M29 10H74V78Q65 117 29 111Q0 105 13 83Q23 66 47 77V30L29 34Z" {...common}/><Ellipse cx="28" cy="92" rx="13" ry="9" fill={EMPLOYMENT_ART.tone26}/><Path d="M80 17L95 9V82Q89 100 76 96" stroke={white} strokeWidth="4" fill="none"/></G>;
+ case "design":return <G transform="translate(86 27)"><Path d="M52 7Q100 4 103 48Q106 85 68 102Q52 106 50 90Q47 78 31 83Q0 83 5 52Q12 12 52 7Z" {...common}/>{[[30,31],[53,24],[77,34],[85,58]].map(([x,y],i)=><Circle key={i} cx={x} cy={y} r="8" fill={[EMPLOYMENT_ART.tone27,EMPLOYMENT_ART.tone28,EMPLOYMENT_ART.tone29,EMPLOYMENT_ART.tone30][i]}/>)}<Path d="M23 122L77 70 91 83 37 136Z" {...common}/></G>;
+ case "fashion":case "beauty":return <G transform="translate(85 25)"><Path d="M32 8L50 23 68 8 100 34 83 58 69 46V126H31V46L17 58 0 34Z" {...common}/><Path d="M32 8Q50 50 68 8M50 45V126" stroke={white} strokeOpacity=".7" fill="none"/><Path d="M9 102L20 87 26 101 20 116Z" fill={EMPLOYMENT_ART.tone31}/></G>;
+ case "sports":return <G transform="translate(84 39)"><Circle cx="55" cy="54" r="49" {...common}/><Path d="M55 25L76 41 68 65H42L34 41ZM55 25V5M76 41L99 34M68 65L83 92M42 65L27 92M34 41L10 34" stroke={EMPLOYMENT_ART.tone32} strokeWidth="4" fill="none"/></G>;
+ case "agriculture":return <G transform="translate(85 21)"><Path d="M52 133V45" stroke={white} strokeWidth="4"/>{[0,1,2].map(i=><G key={i}><Path d={`M52 ${60+i*22}Q8 ${14+i*22} 4 ${53+i*22}Q13 ${72+i*22} 52 ${60+i*22}Z`} {...common}/><Path d={`M52 ${72+i*17}Q90 ${20+i*17} 105 ${53+i*17}Q96 ${79+i*17} 52 ${72+i*17}Z`} {...common}/></G>)}</G>;
+ case "legal":return <G transform="translate(86 20)"><Path d="M52 12V122M20 125H84M5 28H99M52 12L5 28M52 12L99 28M5 28L-1 71H31L5 28M99 28L73 71H105Z" stroke={white} strokeWidth="3" fill="none"/><Path d="M-1 71Q15 96 31 71M73 71Q89 96 105 71" {...common}/><Circle cx="52" cy="9" r="6" {...common}/></G>;
+ case "security":return <G transform="translate(88 24)"><Path d="M52 5L97 23V65Q97 109 52 133Q7 109 7 65V23Z" {...common}/><Path d="M52 22L82 35V65Q82 96 52 115Q22 96 22 65V35Z" fill={EMPLOYMENT_ART.tone33} stroke={white}/><Rect x="39" y="57" width="26" height="28" rx="4" {...common}/><Path d="M44 57V48Q44 35 52 35Q60 35 60 48V57" stroke={white} strokeWidth="4" fill="none"/></G>;
+ case "industry":return <G transform="translate(86 28)"><Circle cx="55" cy="59" r="45" {...common}/>{Array.from({length:12},(_,i)=><Rect key={i} x="48" y="5" width="14" height="24" rx="2" {...common} transform={`rotate(${i*30} 55 59)`}/>)}<Circle cx="55" cy="59" r="30" fill={EMPLOYMENT_ART.tone34} stroke={white}/><Circle cx="55" cy="59" r="13" {...common}/></G>;
+ case "commerce":return <G transform="translate(86 33)"><Path d="M9 28H98L92 122H15Z" {...common}/><Path d="M31 39V24Q31 3 53 3Q75 3 75 24V39" stroke={white} strokeWidth="5" fill="none"/><Path d="M25 72H82M25 85H72" stroke={white} strokeOpacity=".6" strokeWidth="3"/></G>;
+ case "business":return <G transform="translate(83 41)"><Rect x="4" y="22" width="104" height="76" rx="8" {...common}/><Path d="M39 22V10H73V22" stroke={white} strokeWidth="5" fill="none"/><Path d="M4 52H108" stroke={white} strokeWidth="3"/><Rect x="48" y="45" width="16" height="17" rx="3" fill={EMPLOYMENT_ART.tone35}/></G>;
+ // These categories retain the neutral vector treatment if their local image fails to load.
+ case "aviation":case "railway":case "heavy_equipment":case "maritime":case "motorcycles":case "refrigeration":case "animals":case "generic":return null;
+ }
+}
+export function EmploymentBanner({family}:{family:BannerFamily}){
+ return <BannerArtwork key={family} family={family}/>;
+}
+
+function BannerArtwork({family}:{family:BannerFamily}){
+ const [failed,setFailed]=useState(false);
+ return <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={StyleSheet.absoluteFill}>
+  {failed?<EmploymentVector family={family}/>:<Image
+   source={BANNER_IMAGES[family]} resizeMode="cover" fadeDuration={0}
+   style={styles.image} onError={()=>setFailed(true)}/>}
+  <View style={styles.scrim}/>
+ </View>;
+}
+
+const styles=StyleSheet.create({
+ image:{...StyleSheet.absoluteFillObject,width:"100%",height:"100%"},
+ scrim:{...StyleSheet.absoluteFillObject,backgroundColor:EMPLOYMENT_ART.tone38,opacity:EMPLOYMENT_ART.scrimOpacity},
+});
+
+function EmploymentVector({family}:{family:BannerFamily}){
+ const id=useId().replace(/[^a-zA-Z0-9]/g,""),[base,accent]=BANNER_PALETTES[family];
+ const bg="bg"+id,metal="metal"+id,light="light"+id;
+ return <Svg width="100%" height="100%" viewBox="0 0 160 160" preserveAspectRatio="xMidYMid slice">
+   <Defs>
+    <LinearGradient id={bg} x1="0%" y1="100%" x2="100%" y2="0%"><Stop offset="0%" stopColor={base}/><Stop offset="100%" stopColor={accent}/></LinearGradient>
+    <LinearGradient id={metal} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={EMPLOYMENT_ART.tone36}/><Stop offset="36%" stopColor={accent}/><Stop offset="100%" stopColor={base}/></LinearGradient>
+    <RadialGradient id={light} cx="90%" cy="5%" rx="90%" ry="90%"><Stop offset="0%" stopColor={EMPLOYMENT_ART.tone37} stopOpacity=".5"/><Stop offset="100%" stopColor={EMPLOYMENT_ART.tone37} stopOpacity="0"/></RadialGradient>
+   </Defs>
+   <Rect width="160" height="160" fill={`url(#${bg})`}/><Rect width="160" height="160" fill={`url(#${light})`}/>
+   <Path d="M-20 145Q50 19 180 32L180 67Q80 49 -20 170Z" fill={EMPLOYMENT_ART.tone37} opacity=".1"/><Path d="M-18 140Q56 12 176 28" stroke={EMPLOYMENT_ART.tone37} strokeOpacity=".34" strokeWidth="1" fill="none"/>
+   <G opacity=".93"><Motif family={family} metal={`url(#${metal})`}/></G>
+   <Path d="M2 16Q2 2 16 2H144Q158 2 158 16" fill="none" stroke={EMPLOYMENT_ART.tone37} strokeOpacity=".23"/>
+ </Svg>;
+}

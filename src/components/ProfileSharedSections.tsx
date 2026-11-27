@@ -1,13 +1,16 @@
 import {Ionicons} from "@expo/vector-icons";
 import {Animated,Image,Linking,Pressable,ScrollView,Text,View,useWindowDimensions} from "react-native";
 import {useCallback,useEffect,useRef,useState} from "react";
+import {BottomSheet} from "./social-ui";
+import {languageProgress} from "../lib/profile-progress";
+import {profileProgressColors} from "../theme/profile-progress";
 import {useReducedMotion} from "react-native-reanimated";
 import type {ReactNode,ComponentProps,Ref} from "react";
 import {ProfileFollowCounts,type ProfileContactsHandle} from "./ProfileFollowCounts";
 import {MediaThumbnail} from "./MediaThumbnail";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
-import {JOBEEN_TYPE} from "../theme/typography";
+import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {jcardSurfaceMetrics} from "../theme/jcard";
 import type {BusinessCardData,CardData} from "../lib/jcard";
@@ -29,36 +32,56 @@ const tabs=[
 ] as const;
 const visitorTabs=tabs.filter(tab=>tab.id!=="jcards");
 
-/** Accessible horizontally scrollable tabs, pinned by the parent ScrollView. */
+/** Opaque full-width accordion sheet with one elevated, moving selection capsule. */
 export function ProfileSectionTabs({section,onSelect,pinned=false,showPrivateJCards=false}:{section:ProfileSection;onSelect:(section:ProfileSection)=>void;pinned?:boolean;showPrivateJCards?:boolean}){
  const {theme}=useTheme();const jt=jobeenTokens(theme);
- const {width}=useWindowDimensions();const reducedMotion=useReducedMotion();
+ const {width,fontScale}=useWindowDimensions();const reducedMotion=useReducedMotion();
  const [viewportWidth,setViewportWidth]=useState(width);
  const compact=viewportWidth<380;
  const scroller=useRef<ScrollView|null>(null);
- const tabLayouts=useRef<Partial<Record<ProfileSection,{x:number;width:number}>>>({});
- const scrollToSection=useCallback((id:ProfileSection)=>{
-  const layout=tabLayouts.current[id];
-  if(layout)scroller.current?.scrollTo({x:Math.max(0,layout.x+layout.width/2-viewportWidth/2),animated:!reducedMotion});
- },[viewportWidth,reducedMotion]);
- useEffect(()=>{scrollToSection(section);},[section,scrollToSection]);
- return <View style={{backgroundColor:jt.bg,borderBottomWidth:1,borderBottomColor:jt.line,
-  elevation:pinned?3:0,shadowColor:jt.ink,shadowOffset:{width:0,height:2},shadowOpacity:pinned?0.09:0,
-  shadowRadius:pinned?5:0,zIndex:5}}>
-  <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always"
-   onLayout={event=>setViewportWidth(event.nativeEvent.layout.width)} ref={scroller} contentContainerStyle={{flexGrow:1,alignItems:"center",paddingHorizontal:4,gap:compact?0:4}}>
-   {(showPrivateJCards?tabs:visitorTabs).map(tab=>{
-    const selected=section===tab.id;
-    return <Pressable key={tab.id} accessibilityRole="tab" accessibilityLabel={tab.label}
-      accessibilityState={{selected}} aria-selected={selected} onPress={()=>onSelect(tab.id)}
-      onLayout={event=>{tabLayouts.current[tab.id]=event.nativeEvent.layout;if(selected)scrollToSection(tab.id);}}
-      style={{minHeight:50,minWidth:compact?JOBEEN_CONTROL.touchTarget:54,flexGrow:1,flexShrink:0,
-       paddingHorizontal:compact?4:9,alignItems:"center",justifyContent:"center",
-       borderBottomWidth:3,borderBottomColor:selected?jt.yellow:jt.bg}}>
-     <Text style={{fontSize:compact?JOBEEN_TYPE.input-1:JOBEEN_TYPE.input,fontWeight:selected?"700":"600",color:jt.ink,textAlign:"center"}}>{tab.label}</Text>
-    </Pressable>;
-   })}
-  </ScrollView>
+ const [layouts,setLayouts]=useState<Partial<Record<ProfileSection,{x:number;width:number}>>>({});
+ const position=useRef(new Animated.Value(0)).current;
+ const pillWidth=useRef(new Animated.Value(0)).current;
+ const initialized=useRef(false);
+ const previousSection=useRef<ProfileSection|null>(null);
+ const layout=layouts[section];
+ const track=jt.surface;
+ const active=jt.ink,activeInk=jt.surface;
+ useEffect(()=>{
+  if(!layout)return;
+  const changed=previousSection.current!==section;
+  if(!initialized.current||reducedMotion||!changed){
+   position.setValue(layout.x);pillWidth.setValue(layout.width);initialized.current=true;
+  }else{
+   const transition=Animated.parallel([
+    Animated.timing(position,{toValue:layout.x,duration:230,useNativeDriver:false}),
+    Animated.timing(pillWidth,{toValue:layout.width,duration:230,useNativeDriver:false})
+   ]);
+   transition.start();
+   previousSection.current=section;
+   scroller.current?.scrollTo({x:Math.max(0,layout.x+layout.width/2-viewportWidth/2),animated:!reducedMotion});
+   return()=>transition.stop();
+  }
+  previousSection.current=section;
+  scroller.current?.scrollTo({x:Math.max(0,layout.x+layout.width/2-viewportWidth/2),animated:!reducedMotion});
+ },[layout,section,viewportWidth,reducedMotion,position,pillWidth]);
+ return <View style={{width:"100%",backgroundColor:jt.bg,zIndex:5,paddingHorizontal:compact?5:10,paddingTop:7,paddingBottom:8}}>
+  <View style={{backgroundColor:track,borderColor:jt.line,borderWidth:1,borderRadius:28,shadowColor:jt.floatingCardShadow,shadowOffset:{width:0,height:pinned?4:3},shadowOpacity:theme==="light"?0.16:0.4,shadowRadius:7,elevation:5}}>
+   <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always"
+    onLayout={event=>setViewportWidth(event.nativeEvent.layout.width)} ref={scroller} contentContainerStyle={{flexGrow:1,alignItems:"center",paddingHorizontal:3,paddingVertical:3}}>
+    {!!layout&&<Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{position:"absolute",top:3,bottom:3,left:0,width:pillWidth,borderRadius:24,backgroundColor:active,transform:[{translateX:position}]}}/>}
+    {(showPrivateJCards?tabs:visitorTabs).map(tab=>{
+     const selected=section===tab.id;
+     return <Pressable key={tab.id} accessibilityRole="tab" accessibilityLabel={tab.label}
+       accessibilityState={{selected}} aria-selected={selected} onPress={()=>onSelect(tab.id)}
+       onLayout={event=>{const {x,width}=event.nativeEvent.layout;setLayouts(current=>current[tab.id]?.x===x&&current[tab.id]?.width===width?current:{...current,[tab.id]:{x,width}});}}
+       style={{minHeight:JOBEEN_CONTROL.touchTarget,minWidth:JOBEEN_CONTROL.touchTarget,flexGrow:1,flexShrink:0,
+        paddingHorizontal:compact?3:7,alignItems:"center",justifyContent:"center",borderRadius:24,backgroundColor:!layout&&selected?active:undefined}}>
+      <Text style={{fontSize:compact&&fontScale<=1.15?JOBEEN_TYPE.input-2:JOBEEN_TYPE.input-1,fontWeight:"600",color:selected?activeInk:jt.ink,textAlign:"center"}}>{tab.label}</Text>
+     </Pressable>;
+    })}
+   </ScrollView>
+  </View>
  </View>;
 }
 
@@ -121,18 +144,43 @@ export function ProfilePersonalContact({target,scope}:{target:string;scope?:Mess
  </View>;
 }
 
-export function ProfilePersonalLanguages({languages}:{languages:CardData["languages"]}){
+export function ProfilePersonalLanguages({languages,own=false}:{languages:CardData["languages"];own?:boolean}){
  const {theme}=useTheme(),jt=jobeenTokens(theme);
+ const [learning,setLearning]=useState<string|null>(null);
+ const current=own?languages.find(l=>l.name===learning&&languageProgress(l.fluency)<100):undefined;
  if(!languages.length)return null;
- return <View style={{gap:8,padding:14,borderWidth:1,borderColor:jt.line,borderRadius:14,backgroundColor:jt.surface}}>
-  <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.input,fontWeight:"700",color:jt.ink}}>Idiomas</Text>
-  {languages.map(({name,fluency},index)=><View key={name+index} style={{flexDirection:"row",alignItems:"center",gap:8,minHeight:JOBEEN_CONTROL.touchTarget}}>
-   <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-    <LanguageRing name={name} value={fluency} color={jt.ink} track={jt.line} size={32}/>
-   </View>
-   <Text style={{flex:1,fontSize:JOBEEN_TYPE.input,color:jt.ink}}>{name}</Text>
-   <Text style={{flexShrink:1,textAlign:"right",color:jt.ink2}}>{languageLabel(fluency)} · {Math.round(fluency)}%</Text>
-  </View>)}
+ const {gold,blue}=profileProgressColors(theme);
+ return <View style={{gap:12,padding:14,borderWidth:1,borderColor:jt.line,borderRadius:14,backgroundColor:jt.surface}}>
+  <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,fontWeight:"700",color:jt.ink}}>Idiomas</Text>
+  {languages.map(({name,fluency},index)=>{
+   const percent=languageProgress(fluency),complete=percent===100,fill=complete?gold:blue;
+   return <View key={name+index} style={{flexDirection:"row",alignItems:"flex-start",gap:9,minHeight:JOBEEN_CONTROL.touchTarget}}>
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+     <LanguageRing name={name} value={percent} color={jt.ink} track={jt.line} size={32} accentColor={complete?gold:blue}/>
+    </View>
+    <View style={{flex:1,minWidth:0,gap:6}}>
+     <View style={{flexDirection:"row",alignItems:"center",gap:6}}>
+      <Text style={{flex:1,minWidth:0,fontSize:JOBEEN_TYPE.input,fontWeight:"600",color:jt.ink}}>{name}</Text>
+      {complete&&<Ionicons name="ribbon-outline" size={17} color={gold} accessibilityLabel="Nivel declarado completo"/>}
+      <Text style={{fontWeight:"700",color:jt.ink,fontSize:JOBEEN_TYPE.input}}>{percent}%</Text>
+     </View>
+     <View accessible accessibilityRole="progressbar" accessibilityLabel={name+", dominio declarado"} accessibilityValue={{min:0,max:100,now:percent}} style={{height:8,borderRadius:8,overflow:"hidden",backgroundColor:jt.line}}>
+      <View style={{height:"100%",width:`${percent}%`,backgroundColor:fill,borderRadius:8}}/>
+     </View>
+     <Text style={{fontSize:JOBEEN_TYPE.caption,color:jt.ink2}}>{languageLabel(percent)} · Nivel declarado</Text>
+     {own&&!complete&&<Pressable accessibilityRole="button" accessibilityLabel={"Seguir avanzando en "+name} onPress={()=>setLearning(name)} style={{minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"flex-end",gap:4}}>
+      <Text style={{fontSize:JOBEEN_TYPE.secondary,fontWeight:"600",color:blue}}>Seguir avanzando</Text><Ionicons name="arrow-forward" size={16} color={blue}/>
+     </Pressable>}
+    </View>
+   </View>;
+  })}
+  <BottomSheet visible={!!current} title={current?"Seguir avanzando · "+current.name:"Seguir avanzando"} onClose={()=>setLearning(null)}>
+   {!!current&&<View style={{gap:12}}>
+    <Text style={{color:jt.ink,fontWeight:"600"}}>Tu nivel declarado: {languageProgress(current.fluency)}%</Text>
+    <Text style={{color:jt.ink2}}>Practica comprensión, conversación, lectura y vocabulario de tu profesión. Actualiza tu nivel en Mi perfil cuando hayas mejorado; completar la barra no acredita un certificado.</Text>
+    <Text style={{color:jt.ink2}}>Los cursos de idiomas de JAcademy todavía no están disponibles.</Text>
+   </View>}
+  </BottomSheet>
  </View>;
 }
 

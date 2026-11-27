@@ -9,6 +9,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
 import {Ionicons} from "@expo/vector-icons";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
+import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {NAVIGATION_ROW_HEIGHT} from "../theme/navigation";
 import {jobeenTokens} from "../theme/jobeen";
 import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,ProfilePersonalContact,ProfilePersonalLanguages,type ProfileSection} from "../components/ProfileSharedSections";
@@ -24,7 +25,9 @@ import { JobinCard } from "../components/JobinCard";
 import {resolveProfileCardSide} from "../lib/jcard-profile-side";
 import {useUi} from "../components/ui";
 import {JCardLoadState} from "../components/JCardConnectionState";
-import { loadPublicCard } from "../lib/professional-api";
+import { loadPublicCard,loadCatalog } from "../lib/professional-api";
+import {useProfessionalData} from "../state/useProfessionalData";
+import {ProfessionalHistoryGrid} from "../components/ProfessionalHistoryGrid";
 import {readPublicBusinessCard} from "../lib/jcard-cloud";
 import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import {isSavedJCard,removeSavedJCard,saveVisibleJCard,type SavedJCardSide} from "../lib/saved-jcards";
@@ -161,6 +164,7 @@ export default function PublicJCard(){
  const cvScope=useRef<MessageScope|null>(null),cvRevision=useRef(0),cvTarget=useRef("");
  const [cvStatus,setCvStatus]=useState("");
  const [cvRows,setCvRows]=useState<{company:string;role:string;from_year:number;to_year:number|null}[]>([]);
+ const historyCatalog=useProfessionalData(loadCatalog,false,false,cvRows.length>0);
  const [cvMessage,setCvMessage]=useState("");
  const [cvOpen,setCvOpen]=useState(false);
  useFocusEffect(useCallback(()=>{
@@ -291,7 +295,7 @@ export default function PublicJCard(){
       <ProfilePersonalContact target={resource.data.id} scope={publicScope}/>
       <ProfilePersonalLanguages languages={resource.data.languages}/>
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,minHeight:48,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
-       <Text style={{fontWeight:"700",color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text>
+       <Text style={{fontWeight:"700",fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text>
       </Pressable>
       {cvOpen&&cvTarget.current===user&&<View style={{gap:8,padding:12}}>
        {user!==viewer&&cvStatus!=="approved"?<>
@@ -301,7 +305,7 @@ export default function PublicJCard(){
          <Text style={{fontWeight:"700",color:colors.ink}}>{cvStatus==="pending"?"Solicitud pendiente":"Solicitar CV"}</Text>
         </Pressable>
        </>:<>
-        {cvRows.length?cvRows.map((row,i)=><Text key={i} style={{color:colors.ink}}>{row.role} · {row.company} ({row.from_year}–{row.to_year??"Actualidad"})</Text>):
+        {cvRows.length?<ProfessionalHistoryGrid key={user+":"+publicScope?.session} catalog={historyCatalog.data?.professions??[]} rows={cvRows.map((row,i)=>({id:String(i),company:row.company,role:row.role,from:row.from_year,to:row.to_year}))}/> :
          <Text style={{color:colors.muted}}>No hay experiencias registradas o disponibles.</Text>}
        </>}
        {!!cvMessage&&<Text style={{color:colors.muted}}>{cvMessage}</Text>}
