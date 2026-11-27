@@ -344,3 +344,6 @@ select pg_temp.cv_assert(not exists(select 1 from public.read_approved_employmen
 select pg_temp.cv_assert(not exists(select 1 from public.read_approved_employment('a1111111-1111-4111-8111-111111111111') where company='Shared fixture'),'unapproved requester cannot see restored records');
 reset role;
 rollback;
+
+-- Dedicated scalar projection checks run on the same disposable CI database.
+\ir public-primary-experience.test.sql

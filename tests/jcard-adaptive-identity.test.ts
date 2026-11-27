@@ -63,3 +63,22 @@ test("Pills use intrinsic label width without flex redistribution; business colu
  assert.ok(card.includes('contentContainerStyle={{alignItems:"stretch",gap:2}}'));
  assert.ok(header.includes('const align="left"')&&header.includes('const justify="flex-start"'));
 });
+
+ test("All profile widths preserve a bottom margin after the minimum profession, connections and availability rows",async()=>{
+  const {jcardProfileBodyHeight}=await import("../src/theme/jcard.ts");
+  for(const screen of [320,360,390,402,440])for(const scale of [1,1.3,2]){
+   const width=screen-32,identity=jcardProfileIdentitySpace(jcardProfilePortraitMetrics(width),scale).minHeight;
+   assert.ok(jcardProfileBodyHeight(width,scale)>=identity+3*48+16);
+  }
+ });
+
+test("No negative personal experience pill, both profile faces use the same centered row",async()=>{
+ const {primaryExperiencePillLabel}=await import("../src/lib/employment.ts");
+ for(const months of [undefined,null,0,-1,NaN,Infinity,0.5])assert.equal(primaryExperiencePillLabel(months),null);
+ for(const [months,label] of [[1,"1 Mes de experiencia"],[8,"8 Meses de experiencia"],[12,"1 Año de experiencia"],[61,"5+ Años de experiencia"]] as const)assert.equal(primaryExperiencePillLabel(months),label);
+ const card=source("src/components/JobinCard.tsx");
+ assert.equal((card.match(/\{experience!==null&&<Pressable/g)??[]).length,2);
+ assert.ok(card.includes('flexWrap:"wrap",alignItems:"center",justifyContent:"center",gap:8'));
+ assert.ok(card.includes("visible={experienceOpen&&experience!==null}"));
+ assert.ok(!card.includes('"Sin experiencia"'));
+});
