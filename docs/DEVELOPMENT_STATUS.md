@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-PERSONAL-CONTACT-ABOUT — bloque combinado autorizado (2026-11-27)
+
+- Continuación PR #149 (184e3d6, CI 46033582254 success previo). Añadir Información personal antes de Idiomas solo en Acerca de > Personal, propio/visitante; 0–2 correos y 0–2 teléfonos manuales consentidos; enlaces y ocultación de sección vacía, sin alterar caras. Textos Mostrar correo/teléfono en mi perfil. Reutilizar proyección existente y scope autenticado, limpiar al salir y no leer datos de login. RPC alojada filtra preferencias pero conserva permiso anon y no comprueba bloqueo/visibilidad; no se modifica alojado sin autorización. Nuevo CI pendiente; una sola OTA tras aprobación, sin APK.
+
 ## JCARD-ABOUT-SIDE-SYNC — corrección autorizada (2026-11-27)
 
 - Base f34963f8 (#147), CI 45929026862 y OTA 46031287835 success. Selector Personal/Negocio y cara JCard comparten selección en propio/visitante, incluido giro por gesto, enlace directo y acciones de la cara; preservar privacidad y disponibilidad, animación existente y acordeón. Pruebas de regresión nuevas; CI y validación física pendientes. Sin APK, OTA nueva, cambios de backend o dependencias; merge/OTA requieren autorización separada.

@@ -90,7 +90,7 @@ function mount(config:{
    const header=find(screen,"ProfileIdentityHeader");
    return {card:header?.props.card as Element|undefined,actions:header?.props.actions as Element|undefined,
     error:find(screen,"JCardLoadState")?.props.error,posts:find(screen,"ProfilePublicPosts")?.props.userId,
-    selector:find(screen,"ProfileAboutSelector"),businessAbout:find(screen,"ProfileBusinessAbout"),personalAbout:find(screen,"ProfilePersonalLanguages"),
+    selector:find(screen,"ProfileAboutSelector"),businessAbout:find(screen,"ProfileBusinessAbout"),personalAbout:find(screen,"ProfilePersonalLanguages"),personalContact:find(screen,"ProfilePersonalContact"),
     businessReads,cvReads};
   },
   openAbout:()=>{const tabs=find(render(),"ProfileSectionTabs");assert.ok(tabs);(tabs.props.onSelect as (side:string)=>void)("cv");},
@@ -176,6 +176,7 @@ test("Visitor About and actual JCard callback synchronize in both directions wit
  assert.equal(view.card?.props.selectedSide,"personal");
  assert.equal(view.selector?.props.side,"personal");
  assert.ok(view.personalAbout);
+ assert.equal(view.personalContact?.props.target,author);
  assert.equal(view.businessAbout,undefined);
  (view.selector?.props.onSelect as (side:string)=>void)("business");
  view=page.read();
@@ -183,6 +184,7 @@ test("Visitor About and actual JCard callback synchronize in both directions wit
  assert.equal(view.selector?.props.side,"business");
  assert.ok(view.businessAbout);
  assert.equal(view.personalAbout,undefined);
+ assert.equal(view.personalContact,undefined);
  (view.card?.props.onActiveSideChange as (side:string)=>void)("personal");
  view=page.read();
  assert.equal(view.selector?.props.side,"personal");

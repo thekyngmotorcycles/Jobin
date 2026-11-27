@@ -11,7 +11,7 @@ import {Ionicons} from "@expo/vector-icons";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {NAVIGATION_ROW_HEIGHT} from "../theme/navigation";
 import {jobeenTokens} from "../theme/jobeen";
-import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,ProfilePersonalLanguages,type ProfileSection} from "../components/ProfileSharedSections";
+import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,ProfilePersonalContact,ProfilePersonalLanguages,type ProfileSection} from "../components/ProfileSharedSections";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfilePublicPosts} from "../components/ProfileOwnedPosts";
 import {router,Stack,useFocusEffect} from "expo-router";
@@ -288,6 +288,7 @@ export default function PublicJCard(){
     {section==="cv"&&<ProfileAboutSelector side={activeCardSide} onSelect={setActiveCardSide} personalAvailable={cardVisibility.personal_enabled} businessAvailable={!!publicBusiness}/>}
     {section==="cv"&&activeCardSide==="business"&&cardVisibility.business_enabled&&publicBusiness&&<ProfileBusinessAbout business={publicBusiness} target={resource.data.id} scope={publicScope}/>}
     {section==="cv"&&activeCardSide==="personal"&&cardVisibility.personal_enabled&&<View style={{marginVertical:4,gap:10}}>
+      <ProfilePersonalContact target={resource.data.id} scope={publicScope}/>
       <ProfilePersonalLanguages languages={resource.data.languages}/>
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,minHeight:48,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
        <Text style={{fontWeight:"700",color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text>

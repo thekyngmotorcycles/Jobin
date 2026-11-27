@@ -113,3 +113,7 @@ Opción 3 refinada: una portada única pública y elegida expresamente por su ti
 
 ### Sincronización JCard / Acerca de (aprobada 2026-11-27)
 - Personal/Negocio en Acerca de y la cara de JCard usan una única selección bidireccional en ambos perfiles: pulsar el selector gira la tarjeta; girarla con toque o gesto actualiza selector e información. Mantener animación 3D, composición, privacidad, caras públicas disponibles, enlaces y acordeón; no añadir controles ni cambiar dimensiones.
+
+
+### Contacto personal en Acerca de (aprobado 2026-11-27)
+- Mostrar Información personal antes de Idiomas, solo en Acerca de > Personal propio/visitante, con los correos y teléfonos manuales autorizados y no vacíos (hasta dos de cada tipo), enlaces de correo y teléfono. Ocultar sección vacía. Los textos de privacidad serán «Mostrar correo en mi perfil» y «Mostrar teléfono en mi perfil». No ampliar la JCard, tocar datos de acceso ni cambiar apariencia o reglas de Negocio.
