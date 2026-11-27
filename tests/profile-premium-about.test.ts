@@ -33,3 +33,15 @@ test("History uses two columns, actual verification, scoped owner edit and autho
  assert.ok(visitor.includes("cvRows.map((row,i)=>")&&!visitor.includes("onAdd={"));
  assert.ok(grid.includes("<EmploymentBanner family={family}/>"));
 });
+
+test("Premium About uses established Royal Hive typography and plain history title",()=>{
+ const owner=source("src/app/(tabs)/profile.tsx"),visitor=source("src/app/jcard.tsx"),grid=source("src/components/ProfessionalHistoryGrid.tsx"),shared=source("src/components/ProfileSharedSections.tsx");
+ assert.ok(owner.includes('<Text accessibilityRole="header" style={s.h3}>Historial profesional</Text>'));
+ assert.ok(!owner.includes('<Text style={s.h2}>Historial profesional</Text>'));
+ assert.ok(visitor.includes('fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,color:colors.ink}}>Historial profesional'));
+ assert.ok(grid.includes("fontSize:JOBEEN_TYPE.body")&&grid.includes("fontSize:JOBEEN_TYPE.caption")&&grid.includes("fontSize:JOBEEN_TYPE.micro"));
+ assert.ok(!/fontSize:\s*\d/.test(grid));
+ const languages=shared.slice(shared.indexOf("export function ProfilePersonalLanguages"),shared.indexOf("/** Business fields"));
+ assert.ok(languages.includes("fontSize:JOBEEN_TYPE.sectionTitle")&&languages.includes("fontSize:JOBEEN_TYPE.caption"));
+ assert.ok(!/fontSize:\s*\d/.test(languages));
+});

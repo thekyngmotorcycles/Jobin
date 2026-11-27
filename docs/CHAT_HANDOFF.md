@@ -1,3 +1,7 @@
+# Jobeen — Continuidad del perfil premium
+
+- CI 46054697615 y visor 46054737015 completados con éxito; Vercel dpl_FqMAJDiGDpcLMUmYcJo3ftfJCv3a READY (a4a44b1). Propietario ordena título Historial profesional sin serif/cursiva; reutilizar s.h3 y escala semántica Royal Hive exclusivamente en el bloque nuevo. No modificar estilos globales ni partes aprobadas. 16 fondos WebP generados fuera del repo, 12 pendientes y transferencia binaria no confirmada. Revalidar antes de merge/OTA.
+
 # Jobeen — Perfil premium, progreso y menú medio
 
 ## PROFILE-PREMIUM-ABOUT — bloque visual aprobado 2026-11-27

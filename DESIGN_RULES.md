@@ -122,3 +122,7 @@ Opción 3 refinada: una portada única pública y elegida expresamente por su ti
 ## Progreso profesional y superficies premium — aprobación 2026-11-27
 
 Mostrar avance real/declarado de forma clara, barras incompletas sin castigo, dorado de dominio declarado separado de verificación y certificados. No inducir a falsear habilidades; CTA de aprendizaje solo con función real, sin prometer formación inexistente. Las tarjetas temáticas de experiencia se asignan por familia profesional, mantienen texto legible y verificación real; nunca exigir imagen al usuario. Menú medio: una cápsula interior deslizante, contenedor flotante y cobertura opaca a todo ancho del acordeón. Validar ambos temas, 320–440 px, fuentes accesibles y privacidad CV.
+
+
+### Refuerzo del propietario: tipografía y alcance (2026-11-27)
+- En cada nueva pantalla o cambio aprobado, aplicar `src/theme/typography.ts`, pesos y estilos semánticos ya homologados. Los títulos de sección del perfil, incluido Historial profesional, usan sans serif de la interfaz y peso de sección existente (`s.h3`), no el estilo artístico serif/cursivo de los encabezados heredados. No cambiar el arte de la JCard ni modificar globalmente estilos o pantallas previamente aprobados. Cambiar únicamente el área de la tarea autorizada y protegerla con pruebas de regresión.

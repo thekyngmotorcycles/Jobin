@@ -9,6 +9,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
 import {Ionicons} from "@expo/vector-icons";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
+import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {NAVIGATION_ROW_HEIGHT} from "../theme/navigation";
 import {jobeenTokens} from "../theme/jobeen";
 import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,ProfilePersonalContact,ProfilePersonalLanguages,type ProfileSection} from "../components/ProfileSharedSections";
@@ -294,7 +295,7 @@ export default function PublicJCard(){
       <ProfilePersonalContact target={resource.data.id} scope={publicScope}/>
       <ProfilePersonalLanguages languages={resource.data.languages}/>
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,minHeight:48,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
-       <Text style={{fontWeight:"700",color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text>
+       <Text style={{fontWeight:"700",fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text>
       </Pressable>
       {cvOpen&&cvTarget.current===user&&<View style={{gap:8,padding:12}}>
        {user!==viewer&&cvStatus!=="approved"?<>

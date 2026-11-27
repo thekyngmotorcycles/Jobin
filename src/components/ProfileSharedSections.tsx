@@ -10,7 +10,7 @@ import {ProfileFollowCounts,type ProfileContactsHandle} from "./ProfileFollowCou
 import {MediaThumbnail} from "./MediaThumbnail";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
-import {JOBEEN_TYPE} from "../theme/typography";
+import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {jcardSurfaceMetrics} from "../theme/jcard";
 import type {BusinessCardData,CardData} from "../lib/jcard";
@@ -151,7 +151,7 @@ export function ProfilePersonalLanguages({languages,own=false}:{languages:CardDa
  if(!languages.length)return null;
  const {gold,blue}=profileProgressColors(theme);
  return <View style={{gap:12,padding:14,borderWidth:1,borderColor:jt.line,borderRadius:14,backgroundColor:jt.surface}}>
-  <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.input,fontWeight:"700",color:jt.ink}}>Idiomas</Text>
+  <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,fontWeight:"700",color:jt.ink}}>Idiomas</Text>
   {languages.map(({name,fluency},index)=>{
    const percent=languageProgress(fluency),complete=percent===100,fill=complete?gold:blue;
    return <View key={name+index} style={{flexDirection:"row",alignItems:"flex-start",gap:9,minHeight:JOBEEN_CONTROL.touchTarget}}>
@@ -167,9 +167,9 @@ export function ProfilePersonalLanguages({languages,own=false}:{languages:CardDa
      <View accessible accessibilityRole="progressbar" accessibilityLabel={name+", dominio declarado"} accessibilityValue={{min:0,max:100,now:percent}} style={{height:8,borderRadius:8,overflow:"hidden",backgroundColor:jt.line}}>
       <View style={{height:"100%",width:`${percent}%`,backgroundColor:fill,borderRadius:8}}/>
      </View>
-     <Text style={{fontSize:11,color:jt.ink2}}>{languageLabel(percent)} · Nivel declarado</Text>
+     <Text style={{fontSize:JOBEEN_TYPE.caption,color:jt.ink2}}>{languageLabel(percent)} · Nivel declarado</Text>
      {own&&!complete&&<Pressable accessibilityRole="button" accessibilityLabel={"Seguir avanzando en "+name} onPress={()=>setLearning(name)} style={{minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"flex-end",gap:4}}>
-      <Text style={{fontSize:12,fontWeight:"600",color:blue}}>Seguir avanzando</Text><Ionicons name="arrow-forward" size={16} color={blue}/>
+      <Text style={{fontSize:JOBEEN_TYPE.secondary,fontWeight:"600",color:blue}}>Seguir avanzando</Text><Ionicons name="arrow-forward" size={16} color={blue}/>
      </Pressable>}
     </View>
    </View>;
