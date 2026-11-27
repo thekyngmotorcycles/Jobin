@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## CONSOLIDACIÓN-PARIDAD — aprobada 2026-11-27
+
+- Reutilización exacta de los componentes compartidos y pruebas del visor validado `101a36790eb4dfb713126fcd8d75d79a2b968427` (CI 46046629654 success). PR #151 integra navegación/login web y JCard/experiencia/geometría; no incluye HTML/CSS/JS del visor ni su puente de retorno exclusivo. PR #149 ya integrado. RPC de experiencia pública instalada y comprobada; no repetir migración. PR #150 es publicador temporal de e60e313f con comprobación workflow fallida, no fusionar ni publicar esa versión antigua; conservar una futura entrega conjunta con SHA exacto aprobado. Sin nuevo cambio de apariencia, APK, OTA, main ni datos alojados. Propietario confirma equivalencia visual observada y solicita terminar perfil antes de STREAM-UI. Integración pendiente de CI del conjunto; mantener visor actualizado desde development conservando solo overlay privado y verificar igualdad de archivos comunes.
+
 ## WEB-VIEWER-SCROLL / JCARD-EXPERIENCE-OPTIONAL — bloque aprobado (2026-11-27)
 
 - Flechas exteriores fijas sin superponer iframe, control de desplazamiento y accesibilidad. Pastilla de experiencia solo si meses enteros positivos; disponibilidad centrada en ausencia de experiencia. Supabase agregado público instalado tras CI 46045108013, comprobación de permisos aprobada. Rama privada PR #152; sin APK, OTA ni merge.

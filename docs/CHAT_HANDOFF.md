@@ -1,3 +1,9 @@
+# Jobeen — Consolidación y prioridad de perfil (2026-11-27)
+
+## CONSOLIDACIÓN-PARIDAD — aprobada 2026-11-27
+
+- Reutilización exacta de los componentes compartidos y pruebas del visor validado `101a36790eb4dfb713126fcd8d75d79a2b968427` (CI 46046629654 success). PR #151 integra navegación/login web y JCard/experiencia/geometría; no incluye HTML/CSS/JS del visor ni su puente de retorno exclusivo. PR #149 ya integrado. RPC de experiencia pública instalada y comprobada; no repetir migración. PR #150 es publicador temporal de e60e313f con comprobación workflow fallida, no fusionar ni publicar esa versión antigua; conservar una futura entrega conjunta con SHA exacto aprobado. Sin nuevo cambio de apariencia, APK, OTA, main ni datos alojados. Propietario confirma equivalencia visual observada y solicita terminar perfil antes de STREAM-UI. Integración pendiente de CI del conjunto; mantener visor actualizado desde development conservando solo overlay privado y verificar igualdad de archivos comunes.
+
 # Jobeen — Visor: desplazamiento exterior y experiencia opcional (2026-11-27)
 
 Bloque aprobado: dos botones de 48 px para desplazar exclusivamente el contenedor exterior del visor, barra inferior con espacio propio (no cubre iframe), respeto a movimiento reducido, sin reducir ancho del dispositivo. Ocultar pastilla de experiencia personal cuando meses son cero, desconocidos o inválidos en perfil propio, visitante y ambas presentaciones compartidas; estado Disponible/Trabajando queda centrado. No cambiar datos históricos. CI anterior 46045108013 success, Supabase RPC agregado instalado y verificado (anon denegado). PR #152, rama privada; sin merge/OTA/APK. Pruebas de regresión incluidas, pendiente validar CI/Vercel y captura real.
