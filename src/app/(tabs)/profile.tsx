@@ -459,7 +459,7 @@ export default function Profile() {
         {mode === "cv" && aboutSide==="personal" && (
           <View style={{ gap: 14 }}>
             {ownerId&&workspace.scope?.owner===ownerId&&<ProfilePersonalContact target={ownerId} scope={workspace.scope}/>}
-            {workspace.data?.card&&<ProfilePersonalLanguages key={ownerId+":"+workspaceSession} languages={workspace.data.card.languages} own/>}
+            {workspace.data?.card&&<ProfilePersonalLanguages languages={workspace.data.card.languages} key={ownerId+":"+workspaceSession} own/>}
             <Text style={s.h2}>Historial profesional</Text>
             {experienceKnown&&<Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}.</Text>}
             {ownerId&&historyLoading&&!historyError&&<PageState kind="loading" message="Cargando historial profesional…"/>}

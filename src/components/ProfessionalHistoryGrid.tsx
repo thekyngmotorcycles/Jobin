@@ -3,7 +3,8 @@ import {Ionicons} from "@expo/vector-icons";
 import {Pressable,Text,View,useWindowDimensions} from "react-native";
 import {BottomSheet} from "./social-ui";
 import {EmploymentBanner} from "./EmploymentBanner";
-import {employmentBannerFamily,BANNER_PALETTES} from "../lib/employment-banner";
+import {employmentBannerFamily} from "../lib/employment-banner";
+import {BANNER_PALETTES,EMPLOYMENT_ART} from "../theme/employment-art";
 import type {Profession} from "../lib/professional-types";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
@@ -23,15 +24,15 @@ export function ProfessionalHistoryGrid({rows,catalog=[],onAdd}:{rows:HistoryTil
     const family=employmentBannerFamily(row.role,row.professions,catalog);
     return <View key={row.id} style={{width:"50%",padding:4}}>
      <Pressable accessibilityRole="button" accessibilityLabel={row.company+", "+row.role+", "+period(row)+", "+verification(row)+". Ver detalles"} onPress={()=>setSelected(row.id)}
-      style={{aspectRatio:fontScale<=1.15?1:undefined,minHeight:fontScale<=1.15?128:180,borderRadius:16,overflow:"hidden",backgroundColor:BANNER_PALETTES[family][0],padding:10,justifyContent:"space-between",gap:3,borderWidth:1,borderColor:theme==="light"?"#DCE3EA":"#41546C"}}>
+      style={{aspectRatio:fontScale<=1.15?1:undefined,minHeight:fontScale<=1.15?128:180,borderRadius:16,overflow:"hidden",backgroundColor:BANNER_PALETTES[family][0],padding:10,justifyContent:"space-between",gap:3,borderWidth:1,borderColor:theme==="light"?EMPLOYMENT_ART.tone39:EMPLOYMENT_ART.tone40}}>
       <EmploymentBanner family={family}/>
-      <Text numberOfLines={2} style={{fontSize:14,fontWeight:"700",color:"#FFFFFF"}}>{row.company}</Text>
-      <Text numberOfLines={2} style={{fontSize:11,fontWeight:"500",color:"#F0F5FC"}}>{row.role}</Text>
+      <Text numberOfLines={2} style={{fontSize:14,fontWeight:"700",color:EMPLOYMENT_ART.tone37}}>{row.company}</Text>
+      <Text numberOfLines={2} style={{fontSize:11,fontWeight:"500",color:EMPLOYMENT_ART.tone41}}>{row.role}</Text>
       <View style={{gap:3}}>
-       <Text numberOfLines={1} style={{fontSize:11,color:"#FFFFFF"}}>{period(row)}</Text>
+       <Text numberOfLines={1} style={{fontSize:11,color:EMPLOYMENT_ART.tone37}}>{period(row)}</Text>
        <View style={{flexDirection:"row",alignItems:"center",gap:4}}>
-        <Ionicons name={row.verifiedBy?"checkmark-circle-outline":"ellipse-outline"} size={14} color={row.verifiedBy?"#FFE08A":"#EDF3FA"}/>
-        <Text numberOfLines={2} style={{flex:1,minWidth:0,fontSize:10,color:row.verifiedBy?"#FFE08A":"#EDF3FA",fontWeight:"600"}}>{verification(row)}</Text>
+        <Ionicons name={row.verifiedBy?"checkmark-circle-outline":"ellipse-outline"} size={14} color={row.verifiedBy?EMPLOYMENT_ART.tone42:EMPLOYMENT_ART.tone43}/>
+        <Text numberOfLines={2} style={{flex:1,minWidth:0,fontSize:10,color:row.verifiedBy?EMPLOYMENT_ART.tone42:EMPLOYMENT_ART.tone43,fontWeight:"600"}}>{verification(row)}</Text>
        </View>
       </View>
      </Pressable>

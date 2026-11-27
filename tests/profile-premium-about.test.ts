@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {readFileSync} from "node:fs";
 import {languageProgress} from "../src/lib/profile-progress.ts";
-import {employmentBannerFamily,BANNER_PALETTES} from "../src/lib/employment-banner.ts";
+import {employmentBannerFamily} from "../src/lib/employment-banner.ts";
+import {BANNER_PALETTES} from "../src/theme/employment-art.ts";
 const source=(p:string)=>readFileSync(p,"utf8");
 test("Language completion is bounded, does not round an incomplete level to 100",()=>{
  for(const [value,expected] of [[65,65],[99.9,99],[100,100],[101,100],[-5,0],[NaN,0]])assert.equal(languageProgress(value),expected);

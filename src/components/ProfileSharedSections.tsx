@@ -3,6 +3,7 @@ import {Animated,Image,Linking,Pressable,ScrollView,Text,View,useWindowDimension
 import {useCallback,useEffect,useRef,useState} from "react";
 import {BottomSheet} from "./social-ui";
 import {languageProgress} from "../lib/profile-progress";
+import {profileProgressColors} from "../theme/profile-progress";
 import {useReducedMotion} from "react-native-reanimated";
 import type {ReactNode,ComponentProps,Ref} from "react";
 import {ProfileFollowCounts,type ProfileContactsHandle} from "./ProfileFollowCounts";
@@ -44,8 +45,8 @@ export function ProfileSectionTabs({section,onSelect,pinned=false,showPrivateJCa
  const initialized=useRef(false);
  const previousSection=useRef<ProfileSection|null>(null);
  const layout=layouts[section];
- const track=theme==="light"?jt.surface:jt.surface;
- const active=theme==="light"?jt.ink:"#F4F6FA",activeInk=theme==="light"?"#FFFFFF":"#0D1B2A";
+ const track=jt.surface;
+ const active=jt.ink,activeInk=jt.surface;
  useEffect(()=>{
   if(!layout)return;
   const changed=previousSection.current!==section;
@@ -65,7 +66,7 @@ export function ProfileSectionTabs({section,onSelect,pinned=false,showPrivateJCa
   scroller.current?.scrollTo({x:Math.max(0,layout.x+layout.width/2-viewportWidth/2),animated:!reducedMotion});
  },[layout,section,viewportWidth,reducedMotion,position,pillWidth]);
  return <View style={{width:"100%",backgroundColor:jt.bg,zIndex:5,paddingHorizontal:compact?5:10,paddingTop:7,paddingBottom:8}}>
-  <View style={{backgroundColor:track,borderColor:jt.line,borderWidth:1,borderRadius:28,shadowColor:"#000000",shadowOffset:{width:0,height:pinned?4:3},shadowOpacity:theme==="light"?0.16:0.4,shadowRadius:7,elevation:5}}>
+  <View style={{backgroundColor:track,borderColor:jt.line,borderWidth:1,borderRadius:28,shadowColor:jt.floatingCardShadow,shadowOffset:{width:0,height:pinned?4:3},shadowOpacity:theme==="light"?0.16:0.4,shadowRadius:7,elevation:5}}>
    <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always"
     onLayout={event=>setViewportWidth(event.nativeEvent.layout.width)} ref={scroller} contentContainerStyle={{flexGrow:1,alignItems:"center",paddingHorizontal:3,paddingVertical:3}}>
     {!!layout&&<Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{position:"absolute",top:3,bottom:3,left:0,width:pillWidth,borderRadius:24,backgroundColor:active,transform:[{translateX:position}]}}/>}
@@ -76,7 +77,7 @@ export function ProfileSectionTabs({section,onSelect,pinned=false,showPrivateJCa
        onLayout={event=>{const {x,width}=event.nativeEvent.layout;setLayouts(current=>current[tab.id]?.x===x&&current[tab.id]?.width===width?current:{...current,[tab.id]:{x,width}});}}
        style={{minHeight:JOBEEN_CONTROL.touchTarget,minWidth:JOBEEN_CONTROL.touchTarget,flexGrow:1,flexShrink:0,
         paddingHorizontal:compact?3:7,alignItems:"center",justifyContent:"center",borderRadius:24,backgroundColor:!layout&&selected?active:undefined}}>
-      <Text numberOfLines={1} style={{fontSize:compact&&fontScale<=1.15?JOBEEN_TYPE.input-2:JOBEEN_TYPE.input-1,fontWeight:"600",color:selected?activeInk:jt.ink,textAlign:"center"}}>{tab.label}</Text>
+      <Text style={{fontSize:compact&&fontScale<=1.15?JOBEEN_TYPE.input-2:JOBEEN_TYPE.input-1,fontWeight:"600",color:selected?activeInk:jt.ink,textAlign:"center"}}>{tab.label}</Text>
      </Pressable>;
     })}
    </ScrollView>
@@ -148,7 +149,7 @@ export function ProfilePersonalLanguages({languages,own=false}:{languages:CardDa
  const [learning,setLearning]=useState<string|null>(null);
  const current=own?languages.find(l=>l.name===learning&&languageProgress(l.fluency)<100):undefined;
  if(!languages.length)return null;
- const gold=theme==="light"?"#B47B08":"#F5C842",blue=theme==="light"?"#2469A4":"#75B9F0";
+ const {gold,blue}=profileProgressColors(theme);
  return <View style={{gap:12,padding:14,borderWidth:1,borderColor:jt.line,borderRadius:14,backgroundColor:jt.surface}}>
   <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.input,fontWeight:"700",color:jt.ink}}>Idiomas</Text>
   {languages.map(({name,fluency},index)=>{
