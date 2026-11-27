@@ -1,5 +1,10 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-FINAL-POLISH — cinco correcciones autorizadas (2026-11-26)
+
+- Base `cffe2f3e`, PR #144 y OTA 45870644043 exitosos; capturas del propietario confirman tamaño común, pastillas y columna. Bloque aprobado: singular/plural, botones públicos con medidas privadas, opacidad de navegación en perfiles, etiquetas ESP/ENG y restauración de cinco estrellas (regla de diez reseñas, relleno proporcional al promedio, una fila). Pruebas de presentación y geometría; CI y validación física pendientes. No modificar backend, dependencias, APK ni publicar sin autorización separada. PR documental #146 de Google permanece independiente y pendiente de integración.
+
+
 ## JCARD-COLUMN — pastillas, sangría Negocio y pestañas (2026-11-26)
 
 - Base `2e16c1f7`, PR #142 integrado y OTA 45757149980 exitosa. Revisión física muestra pastilla de experiencia comprimida y disponibilidad extendida; corrección aprobada: misma altura normal 28 dp, ancho intrínseco distinto por contenido (experiencia más larga), fuente 11 sp en una línea, conjunto centrado y gap 8 dp; sin autoajuste diminuto ni redistribución flex. Si no caben por escala accesible/ancho, admitir salto de fila del conjunto. Se actualiza prueba de orden anterior y se refuerza en AGENTS.md la autorización explícita antes de ejecutar o enviar órdenes a Codex. Negocio usa columna común izquierda 22 dp y respeta logo a derecha. Orden medio Acerca de, Todo, En vivo, Videos, JCards (colección privada solo titular). Conserva selección inicial, geometría exterior, retratos, portada, giro y acciones.

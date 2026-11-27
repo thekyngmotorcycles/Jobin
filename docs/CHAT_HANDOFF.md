@@ -1,3 +1,13 @@
+# Jobeen — Traspaso operativo (2026-11-26)
+
+**Estado actual:** rama `fix/jcard-final-polish-five-reviews`, [PR #147](https://github.com/thekyngmotorcycles/Jobin/pull/147), base `development` `cffe2f3e`; `main` `887d857` intacta. El commit de implementación es `0007b818`. Bloque autorizado: singular/plural de seguidores/contactos, botones públicos con medidas privadas, fondo inferior opaco solo en perfiles, etiquetas ESP/ENG y cinco estrellas de reseñas de Jobin en una fila. CI [45912491849](https://github.com/thekyngmotorcycles/Jobin/actions/runs/45912491849): lint, typecheck y database verdes; 516/520 tests, cuatro fallos por expectativas previas al diseño y precisión flotante. Este cambio actualiza las cuatro pruebas afectadas sin modificar la implementación; comprobaciones puntuales de cadenas y tolerancia numérica realizadas, suite completa y export pendientes de nuevo CI. Consultar HEAD y CI del PR para el SHA actual.
+
+**Próxima acción:** comprobar el nuevo CI de #147; corregir solo fallos reales restantes. Solicitar autorización separada de merge y OTA antes de integrar/publicar; validación física en Jelly 2 pendiente. La OTA anterior [45870644043](https://github.com/thekyngmotorcycles/Jobin/actions/runs/45870644043) fue exitosa; no contiene #147. [PR #146](https://github.com/thekyngmotorcycles/Jobin/pull/146) (Google opcional Business Premium, autofinanciado) tiene CI verde y sigue pendiente de integración independiente. No hay cambios nativos, APK, datos alojados ni producción en este bloque. GitHub verificado; estado directo de los demás servicios no verificado en esta etapa. Leer AGENTS.md y DEVELOPMENT_STATUS.md del HEAD pertinente; no retomar tareas históricas superadas. La documentación de marca registra Jobin como última decisión anterior; el protocolo del propietario del 26-11 vuelve a indicar Jobeen. No alterar marca, identificadores o rutas en este bloque.
+
+---
+
+## Contexto histórico (no operativo si contradice lo anterior)
+
 # Jobeen — Continuidad obligatoria (2026-11-22)
 
 **Para ChatGPT y Codex:** leer primero [AGENTS.md](../AGENTS.md) y [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md) de la rama activa `fix/message-jshop-authorization-20261121` (PR #70, hasta su promoción autorizada). Este último es el único backlog operativo; comprobar HEAD y CI y continuar desde el siguiente ID. No repetir auditorías concluidas ni pedir al propietario que repita instrucciones. Las órdenes Continua y Fix están definidas en AGENTS.md. No modificar development, main, OTA, Supabase alojado ni compilar APK sin autorización durante esta etapa. El contenido siguiente es contexto histórico; si contradice el estado central o la política vigente, prevalece AGENTS.md y DEVELOPMENT_STATUS.md.

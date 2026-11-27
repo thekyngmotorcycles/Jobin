@@ -1,5 +1,6 @@
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
+import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {Modal,Pressable,ScrollView,StyleSheet,Text,View,useWindowDimensions} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
@@ -78,17 +79,17 @@ export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClos
   }catch(e){setMessage(e instanceof Error?e.message:"No se pudo bloquear.");}
   finally{setBusy(false);setConfirm(null);}
  }
- return <View style={{gap:8,marginVertical:10}}>
-  <View style={{flexDirection:"row",gap:10,alignItems:"center"}}>
-   <Pressable accessibilityRole="button" disabled={busy} onPress={()=>void toggleFollow()} style={{flex:1,flexDirection:"row",justifyContent:"center",alignItems:"center",gap:6,paddingVertical:13,paddingHorizontal:8,minHeight:52,borderRadius:13,backgroundColor:colors.ink}}>
-    <Ionicons name={followed?"checkmark":"heart-outline"} size={17} color={colors.paper}/><Text numberOfLines={1} style={{color:colors.paper,fontWeight:"700",fontSize:14}}>{followed?"Siguiendo":"Seguir"}</Text>
+ return <View>
+  <View style={{flexDirection:"row",gap:8,alignItems:"stretch"}}>
+   <Pressable accessibilityRole="button" disabled={busy} onPress={()=>void toggleFollow()} style={{flex:1,minWidth:48,flexDirection:"row",justifyContent:"center",alignItems:"center",gap:5,paddingVertical:10,paddingHorizontal:5,minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:JOBEEN_CONTROL.buttonRadius,backgroundColor:colors.ink}}>
+    <Ionicons name={followed?"checkmark":"heart-outline"} size={18} color={colors.paper}/><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{flexShrink:1,color:colors.paper,fontWeight:"700",fontSize:14}}>{followed?"Siguiendo":"Seguir"}</Text>
    </Pressable>
    <Pressable accessibilityRole="button" accessibilityLabel={contactLabel+" · "+name}
-    disabled={busy} onPress={()=>void connect()} style={{flex:1,flexDirection:"row",justifyContent:"center",alignItems:"center",gap:6,paddingVertical:13,paddingHorizontal:8,minHeight:52,borderRadius:13,borderWidth:1,borderColor:jobeen.yellow,backgroundColor:jobeen.cream}}>
-    <Ionicons name={contact?.status==="accepted"?"people":"person-add-outline"} size={17} color={jobeen.ink}/>
-    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{color:jobeen.ink,fontWeight:"700",fontSize:14}}>{contactLabel}</Text>
+    disabled={busy} onPress={()=>void connect()} style={{flex:1,minWidth:48,flexDirection:"row",justifyContent:"center",alignItems:"center",gap:5,paddingVertical:10,paddingHorizontal:5,minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:jobeen.yellow,backgroundColor:jobeen.cream}}>
+    <Ionicons name={contact?.status==="accepted"?"people":"person-add-outline"} size={18} color={jobeen.ink}/>
+    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{flexShrink:1,color:jobeen.ink,fontWeight:"700",fontSize:14}}>{contactLabel}</Text>
    </Pressable>
-   <Pressable accessibilityRole="button" accessibilityLabel={"Enviar mensaje a "+name} onPress={()=>router.push({pathname:"/message",params:{user,name}})} style={{width:52,height:52,flexDirection:"row",justifyContent:"center",alignItems:"center",borderRadius:13,borderWidth:1,borderColor:jobeen.yellow,backgroundColor:jobeen.cream}}>
+   <Pressable accessibilityRole="button" accessibilityLabel={"Enviar mensaje a "+name} onPress={()=>router.push({pathname:"/message",params:{user,name}})} style={{width:JOBEEN_CONTROL.touchTarget,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",justifyContent:"center",alignItems:"center",borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:jobeen.yellow,backgroundColor:jobeen.cream}}>
     <Ionicons name="paper-plane-outline" size={22} color={jobeen.ink}/>
    </Pressable>
   </View>

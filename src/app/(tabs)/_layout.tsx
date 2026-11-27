@@ -50,7 +50,7 @@ export default function TabLayout(){
   headerShown:false,tabBarShowLabel:false,tabBarActiveTintColor:colors.ink,tabBarInactiveTintColor:colors.ink,
   tabBarHideOnKeyboard:true,tabBarItemStyle:{minHeight:48,justifyContent:"center",alignItems:"center",backgroundColor:colors.transparent},
   tabBarActiveBackgroundColor:colors.transparent,tabBarInactiveBackgroundColor:colors.transparent,
-  tabBarBackground:()=> desktop?null:<NavigationFade/>,
+  tabBarBackground:()=> desktop?null:<NavigationFade profileOpaque={pathname==="/profile"||pathname==="/(tabs)/profile"}/>,
   tabBarStyle:{display:desktop?"none":"flex",position:"absolute",backgroundColor:colors.transparent,borderTopWidth:0,elevation:0,shadowOpacity:0,overflow:"visible",height:NAVIGATION_ROW_HEIGHT+inset.bottom,paddingTop:3,paddingBottom:Math.max(7,inset.bottom+2)},
   tabBarIconStyle:{height:48,width:48,alignItems:"center",justifyContent:"center"},
  }}>

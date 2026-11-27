@@ -4,6 +4,8 @@ import {ProfileConnectionCountRow} from "./ProfileFollowCounts";
 import {JCardSharedCover} from "./JCardSharedCover";
 import {JCardProfileLayers} from "./JCardProfileLayers";
 import {JCardProfileIdentity} from "./JCardProfileIdentity";
+import {BusinessReviewSummary} from "./BusinessReviewSummary";
+import {businessPhoneLabel} from "../lib/jcard-review-display";
 import {jobeenTokens,jcardArtTokens} from "../theme/jobeen";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {personalAvatarUrl} from "../lib/personal-jcard-photo";
@@ -394,7 +396,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
  const [showBusinessVerification,setShowBusinessVerification]=useState(false);
  const [artSize,setArtSize]=useState({width:0,height:0});
  const company=!!b?.name.trim();const businessName=Array.from((b?.name??"").trim()).slice(0,30).join("");const [businessNameWidth,setBusinessNameWidth]=useState(180);const nameFontSize=Math.max(14,Math.min(21,Math.floor(businessNameWidth/Math.max(8,theme==="light"?Math.ceil(businessName.length/2):businessName.length)*1.65)));const rating=displayedRating(b?.rating??null,b?.reviewCount??0);
- const reviewCount=b?.reviewCount??0;const ratingUnlocked=reviewCount>=10&&rating!==null;const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
+ const reviewCount=b?.reviewCount??0;const year=Number(b?.opened);const years=Number.isInteger(year)&&year>1900&&year<=new Date().getFullYear()?new Date().getFullYear()-year:0;
  const category=b?.category?.trim()||(/hvac|aire acondicionado|climatiz|refrigeraci/i.test([card.role,...(b?.services??[])].join(" "))?"Climatización":b?.services?.[0]||"Servicios profesionales");
  const art=businessCategoryArt(category);
  const hvacCategory=/hvac|climatiz|aire acondicionado/i.test(category)&&!/refrigeraci/i.test(category);
@@ -405,7 +407,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
  const profileCategory=b?.category?.trim()||"Servicios profesionales";
  const businessContactInk=premium?finish.text:jobeen.ink;
  const businessIconInk=premium?finish.text:jobeen.ink;
- const profilePhones=[{number:b?.phone,label:b?.phoneLabel},{number:b?.phoneSecondary,label:b?.phoneSecondaryLabel}].filter(item=>item.number);
+ const profilePhones=[{number:b?.phone,label:businessPhoneLabel(b?.phoneLabel)},{number:b?.phoneSecondary,label:businessPhoneLabel(b?.phoneSecondaryLabel)}].filter(item=>item.number);
  const contactRows=profilePortrait?<View style={{alignSelf:"stretch",width:"100%"}}>
    {(visibility.business_show_email?(theme==="light"?[b?.email??b?.emailSecondary]:[b?.email,b?.emailSecondary]):[]).filter(Boolean).map((email,index)=>
      <Pressable key={index} accessibilityRole="link" accessibilityLabel={"Enviar correo a "+email}
@@ -442,7 +444,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
  onPress={event=>{event.stopPropagation();const primary=b?.phone||b?.phoneSecondary;if(primary)void Linking.openURL("tel:"+primary.replace(/[^+\d]/g,"")).catch(()=>{});}}
  style={{width:40,height:44,alignItems:"center",justifyContent:"center",flexShrink:0}}>
  <View style={{width:theme==="light"?30:14,height:theme==="light"?30:14,borderRadius:15,backgroundColor:theme==="light"?jobeen.yellow:undefined,alignItems:"center",justifyContent:"center"}}>
- <Ionicons name="call-outline" size={14} color={businessIconInk}/></View></Pressable>{[{number:b?.phone,label:b?.phoneLabel},{number:b?.phoneSecondary,label:b?.phoneSecondaryLabel}].filter(x=>!!x.number).map((item,i)=><View key={"business-phone"+i} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:3}}>{i>0&&<View style={{height:16,width:1,backgroundColor:finish.line,marginHorizontal:2}}/>}<Pressable accessibilityRole="link" accessibilityLabel={"Llamar al número "+item.number} style={{alignSelf:"flex-start",maxWidth:"100%",minHeight:44,justifyContent:"center",paddingHorizontal:2}} onPress={event=>{event.stopPropagation();void Linking.openURL("tel:"+item.number!.replace(/[^+\d]/g,"")).catch(()=>{});}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.84} style={{fontSize:10.5,color:businessContactInk}}>{item.label?item.label+" ":""}{item.number}</Text></Pressable></View>)}{theme==="light"&&!!(b?.phone||b?.phoneSecondary)&&<Pressable accessibilityRole="link" accessibilityLabel="Abrir WhatsApp del negocio" onPress={event=>{event.stopPropagation();void Linking.openURL("https://wa.me/"+(b?.phone||b?.phoneSecondary||"").replace(/\D/g,"")).catch(()=>{});}} style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}><View style={{width:30,height:30,borderRadius:15,backgroundColor:jobeen.ink,alignItems:"center",justifyContent:"center"}}><Ionicons name="logo-whatsapp" size={17} color={jobeen.surface}/></View></Pressable>}</View>}
+ <Ionicons name="call-outline" size={14} color={businessIconInk}/></View></Pressable>{profilePhones.map((item,i)=><View key={"business-phone"+i} style={{flex:1,minWidth:0,flexDirection:"row",alignItems:"center",gap:3}}>{i>0&&<View style={{height:16,width:1,backgroundColor:finish.line,marginHorizontal:2}}/>}<Pressable accessibilityRole="link" accessibilityLabel={"Llamar al número "+item.number} style={{alignSelf:"flex-start",maxWidth:"100%",minHeight:44,justifyContent:"center",paddingHorizontal:2}} onPress={event=>{event.stopPropagation();void Linking.openURL("tel:"+item.number!.replace(/[^+\d]/g,"")).catch(()=>{});}}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.84} style={{fontSize:10.5,color:businessContactInk}}>{item.label?item.label+" ":""}{item.number}</Text></Pressable></View>)}{theme==="light"&&!!(b?.phone||b?.phoneSecondary)&&<Pressable accessibilityRole="link" accessibilityLabel="Abrir WhatsApp del negocio" onPress={event=>{event.stopPropagation();void Linking.openURL("https://wa.me/"+(b?.phone||b?.phoneSecondary||"").replace(/\D/g,"")).catch(()=>{});}} style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}><View style={{width:30,height:30,borderRadius:15,backgroundColor:jobeen.ink,alignItems:"center",justifyContent:"center"}}><Ionicons name="logo-whatsapp" size={17} color={jobeen.surface}/></View></Pressable>}</View>}
      {!!b?.location&&<Pressable accessibilityRole="link" accessibilityLabel={"Abrir ubicación en Google Maps: "+b.location} onPress={event=>{event.stopPropagation();void Linking.openURL("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(b.location!.trim())).catch(()=>Alert.alert("Google Maps","No se pudo abrir el mapa. Comprueba que tengas un navegador o Google Maps disponible."));}} style={{alignSelf:"flex-start",maxWidth:"100%",flexDirection:"row",alignItems:"center",gap:6,minHeight:44,paddingRight:3}}><View style={{width:theme==="light"?30:15,height:theme==="light"?30:15,borderRadius:15,backgroundColor:theme==="light"?jobeen.yellow:undefined,alignItems:"center",justifyContent:"center"}}><Ionicons name="location-outline" size={15} color={businessIconInk}/></View><Text numberOfLines={2} style={{flexShrink:1,flexGrow:0,fontSize:11,color:businessContactInk}}>{b.location}</Text></Pressable>}
    </View>;
  return <View onLayout={e=>{const {width,height}=e.nativeEvent.layout;setArtSize(prev=>prev.width===width&&prev.height===height?prev:{width,height});}} style={{flex:1,borderRadius:30,backgroundColor:finish.start,overflow:"hidden"}}>
@@ -466,11 +468,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
        color={b?.licenseVerified?jcardCommon.verifiedBubble:jcardCommon.unverifiedBubble}/>}
       subtitleIcon={<Ionicons name={categoryIcon} size={15} color={businessIconInk}/>}/>
      <ScrollView nestedScrollEnabled style={{flex:1,minHeight:0}} contentContainerStyle={{alignItems:"stretch",gap:2}} keyboardShouldPersistTaps="handled">
-     <Text style={{fontSize:11,color:finish.secondary,textAlign:"left"}}>
-      <Text style={{color:finish.text,fontWeight:"700"}}>
-       <Text style={{color:jcardCommon.businessGold}}>★</Text> {ratingUnlocked?rating!.toFixed(1):"—"}
-      </Text> · ({reviewCount} {reviewCount===1?"reseña":"reseñas"})
-     </Text>
+     <BusinessReviewSummary rating={rating} reviewCount={reviewCount} ink={finish.text} muted={finish.secondary}/>
      {contactRows}
      {onSaveContact&&<Pressable accessibilityRole="button" accessibilityLabel="Guardar contacto del negocio" onPress={onSaveContact}
       style={{alignSelf:"center",width:JOBEEN_CONTROL.touchTarget,height:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center"}}>
@@ -485,7 +483,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
     <View style={{flex:1,minWidth:0,gap:3}}>
      <View style={{flexDirection:"row",alignItems:"center",gap:3}}><Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7} style={{flexShrink:1,fontSize:15,lineHeight:18,fontWeight:"700",color:finish.text}}>{businessName?wrapBusinessCardName(businessName):"Cargando negocio…"}</Text><Pressable accessibilityRole="button" accessibilityLabel="Verificación de empresa" onPress={event=>{event.stopPropagation();setShowBusinessVerification(true);}} hitSlop={{top:7,bottom:7,right:6,left:0}} style={{width:18,height:20,alignItems:"center",justifyContent:"center",flexShrink:0}}><Ionicons name={b?.licenseVerified?"checkmark-circle":"checkmark-circle-outline"} size={16} color={b?.licenseVerified?jcardCommon.verifiedBubble:jcardCommon.unverifiedBubble}/></Pressable></View>
      <View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name={categoryIcon} size={14} color={businessIconInk}/><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{flexShrink:1,fontSize:12,color:finish.secondary}}>{company?category:"JCard de negocio"}</Text></View>
-     <View style={{flexDirection:"row",alignItems:"center",gap:4}}><Text style={{fontSize:11,fontWeight:"700",color:finish.text}}><Text style={{color:jcardCommon.businessGold}}>★</Text> {ratingUnlocked?rating!.toFixed(1):"0.0"}</Text><Text numberOfLines={1} style={{fontSize:10,color:finish.secondary}}>· ({reviewCount} {reviewCount===1?"reseña":"reseñas"})</Text></View>
+     <BusinessReviewSummary rating={rating} reviewCount={reviewCount} ink={finish.text} muted={finish.secondary}/>
     </View>
    </View>
 

@@ -36,7 +36,7 @@ test("Keep Videos bigger, keyboard behavior, notification badge and inset",()=>{
  assert.ok(tabs.includes("height:NAVIGATION_ROW_HEIGHT+inset.bottom"));
  assert.ok(tabs.includes("paddingBottom:Math.max(7,inset.bottom+2)"));
  assert.ok(tabs.includes("paddingTop:3"));
- assert.ok(tabs.includes('tabBarBackground:()=> desktop?null:<NavigationFade/>'));
+ assert.ok(tabs.includes('tabBarBackground:()=> desktop?null:<NavigationFade profileOpaque={pathname==="/profile"||pathname==="/(tabs)/profile"}/>'));
  assert.ok(tabs.includes('route.name==="videos"&&(pathname==="/streams"||pathname.endsWith("/streams"))'));
  assert.ok(tabs.includes('const {colors}=useTheme()'));
 });

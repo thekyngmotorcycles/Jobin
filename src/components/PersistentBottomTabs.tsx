@@ -26,7 +26,7 @@ export function PersistentBottomTabs(){
  return <View pointerEvents="auto" accessibilityLabel="Navegación inferior"
   style={{position:"absolute",left:0,right:0,bottom:0,zIndex:50,
    height:NAVIGATION_ROW_HEIGHT+inset.bottom}}>
-  <NavigationFade/>
+  <NavigationFade profileOpaque={pathname==="/jcard"}/>
   <View style={{flex:1,flexDirection:"row",paddingTop:3,paddingBottom:Math.max(7,inset.bottom+2)}}>
    {items.map(item=><Pressable key={item.id} accessibilityRole="tab" accessibilityLabel={item.label}
     accessibilityState={{selected:active===item.id}} onPress={()=>item.id==="videos"?openVideos():router.navigate(item.path)}
