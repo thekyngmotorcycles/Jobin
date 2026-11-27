@@ -500,7 +500,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
 
  </View>;
 }
-export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,onEditPersonalPhoto,ownerId,showOwnerActions=false,initialSide="personal",employerLink,onDemoSaveContact,onActiveSideChange,ownerQuickActions,publicVisibility,publicScope,awardsInAbout=false,profileCoverScope,profileInset=0}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;onEditBusinessMedia?:(slot:"banner"|"avatar")=>void;onEditPersonalPhoto?:()=>void;ownerId?:string;showOwnerActions?:boolean;initialSide?:"personal"|"business";employerLink?:{id:string;name:string;handle:string}|null;onDemoSaveContact?:()=>void;onActiveSideChange?:(side:"personal"|"business")=>void;ownerQuickActions?:{onPanel:()=>void;onLive:()=>void;liveLabel:string};publicVisibility?:JCardVisibility;publicScope?:MessageScope;awardsInAbout?:boolean;profileCoverScope?:MessageScope|null;profileInset?:number}){
+export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,onEditPersonalPhoto,ownerId,showOwnerActions=false,initialSide="personal",selectedSide,employerLink,onDemoSaveContact,onActiveSideChange,ownerQuickActions,publicVisibility,publicScope,awardsInAbout=false,profileCoverScope,profileInset=0}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;onEditBusinessMedia?:(slot:"banner"|"avatar")=>void;onEditPersonalPhoto?:()=>void;ownerId?:string;showOwnerActions?:boolean;initialSide?:"personal"|"business";selectedSide?:"personal"|"business";employerLink?:{id:string;name:string;handle:string}|null;onDemoSaveContact?:()=>void;onActiveSideChange?:(side:"personal"|"business")=>void;ownerQuickActions?:{onPanel:()=>void;onLive:()=>void;liveLabel:string};publicVisibility?:JCardVisibility;publicScope?:MessageScope;awardsInAbout?:boolean;profileCoverScope?:MessageScope|null;profileInset?:number}){
  const {theme}=useTheme();const {colors}=useUi();const {width,fontScale}=useWindowDimensions();
  const [measuredCardWidth,setMeasuredCardWidth]=useState(0);
  const [contact,setContact]=useState<{email:string|null;phone:string|null;details?:PersonalContactDetails}>({email:null,phone:null});
@@ -527,12 +527,14 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const [loadedVisibility,setVisibility]=useState(DEFAULT_JCARD_VISIBILITY);
  const visibility=publicVisibility??loadedVisibility;
  useFocusEffect(useCallback(()=>{let live=true;if(ownerId&&!publicVisibility)void readJCardVisibility(ownerId).then(v=>{if(live)setVisibility(v);}).catch(()=>{});return()=>{live=false;};},[ownerId,publicVisibility]));
- const [back,setBack]=useState(initialSide==="business");
+ const [localBack,setLocalBack]=useState(initialSide==="business");
  const [shareSide,setShareSide]=useState<"personal"|"business"|null>(null);
-  useEffect(()=>setBack(initialSide==="business"),[initialSide]);
+  useEffect(()=>{if(selectedSide===undefined)setLocalBack(initialSide==="business");},[initialSide,selectedSide]);
  const canFlip=showOwnerActions||(visibility.personal_enabled&&visibility.business_enabled&&(!publicVisibility||!!card.business));
  const activeBusiness=!visibility.personal_enabled&&visibility.business_enabled;
- useEffect(()=>{onActiveSideChange?.(canFlip?(back?"business":"personal"):(activeBusiness?"business":"personal"));},[back,canFlip,activeBusiness,onActiveSideChange]);
+ const back=canFlip?(selectedSide===undefined?localBack:selectedSide==="business"):activeBusiness;
+ // Controlled profiles own the selected face; report gestures only, never echo props.
+ useEffect(()=>{if(selectedSide===undefined)onActiveSideChange?.(back?"business":"personal");},[back,selectedSide,onActiveSideChange]);
  const cardTheme=previewTheme??theme;
  const cardColors=jobeenTokens(cardTheme);
  const surface=jcardSurfaceSize({screenWidth:width,measuredWidth:measuredCardWidth,fontScale,theme:cardTheme,
@@ -540,7 +542,7 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
  const profilePortrait=awardsInAbout?jcardProfilePortraitMetrics(surface.width):undefined;
  // Identical outer footprint for both faces, independent of profile content.
  const cardHeight=surface.height;
- useEffect(()=>{if(!canFlip)setBack(activeBusiness);},[canFlip,activeBusiness]);
+ useEffect(()=>{if(selectedSide===undefined&&!canFlip)setLocalBack(activeBusiness);},[canFlip,activeBusiness,selectedSide]);
  const savePersonal=()=>void presentJCardContact({name:card.name,phone:contact.details?.phone_primary||contact.details?.phone_secondary||contact.phone,email:contact.details?.email_primary||contact.details?.email_secondary||contact.email});
  const saveBusiness=()=>void presentJCardContact({name:card.business?.name?.trim()||card.name,phone:visibility.business_show_phone?(card.business?.phone||card.business?.phoneSecondary):null,email:visibility.business_show_email?(card.business?.email||card.business?.emailSecondary):null});
  const share=(side:"personal"|"business")=>setShareSide(side);
@@ -553,8 +555,8 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
    const next=Math.round(event.nativeEvent.layout.width);
    if(next>0)setMeasuredCardWidth(previous=>previous!==next?next:previous);
   }} style={{width:"100%",maxWidth:jcardSurfaceMetrics.maxWidth,alignSelf:"center"}}>
-   <BusinessCard3D height={cardHeight} topInset={profilePortrait?.overlap??0} enabled={canFlip} initialSide={initialSide} side={back?"business":"personal"}
-     onSideChange={side=>setBack(side==="business")} shadowColor={jcardCommon.cardShadowColor}
+   <BusinessCard3D height={cardHeight} topInset={profilePortrait?.overlap??0} enabled={canFlip} initialSide={back?"business":"personal"} side={back?"business":"personal"}
+     onSideChange={side=>{if(selectedSide===undefined)setLocalBack(side==="business");else onActiveSideChange?.(side);}} shadowColor={jcardCommon.cardShadowColor}
      frontPortrait={profilePortrait&&(showOwnerActions||visibility.personal_enabled)?<Pressable disabled={!showOwnerActions||!onEditPersonalPhoto} accessibilityRole={showOwnerActions&&onEditPersonalPhoto?"button":undefined} accessibilityLabel="Foto de JCard personal" onPress={event=>{event.stopPropagation();onEditPersonalPhoto?.();}} style={{position:"absolute",top:0,left:profilePortrait.inset,width:profilePortrait.width,height:profilePortrait.height,borderRadius:profilePortrait.radius,overflow:"hidden",zIndex:3}}><Avatar uri={personalAvatarUrl(card.avatar)} name={card.name} size={profilePortrait.width} height={profilePortrait.height} shape="portrait" framed={false}/></Pressable>:undefined}
      backPortrait={profilePortrait&&(showOwnerActions||visibility.business_enabled)?
       <BusinessProfileLogo key={card.business?.avatarUrl} uri={card.business?.avatarUrl} portrait={profilePortrait} theme={cardTheme}

@@ -122,6 +122,7 @@ export function BusinessCard3D({front,back,height,enabled=true,initialSide="pers
     })
     .onFinalize(()=>{
       // Do not schedule a spring on every failed vertical-scroll gesture.
+      if(moving.value)angle.value=withSpring(side==="business"?180:0,SPRING);
       if(moving.value){lift.value=withSpring(1,SPRING);moving.value=false;}
     });
   const gesture=Gesture.Exclusive(pan,tap);

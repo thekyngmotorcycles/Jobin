@@ -63,7 +63,7 @@ export function ProfileSectionTabs({section,onSelect,pinned=false,showPrivateJCa
 
 export type ProfileAboutSide="personal"|"business";
 
-/** Separate from the rotating card: only switches the already-authorized About content. */
+/** Controlled selector: the profile uses the same authorized side for About and the rotating JCard. */
 export function ProfileAboutSelector({side,onSelect,personalAvailable=true,businessAvailable=true}:{side:ProfileAboutSide;onSelect:(side:ProfileAboutSide)=>void;personalAvailable?:boolean;businessAvailable?:boolean}){
  const {theme}=useTheme(),jt=jobeenTokens(theme),reducedMotion=useReducedMotion();
  const [width,setWidth]=useState(0);

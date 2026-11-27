@@ -11,7 +11,7 @@ import {Ionicons} from "@expo/vector-icons";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {NAVIGATION_ROW_HEIGHT} from "../theme/navigation";
 import {jobeenTokens} from "../theme/jobeen";
-import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,ProfilePersonalLanguages,type ProfileSection,type ProfileAboutSide} from "../components/ProfileSharedSections";
+import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,ProfilePersonalLanguages,type ProfileSection} from "../components/ProfileSharedSections";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfilePublicPosts} from "../components/ProfileOwnedPosts";
 import {router,Stack,useFocusEffect} from "expo-router";
@@ -21,6 +21,7 @@ import {identityVerified} from "../lib/identity-status";
 import { useLocalSearchParams } from "expo-router";
 
 import { JobinCard } from "../components/JobinCard";
+import {resolveProfileCardSide} from "../lib/jcard-profile-side";
 import {useUi} from "../components/ui";
 import {JCardLoadState} from "../components/JCardConnectionState";
 import { loadPublicCard } from "../lib/professional-api";
@@ -38,7 +39,7 @@ export default function PublicJCard(){
  const fadeHeight=NAVIGATION_ROW_HEIGHT+100;const fadeCenter=(fadeHeight-NAVIGATION_ROW_HEIGHT/2)/fadeHeight;
  const {height:screenHeight}=useWindowDimensions();
  const [profileMenuOpen,setProfileMenuOpen]=useState(false);
- const [activeCardSide,setActiveCardSide]=useState<SavedJCardSide>(card==="business"?"business":"personal");
+ const [requestedCardSide,setActiveCardSide]=useState<SavedJCardSide>(card==="business"?"business":"personal");
  const publicRevision=useRef(0);
  const [publicSnapshot,setPublicSnapshot]=useState<{target:string;scope:MessageScope;data:Awaited<ReturnType<typeof loadPublicCard>>;visibility:Awaited<ReturnType<typeof readJCardVisibility>>;business:BusinessCardData|null}|null>(null);
  const [publicLoading,setPublicLoading]=useState(true),[publicError,setPublicError]=useState(""),[publicRetry,setPublicRetry]=useState(0);
@@ -48,6 +49,7 @@ export default function PublicJCard(){
  const cardVisibility=snapshot?.visibility??{...DEFAULT_JCARD_VISIBILITY,personal_enabled:false,business_enabled:false};
  const cardVisibilityReady=!!snapshot;
  const publicBusiness=cardVisibility.business_enabled?snapshot?.business??null:null;
+ const activeCardSide=resolveProfileCardSide(requestedCardSide,cardVisibility.personal_enabled,!!publicBusiness);
  const [cardSaved,setCardSaved]=useState(false);
  const [savingCard,setSavingCard]=useState(false);
  const sideIsPublic=activeCardSide==="personal"?cardVisibility.personal_enabled:cardVisibility.business_enabled&&!!publicBusiness;
@@ -80,7 +82,7 @@ export default function PublicJCard(){
   }catch(e){if(valid())Alert.alert("Guardar contacto",e instanceof Error?e.message:"No se pudo abrir el contacto.");}
   finally{if(contactSaveGuard.current===operation)contactSaveGuard.current=null;}
  };
- useEffect(()=>setActiveCardSide(card==="business"?"business":"personal"),[card,user]);
+ useEffect(()=>setActiveCardSide(card==="business"?"business":"personal"),[card,user,publicScope?.session]);
  useFocusEffect(useCallback(()=>{
   const generation=++publicRevision.current;
   setPublicSnapshot(null);setPublicLoading(true);setPublicError("");setProfileMenuOpen(false);
@@ -124,9 +126,7 @@ export default function PublicJCard(){
  },[user,card,publicRetry]));
  const resource={data:snapshot?.data??null,loading:publicLoading,error:publicError,reload:()=>setPublicRetry(v=>v+1)};
  const [section,setSection]=useState<ProfileSection>("grid");
- const [aboutPreference,setAboutPreference]=useState<ProfileAboutSide>("personal");
- const aboutSide:ProfileAboutSide=!cardVisibility.personal_enabled?"business":!publicBusiness?"personal":aboutPreference;
- useEffect(()=>setAboutPreference("personal"),[user,publicScope?.session]);
+
  const profileScroll=useRef<ScrollView|null>(null);
  const profileScrollY=useRef(new Animated.Value(0)).current;
  const [tabOffset,setTabOffset]=useState(0);
@@ -270,7 +270,7 @@ export default function PublicJCard(){
     })}>
    <Animated.View style={{paddingBottom:12,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
     {resource.data?<ProfileIdentityHeader
-     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={publicBusiness&&(card==="business"||!cardVisibility.personal_enabled)?"business":"personal"} onActiveSideChange={setActiveCardSide} awardsInAbout profileInset={16} publicVisibility={cardVisibility} publicScope={snapshot?.scope}/>}
+     card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={publicBusiness&&(card==="business"||!cardVisibility.personal_enabled)?"business":"personal"} selectedSide={activeCardSide} onActiveSideChange={setActiveCardSide} awardsInAbout profileInset={16} publicVisibility={cardVisibility} publicScope={snapshot?.scope}/>}
      actionsInset={16} actions={<ProfileCommunityActions user={resource.data.id} name={cardVisibility.personal_enabled?resource.data.name:publicBusiness?.name??""} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
       onToggleSaved={savedReady&&cardVisibilityReady&&sideIsPublic?()=>void toggleSaved():undefined}
       onSaveContact={cardVisibilityReady&&sideIsPublic?()=>void saveVisibleContact():undefined}
@@ -285,7 +285,7 @@ export default function PublicJCard(){
    </View>}
    {!!resource.data&&<View style={{width:"100%",maxWidth:1180,alignSelf:"center",gap:14,paddingHorizontal:20,paddingTop:20,paddingBottom:20,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
 
-    {section==="cv"&&<ProfileAboutSelector side={aboutSide} onSelect={setAboutPreference} personalAvailable={cardVisibility.personal_enabled} businessAvailable={!!publicBusiness}/>}
+    {section==="cv"&&<ProfileAboutSelector side={activeCardSide} onSelect={setActiveCardSide} personalAvailable={cardVisibility.personal_enabled} businessAvailable={!!publicBusiness}/>}
     {section==="cv"&&aboutSide==="business"&&cardVisibility.business_enabled&&publicBusiness&&<ProfileBusinessAbout business={publicBusiness} target={resource.data.id} scope={publicScope}/>}
     {section==="cv"&&aboutSide==="personal"&&cardVisibility.personal_enabled&&<View style={{marginVertical:4,gap:10}}>
       <ProfilePersonalLanguages languages={resource.data.languages}/>

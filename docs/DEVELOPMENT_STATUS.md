@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## JCARD-ABOUT-SIDE-SYNC — corrección autorizada (2026-11-27)
+
+- Base f34963f8 (#147), CI 45929026862 y OTA 46031287835 success. Selector Personal/Negocio y cara JCard comparten selección en propio/visitante, incluido giro por gesto, enlace directo y acciones de la cara; preservar privacidad y disponibilidad, animación existente y acordeón. Pruebas de regresión nuevas; CI y validación física pendientes. Sin APK, OTA nueva, cambios de backend o dependencias; merge/OTA requieren autorización separada.
+
 ## JCARD-FINAL-POLISH — cinco correcciones autorizadas (2026-11-26)
 
 - Base `cffe2f3e`, PR #144 y OTA 45870644043 exitosos; capturas del propietario confirman tamaño común, pastillas y columna. Bloque aprobado: singular/plural, botones públicos con medidas privadas, opacidad de navegación en perfiles, etiquetas ESP/ENG y restauración de cinco estrellas (regla de diez reseñas, relleno proporcional al promedio, una fila). Pruebas de presentación y geometría; CI y validación física pendientes. No modificar backend, dependencias, APK ni publicar sin autorización separada. PR documental #146 de Google permanece independiente y pendiente de integración.
