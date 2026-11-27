@@ -24,6 +24,9 @@ test("Both profiles share one selection for the card and About and reset on iden
  assert.ok(visitor.includes('resolveProfileCardSide(requestedCardSide,cardVisibility.personal_enabled,!!publicBusiness)'));
  assert.ok(visitor.includes('[card,user,publicScope?.session]'));
  assert.ok(!visitor.includes("aboutPreference"));
+ assert.ok(!/\baboutSide\b/.test(visitor),"No stale independent About state in public profile");
+ assert.ok(visitor.includes('section==="cv"&&activeCardSide==="business"&&cardVisibility.business_enabled&&publicBusiness'));
+ assert.ok(visitor.includes('section==="cv"&&activeCardSide==="personal"&&cardVisibility.personal_enabled'));
  assert.ok(visitor.includes('visibleCardSide={activeCardSide}'));
  assert.ok(visitor.includes('saveVisibleJCard(user,activeCardSide,viewer,origin.scope)'));
 });
