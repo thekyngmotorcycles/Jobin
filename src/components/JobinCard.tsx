@@ -217,7 +217,7 @@ function CardFace({ card, theme, appearance="original", expanded = false, onEdit
       <JCardProfileIdentity portrait={profilePortrait} side="personal" name={fullDisplayName} subtitle={"@"+card.handle}
        ink={finish.text} muted={finish.secondary} verification={card.identityVerified?"Identidad verificada por Jobin.":"Identidad sin verificar."}
        badge={<View style={{transform:[{scale:0.72}]}}><IdentityBadge verified={card.identityVerified===true} ink={finish.text} contrast={finish.start}/></View>}/>
-      <ScrollView nestedScrollEnabled style={{flex:1,minHeight:0}} contentContainerStyle={{paddingHorizontal:12,alignItems:"center"}} keyboardShouldPersistTaps="handled">
+      <ScrollView nestedScrollEnabled style={{flex:1,minHeight:0}} contentContainerStyle={{paddingHorizontal:12,alignItems:"center",paddingBottom:12}} keyboardShouldPersistTaps="handled">
         <Pressable accessibilityRole="button" accessibilityLabel={"Detalles de la profesión principal: "+primaryProfession}
          onPress={()=>setInfo("Profesión principal: "+primaryProfession+"\nEspecialidades: "+(card.primarySpecialties?.length?card.primarySpecialties.join(", "):"No declaradas")+"\nExperiencia en esta profesión: "+(primarySealMonths===undefined?"No disponible":experienceLabel(primarySealMonths)))}
          style={{minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center",alignItems:"center",flexDirection:"row",gap:5,maxWidth:"100%"}}>

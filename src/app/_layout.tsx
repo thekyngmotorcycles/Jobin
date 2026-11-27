@@ -4,15 +4,16 @@ import { NoticeProvider } from "../state/NoticeProvider";
 import { AuthGate,useAuthNavigationPhase } from "../components/AuthGate";
 import { SafetyAccountGate } from "../components/SafetyAccountGate";
 import { JobinWordmark } from "../components/JobinWordmark";
-import { Stack,usePathname } from "expo-router";
-import {useEffect} from "react";
+import { Stack,usePathname,router } from "expo-router";
+import {useEffect,useRef} from "react";
+import {readViewerReturn,viewerFramePage,VIEWER_RETURN_KEY} from "../lib/web-viewer-return";
 import {VideoSectionNavigationProvider} from "../state/VideoSectionNavigation";
 import {PersistentBottomTabs} from "../components/PersistentBottomTabs";
 import {ScrollNavigationProvider,useScrollNavigation} from "../state/ScrollNavigation";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts,loadAsync } from "expo-font";
 import { useState,type ReactNode } from "react";
-import { ActivityIndicator,Pressable,Text,View } from "react-native";
+import { ActivityIndicator,Pressable,Text,View,Platform } from "react-native";
 import { SocialProvider } from "../state/SocialProvider";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -31,6 +32,16 @@ function Navigation() {
  const {theme,colors}=useTheme();const jt=jobeenTokens(theme);const shellBackground=theme==="light"?jt.bg:colors.paper;
  const pathname=usePathname();const {reset}=useScrollNavigation();
  const phase=useAuthNavigationPhase();
+ const viewerRestored=useRef(false);
+ useEffect(()=>{
+  if(Platform.OS!=="web"||typeof window==="undefined"||phase!=="signed-in")return;
+  if(window.top===window.self){
+   try{const pending=window.sessionStorage.getItem(VIEWER_RETURN_KEY);window.sessionStorage.removeItem(VIEWER_RETURN_KEY);const destination=readViewerReturn(pending,Date.now());if(destination)window.location.replace(destination);}catch{/* No storage: normal app navigation remains available. */}
+   return;
+  }
+  if(viewerRestored.current)return;
+  try{const frame=window.frameElement;const parentPath=window.parent.location.pathname;const destination=viewerFramePage(parentPath,frame?.getAttribute("data-preview-page")??null);if(destination){viewerRestored.current=true;if(pathname!==destination)router.replace(destination);}}catch{/* A foreign frame is not a trusted viewer. */}
+ },[phase,pathname]);
  useEffect(()=>reset(),[pathname,reset]);
  const isBrowserPage=pathname==="/jcard"||pathname==="/search"||pathname==="/notifications"||pathname.startsWith("/post/")||pathname.startsWith("/work-media/")||pathname.startsWith("/jshop/item/")||pathname==="/jshop/favorites";
  return <><StatusBar style={theme==="dark"?"light":"dark"}/><Stack screenOptions={{headerStyle:{backgroundColor:shellBackground},headerTintColor:colors.ink,headerTitleStyle:{fontSize:JOBEEN_TYPE.navigationTitle,fontWeight:"600"},contentStyle:{backgroundColor:shellBackground}}}>

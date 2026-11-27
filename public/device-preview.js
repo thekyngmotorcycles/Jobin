@@ -23,7 +23,11 @@ function size(){
  for(const button of presets)button.setAttribute("aria-pressed",String(button.dataset.preset===device.value&&w===referenceWidth));
 }
 function selectPreset(key){if(!Object.hasOwn(sizes,key))return;device.value=key;width.value=String(sizes[key][0]);size();persist();}
-function navigate(){phone.src=allowedPages.has(page.value)?page.value:"/profile";persist();}
+function navigate(){const selected=allowedPages.has(page.value)?page.value:"/profile";phone.setAttribute("data-preview-page",selected);phone.src=selected;persist();}
+document.getElementById("login").addEventListener("click",()=>{
+ try{sessionStorage.setItem("jobeen:viewer-return:v1",JSON.stringify({created:Date.now(),device:device.value,width:Number(width.value),page:page.value}));location.assign("/");}
+ catch{alert("No se pudo conservar la vista. Habilita el almacenamiento del navegador y vuelve a intentar.");}
+});
 device.addEventListener("change",()=>selectPreset(device.value));
 width.addEventListener("input",()=>{size();persist();});
 for(const button of presets)button.addEventListener("click",()=>selectPreset(button.dataset.preset));
