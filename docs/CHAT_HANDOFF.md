@@ -2,6 +2,8 @@
 
 El propietario confirmó el login real en preview cd308bd (CI 46039823186 success); autorizó URL HTTPS exacta de ese deployment en Supabase. Autorizó visor privado con iPhone 17, Galaxy S22 y Jelly 2. Rama `test/web-device-viewer` desde cd308bd, no fusionar en main/development: solo herramienta estática en public, iframe same-origin de la app real, sin copiar tokens ni datos ni cambiar auth, rutas, backend o nativo. Tamaños CSS 402×874, 360×780 y 320×569 (referencias aproximadas); perfil predeterminado. Protección Vercel se mantiene. Nueva URL estable de rama requiere autorizar exactamente su raíz HTTPS en Supabase antes de OAuth; iniciar sesión en pestaña principal de ese mismo origen, luego volver al visor. Pendiente verificar export, HTTP, navegación y sesión real del propietario. No afirmar captura nativa. PR #151 y OTA #150 independientes.
 
+El propietario reitera que no debe ejecutar código ni procesos técnicos manuales: ChatGPT/Codex/Work se encargan según capacidad, y solo se le solicita autenticación, aprobación o acciones realmente fuera del acceso disponible. Verificar conexiones antes de declarar bloqueo. Visor aprobado: ancho base 390, slider 320–440 px paso 1, presets 320/360/390/402/440, altura proporcional al preset, escala exterior sin cambiar dimensiones CSS internas; conservar página y ancho en URL. Sin modificar app, backend, APK, OTA ni producción. Misma rama y alias estable.
+
 ---
 # Jobeen — Acceso web real (2026-11-27)
 
