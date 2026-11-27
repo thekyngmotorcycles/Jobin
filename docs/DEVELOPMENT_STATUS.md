@@ -1,5 +1,9 @@
 # Jobin — registro central de desarrollo
 
+## PROFILE-PREMIUM-ABOUT — bloque visual aprobado 2026-11-27
+
+- Base development c78d0116 y visor f998e23f. Reutilizar ProfileSectionTabs/ProfilePersonalLanguages y BottomSheet; cápsula flotante única animada, fondo opaco de ancho completo en acordeón, Light/Dark, progreso declarado con oro solo a 100 y guía local honesta de aprendizaje mientras no exista JAcademy; CTA solo propietario. Historial dos columnas, edición/alta con guardas existentes, detalle al tocar, acceso visitante únicamente CV autorizado. 24 familias del catálogo + distinciones HVAC, refrigeración, electricidad y genérica. Arte temático vectorial estático con objetos y sombreado (no raster WebP fotográfico todavía), fallback de color, sin red/dependencias. No modificar datos, permisos, fuentes ni JCard. Pruebas de regresión; validar export, contraste y tamaños 320–440 antes de aprobar. No OTA ni APK. Mantener prioridad de perfil.
+
 ## CONSOLIDACIÓN-PARIDAD — aprobada 2026-11-27
 
 - Reutilización exacta de los componentes compartidos y pruebas del visor validado `101a36790eb4dfb713126fcd8d75d79a2b968427` (CI 46046629654 success). PR #151 integra navegación/login web y JCard/experiencia/geometría; no incluye HTML/CSS/JS del visor ni su puente de retorno exclusivo. PR #149 ya integrado. RPC de experiencia pública instalada y comprobada; no repetir migración. PR #150 es publicador temporal de e60e313f con comprobación workflow fallida, no fusionar ni publicar esa versión antigua; conservar una futura entrega conjunta con SHA exacto aprobado. Sin nuevo cambio de apariencia, APK, OTA, main ni datos alojados. Propietario confirma equivalencia visual observada y solicita terminar perfil antes de STREAM-UI. Integración pendiente de CI del conjunto; mantener visor actualizado desde development conservando solo overlay privado y verificar igualdad de archivos comunes.

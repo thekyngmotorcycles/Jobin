@@ -1,3 +1,9 @@
+# Jobeen — Perfil premium, progreso y menú medio
+
+## PROFILE-PREMIUM-ABOUT — bloque visual aprobado 2026-11-27
+
+- Base development c78d0116 y visor f998e23f. Reutilizar ProfileSectionTabs/ProfilePersonalLanguages y BottomSheet; cápsula flotante única animada, fondo opaco de ancho completo en acordeón, Light/Dark, progreso declarado con oro solo a 100 y guía local honesta de aprendizaje mientras no exista JAcademy; CTA solo propietario. Historial dos columnas, edición/alta con guardas existentes, detalle al tocar, acceso visitante únicamente CV autorizado. 24 familias del catálogo + distinciones HVAC, refrigeración, electricidad y genérica. Arte temático vectorial estático con objetos y sombreado (no raster WebP fotográfico todavía), fallback de color, sin red/dependencias. No modificar datos, permisos, fuentes ni JCard. Pruebas de regresión; validar export, contraste y tamaños 320–440 antes de aprobar. No OTA ni APK. Mantener prioridad de perfil.
+
 # Jobeen — Consolidación y prioridad de perfil (2026-11-27)
 
 ## CONSOLIDACIÓN-PARIDAD — aprobada 2026-11-27

@@ -92,9 +92,9 @@ export function languageFlag(name:string){
  return canonical?LANGUAGE_FLAGS[canonical]:"🌐";
 }
 function wavyArc(fraction:number){const steps=Math.max(2,Math.round(140*fraction));let path="";for(let i=0;i<=steps;i++){const angle=-Math.PI/2+2*Math.PI*fraction*i/steps;const radius=25+1.1*Math.sin(i/steps*2*Math.PI*fraction*18);const x=32+radius*Math.cos(angle),y=32+radius*Math.sin(angle);path+=(i===0?"M":"L")+x.toFixed(2)+" "+y.toFixed(2)+" ";}return path;}
-export function LanguageRing({name,value,color,track,size=52}:{name:string;value:number;color:string;track:string;size?:number}){
+export function LanguageRing({name,value,color,track,size=52,accentColor}:{name:string;value:number;color:string;track:string;size?:number;accentColor?:string}){
  const progress=Math.max(0,Math.min(100,value))/100;
- const activeColor=progress<=0.5?proficiencyColors.low:progress<0.8?proficiencyColors.middle:proficiencyColors.high;
+ const activeColor=accentColor??(progress<=0.5?proficiencyColors.low:progress<0.8?proficiencyColors.middle:proficiencyColors.high);
  return <View accessible accessibilityLabel={name+", "+languageLabel(value)} style={{width:size,height:size,alignItems:"center",justifyContent:"center"}}>
   <Svg width={size} height={size} viewBox="0 0 64 64" style={{position:"absolute"}}><Defs><LinearGradient id="jobinLevelGradient" x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={proficiencyColors.low}/><Stop offset="50%" stopColor={proficiencyColors.middle}/><Stop offset="100%" stopColor={proficiencyColors.high}/></LinearGradient></Defs>
    <Path d={wavyArc(1)} stroke={track} strokeWidth="5" fill="none"/>

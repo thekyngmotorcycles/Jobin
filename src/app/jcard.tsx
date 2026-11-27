@@ -24,7 +24,9 @@ import { JobinCard } from "../components/JobinCard";
 import {resolveProfileCardSide} from "../lib/jcard-profile-side";
 import {useUi} from "../components/ui";
 import {JCardLoadState} from "../components/JCardConnectionState";
-import { loadPublicCard } from "../lib/professional-api";
+import { loadPublicCard,loadCatalog } from "../lib/professional-api";
+import {useProfessionalData} from "../state/useProfessionalData";
+import {ProfessionalHistoryGrid} from "../components/ProfessionalHistoryGrid";
 import {readPublicBusinessCard} from "../lib/jcard-cloud";
 import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY} from "../lib/jcard-visibility";
 import {isSavedJCard,removeSavedJCard,saveVisibleJCard,type SavedJCardSide} from "../lib/saved-jcards";
@@ -161,6 +163,7 @@ export default function PublicJCard(){
  const cvScope=useRef<MessageScope|null>(null),cvRevision=useRef(0),cvTarget=useRef("");
  const [cvStatus,setCvStatus]=useState("");
  const [cvRows,setCvRows]=useState<{company:string;role:string;from_year:number;to_year:number|null}[]>([]);
+ const historyCatalog=useProfessionalData(loadCatalog,false,false,cvRows.length>0);
  const [cvMessage,setCvMessage]=useState("");
  const [cvOpen,setCvOpen]=useState(false);
  useFocusEffect(useCallback(()=>{
@@ -301,7 +304,7 @@ export default function PublicJCard(){
          <Text style={{fontWeight:"700",color:colors.ink}}>{cvStatus==="pending"?"Solicitud pendiente":"Solicitar CV"}</Text>
         </Pressable>
        </>:<>
-        {cvRows.length?cvRows.map((row,i)=><Text key={i} style={{color:colors.ink}}>{row.role} · {row.company} ({row.from_year}–{row.to_year??"Actualidad"})</Text>):
+        {cvRows.length?<ProfessionalHistoryGrid key={user+":"+publicScope?.session} catalog={historyCatalog.data?.professions??[]} rows={cvRows.map((row,i)=>({id:String(i),company:row.company,role:row.role,from:row.from_year,to:row.to_year}))}/> :
          <Text style={{color:colors.muted}}>No hay experiencias registradas o disponibles.</Text>}
        </>}
        {!!cvMessage&&<Text style={{color:colors.muted}}>{cvMessage}</Text>}

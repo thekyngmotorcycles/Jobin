@@ -18,6 +18,7 @@ import {useRef} from "react";
 import type {ProfileContactsHandle} from "../../components/ProfileFollowCounts";
 import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,ProfilePersonalContact,ProfilePersonalLanguages,type ProfileSection,type ProfileAboutSide} from "../../components/ProfileSharedSections";
 import {SavedJCardsGallery} from "../../components/SavedJCardsGallery";
+import {ProfessionalHistoryGrid} from "../../components/ProfessionalHistoryGrid";
 import {useReducedMotion} from "react-native-reanimated";
 import {ProfileOwnedPosts} from "../../components/ProfileOwnedPosts";
 import {SettingsDrawerHeader} from "../../components/SettingsDrawerHeader";
@@ -458,30 +459,19 @@ export default function Profile() {
         {mode === "cv" && aboutSide==="personal" && (
           <View style={{ gap: 14 }}>
             {ownerId&&workspace.scope?.owner===ownerId&&<ProfilePersonalContact target={ownerId} scope={workspace.scope}/>}
-            {workspace.data?.card&&<ProfilePersonalLanguages languages={workspace.data.card.languages}/>}
+            {workspace.data?.card&&<ProfilePersonalLanguages key={ownerId+":"+workspaceSession} languages={workspace.data.card.languages} own/>}
             <Text style={s.h2}>Historial profesional</Text>
             {experienceKnown&&<Text style={s.muted}>Experiencia total registrada: {experienceLabel(employmentMonths(history))}.</Text>}
             {ownerId&&historyLoading&&!historyError&&<PageState kind="loading" message="Cargando historial profesional…"/>}
             {ownHistory&&!historyLoading&&!historyEditable&&<PageState kind="error" message="Los contactos privados y la edición del historial no están disponibles." actionLabel="Reintentar" onAction={retryHistory}/>}
             {ownHistory?.reviewPending&&<PageState kind="info" message="Parte de tu historial está en revisión de titularidad."/>}
             {experienceKnown&&history.length===0&&<Text style={s.muted}>Todavía no agregaste empleos.</Text>}
-            {history.map(entry => (
-              <View key={entry.id} style={[s.panel, { flexDirection: "row", gap: 12, alignItems: "center" }]}>
-                <View style={{ flex: 1, gap: 4 }}>
-                  <Text style={s.h3}>{entry.company} ({entry.from}–{entry.to ?? "actual"})</Text>
-                  <Text style={s.muted}>{entry.role}</Text>
-                </View>
-                {historyEditable&&canDeleteApprovedEmployment(entry)&&<Pressable accessibilityRole="button" accessibilityLabel={"Editar empleo en "+entry.company} onPress={()=>openEmployment(entry)} style={{padding:8}}><Ionicons name="create-outline" size={22} color={colors.ink}/></Pressable>}
-                <View accessibilityLabel={entry.verifiedBy ? "Verificado por " + entry.verifiedBy : "No verificada"} style={{ alignItems: "center", gap: 2 }}>
-                  <Ionicons name={entry.verifiedBy ? "checkmark-circle" : "ellipse-outline"} size={22} color={colors.ink} />
-                  <Text style={[s.muted, { fontSize: 9 }]}>{entry.verifiedBy ? "Verificado" : "No verificada"}</Text>
-                </View>
-              </View>
-            ))}
+            <ProfessionalHistoryGrid key={ownerId+":"+workspaceSession} catalog={catalogProfessions}
+             rows={history.map(entry=>({id:entry.id,company:entry.company,role:entry.role,from:entry.from,to:entry.to,professions:entry.professions,verifiedBy:entry.verifiedBy,onEdit:historyEditable&&canDeleteApprovedEmployment(entry)?()=>openEmployment(entry):undefined}))}
+             onAdd={historyEditable?()=>openEmployment():undefined}/>
             <View style={{gap:8}}><Button secondary title="Actualizar solicitudes de CV" onPress={()=>void refreshCV()}/>{incomingCV.filter(req=>req.owner_id===ownerId).map(req=><View key={req.id} style={{gap:6,padding:10,borderWidth:1,borderColor:colors.line,borderRadius:10}}><Text style={s.text}>Solicitud {req.requester_id.slice(0,8)} · {req.status}</Text>{req.status==="pending"&&<View style={s.row}><Button title="Autorizar" onPress={()=>void answerCV(req.id,true)}/><Button secondary title="Rechazar" onPress={()=>void answerCV(req.id,false)}/></View>}{req.status==="approved"&&<Button secondary title="Revocar acceso" onPress={()=>void cancelCV(req.id)}/>}</View>)}</View>
             <View style={s.row}>
               <Button secondary title="Compartir CV" disabled={!ownHistory} onPress={() => void shareCV()} />
-              {historyEditable&&<Button title="Agregar" onPress={() => openEmployment()} />}
             </View>
           </View>
         )}
