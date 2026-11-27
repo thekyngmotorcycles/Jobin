@@ -1,7 +1,44 @@
-import {useId} from "react";
-import {StyleSheet,View} from "react-native";
+import {useId,useState} from "react";
+import {Image,StyleSheet,View,type ImageSourcePropType} from "react-native";
 import Svg,{Defs,LinearGradient,RadialGradient,Stop,Rect,Path,Circle,Ellipse,G,Line} from "react-native-svg";
 import {BANNER_PALETTES,EMPLOYMENT_ART,type BannerFamily} from "../theme/employment-art";
+// Metro bundles the same files for Android and web from these literal references.
+/* eslint-disable @typescript-eslint/no-require-imports */
+const BANNER_IMAGES:Record<BannerFamily,ImageSourcePropType>={
+ business:require("../../assets/images/employment/business.webp"),
+ agriculture:require("../../assets/images/employment/agriculture.webp"),
+ arts:require("../../assets/images/employment/arts.webp"),
+ automotive:require("../../assets/images/employment/automotive.webp"),
+ aviation:require("../../assets/images/employment/aviation.webp"),
+ beauty:require("../../assets/images/employment/beauty.webp"),
+ climate:require("../../assets/images/employment/climate.webp"),
+ commerce:require("../../assets/images/employment/commerce.webp"),
+ construction:require("../../assets/images/employment/construction.webp"),
+ sports:require("../../assets/images/employment/sports.webp"),
+ design:require("../../assets/images/employment/design.webp"),
+ education:require("../../assets/images/employment/education.webp"),
+ railway:require("../../assets/images/employment/railway.webp"),
+ hospitality:require("../../assets/images/employment/hospitality.webp"),
+ hotels:require("../../assets/images/employment/hotels.webp"),
+ industry:require("../../assets/images/employment/industry.webp"),
+ engineering:require("../../assets/images/employment/engineering.webp"),
+ logistics:require("../../assets/images/employment/logistics.webp"),
+ maintenance:require("../../assets/images/employment/maintenance.webp"),
+ heavy_equipment:require("../../assets/images/employment/heavy_equipment.webp"),
+ maritime:require("../../assets/images/employment/maritime.webp"),
+ fashion:require("../../assets/images/employment/fashion.webp"),
+ motorcycles:require("../../assets/images/employment/motorcycles.webp"),
+ refrigeration:require("../../assets/images/employment/refrigeration.webp"),
+ health:require("../../assets/images/employment/health.webp"),
+ animals:require("../../assets/images/employment/animals.webp"),
+ security:require("../../assets/images/employment/security.webp"),
+ legal:require("../../assets/images/employment/legal.webp"),
+ technology:require("../../assets/images/employment/technology.webp"),
+ transport:require("../../assets/images/employment/transport.webp"),
+ generic:require("../../assets/images/employment/generic.webp"),
+};
+/* eslint-enable @typescript-eslint/no-require-imports */
+
 const white=EMPLOYMENT_ART.tone01;
 /** Static thematic vector artwork: illustrated tools, dimensional shading and satin light, no animation or network request. */
 function Motif({family,metal}:{family:BannerFamily;metal:string}){
@@ -27,26 +64,41 @@ function Motif({family,metal}:{family:BannerFamily;metal:string}){
  case "industry":return <G transform="translate(86 28)"><Circle cx="55" cy="59" r="45" {...common}/>{Array.from({length:12},(_,i)=><Rect key={i} x="48" y="5" width="14" height="24" rx="2" {...common} transform={`rotate(${i*30} 55 59)`}/>)}<Circle cx="55" cy="59" r="30" fill={EMPLOYMENT_ART.tone34} stroke={white}/><Circle cx="55" cy="59" r="13" {...common}/></G>;
  case "commerce":return <G transform="translate(86 33)"><Path d="M9 28H98L92 122H15Z" {...common}/><Path d="M31 39V24Q31 3 53 3Q75 3 75 24V39" stroke={white} strokeWidth="5" fill="none"/><Path d="M25 72H82M25 85H72" stroke={white} strokeOpacity=".6" strokeWidth="3"/></G>;
  case "business":return <G transform="translate(83 41)"><Rect x="4" y="22" width="104" height="76" rx="8" {...common}/><Path d="M39 22V10H73V22" stroke={white} strokeWidth="5" fill="none"/><Path d="M4 52H108" stroke={white} strokeWidth="3"/><Rect x="48" y="45" width="16" height="17" rx="3" fill={EMPLOYMENT_ART.tone35}/></G>;
- // Neutral interim art for categories awaiting their approved raster assets.
+ // These categories retain the neutral vector treatment if their local image fails to load.
  case "aviation":case "railway":case "heavy_equipment":case "maritime":case "motorcycles":case "refrigeration":case "animals":case "generic":return null;
  }
 }
 export function EmploymentBanner({family}:{family:BannerFamily}){
- const id=useId().replace(/[^a-zA-Z0-9]/g,""),[base,accent]=BANNER_PALETTES[family];
- const bg="bg"+id,metal="metal"+id,light="light"+id,scrim="scrim"+id;
+ return <BannerArtwork key={family} family={family}/>;
+}
+
+function BannerArtwork({family}:{family:BannerFamily}){
+ const [failed,setFailed]=useState(false);
  return <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={StyleSheet.absoluteFill}>
-  <Svg width="100%" height="100%" viewBox="0 0 160 160" preserveAspectRatio="xMidYMid slice">
+  {failed?<EmploymentVector family={family}/>:<Image
+   source={BANNER_IMAGES[family]} resizeMode="cover" fadeDuration={0}
+   style={styles.image} onError={()=>setFailed(true)}/>}
+  <View style={styles.scrim}/>
+ </View>;
+}
+
+const styles=StyleSheet.create({
+ image:{...StyleSheet.absoluteFillObject,width:"100%",height:"100%"},
+ scrim:{...StyleSheet.absoluteFillObject,backgroundColor:EMPLOYMENT_ART.tone38,opacity:EMPLOYMENT_ART.scrimOpacity},
+});
+
+function EmploymentVector({family}:{family:BannerFamily}){
+ const id=useId().replace(/[^a-zA-Z0-9]/g,""),[base,accent]=BANNER_PALETTES[family];
+ const bg="bg"+id,metal="metal"+id,light="light"+id;
+ return <Svg width="100%" height="100%" viewBox="0 0 160 160" preserveAspectRatio="xMidYMid slice">
    <Defs>
     <LinearGradient id={bg} x1="0%" y1="100%" x2="100%" y2="0%"><Stop offset="0%" stopColor={base}/><Stop offset="100%" stopColor={accent}/></LinearGradient>
     <LinearGradient id={metal} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={EMPLOYMENT_ART.tone36}/><Stop offset="36%" stopColor={accent}/><Stop offset="100%" stopColor={base}/></LinearGradient>
     <RadialGradient id={light} cx="90%" cy="5%" rx="90%" ry="90%"><Stop offset="0%" stopColor={EMPLOYMENT_ART.tone37} stopOpacity=".5"/><Stop offset="100%" stopColor={EMPLOYMENT_ART.tone37} stopOpacity="0"/></RadialGradient>
-    <LinearGradient id={scrim} x1="0%" y1="100%" x2="100%" y2="0%"><Stop offset="0%" stopColor={EMPLOYMENT_ART.tone38} stopOpacity=".84"/><Stop offset="62%" stopColor={EMPLOYMENT_ART.tone38} stopOpacity=".69"/><Stop offset="100%" stopColor={EMPLOYMENT_ART.tone38} stopOpacity=".33"/></LinearGradient>
    </Defs>
    <Rect width="160" height="160" fill={`url(#${bg})`}/><Rect width="160" height="160" fill={`url(#${light})`}/>
    <Path d="M-20 145Q50 19 180 32L180 67Q80 49 -20 170Z" fill={EMPLOYMENT_ART.tone37} opacity=".1"/><Path d="M-18 140Q56 12 176 28" stroke={EMPLOYMENT_ART.tone37} strokeOpacity=".34" strokeWidth="1" fill="none"/>
    <G opacity=".93"><Motif family={family} metal={`url(#${metal})`}/></G>
-   <Rect width="160" height="160" fill={`url(#${scrim})`}/>
    <Path d="M2 16Q2 2 16 2H144Q158 2 158 16" fill="none" stroke={EMPLOYMENT_ART.tone37} strokeOpacity=".23"/>
-  </Svg>
- </View>;
+ </Svg>;
 }

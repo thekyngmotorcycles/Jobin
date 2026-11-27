@@ -57,5 +57,7 @@ export const EMPLOYMENT_ART={
  "tone40": "#41546C",
  "tone41": "#F0F5FC",
  "tone42": "#FFE08A",
- "tone43": "#EDF3FA"
+ "tone43": "#EDF3FA",
+ // Keeps all history text readable even over a pure-white image pixel.
+ scrimOpacity: 0.66
 } as const;
