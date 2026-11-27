@@ -1,3 +1,7 @@
+
+## Recursos visuales aprobados y eficiencia — 2026-11-27
+
+Reutilizar exactamente las imágenes aprobadas por el propietario. Antes de generar, sustituir o modificar cualquier imagen, explicar motivo, beneficio y pedir autorización expresa; no generar variantes por iniciativa propia. Priorizar recursos existentes y evitar consumo innecesario de IA. No confundir una referencia aprobada con autorización de reemplazarla. El nombre comercial actual es Jobin.
 ## Catálogo único, marca y ejecución por bloques — aprobación del propietario 2026-11-27
 
 - Nombre comercial vigente: **Jobin**, con una I, sin doble E. Usar en nuevos textos, propuestas y documentación. No renombrar identificadores técnicos, repositorio, dominio, paquete, runtime, claves, funciones ni textos históricos por sustitución masiva; cualquier migración de marca visible existente se planifica y aprueba por separado.

@@ -1,3 +1,7 @@
+# Jobin — continuidad de catálogo e historial
+
+- CI 46072462868: success para 229dde2 (30 categorías oficiales y fallback neutro, asignación por código). Biblioteca final de 31 WebP ya generada en `jobin_banners_30_categorias.zip`, no generar más. Pendiente único de arte: trasladar los binarios al repositorio, activar imágenes locales con fallback y validar export/visor; no declarar integrado antes de verificar los archivos. No publicar OTA, no crear APK, no fusionar sin aprobación del propietario.
+
 # Jobeen — Continuidad del perfil premium
 
 - CI 46054697615 y visor 46054737015 completados con éxito; Vercel dpl_FqMAJDiGDpcLMUmYcJo3ftfJCv3a READY (a4a44b1). Propietario ordena título Historial profesional sin serif/cursiva; reutilizar s.h3 y escala semántica Royal Hive exclusivamente en el bloque nuevo. No modificar estilos globales ni partes aprobadas. 16 fondos WebP generados fuera del repo, 12 pendientes y transferencia binaria no confirmada. Revalidar antes de merge/OTA.
