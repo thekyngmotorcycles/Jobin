@@ -1,5 +1,11 @@
 # Jobin — continuidad de OTA compatible
 
+## PROFILE-SEGMENTED — Bloque B aprobado (2026-11-27)
+
+- Bloque A integrado en 8ac44748: 543/543, CI push 46101093284, primera OTA automática Android grupo 67cd3f97-81d6-49df-8904-6e50646a5536, Vercel READY mismo SHA. Propietario corrigió Site URL y lista exacta de redirecciones en Supabase (con barra final, conservó jobin://), confirmó acceso Google web y mostró perfil propio Light. Aprueba avanzar conservando tipografía como base provisional; revisión Dark, visitante y APK física pendiente.
+- B: solo ProfileSectionTabs y ProfileAboutSelector compartidos. Pista 38 dp, cápsula 30 dp, objetivos táctiles 48 dp reales, incremento natural con texto accesible, sombra reducida, conserva paleta Royal Hive, orden, selección, animación, scroll horizontal, acordeón y sincronización de cara autorizada. Referencias Telegram consultadas en Mobbin (metadatos disponibles, imágenes no inspeccionadas); diseño ya aprobado. Sin cambios de JCard, historial, fotos, idiomas, permisos ni dependencias. Pendientes CI, integración autorizada, Vercel y OTA Android del mismo SHA y validación visual. No iniciar C ni STREAM-UI.
+
+
 ## PROFILE-TYPOGRAPHY-02 — aprobación Bloque A (2026-11-27)
 
 - Propietario aprobó Royal Hive Typography 2.0, candidato solo en perfil propio y visitante: escala semántica por ancho lógico <360 / 360–399 / >=400 dp; títulos 20/21/22, secciones 15/16/17, cuerpo 14/15/15, acciones 13/14/15, selectores 12/13/14, secundarios 12/12/13, etiquetas 10/11/11. Accesibilidad nativa activa; sin multiplicador global. Mantener la familia y arte JCard, navegación, áreas táctiles, datos y permisos. Fuera del perfil permanecen los tokens anteriores. Geometría de selectores/tarjetas, fondos y colores de idiomas quedan para B–E; no empezar STREAM-UI. Pendientes CI del candidato, autorización de integración y revisión visual real (320/360/390/402/440, ambos temas y escala accesible). OTA compatible según autorización permanente después de merge aprobado y CI del SHA exacto; ninguna APK nueva.
