@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT,jobeenTypeWidthScale,royalHiveTypography} from "../src/theme/typography.ts";
-const source=(path:string)=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
+const source=(path:string)=>readFileSync(path,"utf8");
 test("Approved profile type sizes at logical widths and boundaries",()=>{
  const keys=["pageTitle","navigationTitle","modalTitle","sectionTitle","body","input","action","segmented","secondary","micro"] as const;
  const compact=[20,16,18,15,14,14,13,12,12,10],standard=[21,17,19,16,15,15,14,13,12,11],wide=[22,18,20,17,15,15,15,14,13,11];
