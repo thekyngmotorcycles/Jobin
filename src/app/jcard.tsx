@@ -8,7 +8,7 @@ import {useTabClearance} from "../theme/navigation";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
 import {Ionicons} from "@expo/vector-icons";
-import {JOBEEN_CONTROL} from "../theme/control-metrics";
+import {JOBEEN_CONTROL,PROFILE_CONTROL_RHYTHM} from "../theme/control-metrics";
 import {ProfileTypographyScope,useRoyalHiveTypography} from "../theme/ProfileTypographyScope";
 import {NAVIGATION_ROW_HEIGHT} from "../theme/navigation";
 import {jobeenTokens} from "../theme/jobeen";
@@ -274,7 +274,7 @@ function PublicJCardScreen(){
       setTabsPinned(previous=>previous===pinned?previous:pinned);
      }
     })}>
-   <Animated.View style={{paddingBottom:12,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
+   <Animated.View style={{paddingBottom:PROFILE_CONTROL_RHYTHM.heroBottom,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
     {resource.data?<ProfileIdentityHeader
      card={<JobinCard card={{...resource.data,identityVerified:verifiedIdentity,business:publicBusiness??undefined}} ownerId={resource.data.id} initialSide={publicBusiness&&(card==="business"||!cardVisibility.personal_enabled)?"business":"personal"} selectedSide={activeCardSide} onActiveSideChange={setActiveCardSide} awardsInAbout profileInset={16} publicVisibility={cardVisibility} publicScope={snapshot?.scope}/>}
      actionsInset={16} actions={<ProfileCommunityActions user={resource.data.id} name={cardVisibility.personal_enabled?resource.data.name:publicBusiness?.name??""} url={resource.data.profileUrl} menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}
@@ -289,11 +289,11 @@ function PublicJCardScreen(){
     style={{zIndex:3,backgroundColor:jt.bg,borderTopLeftRadius:18,borderTopRightRadius:18,width:"100%",maxWidth:1180,alignSelf:"center"}}>
     <ProfileSectionTabs section={section} onSelect={selectSection} pinned={tabsPinned}/>
    </View>}
-   {!!resource.data&&<View style={{width:"100%",maxWidth:1180,alignSelf:"center",gap:14,paddingHorizontal:20,paddingTop:20,paddingBottom:20,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
+   {!!resource.data&&<View style={{width:"100%",maxWidth:1180,alignSelf:"center",gap:PROFILE_CONTROL_RHYTHM.gap,paddingHorizontal:PROFILE_CONTROL_RHYTHM.horizontalInset,paddingTop:section==="cv"?PROFILE_CONTROL_RHYTHM.aboutTop:PROFILE_CONTROL_RHYTHM.gap,paddingBottom:20,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
 
     {section==="cv"&&<ProfileAboutSelector side={activeCardSide} onSelect={setActiveCardSide} personalAvailable={cardVisibility.personal_enabled} businessAvailable={!!publicBusiness}/>}
     {section==="cv"&&activeCardSide==="business"&&cardVisibility.business_enabled&&publicBusiness&&<ProfileBusinessAbout business={publicBusiness} target={resource.data.id} scope={publicScope}/>}
-    {section==="cv"&&activeCardSide==="personal"&&cardVisibility.personal_enabled&&<View style={{marginVertical:4,gap:10}}>
+    {section==="cv"&&activeCardSide==="personal"&&cardVisibility.personal_enabled&&<View style={{gap:PROFILE_CONTROL_RHYTHM.gap}}>
       <ProfilePersonalContact target={resource.data.id} scope={publicScope}/>
       <ProfilePersonalLanguages languages={resource.data.languages}/>
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,minHeight:48,borderRadius:12,borderWidth:1,borderColor:colors.line}}>

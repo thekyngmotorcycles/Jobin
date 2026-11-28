@@ -1,5 +1,10 @@
 # Jobin — continuidad de OTA compatible
 
+## PROFILE-RHYTHM — Bloque B2 opción 2 aprobada (2026-11-28)
+
+- B integrado 419e0df0; Vercel READY y OTA Android grupo 0c5a64c9-810d-4645-9843-4b07c746b99b, CI push 46108225024 success. Propietario aporta capturas web y Android Light y referencia Jobin anterior; identifica botones pesados y separación excesiva. Aprueba opción 2: acción 40 dp visible/20 radio/18 icono, menú principal 38/30, Personal/Negocio 44/36, 48 dp táctiles reales, espaciado base 8 dp y márgenes alineados. Mantener paleta, tipografía A, gestos, rutas, privacidad, arte JCard y barra inferior; aplicar perfil propio/visitante. Los insets táctiles hacen que el intervalo visual acciones→menú sea 9 dp a escala normal, sin solapar zonas de toque. No extender a pantallas ajenas. Referencias visuales aportadas manualmente; no gastar Mobbin. No generar imágenes. Pendientes CI, aprobación separada de merge, OTA/Vercel y revisión física; no empezar C.
+
+
 ## PROFILE-SEGMENTED — Bloque B aprobado (2026-11-27)
 
 - Bloque A integrado en 8ac44748: 543/543, CI push 46101093284, primera OTA automática Android grupo 67cd3f97-81d6-49df-8904-6e50646a5536, Vercel READY mismo SHA. Propietario corrigió Site URL y lista exacta de redirecciones en Supabase (con barra final, conservó jobin://), confirmó acceso Google web y mostró perfil propio Light. Aprueba avanzar conservando tipografía como base provisional; revisión Dark, visitante y APK física pendiente.

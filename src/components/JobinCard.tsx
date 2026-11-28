@@ -8,7 +8,7 @@ import {JCardProfileIdentity} from "./JCardProfileIdentity";
 import {BusinessReviewSummary} from "./BusinessReviewSummary";
 import {businessPhoneLabel} from "../lib/jcard-review-display";
 import {jobeenTokens,jcardArtTokens} from "../theme/jobeen";
-import {JOBEEN_CONTROL} from "../theme/control-metrics";
+import {JOBEEN_CONTROL,PROFILE_CONTROL_RHYTHM,profileActionSurface} from "../theme/control-metrics";
 import {personalAvatarUrl} from "../lib/personal-jcard-photo";
 import {readJCardVisibility,DEFAULT_JCARD_VISIBILITY,type JCardVisibility} from "../lib/jcard-visibility";
 import {assertMessageScope,captureMessageScope,type MessageScope} from "../lib/message-session";
@@ -562,15 +562,18 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
      front={(showOwnerActions||visibility.personal_enabled)?<CardFace card={card} theme={cardTheme} profilePortrait={profilePortrait} appearance={appearance} contact={contact} employerLink={employerLink} onEdit={()=>router.push("/professional")} onEditPhoto={showOwnerActions?onEditPersonalPhoto:undefined} onSaveContact={!profilePortrait&&!showOwnerActions?(onDemoSaveContact??(ownerId?savePersonal:undefined)):undefined} onShare={!showOwnerActions?()=>void share("personal"):undefined}/>:null}
      back={<View style={{height:cardHeight}}>{(showOwnerActions||visibility.business_enabled)&&<BusinessFace card={card} theme={cardTheme} appearance={businessAppearance} contact={contact} onSaveContact={!profilePortrait&&!showOwnerActions?(onDemoSaveContact??(ownerId?saveBusiness:undefined)):undefined} onShare={!showOwnerActions?()=>void share("business"):undefined} canEditMedia={showOwnerActions&&!!onEditBusinessMedia} onEditMedia={onEditBusinessMedia} visibility={visibility} awardsInAbout={awardsInAbout} profilePortrait={profilePortrait}/>}</View>}
    />
-   {showOwnerActions&&ownerQuickActions&&<View style={{flexDirection:"row",gap:8,paddingTop:10,alignItems:"stretch"}}>
-     <Pressable accessibilityRole="button" accessibilityLabel="Panel" onPress={ownerQuickActions.onPanel} style={({pressed})=>({flex:1,minWidth:48,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,paddingHorizontal:5,paddingVertical:10,borderRadius:JOBEEN_CONTROL.buttonRadius,backgroundColor:cardColors.ink,opacity:pressed?0.8:1})}>
-       <Ionicons name="grid-outline" size={18} color={cardColors.surface}/><Text style={{flexShrink:1,textAlign:"center",color:cardColors.surface,fontWeight:adaptive?"500":"700",...(adaptive?{fontSize:profileType.action,lineHeight:profileLine.action}:{})}}>Panel</Text>
+   {showOwnerActions&&ownerQuickActions&&<View style={{flexDirection:"row",gap:PROFILE_CONTROL_RHYTHM.gap,paddingTop:PROFILE_CONTROL_RHYTHM.cardActionGap,alignItems:"stretch"}}>
+     <Pressable accessibilityRole="button" accessibilityLabel="Panel" onPress={ownerQuickActions.onPanel} style={({pressed})=>({flex:1,minWidth:48,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,paddingHorizontal:5,paddingVertical:10,position:"relative",borderRadius:PROFILE_CONTROL_RHYTHM.actionRadius,opacity:pressed?0.8:1})}>
+       <View pointerEvents="none" accessible={false} style={profileActionSurface(cardColors.ink)}/>
+       <Ionicons name="grid-outline" size={PROFILE_CONTROL_RHYTHM.icon} color={cardColors.surface}/><Text style={{flexShrink:1,textAlign:"center",color:cardColors.surface,fontWeight:adaptive?"500":"700",...(adaptive?{fontSize:profileType.action,lineHeight:profileLine.action}:{})}}>Panel</Text>
      </Pressable>
-     <Pressable accessibilityRole="button" accessibilityLabel={ownerQuickActions.liveLabel} onPress={ownerQuickActions.onLive} style={({pressed})=>({flex:1,minWidth:48,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,paddingHorizontal:5,paddingVertical:10,borderRadius:JOBEEN_CONTROL.buttonRadius,backgroundColor:cardColors.yellow,opacity:pressed?0.8:1})}>
-       <Ionicons name="radio-outline" size={18} color={cardColors.onYellow}/><Text style={{flexShrink:1,textAlign:"center",color:cardColors.onYellow,fontWeight:adaptive?"500":"700",...(adaptive?{fontSize:profileType.action,lineHeight:profileLine.action}:{})}}>{ownerQuickActions.liveLabel}</Text>
+     <Pressable accessibilityRole="button" accessibilityLabel={ownerQuickActions.liveLabel} onPress={ownerQuickActions.onLive} style={({pressed})=>({flex:1,minWidth:48,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,paddingHorizontal:5,paddingVertical:10,position:"relative",borderRadius:PROFILE_CONTROL_RHYTHM.actionRadius,opacity:pressed?0.8:1})}>
+       <View pointerEvents="none" accessible={false} style={profileActionSurface(cardColors.yellow)}/>
+       <Ionicons name="radio-outline" size={PROFILE_CONTROL_RHYTHM.icon} color={cardColors.onYellow}/><Text style={{flexShrink:1,textAlign:"center",color:cardColors.onYellow,fontWeight:adaptive?"500":"700",...(adaptive?{fontSize:profileType.action,lineHeight:profileLine.action}:{})}}>{ownerQuickActions.liveLabel}</Text>
      </Pressable>
-     <Pressable accessibilityRole="button" accessibilityLabel={back?"Compartir JCard de negocio":"Compartir JCard personal"} onPress={()=>void share(back?"business":"personal")} style={({pressed})=>({width:JOBEEN_CONTROL.touchTarget,minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center",borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:cardColors.outline,backgroundColor:cardColors.surface,opacity:pressed?0.8:1})}>
-       <Ionicons name="share-social-outline" size={22} color={cardColors.ink}/>
+     <Pressable accessibilityRole="button" accessibilityLabel={back?"Compartir JCard de negocio":"Compartir JCard personal"} onPress={()=>void share(back?"business":"personal")} style={({pressed})=>({width:JOBEEN_CONTROL.touchTarget,minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center",position:"relative",borderRadius:PROFILE_CONTROL_RHYTHM.actionRadius,opacity:pressed?0.8:1})}>
+       <View pointerEvents="none" accessible={false} style={profileActionSurface(cardColors.surface,cardColors.outline)}/>
+       <Ionicons name="share-social-outline" size={PROFILE_CONTROL_RHYTHM.icon} color={cardColors.ink}/>
      </Pressable>
     </View>}
     {showOwnerActions&&!ownerQuickActions&&<View style={{flexDirection:"row",gap:10,paddingTop:10}}>

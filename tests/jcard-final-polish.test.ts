@@ -30,11 +30,16 @@ test("Profile actions follow shared private dimensions and singular counter labe
  const counts=source("src/components/ProfileFollowCounts.tsx"),actions=source("src/components/ProfileCommunityActions.tsx"),card=source("src/components/JobinCard.tsx"),shared=source("src/components/ProfileSharedSections.tsx");
  assert.ok(counts.includes('counts?.followers===1?"Seguidor":"Seguidores"')&&counts.includes('counts?.contacts===1?"Contacto":"Contactos"'));
  assert.ok(!actions.includes("marginVertical:10")&&!actions.includes("minHeight:52"));
- for(const s of [actions,card]){
-  assert.ok(s.includes("minHeight:JOBEEN_CONTROL.touchTarget")&&s.includes("borderRadius:JOBEEN_CONTROL.buttonRadius"));
-  assert.ok(s.includes('gap:8,')&&s.includes('paddingVertical:10'));
+ const ownerRow=card.slice(card.indexOf("{showOwnerActions&&ownerQuickActions&&"),card.indexOf("{showOwnerActions&&!ownerQuickActions"));
+ const visitorRow=actions.slice(actions.indexOf(" return <View>"),actions.indexOf("  <Modal visible={menuOpen}"));
+ for(const s of [visitorRow,ownerRow]){
+  assert.equal(s.split("minHeight:JOBEEN_CONTROL.touchTarget").length-1,3,"Every action retains a full touch target");
+  assert.equal(s.split("borderRadius:PROFILE_CONTROL_RHYTHM.actionRadius").length-1,3);
+  assert.equal(s.split("profileActionSurface(").length-1,3,"All actions share the independent compact painted surface");
+  assert.ok(s.includes("gap:PROFILE_CONTROL_RHYTHM.gap")&&s.includes("paddingVertical:10"));
+  assert.equal(s.split('pointerEvents="none"').length-1,3,"Decorative surfaces cannot consume touches");
  }
- assert.ok(shared.includes("gap:actionsInset>0?10:14")&&shared.includes("jcardSurfaceMetrics.maxWidth+2*actionsInset"));
+ assert.ok(shared.includes("gap:actionsInset>0?PROFILE_CONTROL_RHYTHM.cardActionGap:PROFILE_CONTROL_RHYTHM.gap")&&shared.includes("jcardSurfaceMetrics.maxWidth+2*actionsInset"));
 });
 test("Opacity is increased for profile routes only, while navigation behavior is unchanged",()=>{
  assert.ok(source("src/components/PersistentBottomTabs.tsx").includes('profileOpaque={pathname==="/jcard"}'));
