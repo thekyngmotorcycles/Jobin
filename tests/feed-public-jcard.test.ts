@@ -3,6 +3,7 @@ import {readFileSync} from "node:fs";
 import test from "node:test";
 import ts from "typescript";
 import {resolveProfileCardSide} from "../src/lib/jcard-profile-side.ts";
+import {royalHiveTypography} from "../src/theme/typography.ts";
 
 const author="a1111111-1111-4111-8111-111111111111";
 const stranger="b2222222-2222-4222-8222-222222222222";
@@ -16,7 +17,7 @@ const {outputText}=ts.transpileModule(routeSource,{
  fileName:"jcard.tsx",compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}
 });
 
-type Element={type:string;props:Record<string,unknown>};
+type Element={type:string|(()=>Element);props:Record<string,unknown>};
 function find(node:unknown,type:string):Element|undefined{
  if(Array.isArray(node))return node.map(child=>find(child,type)).find(Boolean);
  if(!node||typeof node!=="object"||!("props" in node))return;
@@ -35,7 +36,7 @@ function mount(config:{
  const route={user:author,card:config.requestedSide};
  const visibility={personal_enabled:config.personal??true,business_enabled:config.businessVisible??true};
  const module={exports:{}};
- const jsx=(type:string,props:Element["props"])=>({type,props});
+ const jsx=(type:Element["type"],props:Element["props"])=>({type,props});
  class AnimatedValue{interpolate() {return 0;}}
  const modules:Record<string,unknown>={
   react:{useState:(initial:unknown)=>{
@@ -46,13 +47,14 @@ function mount(config:{
   useCallback:(fn:unknown)=>fn,useEffect:()=>{}},
   "react/jsx-runtime":{jsx,jsxs:jsx,Fragment:"Fragment"},
   "react-native":{Animated:{Value:AnimatedValue,multiply:()=>new AnimatedValue(),event:()=>()=>{}},
-   useWindowDimensions:()=>({height:720})},
+   useWindowDimensions:()=>({height:720,width:320,fontScale:1})},
   "expo-router":{Stack:{Screen:"Screen"},router:{},useLocalSearchParams:()=>route,
    useFocusEffect:(effect:()=>void|(()=>void))=>effects.push(effect)},
   "react-native-safe-area-context":{useSafeAreaInsets:()=>({top:0}),SafeAreaView:"SafeAreaView"},
   "react-native-reanimated":{useReducedMotion:()=>false},
   "../theme/navigation":{useTabClearance:()=>({contentBottom:0}),NAVIGATION_ROW_HEIGHT:50},
   "../theme/jobeen":{jobeenTokens:()=>({})},
+  "../theme/ProfileTypographyScope":{ProfileTypographyScope:"ProfileTypographyScope",useRoyalHiveTypography:()=>royalHiveTypography(320,true)},
   "../state/ThemeProvider":{useTheme:()=>({theme:"light"})},
   "../components/ui":{useUi:()=>({s:{},colors:{}})},
   "../lib/message-session":{
@@ -81,7 +83,14 @@ function mount(config:{
  const components=new Proxy({}, {get:(_target,key)=>String(key)});
  new Function("require","module","exports",outputText)((name:string)=>modules[name]??components,module,module.exports);
  const {default:Page}=module.exports as {default:()=>Element};
- function render(){cursor=0;refCursor=0;effects.length=0;return Page();}
+ function render(){
+  cursor=0;refCursor=0;effects.length=0;
+  const root=Page();
+  assert.equal(root.type,"ProfileTypographyScope","Visitor route must opt into the scoped typography");
+  const screen=root.props.children as Element;
+  assert.equal(typeof screen.type,"function","Render the actual screen inside the typography provider");
+  return (screen.type as ()=>Element)();
+ }
  render();
  const close=effects[0]();
  const closeCV=effects[1]();
