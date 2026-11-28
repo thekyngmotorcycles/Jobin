@@ -11,7 +11,7 @@ import {MediaThumbnail} from "./MediaThumbnail";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {useRoyalHiveTypography} from "../theme/ProfileTypographyScope";
-import {JOBEEN_CONTROL} from "../theme/control-metrics";
+import {JOBEEN_CONTROL,PROFILE_SEGMENTED} from "../theme/control-metrics";
 import {jcardSurfaceMetrics} from "../theme/jcard";
 import type {BusinessCardData,CardData} from "../lib/jcard";
 import {LanguageRing, languageLabel} from "./LanguageRing";
@@ -66,18 +66,20 @@ export function ProfileSectionTabs({section,onSelect,pinned=false,showPrivateJCa
   previousSection.current=section;
   scroller.current?.scrollTo({x:Math.max(0,layout.x+layout.width/2-viewportWidth/2),animated:!reducedMotion});
  },[layout,section,viewportWidth,reducedMotion,position,pillWidth]);
- return <View style={{width:"100%",backgroundColor:jt.bg,zIndex:5,paddingHorizontal:compact?5:10,paddingTop:7,paddingBottom:8}}>
-  <View style={{backgroundColor:track,borderColor:jt.line,borderWidth:1,borderRadius:28,shadowColor:jt.floatingCardShadow,shadowOffset:{width:0,height:pinned?4:3},shadowOpacity:theme==="light"?0.16:0.4,shadowRadius:7,elevation:5}}>
+ return <View style={{width:"100%",backgroundColor:jt.bg,zIndex:5,paddingHorizontal:compact?5:10,paddingTop:PROFILE_SEGMENTED.outerVerticalPadding,paddingBottom:PROFILE_SEGMENTED.outerVerticalPadding}}>
+  <View style={{position:"relative"}}>
+   <View pointerEvents="none" accessible={false} style={{position:"absolute",left:0,right:0,top:PROFILE_SEGMENTED.trackInset,bottom:PROFILE_SEGMENTED.trackInset,backgroundColor:track,borderColor:jt.line,borderWidth:1,borderRadius:PROFILE_SEGMENTED.radius,shadowColor:jt.floatingCardShadow,shadowOffset:{width:0,height:pinned?2:1},shadowOpacity:theme==="light"?.08:.16,shadowRadius:3,elevation:pinned?2:1}}/>
    <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always"
-    onLayout={event=>setViewportWidth(event.nativeEvent.layout.width)} ref={scroller} contentContainerStyle={{flexGrow:1,alignItems:"center",paddingHorizontal:3,paddingVertical:3}}>
-    {!!layout&&<Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{position:"absolute",top:3,bottom:3,left:0,width:pillWidth,borderRadius:24,backgroundColor:active,transform:[{translateX:position}]}}/>}
+    onLayout={event=>setViewportWidth(event.nativeEvent.layout.width)} ref={scroller} contentContainerStyle={{flexGrow:1,alignItems:"stretch",paddingHorizontal:PROFILE_SEGMENTED.horizontalInset}}>
+    {!!layout&&<Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{position:"absolute",top:PROFILE_SEGMENTED.pillInset,bottom:PROFILE_SEGMENTED.pillInset,left:0,width:pillWidth,borderRadius:PROFILE_SEGMENTED.radius,backgroundColor:active,transform:[{translateX:position}]}}/>}
     {(showPrivateJCards?tabs:visitorTabs).map(tab=>{
      const selected=section===tab.id;
      return <Pressable key={tab.id} accessibilityRole="tab" accessibilityLabel={tab.label}
        accessibilityState={{selected}} aria-selected={selected} onPress={()=>onSelect(tab.id)}
        onLayout={event=>{const {x,width}=event.nativeEvent.layout;setLayouts(current=>current[tab.id]?.x===x&&current[tab.id]?.width===width?current:{...current,[tab.id]:{x,width}});}}
        style={{minHeight:JOBEEN_CONTROL.touchTarget,minWidth:JOBEEN_CONTROL.touchTarget,flexGrow:1,flexShrink:0,
-        paddingHorizontal:compact?3:7,alignItems:"center",justifyContent:"center",borderRadius:24,backgroundColor:!layout&&selected?active:undefined}}>
+        paddingHorizontal:compact?3:7,paddingVertical:PROFILE_SEGMENTED.textPadding,alignItems:"center",justifyContent:"center",borderRadius:PROFILE_SEGMENTED.radius}}>
+      {!layout&&selected&&<View pointerEvents="none" accessible={false} style={{position:"absolute",left:0,right:0,top:PROFILE_SEGMENTED.pillInset,bottom:PROFILE_SEGMENTED.pillInset,borderRadius:PROFILE_SEGMENTED.radius,backgroundColor:active}}/>}
       <Text style={{fontSize:adaptive?JOBEEN_TYPE.segmented:compact&&fontScale<=1.15?JOBEEN_TYPE.input-2:JOBEEN_TYPE.input-1,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.segmented}:{}),fontWeight:adaptive&&!selected?"500":"600",color:selected?activeInk:jt.ink,textAlign:"center"}}>{tab.label}</Text>
      </Pressable>;
     })}
@@ -102,14 +104,16 @@ export function ProfileAboutSelector({side,onSelect,personalAvailable=true,busin
   transition.start();return()=>transition.stop();
  },[destination,position,reducedMotion,width]);
  if(!personalAvailable||!businessAvailable)return null;
- const half=Math.max(0,(width-8)/2);
- return <View accessibilityRole="tablist" onLayout={event=>setWidth(Math.round(event.nativeEvent.layout.width))}
-  style={{flexDirection:"row",padding:4,minHeight:JOBEEN_CONTROL.touchTarget+8,borderRadius:28,backgroundColor:jt.surface,borderWidth:1,borderColor:jt.line}}>
+ const half=Math.max(0,(width-2*PROFILE_SEGMENTED.horizontalInset)/2);
+ return <View accessibilityRole="tablist" onLayout={event=>setWidth(event.nativeEvent.layout.width)}
+  style={{position:"relative",flexDirection:"row",alignItems:"stretch",paddingHorizontal:PROFILE_SEGMENTED.horizontalInset,minHeight:JOBEEN_CONTROL.touchTarget}}>
+  <View pointerEvents="none" accessible={false} style={{position:"absolute",left:0,right:0,top:PROFILE_SEGMENTED.trackInset,bottom:PROFILE_SEGMENTED.trackInset,borderRadius:PROFILE_SEGMENTED.radius,backgroundColor:jt.surface,borderWidth:1,borderColor:jt.line}}/>
   {half>0&&<Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-   style={{position:"absolute",left:4,top:4,bottom:4,width:half,borderRadius:24,backgroundColor:jt.ink,transform:[{translateX:position.interpolate({inputRange:[0,1],outputRange:[0,half]})}]}}/>}
+   style={{position:"absolute",left:PROFILE_SEGMENTED.horizontalInset,top:PROFILE_SEGMENTED.pillInset,bottom:PROFILE_SEGMENTED.pillInset,width:half,borderRadius:PROFILE_SEGMENTED.radius,backgroundColor:jt.ink,transform:[{translateX:position.interpolate({inputRange:[0,1],outputRange:[0,half]})}]}}/>}
   {(["personal","business"] as const).map(option=><Pressable key={option} accessibilityRole="tab" accessibilityState={{selected:side===option}}
-   onPress={()=>onSelect(option)} style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center",borderRadius:24,backgroundColor:half===0&&side===option?jt.ink:undefined}}>
-   <Text numberOfLines={adaptive?undefined:1} adjustsFontSizeToFit={!adaptive} minimumFontScale={0.85} style={{fontSize:adaptive?JOBEEN_TYPE.segmented:JOBEEN_TYPE.input,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.segmented}:{}),fontWeight:adaptive?(side===option?"600":"500"):(side===option?"700":"600"),color:side===option?jt.surface:jt.ink}}>{option==="personal"?"Personal":"Negocio"}</Text>
+   accessibilityLabel={option==="personal"?"Personal":"Negocio"} onPress={()=>onSelect(option)} style={{flex:1,minWidth:JOBEEN_CONTROL.touchTarget,minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:4,paddingVertical:PROFILE_SEGMENTED.textPadding,alignItems:"center",justifyContent:"center",borderRadius:PROFILE_SEGMENTED.radius}}>
+   {half===0&&side===option&&<View pointerEvents="none" accessible={false} style={{position:"absolute",left:0,right:0,top:PROFILE_SEGMENTED.pillInset,bottom:PROFILE_SEGMENTED.pillInset,borderRadius:PROFILE_SEGMENTED.radius,backgroundColor:jt.ink}}/>}
+   <Text numberOfLines={adaptive?undefined:1} adjustsFontSizeToFit={!adaptive} minimumFontScale={0.85} style={{fontSize:adaptive?JOBEEN_TYPE.segmented:JOBEEN_TYPE.input,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.segmented}:{}),fontWeight:adaptive?(side===option?"600":"500"):(side===option?"700":"600"),color:side===option?jt.surface:jt.ink,textAlign:"center",maxWidth:"100%"}}>{option==="personal"?"Personal":"Negocio"}</Text>
   </Pressable>)}
  </View>;
 }

@@ -36,3 +36,11 @@ export function jobeenPageLayout(width:number,kind:JobeenPageKind){
  const maxWidth=kind==="settings"||kind==="form"?720:980;
  return {padding:margin,gap:16,maxWidth,width:"100%",alignSelf:"center",paddingBottom:32} as const;
 }
+
+/** Profile-only segmented controls: separate painted geometry from the real hit area.
+ * Vertical insets grow naturally with the row when accessibility text wraps.
+ */
+export const PROFILE_SEGMENTED={
+ touchHeight:JOBEEN_CONTROL.touchTarget,trackInset:5,pillInset:9,horizontalInset:4,
+ textPadding:10,radius:999,outerVerticalPadding:3,
+} as const;
