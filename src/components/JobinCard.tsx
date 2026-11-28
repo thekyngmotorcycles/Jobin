@@ -1,3 +1,4 @@
+import {useRoyalHiveTypography} from "../theme/ProfileTypographyScope";
 import {presentJCardContact} from "../lib/jcard-save-contact";
 import {BusinessCard3D,CardFlipInteractionContext} from "./BusinessCard3D";
 import {ProfileConnectionCountRow} from "./ProfileFollowCounts";
@@ -100,7 +101,7 @@ function secondaryCardSeals(card:CardData){
  return card.seals.filter(seal=>!(/hvac/i.test(primaryProfession)&&/hvac|aire acondicionado/i.test(seal.profession))&&seal.profession.trim().toLocaleLowerCase()!==primaryProfession.toLocaleLowerCase());
 }
 function CardFace({ card, theme, appearance="original", expanded = false, onEdit, onShare, onEditPhoto, onSaveContact, contact, employerLink,profilePortrait }: { card: CardData; theme: ThemeName; appearance?:JCardPremiumBackgroundId; expanded?: boolean; onEdit?: () => void; onShare?: () => void; onEditPhoto?: () => void; onSaveContact?:()=>void; contact?:{email:string|null;phone:string|null;details?:PersonalContactDetails}; employerLink?:{id:string;name:string;handle:string}|null;profilePortrait?:JCardProfilePortraitMetrics }) {
-  const { s, fs } = useUi();
+  const { s, fs } = useUi(false);
   const inlineIdentity=theme==="light";
   const jobeen=jcardArtTokens(theme);
   const gradientId = "jcard" + useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -498,7 +499,7 @@ export function BusinessFace({card,theme,appearance="original",contact,onShare,o
  </View>;
 }
 export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,onEditPersonalPhoto,ownerId,showOwnerActions=false,initialSide="personal",selectedSide,employerLink,onDemoSaveContact,onActiveSideChange,ownerQuickActions,publicVisibility,publicScope,awardsInAbout=false,profileCoverScope,profileInset=0}:{card:CardData;previewTheme?:ThemeName;onEditBusiness?:()=>void;onEditBusinessMedia?:(slot:"banner"|"avatar")=>void;onEditPersonalPhoto?:()=>void;ownerId?:string;showOwnerActions?:boolean;initialSide?:"personal"|"business";selectedSide?:"personal"|"business";employerLink?:{id:string;name:string;handle:string}|null;onDemoSaveContact?:()=>void;onActiveSideChange?:(side:"personal"|"business")=>void;ownerQuickActions?:{onPanel:()=>void;onLive:()=>void;liveLabel:string};publicVisibility?:JCardVisibility;publicScope?:MessageScope;awardsInAbout?:boolean;profileCoverScope?:MessageScope|null;profileInset?:number}){
- const {theme}=useTheme();const {colors}=useUi();const {width,fontScale}=useWindowDimensions();
+ const {theme}=useTheme();const {colors}=useUi(false);const {width,fontScale}=useWindowDimensions();const {type:profileType,lineHeight:profileLine,adaptive}=useRoyalHiveTypography();
  const [measuredCardWidth,setMeasuredCardWidth]=useState(0);
  const [contact,setContact]=useState<{email:string|null;phone:string|null;details?:PersonalContactDetails}>({email:null,phone:null});
  useFocusEffect(useCallback(()=>{
@@ -563,10 +564,10 @@ export function JobinCard({card,previewTheme,onEditBusiness,onEditBusinessMedia,
    />
    {showOwnerActions&&ownerQuickActions&&<View style={{flexDirection:"row",gap:8,paddingTop:10,alignItems:"stretch"}}>
      <Pressable accessibilityRole="button" accessibilityLabel="Panel" onPress={ownerQuickActions.onPanel} style={({pressed})=>({flex:1,minWidth:48,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,paddingHorizontal:5,paddingVertical:10,borderRadius:JOBEEN_CONTROL.buttonRadius,backgroundColor:cardColors.ink,opacity:pressed?0.8:1})}>
-       <Ionicons name="grid-outline" size={18} color={cardColors.surface}/><Text style={{flexShrink:1,textAlign:"center",color:cardColors.surface,fontWeight:"700"}}>Panel</Text>
+       <Ionicons name="grid-outline" size={18} color={cardColors.surface}/><Text style={{flexShrink:1,textAlign:"center",color:cardColors.surface,fontWeight:adaptive?"500":"700",...(adaptive?{fontSize:profileType.action,lineHeight:profileLine.action}:{})}}>Panel</Text>
      </Pressable>
      <Pressable accessibilityRole="button" accessibilityLabel={ownerQuickActions.liveLabel} onPress={ownerQuickActions.onLive} style={({pressed})=>({flex:1,minWidth:48,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5,paddingHorizontal:5,paddingVertical:10,borderRadius:JOBEEN_CONTROL.buttonRadius,backgroundColor:cardColors.yellow,opacity:pressed?0.8:1})}>
-       <Ionicons name="radio-outline" size={18} color={cardColors.onYellow}/><Text style={{flexShrink:1,textAlign:"center",color:cardColors.onYellow,fontWeight:"700"}}>{ownerQuickActions.liveLabel}</Text>
+       <Ionicons name="radio-outline" size={18} color={cardColors.onYellow}/><Text style={{flexShrink:1,textAlign:"center",color:cardColors.onYellow,fontWeight:adaptive?"500":"700",...(adaptive?{fontSize:profileType.action,lineHeight:profileLine.action}:{})}}>{ownerQuickActions.liveLabel}</Text>
      </Pressable>
      <Pressable accessibilityRole="button" accessibilityLabel={back?"Compartir JCard de negocio":"Compartir JCard personal"} onPress={()=>void share(back?"business":"personal")} style={({pressed})=>({width:JOBEEN_CONTROL.touchTarget,minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center",borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:cardColors.outline,backgroundColor:cardColors.surface,opacity:pressed?0.8:1})}>
        <Ionicons name="share-social-outline" size={22} color={cardColors.ink}/>

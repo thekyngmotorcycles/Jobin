@@ -9,7 +9,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {useTheme} from "../state/ThemeProvider";
 import {Ionicons} from "@expo/vector-icons";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
-import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
+import {ProfileTypographyScope,useRoyalHiveTypography} from "../theme/ProfileTypographyScope";
 import {NAVIGATION_ROW_HEIGHT} from "../theme/navigation";
 import {jobeenTokens} from "../theme/jobeen";
 import {ProfileIdentityHeader,ProfileSectionTabs,ProfileAboutSelector,ProfileBusinessAbout,ProfilePersonalContact,ProfilePersonalLanguages,type ProfileSection} from "../components/ProfileSharedSections";
@@ -34,7 +34,9 @@ import {isSavedJCard,removeSavedJCard,saveVisibleJCard,type SavedJCardSide} from
 import type {BusinessCardData} from "../lib/jcard";
 import {loadPublicContact,loadVisiblePersonalContactDetails} from "../lib/jcard-contact";
 import {presentJCardContact,type JCardContact} from "../lib/jcard-save-contact";
-export default function PublicJCard(){
+export default function PublicJCard(){return <ProfileTypographyScope><PublicJCardScreen/></ProfileTypographyScope>;}
+function PublicJCardScreen(){
+ const {type:JOBEEN_TYPE,lineHeight:JOBEEN_LINE_HEIGHT}=useRoyalHiveTypography();
  const {user,card}=useLocalSearchParams<{user?:string;card?:string}>();
  const {colors,s}=useUi();
  const {theme}=useTheme();const jt=jobeenTokens(theme);
@@ -295,25 +297,25 @@ export default function PublicJCard(){
       <ProfilePersonalContact target={resource.data.id} scope={publicScope}/>
       <ProfilePersonalLanguages languages={resource.data.languages}/>
       <Pressable accessibilityRole="button" accessibilityState={{expanded:cvOpen}} onPress={()=>void openCV()} style={{padding:14,minHeight:48,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
-       <Text style={{fontWeight:"700",fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text>
+       <Text style={{fontWeight:"600",fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,color:colors.ink}}>Historial profesional {cvOpen?"▴":"▾"}</Text>
       </Pressable>
       {cvOpen&&cvTarget.current===user&&<View style={{gap:8,padding:12}}>
        {user!==viewer&&cvStatus!=="approved"?<>
-        <Text style={{color:colors.ink}}>El currículum es privado. El propietario debe autorizar tu solicitud.</Text>
+        <Text style={s.text}>El currículum es privado. El propietario debe autorizar tu solicitud.</Text>
         <Pressable disabled={cvStatus==="pending"} accessibilityRole="button" onPress={()=>void sendCVRequest()}
          style={{minHeight:48,justifyContent:"center"}}>
-         <Text style={{fontWeight:"700",color:colors.ink}}>{cvStatus==="pending"?"Solicitud pendiente":"Solicitar CV"}</Text>
+         <Text style={{fontWeight:"500",fontSize:JOBEEN_TYPE.action,lineHeight:JOBEEN_LINE_HEIGHT.action,color:colors.ink}}>{cvStatus==="pending"?"Solicitud pendiente":"Solicitar CV"}</Text>
         </Pressable>
        </>:<>
         {cvRows.length?<ProfessionalHistoryGrid key={user+":"+publicScope?.session} catalog={historyCatalog.data?.professions??[]} rows={cvRows.map((row,i)=>({id:String(i),company:row.company,role:row.role,from:row.from_year,to:row.to_year}))}/> :
-         <Text style={{color:colors.muted}}>No hay experiencias registradas o disponibles.</Text>}
+         <Text style={s.muted}>No hay experiencias registradas o disponibles.</Text>}
        </>}
-       {!!cvMessage&&<Text style={{color:colors.muted}}>{cvMessage}</Text>}
+       {!!cvMessage&&<Text style={s.muted}>{cvMessage}</Text>}
       </View>}
     </View>}
     {section==="live"&&<View style={{padding:14,gap:10,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
-     <Text style={{color:colors.ink,fontWeight:"700"}}>Transmisiones en vivo</Text>
-     <Text style={{color:colors.muted}}>Consulta las transmisiones públicas de este perfil. Las emisiones de demostración no se mostrarán como directos reales.</Text>
+     <Text style={s.h3}>Transmisiones en vivo</Text>
+     <Text style={s.muted}>Consulta las transmisiones públicas de este perfil. Las emisiones de demostración no se mostrarán como directos reales.</Text>
     </View>}
     {(section==="grid"||section==="videos"||section==="live")&&
      <ProfilePublicPosts userId={resource.data.id} filter={section==="grid"?"all":section==="videos"?"videos":"live"}/>}

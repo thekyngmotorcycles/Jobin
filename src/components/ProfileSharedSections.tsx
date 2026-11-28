@@ -10,7 +10,7 @@ import {ProfileFollowCounts,type ProfileContactsHandle} from "./ProfileFollowCou
 import {MediaThumbnail} from "./MediaThumbnail";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
-import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
+import {useRoyalHiveTypography} from "../theme/ProfileTypographyScope";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {jcardSurfaceMetrics} from "../theme/jcard";
 import type {BusinessCardData,CardData} from "../lib/jcard";
@@ -36,6 +36,7 @@ const visitorTabs=tabs.filter(tab=>tab.id!=="jcards");
 export function ProfileSectionTabs({section,onSelect,pinned=false,showPrivateJCards=false}:{section:ProfileSection;onSelect:(section:ProfileSection)=>void;pinned?:boolean;showPrivateJCards?:boolean}){
  const {theme}=useTheme();const jt=jobeenTokens(theme);
  const {width,fontScale}=useWindowDimensions();const reducedMotion=useReducedMotion();
+ const {type:JOBEEN_TYPE,lineHeight:JOBEEN_LINE_HEIGHT,adaptive}=useRoyalHiveTypography();
  const [viewportWidth,setViewportWidth]=useState(width);
  const compact=viewportWidth<380;
  const scroller=useRef<ScrollView|null>(null);
@@ -77,7 +78,7 @@ export function ProfileSectionTabs({section,onSelect,pinned=false,showPrivateJCa
        onLayout={event=>{const {x,width}=event.nativeEvent.layout;setLayouts(current=>current[tab.id]?.x===x&&current[tab.id]?.width===width?current:{...current,[tab.id]:{x,width}});}}
        style={{minHeight:JOBEEN_CONTROL.touchTarget,minWidth:JOBEEN_CONTROL.touchTarget,flexGrow:1,flexShrink:0,
         paddingHorizontal:compact?3:7,alignItems:"center",justifyContent:"center",borderRadius:24,backgroundColor:!layout&&selected?active:undefined}}>
-      <Text style={{fontSize:compact&&fontScale<=1.15?JOBEEN_TYPE.input-2:JOBEEN_TYPE.input-1,fontWeight:"600",color:selected?activeInk:jt.ink,textAlign:"center"}}>{tab.label}</Text>
+      <Text style={{fontSize:adaptive?JOBEEN_TYPE.segmented:compact&&fontScale<=1.15?JOBEEN_TYPE.input-2:JOBEEN_TYPE.input-1,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.segmented}:{}),fontWeight:adaptive&&!selected?"500":"600",color:selected?activeInk:jt.ink,textAlign:"center"}}>{tab.label}</Text>
      </Pressable>;
     })}
    </ScrollView>
@@ -91,6 +92,7 @@ export type ProfileAboutSide="personal"|"business";
 /** Controlled selector: the profile uses the same authorized side for About and the rotating JCard. */
 export function ProfileAboutSelector({side,onSelect,personalAvailable=true,businessAvailable=true}:{side:ProfileAboutSide;onSelect:(side:ProfileAboutSide)=>void;personalAvailable?:boolean;businessAvailable?:boolean}){
  const {theme}=useTheme(),jt=jobeenTokens(theme),reducedMotion=useReducedMotion();
+ const {type:JOBEEN_TYPE,lineHeight:JOBEEN_LINE_HEIGHT,adaptive}=useRoyalHiveTypography();
  const [width,setWidth]=useState(0);
  const position=useRef(new Animated.Value(side==="business"?1:0)).current;
  const destination=side==="business"?1:0;
@@ -107,7 +109,7 @@ export function ProfileAboutSelector({side,onSelect,personalAvailable=true,busin
    style={{position:"absolute",left:4,top:4,bottom:4,width:half,borderRadius:24,backgroundColor:jt.ink,transform:[{translateX:position.interpolate({inputRange:[0,1],outputRange:[0,half]})}]}}/>}
   {(["personal","business"] as const).map(option=><Pressable key={option} accessibilityRole="tab" accessibilityState={{selected:side===option}}
    onPress={()=>onSelect(option)} style={{flex:1,minHeight:JOBEEN_CONTROL.touchTarget,alignItems:"center",justifyContent:"center",borderRadius:24,backgroundColor:half===0&&side===option?jt.ink:undefined}}>
-   <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{fontSize:JOBEEN_TYPE.input,fontWeight:side===option?"700":"600",color:side===option?jt.surface:jt.ink}}>{option==="personal"?"Personal":"Negocio"}</Text>
+   <Text numberOfLines={adaptive?undefined:1} adjustsFontSizeToFit={!adaptive} minimumFontScale={0.85} style={{fontSize:adaptive?JOBEEN_TYPE.segmented:JOBEEN_TYPE.input,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.segmented}:{}),fontWeight:adaptive?(side===option?"600":"500"):(side===option?"700":"600"),color:side===option?jt.surface:jt.ink}}>{option==="personal"?"Personal":"Negocio"}</Text>
   </Pressable>)}
  </View>;
 }
@@ -115,6 +117,7 @@ export function ProfileAboutSelector({side,onSelect,personalAvailable=true,busin
 /** Only manually published contact fields; no private profile or auth fallback. */
 export function ProfilePersonalContact({target,scope}:{target:string;scope?:MessageScope|null}){
  const {theme}=useTheme(),jt=jobeenTokens(theme);
+ const {type:JOBEEN_TYPE,lineHeight:JOBEEN_LINE_HEIGHT,adaptive}=useRoyalHiveTypography();
  const [loaded,setLoaded]=useState<{target:string;scope:MessageScope;details:PersonalContactDetails}|null>(null);
  useFocusEffect(useCallback(()=>{
   let active=true;setLoaded(null);
@@ -131,14 +134,14 @@ export function ProfilePersonalContact({target,scope}:{target:string;scope?:Mess
  const rows=current?personalProfileContactRows(current):[];
  if(!rows.length)return null;
  return <View style={{gap:6,padding:14,borderWidth:1,borderColor:jt.line,borderRadius:14,backgroundColor:jt.surface}}>
-  <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.input,fontWeight:"700",color:jt.ink}}>Información personal</Text>
+  <Text accessibilityRole="header" style={{fontSize:adaptive?JOBEEN_TYPE.sectionTitle:JOBEEN_TYPE.input,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle}:{}),fontWeight:adaptive?"600":"700",color:jt.ink}}>Información personal</Text>
   {rows.map(row=><Pressable key={row.key} accessibilityRole={row.uri?"link":undefined} accessibilityLabel={row.label+": "+row.value}
    disabled={!row.uri} onPress={()=>{if(row.uri)void Linking.openURL(row.uri).catch(()=>{});}}
    style={{flexDirection:"row",alignItems:"center",gap:10,minHeight:JOBEEN_CONTROL.touchTarget,paddingVertical:5}}>
    <Ionicons name={row.kind==="email"?"mail-outline":"call-outline"} size={21} color={jt.ink}/>
    <View style={{flex:1,minWidth:0,gap:2}}>
-    <Text style={{color:jt.ink2,fontSize:11}}>{row.label}</Text>
-    <Text selectable={!row.uri} style={{color:jt.ink,fontSize:JOBEEN_TYPE.input}}>{row.value}</Text>
+    <Text style={{color:jt.ink2,fontSize:adaptive?JOBEEN_TYPE.micro:11}}>{row.label}</Text>
+    <Text selectable={!row.uri} style={{color:jt.ink,fontSize:JOBEEN_TYPE.body,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.body}:{})}}>{row.value}</Text>
    </View>
   </Pressable>)}
  </View>;
@@ -146,12 +149,13 @@ export function ProfilePersonalContact({target,scope}:{target:string;scope?:Mess
 
 export function ProfilePersonalLanguages({languages,own=false}:{languages:CardData["languages"];own?:boolean}){
  const {theme}=useTheme(),jt=jobeenTokens(theme);
+ const {type:JOBEEN_TYPE,lineHeight:JOBEEN_LINE_HEIGHT,adaptive}=useRoyalHiveTypography();
  const [learning,setLearning]=useState<string|null>(null);
  const current=own?languages.find(l=>l.name===learning&&languageProgress(l.fluency)<100):undefined;
  if(!languages.length)return null;
  const {gold,blue}=profileProgressColors(theme);
  return <View style={{gap:12,padding:14,borderWidth:1,borderColor:jt.line,borderRadius:14,backgroundColor:jt.surface}}>
-  <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,fontWeight:"700",color:jt.ink}}>Idiomas</Text>
+  <Text accessibilityRole="header" style={{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle,fontWeight:adaptive?"600":"700",color:jt.ink}}>Idiomas</Text>
   {languages.map(({name,fluency},index)=>{
    const percent=languageProgress(fluency),complete=percent===100,fill=complete?gold:blue;
    return <View key={name+index} style={{flexDirection:"row",alignItems:"flex-start",gap:9,minHeight:JOBEEN_CONTROL.touchTarget}}>
@@ -160,16 +164,16 @@ export function ProfilePersonalLanguages({languages,own=false}:{languages:CardDa
     </View>
     <View style={{flex:1,minWidth:0,gap:6}}>
      <View style={{flexDirection:"row",alignItems:"center",gap:6}}>
-      <Text style={{flex:1,minWidth:0,fontSize:JOBEEN_TYPE.input,fontWeight:"600",color:jt.ink}}>{name}</Text>
+      <Text style={{flex:1,minWidth:0,fontSize:JOBEEN_TYPE.body,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.body}:{}),fontWeight:"600",color:jt.ink}}>{name}</Text>
       {complete&&<Ionicons name="ribbon-outline" size={17} color={gold} accessibilityLabel="Nivel declarado completo"/>}
-      <Text style={{fontWeight:"700",color:jt.ink,fontSize:JOBEEN_TYPE.input}}>{percent}%</Text>
+      <Text style={{fontWeight:adaptive?"600":"700",color:jt.ink,fontSize:JOBEEN_TYPE.body}}>{percent}%</Text>
      </View>
      <View accessible accessibilityRole="progressbar" accessibilityLabel={name+", dominio declarado"} accessibilityValue={{min:0,max:100,now:percent}} style={{height:8,borderRadius:8,overflow:"hidden",backgroundColor:jt.line}}>
       <View style={{height:"100%",width:`${percent}%`,backgroundColor:fill,borderRadius:8}}/>
      </View>
-     <Text style={{fontSize:JOBEEN_TYPE.caption,color:jt.ink2}}>{languageLabel(percent)} · Nivel declarado</Text>
+     <Text style={{fontSize:JOBEEN_TYPE.caption,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.caption}:{}),color:jt.ink2}}>{languageLabel(percent)} · Nivel declarado</Text>
      {own&&!complete&&<Pressable accessibilityRole="button" accessibilityLabel={"Seguir avanzando en "+name} onPress={()=>setLearning(name)} style={{minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",alignItems:"center",justifyContent:"flex-end",gap:4}}>
-      <Text style={{fontSize:JOBEEN_TYPE.secondary,fontWeight:"600",color:blue}}>Seguir avanzando</Text><Ionicons name="arrow-forward" size={16} color={blue}/>
+      <Text style={{fontSize:adaptive?JOBEEN_TYPE.action:JOBEEN_TYPE.secondary,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.action}:{}),fontWeight:adaptive?"500":"600",color:blue}}>Seguir avanzando</Text><Ionicons name="arrow-forward" size={16} color={blue}/>
      </Pressable>}
     </View>
    </View>;
@@ -187,6 +191,7 @@ export function ProfilePersonalLanguages({languages,own=false}:{languages:CardDa
 /** Business fields come from the authorized face. Review aggregates load only here. */
 export function ProfileBusinessAbout({business,onEdit,target,scope}:{business?:BusinessCardData|null;onEdit?:()=>void;target?:string;scope?:MessageScope|null}){
  const {theme}=useTheme(),jt=jobeenTokens(theme);
+ const {type:JOBEEN_TYPE,lineHeight:JOBEEN_LINE_HEIGHT,adaptive}=useRoyalHiveTypography();
  const [awardState,setAwardState]=useState<{target:string;scope:MessageScope;data:Awaited<ReturnType<typeof readBusinessExcellence>>}|null>(null);
  const [awardLoading,setAwardLoading]=useState(false);
  useFocusEffect(useCallback(()=>{
@@ -203,14 +208,14 @@ export function ProfileBusinessAbout({business,onEdit,target,scope}:{business?:B
  const aggregate=awardState&&awardState.target===target&&awardState.scope.owner===scope?.owner&&awardState.scope.session===scope?.session?awardState.data:null;
  const services=business?.services?.map(service=>service.trim()).filter(Boolean)??[];
  return <View style={{gap:12,padding:14,borderWidth:1,borderColor:jt.line,borderRadius:14,backgroundColor:jt.surface}}>
-  {!!business?.name.trim()&&<Text style={{fontWeight:"700",fontSize:JOBEEN_TYPE.input,color:jt.ink}}>{business.name}</Text>}
-  {!!business?.category?.trim()&&<Text style={{color:jt.ink2,fontSize:JOBEEN_TYPE.input}}>{business.category}</Text>}
-  {services.length>0&&<View style={{gap:6}}><Text style={{color:jt.ink,fontWeight:"700"}}>Servicios</Text><View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}>
-   {services.map((service,index)=><View key={index} style={{maxWidth:"100%",paddingHorizontal:10,paddingVertical:7,borderRadius:14,borderWidth:1,borderColor:jt.line}}><Text style={{color:jt.ink}}>{service}</Text></View>)}
+  {!!business?.name.trim()&&<Text style={{fontWeight:adaptive?"600":"700",fontSize:adaptive?JOBEEN_TYPE.sectionTitle:JOBEEN_TYPE.input,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle}:{}),color:jt.ink}}>{business.name}</Text>}
+  {!!business?.category?.trim()&&<Text style={{color:jt.ink2,fontSize:JOBEEN_TYPE.body,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.body}:{})}}>{business.category}</Text>}
+  {services.length>0&&<View style={{gap:6}}><Text style={{color:jt.ink,fontWeight:adaptive?"600":"700",...(adaptive?{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle}:{})}}>Servicios</Text><View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}>
+   {services.map((service,index)=><View key={index} style={{maxWidth:"100%",paddingHorizontal:10,paddingVertical:7,borderRadius:14,borderWidth:1,borderColor:jt.line}}><Text style={{color:jt.ink,...(adaptive?{fontSize:JOBEEN_TYPE.body,lineHeight:JOBEEN_LINE_HEIGHT.body}:{})}}>{service}</Text></View>)}
   </View></View>}
   {!business?.name.trim()&&!services.length&&<Text style={{color:jt.ink2}}>Información del negocio no disponible.</Text>}
-  {!!business?.name.trim()&&<View style={{gap:8}}><Text style={{color:jt.ink,fontWeight:"700"}}>Sellos del negocio</Text>{awardLoading?<Text accessibilityLiveRegion="polite" style={{color:jt.ink2}}>Cargando sellos…</Text>:<BusinessAwards theme={theme} standalone business={aggregate?{...business,...aggregate,reviewCount:aggregate.excellenceReviewCount}:undefined}/>}</View>}
-  {onEdit&&<Pressable accessibilityRole="button" onPress={onEdit} style={{minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center",alignItems:"center",borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:jt.outline}}><Text style={{color:jt.ink,fontWeight:"700"}}>Editar negocio</Text></Pressable>}
+  {!!business?.name.trim()&&<View style={{gap:8}}><Text style={{color:jt.ink,fontWeight:adaptive?"600":"700",...(adaptive?{fontSize:JOBEEN_TYPE.sectionTitle,lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle}:{})}}>Sellos del negocio</Text>{awardLoading?<Text accessibilityLiveRegion="polite" style={{color:jt.ink2}}>Cargando sellos…</Text>:<BusinessAwards theme={theme} standalone business={aggregate?{...business,...aggregate,reviewCount:aggregate.excellenceReviewCount}:undefined}/>}</View>}
+  {onEdit&&<Pressable accessibilityRole="button" onPress={onEdit} style={{minHeight:JOBEEN_CONTROL.touchTarget,justifyContent:"center",alignItems:"center",borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:jt.outline}}><Text style={{color:jt.ink,fontWeight:adaptive?"500":"700",...(adaptive?{fontSize:JOBEEN_TYPE.action,lineHeight:JOBEEN_LINE_HEIGHT.action}:{})}}>Editar negocio</Text></Pressable>}
  </View>;
 }
 

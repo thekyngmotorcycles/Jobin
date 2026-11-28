@@ -1,3 +1,4 @@
+import {useRoyalHiveTypography} from "../theme/ProfileTypographyScope";
 import {Ionicons} from "@expo/vector-icons";
 import {router,useFocusEffect} from "expo-router";
 import {useCallback,useRef,useState} from "react";
@@ -18,7 +19,7 @@ type Filter="all"|"videos"|"live";
 function ProfilePublicationGrid({userId,editable,filter,limit,heading,onSeeAll}:{
  userId?:string;editable:boolean;filter:Filter;limit?:number;heading?:string;onSeeAll?:()=>void;
 }){
- const {theme}=useTheme();const t=jobeenTokens(theme);const {s}=useUi();
+ const {theme}=useTheme();const t=jobeenTokens(theme);const {s}=useUi();const {type:JOBEEN_TYPE,lineHeight:JOBEEN_LINE_HEIGHT,adaptive}=useRoyalHiveTypography();
  const [savedView,setSavedView]=useState(false);
  const [posts,setPosts]=useState<FeedPost[]>([]);
  const [savedPosts,setSavedPosts]=useState<FeedPost[]>([]);
@@ -108,7 +109,7 @@ function ProfilePublicationGrid({userId,editable,filter,limit,heading,onSeeAll}:
    <Text style={s.h3}>{heading??(filter==="videos"?"Videos":filter==="live"?"Transmisiones":"Publicaciones")}</Text>
    {!!onSeeAll&&<Pressable accessibilityRole="button" accessibilityLabel="Ver todas las publicaciones" onPress={onSeeAll}
      style={{minHeight:44,paddingHorizontal:10,flexDirection:"row",gap:5,alignItems:"center",justifyContent:"center"}}>
-     <Text style={{color:t.ink,fontSize:13,fontWeight:"700"}}>Ver todo</Text>
+     <Text style={{color:t.ink,fontSize:adaptive?JOBEEN_TYPE.action:13,fontWeight:adaptive?"500":"700",...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.action}:{})}}>Ver todo</Text>
      <Ionicons name="chevron-forward" size={16} color={t.ink}/>
     </Pressable>}
    {editable&&filter==="all"&&!limit&&<Pressable accessibilityRole="button" accessibilityLabel={savedView?"Ver mis publicaciones":"Ver publicaciones guardadas"} accessibilityState={{selected:savedView}}

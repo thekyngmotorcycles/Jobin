@@ -2,7 +2,7 @@ import {Ionicons} from "@expo/vector-icons";
 import {Pressable,Text,View} from "react-native";
 import {useTheme} from "../state/ThemeProvider";
 import {menuChrome} from "../theme/menu-chrome";
-import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
+import {useRoyalHiveTypography} from "../theme/ProfileTypographyScope";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
 import {jobeenModalTokens} from "../theme/modals";
 import {JobinSettingsIcon} from "./JobinSettingsIcon";
@@ -15,6 +15,7 @@ export function SettingsMenuRow({
  variant?:"navigation"|"action";tone?:"normal"|"danger";disabled?:boolean;
 }){
  const {theme,colors}=useTheme();
+ const {type:JOBEEN_TYPE,lineHeight:JOBEEN_LINE_HEIGHT,adaptive}=useRoyalHiveTypography();
  const chrome=menuChrome(theme,colors);
  const danger=jobeenModalTokens(theme,"danger");
  const iconColor=tone==="danger"?danger.icon:chrome.iconText;
@@ -34,7 +35,7 @@ export function SettingsMenuRow({
    {settingId?<JobinSettingsIcon id={settingId} size={JOBEEN_CONTROL.icon} color={iconColor}/>:<Ionicons name={icon??"settings-outline"} size={JOBEEN_CONTROL.icon} color={iconColor}/>}
   </View>}
   <View style={{flex:1,minWidth:0,gap:3}}>
-   <Text style={{fontSize:JOBEEN_TYPE.body,lineHeight:JOBEEN_LINE_HEIGHT.body,fontWeight:"700",color:chrome.text}}>{title}</Text>
+   <Text style={{fontSize:JOBEEN_TYPE.body,lineHeight:JOBEEN_LINE_HEIGHT.body,fontWeight:adaptive?"500":"700",color:chrome.text}}>{title}</Text>
    {!!value&&<Text style={{fontSize:JOBEEN_TYPE.secondary,lineHeight:JOBEEN_LINE_HEIGHT.secondary,color:chrome.muted}}>{value}</Text>}
    {!!description&&<Text style={{fontSize:JOBEEN_TYPE.secondary,lineHeight:JOBEEN_LINE_HEIGHT.secondary,color:chrome.muted}}>{description}</Text>}
   </View>
