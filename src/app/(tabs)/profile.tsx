@@ -1,7 +1,7 @@
 import {consumePersonalPhotoChange} from "../../lib/personal-jcard-photo";
 import {jobeenModalTokens} from "../../theme/modals";
 import {ProfileTypographyScope,useRoyalHiveTypography} from "../../theme/ProfileTypographyScope";
-import {JOBEEN_CONTROL} from "../../theme/control-metrics";
+import {JOBEEN_CONTROL,PROFILE_CONTROL_RHYTHM} from "../../theme/control-metrics";
 import {jobeenTokens} from "../../theme/jobeen";
 import {useTheme} from "../../state/ThemeProvider";
 import {cvRequests,respondCV,revokeCV,type CVRequest} from "../../lib/cv-access";
@@ -427,7 +427,7 @@ function ProfileScreen(){
           }
         })}
         showsVerticalScrollIndicator={false}>
-        <Animated.View style={{paddingBottom:12,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
+        <Animated.View style={{paddingBottom:PROFILE_CONTROL_RHYTHM.heroBottom,zIndex:0,transform:[{translateY:smoothHeroParallax}]}}>
         <ProfileIdentityHeader
           card={workspace.data?.card ? <><JobinCard card={{...workspace.data.card,identityVerified:verifiedIdentity,seals:uniqueSeals,rating:null,reviewCount:0,business:{...(businessOwner===workspace.data.card.id?business:EMPTY_BUSINESS_CARD),rating:businessRating.rating,reviewCount:businessRating.count},years:primaryExperienceMonths===undefined?workspace.data.card.years:Math.floor(primaryExperienceMonths/12),primaryExperienceMonths,secondaryProfessions}} onEditBusiness={editBusiness} onEditBusinessMedia={replaceBusinessImage} onEditPersonalPhoto={changePersonalPhoto} initialSide={card==="business"?"business":"personal"} selectedSide={aboutSide} onActiveSideChange={setAboutSide} awardsInAbout profileInset={16} profileCoverScope={workspace.scope} ownerQuickActions={{onPanel:()=>router.push("/panel"),onLive:()=>currentLive?router.push({pathname:"/live",params:{view:"studio"}}):router.push("/live"),liveLabel:currentLive?"Volver al Live":"En vivo"}} showOwnerActions ownerId={workspace.data.card.id} employerLink={employerLink?.owner===ownerId?employerLink:null}/>
             {!!workspace.error&&isJCardConnectivityError(workspace.error)&&<View style={{marginTop:12,paddingHorizontal:16}}>
@@ -446,7 +446,7 @@ function ProfileScreen(){
           style={{zIndex:3,backgroundColor:jt.bg,borderTopLeftRadius:18,borderTopRightRadius:18}}>
           <ProfileSectionTabs section={mode} onSelect={selectSection} pinned={tabsPinned} showPrivateJCards/>
         </View>
-        <View style={{gap:16,paddingHorizontal:16,paddingTop:20,paddingBottom:contentBottom,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
+        <View style={{gap:PROFILE_CONTROL_RHYTHM.gap,paddingHorizontal:PROFILE_CONTROL_RHYTHM.horizontalInset,paddingTop:mode==="cv"?PROFILE_CONTROL_RHYTHM.aboutTop:PROFILE_CONTROL_RHYTHM.gap,paddingBottom:contentBottom,minHeight:screenHeight,backgroundColor:jt.bg,zIndex:2}}>
         {mode==="jcards"&&ownerId&&<SavedJCardsGallery key={ownerId} owner={ownerId}/>}
         {mode==="live"&&<View style={{gap:12,padding:14,borderWidth:1,borderColor:colors.line,borderRadius:14}}>
           <Text style={s.h3}>Transmisiones en vivo</Text>
@@ -459,7 +459,7 @@ function ProfileScreen(){
         {mode === "cv" && <ProfileAboutSelector side={aboutSide} onSelect={setAboutSide}/>}
         {mode==="cv"&&aboutSide==="business"&&ownerId&&<ProfileBusinessAbout business={businessOwner===ownerId&&businessScope.current?.owner===ownerId&&businessScope.current?.session===workspaceSession?business:undefined} target={ownerId} scope={businessScope.current?.owner===ownerId&&businessScope.current?.session===workspaceSession?businessScope.current:null} onEdit={editBusiness}/>}
         {mode === "cv" && aboutSide==="personal" && (
-          <View style={{ gap: 14 }}>
+          <View style={{gap:PROFILE_CONTROL_RHYTHM.gap}}>
             {ownerId&&workspace.scope?.owner===ownerId&&<ProfilePersonalContact target={ownerId} scope={workspace.scope}/>}
             {workspace.data?.card&&<ProfilePersonalLanguages languages={workspace.data.card.languages} key={ownerId+":"+workspaceSession} own/>}
             <Text accessibilityRole="header" style={s.h3}>Historial profesional</Text>

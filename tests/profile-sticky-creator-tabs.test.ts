@@ -209,7 +209,7 @@ test("JCard vertical dragging is released early while horizontal flips remain in
 test("Public JCard aligns with owner profile and stays reachable above fixed tabs",()=>{
  assert.ok(visitor.includes('style={{flex:1}} overScrollMode="never" bounces={false} alwaysBounceVertical={false}'));
  assert.ok(visitor.includes('contentContainerStyle={{paddingBottom:contentBottom}}'));
- assert.ok(visitor.includes('paddingTop:20,paddingBottom:20,minHeight:screenHeight'));
+ assert.ok(visitor.includes('paddingTop:section==="cv"?PROFILE_CONTROL_RHYTHM.aboutTop:PROFILE_CONTROL_RHYTHM.gap,paddingBottom:20,minHeight:screenHeight'));
  assert.ok(visitor.includes('stickyHeaderIndices={resource.data?[1]:undefined}'));
  assert.ok(visitor.includes('accessibilityLabel="Volver"'));
  assert.ok(visitor.includes('menuOpen={profileMenuOpen} onMenuClose={()=>setProfileMenuOpen(false)}'));

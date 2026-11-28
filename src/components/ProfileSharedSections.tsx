@@ -11,7 +11,7 @@ import {MediaThumbnail} from "./MediaThumbnail";
 import {useTheme} from "../state/ThemeProvider";
 import {jobeenTokens} from "../theme/jobeen";
 import {useRoyalHiveTypography} from "../theme/ProfileTypographyScope";
-import {JOBEEN_CONTROL,PROFILE_SEGMENTED} from "../theme/control-metrics";
+import {JOBEEN_CONTROL,PROFILE_SEGMENTED,PROFILE_CONTROL_RHYTHM} from "../theme/control-metrics";
 import {jcardSurfaceMetrics} from "../theme/jcard";
 import type {BusinessCardData,CardData} from "../lib/jcard";
 import {LanguageRing, languageLabel} from "./LanguageRing";
@@ -107,12 +107,12 @@ export function ProfileAboutSelector({side,onSelect,personalAvailable=true,busin
  const half=Math.max(0,(width-2*PROFILE_SEGMENTED.horizontalInset)/2);
  return <View accessibilityRole="tablist" onLayout={event=>setWidth(event.nativeEvent.layout.width)}
   style={{position:"relative",flexDirection:"row",alignItems:"stretch",paddingHorizontal:PROFILE_SEGMENTED.horizontalInset,minHeight:JOBEEN_CONTROL.touchTarget}}>
-  <View pointerEvents="none" accessible={false} style={{position:"absolute",left:0,right:0,top:PROFILE_SEGMENTED.trackInset,bottom:PROFILE_SEGMENTED.trackInset,borderRadius:PROFILE_SEGMENTED.radius,backgroundColor:jt.surface,borderWidth:1,borderColor:jt.line}}/>
+  <View pointerEvents="none" accessible={false} style={{position:"absolute",left:0,right:0,top:PROFILE_CONTROL_RHYTHM.aboutTrackInset,bottom:PROFILE_CONTROL_RHYTHM.aboutTrackInset,borderRadius:PROFILE_SEGMENTED.radius,backgroundColor:jt.surface,borderWidth:1,borderColor:jt.line}}/>
   {half>0&&<Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-   style={{position:"absolute",left:PROFILE_SEGMENTED.horizontalInset,top:PROFILE_SEGMENTED.pillInset,bottom:PROFILE_SEGMENTED.pillInset,width:half,borderRadius:PROFILE_SEGMENTED.radius,backgroundColor:jt.ink,transform:[{translateX:position.interpolate({inputRange:[0,1],outputRange:[0,half]})}]}}/>}
+   style={{position:"absolute",left:PROFILE_SEGMENTED.horizontalInset,top:PROFILE_CONTROL_RHYTHM.aboutPillInset,bottom:PROFILE_CONTROL_RHYTHM.aboutPillInset,width:half,borderRadius:PROFILE_SEGMENTED.radius,backgroundColor:jt.ink,transform:[{translateX:position.interpolate({inputRange:[0,1],outputRange:[0,half]})}]}}/>}
   {(["personal","business"] as const).map(option=><Pressable key={option} accessibilityRole="tab" accessibilityState={{selected:side===option}}
    accessibilityLabel={option==="personal"?"Personal":"Negocio"} onPress={()=>onSelect(option)} style={{flex:1,minWidth:JOBEEN_CONTROL.touchTarget,minHeight:JOBEEN_CONTROL.touchTarget,paddingHorizontal:4,paddingVertical:PROFILE_SEGMENTED.textPadding,alignItems:"center",justifyContent:"center",borderRadius:PROFILE_SEGMENTED.radius}}>
-   {half===0&&side===option&&<View pointerEvents="none" accessible={false} style={{position:"absolute",left:0,right:0,top:PROFILE_SEGMENTED.pillInset,bottom:PROFILE_SEGMENTED.pillInset,borderRadius:PROFILE_SEGMENTED.radius,backgroundColor:jt.ink}}/>}
+   {half===0&&side===option&&<View pointerEvents="none" accessible={false} style={{position:"absolute",left:0,right:0,top:PROFILE_CONTROL_RHYTHM.aboutPillInset,bottom:PROFILE_CONTROL_RHYTHM.aboutPillInset,borderRadius:PROFILE_SEGMENTED.radius,backgroundColor:jt.ink}}/>}
    <Text numberOfLines={adaptive?undefined:1} adjustsFontSizeToFit={!adaptive} minimumFontScale={0.85} style={{fontSize:adaptive?JOBEEN_TYPE.segmented:JOBEEN_TYPE.input,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.segmented}:{}),fontWeight:adaptive?(side===option?"600":"500"):(side===option?"700":"600"),color:side===option?jt.surface:jt.ink,textAlign:"center",maxWidth:"100%"}}>{option==="personal"?"Personal":"Negocio"}</Text>
   </Pressable>)}
  </View>;
@@ -266,7 +266,7 @@ export function ProfileMediaGrid({items,emptyMessage}:{items:ProfileTile[];empty
 export function ProfileIdentityHeader({card,actions,trust,profileUserId,contactsMenuRef,countsInCard=false,expectedScope,actionsInset=0}:{
  card:ReactNode;actions?:ReactNode;trust?:ReactNode;profileUserId?:string;contactsMenuRef?:Ref<ProfileContactsHandle>;countsInCard?:boolean;expectedScope?:MessageScope|null;actionsInset?:number;
 }){
- return <View style={{gap:actionsInset>0?10:14}}>
+ return <View style={{gap:actionsInset>0?PROFILE_CONTROL_RHYTHM.cardActionGap:PROFILE_CONTROL_RHYTHM.gap}}>
   {countsInCard&&profileUserId?<ProfileFollowCounts userId={profileUserId} contactsMenuRef={contactsMenuRef} expectedScope={expectedScope} countsInCard>{card}</ProfileFollowCounts>:<>{card}{!!profileUserId&&<ProfileFollowCounts userId={profileUserId} contactsMenuRef={contactsMenuRef}/>}</>}
   {actions&&actionsInset>0?<View style={{width:"100%",maxWidth:jcardSurfaceMetrics.maxWidth+2*actionsInset,alignSelf:"center",paddingHorizontal:actionsInset}}>{actions}</View>:actions}
   {trust}

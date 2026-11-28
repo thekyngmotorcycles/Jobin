@@ -42,5 +42,17 @@ export function jobeenPageLayout(width:number,kind:JobeenPageKind){
  */
 export const PROFILE_SEGMENTED={
  touchHeight:JOBEEN_CONTROL.touchTarget,trackInset:5,pillInset:9,horizontalInset:4,
- textPadding:10,radius:999,outerVerticalPadding:3,
+ textPadding:10,radius:999,outerVerticalPadding:0,
 } as const;
+
+/** Approved option 2: unified profile control rhythm. No global control changes. */
+export const PROFILE_CONTROL_RHYTHM={
+ gap:8,sectionGap:16,horizontalInset:16,actionInset:4,actionRadius:20,icon:18,
+ aboutTrackInset:2,aboutPillInset:6,
+ // The visual insets already provide most of the gap between touch rows.
+ cardActionGap:4,heroBottom:0,aboutTop:1,
+} as const;
+export function profileActionSurface(backgroundColor:string,borderColor?:string){
+ return {position:"absolute",left:0,right:0,top:PROFILE_CONTROL_RHYTHM.actionInset,bottom:PROFILE_CONTROL_RHYTHM.actionInset,
+  borderRadius:PROFILE_CONTROL_RHYTHM.actionRadius,backgroundColor,...(borderColor?{borderColor,borderWidth:1}:{})} as const;
+}
