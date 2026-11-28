@@ -7,7 +7,7 @@ import { useState } from "react";
 import {opacity} from "../theme/color";
 import {jobeenModalTokens} from "../theme/modals";
 import {JOBEEN_CONTROL,royalHiveLayout} from "../theme/control-metrics";
-import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT} from "../theme/typography";
+import {useRoyalHiveTypography} from "../theme/ProfileTypographyScope";
 import {jobeenTokens} from "../theme/jobeen";
 import { useTheme } from "../state/ThemeProvider";
 export type IconName=ComponentProps<typeof Ionicons>["name"];
@@ -28,13 +28,14 @@ export function Avatar({uri,name,size=44,height=size,shape="circle",initials,emp
  </View>;
 }
 export function BottomSheet({visible,onClose,title,children,translucent=false}:{visible:boolean;onClose:()=>void;title:string;children:ReactNode;translucent?:boolean}){
- const {theme}=useTheme();const modal=jobeenModalTokens(theme);const inset=useSafeAreaInsets();const {width}=useWindowDimensions();const layout=royalHiveLayout(Math.min(width,700));
+ const {theme}=useTheme();const modal=jobeenModalTokens(theme);const inset=useSafeAreaInsets();
+ const {type:JOBEEN_TYPE,lineHeight:JOBEEN_LINE_HEIGHT,adaptive}=useRoyalHiveTypography();const {width}=useWindowDimensions();const layout=royalHiveLayout(Math.min(width,700));
  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent={false}>
   <KeyboardAvoidingView style={{flex:1,justifyContent:"flex-end"}} behavior={Platform.OS==="ios"?"padding":undefined}>
    <Pressable accessibilityRole="button" accessibilityLabel="Close panel" onPress={onClose} style={{flex:1,backgroundColor:modal.scrim}}/>
    <View accessibilityViewIsModal style={{maxHeight:"85%",maxWidth:700,width:"100%",alignSelf:"center",backgroundColor:translucent?opacity(modal.surface,0.96):modal.surface,borderTopLeftRadius:modal.radius.sheet,borderTopRightRadius:modal.radius.sheet,borderWidth:1,borderColor:modal.border,paddingHorizontal:layout.margin,paddingBottom:Math.max(inset.bottom,16)}}>
     <View style={{width:38,height:4,backgroundColor:modal.handle,borderRadius:4,alignSelf:"center",marginTop:10}}/>
-    <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingVertical:8}}><Text accessibilityRole="header" style={{flex:1,minWidth:0,fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle,fontWeight:"700",color:modal.text}}>{title}</Text><IconButton icon="close" label="Close panel" onPress={onClose}/></View>
+    <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingVertical:8}}><Text accessibilityRole="header" style={{flex:1,minWidth:0,fontSize:JOBEEN_TYPE.modalTitle,lineHeight:JOBEEN_LINE_HEIGHT.modalTitle,fontWeight:adaptive?"600":"700",color:modal.text}}>{title}</Text><IconButton icon="close" label="Close panel" onPress={onClose}/></View>
     <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets={false} nestedScrollEnabled showsVerticalScrollIndicator style={{flexShrink:1}} contentContainerStyle={{paddingBottom:16,flexGrow:0}}>
      {children}
     </ScrollView>

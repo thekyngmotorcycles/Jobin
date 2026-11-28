@@ -1,6 +1,7 @@
 import {menuChrome} from "../theme/menu-chrome";
 import {JOBEEN_CONTROL,royalHiveLayout,jobeenPageLayout,type JobeenPageKind} from "../theme/control-metrics";
-import {JOBEEN_TYPE,JOBEEN_LINE_HEIGHT,jobeenTypeWidthScale} from "../theme/typography";
+import {jobeenTypeWidthScale} from "../theme/typography";
+import {useRoyalHiveTypography} from "../theme/ProfileTypographyScope";
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
 import { JobinWordmark } from "./JobinWordmark";
@@ -11,7 +12,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useApp } from "../state/AppProvider";
 
 // Preserve semantic text sizes; adapt margins and layout to available width.
-export function useUi() { const { colors,theme } = useTheme(); const chrome=menuChrome(theme,colors); const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme);const danger=jobeenModalTokens(theme,"danger"); const { width } = useWindowDimensions();
+export function useUi(allowProfile=true) { const { colors,theme } = useTheme(); const chrome=menuChrome(theme,colors); const jt=jobeenTokens(theme);const modal=jobeenModalTokens(theme);const danger=jobeenModalTokens(theme,"danger"); const { width } = useWindowDimensions();
+ const {type:JOBEEN_TYPE,lineHeight:JOBEEN_LINE_HEIGHT,adaptive}=useRoyalHiveTypography(allowProfile);
  const k=jobeenTypeWidthScale(width);const layout=royalHiveLayout(width);
  const fs = useCallback((size: number) => Math.round(size * k), [k]);
  const s = useMemo(() => StyleSheet.create({
@@ -23,7 +25,7 @@ export function useUi() { const { colors,theme } = useTheme(); const chrome=menu
   eyebrow: { fontSize: fs(10), letterSpacing: 2, fontWeight: "700", color: colors.muted },
   h1: { fontSize: fs(JOBEEN_TYPE.display), fontFamily: Platform.OS === "android" ? "serif" : "Georgia", fontStyle: "italic", fontWeight: "500", letterSpacing: -1, color: colors.ink },
   h2: { fontSize: fs(JOBEEN_TYPE.headline), fontFamily: Platform.OS === "android" ? "serif" : "Georgia", fontStyle: "italic", fontWeight: "500", color: colors.ink },
-  h3: { fontSize: fs(JOBEEN_TYPE.sectionTitle), fontWeight: "700", color: colors.ink },
+  h3: { fontSize: fs(JOBEEN_TYPE.sectionTitle), ...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.sectionTitle}:{}), fontWeight: adaptive?"600":"700", color: colors.ink },
   text: { fontSize: fs(JOBEEN_TYPE.body), lineHeight: fs(JOBEEN_LINE_HEIGHT.body), color: colors.ink },
   muted: { fontSize: fs(JOBEEN_TYPE.secondary), lineHeight: fs(JOBEEN_LINE_HEIGHT.secondary), color: colors.muted },
   formInput: { color: colors.ink, fontSize: JOBEEN_TYPE.input, lineHeight: JOBEEN_LINE_HEIGHT.input, borderColor: colors.outline, borderWidth: 1, borderRadius: JOBEEN_CONTROL.inputRadius, padding: 12, minHeight: JOBEEN_CONTROL.inputHeight },
@@ -31,7 +33,7 @@ export function useUi() { const { colors,theme } = useTheme(); const chrome=menu
   row: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" },
   panel: { backgroundColor: jt.surface, borderWidth: 1, borderColor: jt.line, borderRadius: JOBEEN_CONTROL.cardRadius, padding: JOBEEN_CONTROL.panelPadding, gap: JOBEEN_CONTROL.panelGap },
   button: { minHeight: JOBEEN_CONTROL.touchTarget, borderRadius: JOBEEN_CONTROL.buttonRadius, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", maxWidth: "100%" },
-  buttonText: { color: colors.onPrimary, fontWeight: "700", fontSize: fs(JOBEEN_TYPE.action), lineHeight: fs(JOBEEN_LINE_HEIGHT.action), textAlign: "center", flexShrink: 1 },
+  buttonText: { color: colors.onPrimary, fontWeight: adaptive?"500":"700", fontSize: fs(JOBEEN_TYPE.action), lineHeight: fs(JOBEEN_LINE_HEIGHT.action), textAlign: "center", flexShrink: 1 },
   secondary: { backgroundColor: jt.surface, borderWidth: 1, borderColor: colors.outline },
   secondaryText: { color: colors.ink },
   tertiary: { backgroundColor: colors.transparent },
@@ -42,12 +44,12 @@ export function useUi() { const { colors,theme } = useTheme(); const chrome=menu
   chip: { borderRadius: 24, borderWidth: 1, borderColor: colors.outline, paddingHorizontal: 14, minHeight: JOBEEN_CONTROL.touchTarget, justifyContent: "center", backgroundColor: jt.surface },
   chipSelected: { backgroundColor: colors.ink, borderColor: colors.ink },
   chipText: { fontSize: fs(JOBEEN_TYPE.secondary), color: colors.ink },
-  tag: { fontSize: fs(10), fontWeight: "600", color: colors.ink, backgroundColor: colors.accent, alignSelf: "flex-start", paddingVertical: 7, paddingHorizontal: 12, borderRadius: 18, overflow: "hidden" },
+  tag: { fontSize: fs(JOBEEN_TYPE.micro), fontWeight: adaptive?"500":"600", color: colors.ink, backgroundColor: colors.accent, alignSelf: "flex-start", paddingVertical: 7, paddingHorizontal: 12, borderRadius: 18, overflow: "hidden" },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
   notice: { padding: 16, borderRadius: modal.radius.popover, backgroundColor:modal.surface, gap: 10, borderWidth:1, borderColor:modal.border },
   footer: { paddingVertical: 20, borderTopWidth: 1, borderTopColor: jt.line, gap: 6 },
   pressed: { opacity: 0.82 },
-}), [colors, fs, chrome.surface, chrome.border, theme, layout.margin]); return { s, colors, fs, k }; }
+}), [colors, fs, chrome.surface, chrome.border, theme, layout.margin, JOBEEN_TYPE, JOBEEN_LINE_HEIGHT, adaptive]); return { s, colors, fs, k }; }
 export type JobeenButtonVariant="primary"|"secondary"|"tertiary"|"danger";
 export function Button({title,onPress,secondary=false,variant,selected,label,disabled=false,busy=false,busyLabel="Procesando…",style}:{
  title:string;onPress:()=>void;secondary?:boolean;variant?:JobeenButtonVariant;selected?:boolean;label?:string;

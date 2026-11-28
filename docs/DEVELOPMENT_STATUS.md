@@ -1,5 +1,10 @@
 # Jobin — registro central de desarrollo
 
+## PROFILE-TYPOGRAPHY-02 — aprobación Bloque A (2026-11-27)
+
+- Propietario aprobó Royal Hive Typography 2.0, candidato solo en perfil propio y visitante: escala semántica por ancho lógico <360 / 360–399 / >=400 dp; títulos 20/21/22, secciones 15/16/17, cuerpo 14/15/15, acciones 13/14/15, selectores 12/13/14, secundarios 12/12/13, etiquetas 10/11/11. Accesibilidad nativa activa; sin multiplicador global. Mantener la familia y arte JCard, navegación, áreas táctiles, datos y permisos. Fuera del perfil permanecen los tokens anteriores. Geometría de selectores/tarjetas, fondos y colores de idiomas quedan para B–E; no empezar STREAM-UI. Pendientes CI del candidato, autorización de integración y revisión visual real (320/360/390/402/440, ambos temas y escala accesible). OTA compatible según autorización permanente después de merge aprobado y CI del SHA exacto; ninguna APK nueva.
+
+
 ## OTA-DEVELOPMENT — autorización permanente del propietario (2026-11-27)
 
 - PR #153 integrado en 4aa07442073f914564be2a448d9c30989b8e3cbb, CI 46075701856 success. OTA Android 46076730934 success, grupo f91b6e76-5d1f-4cca-90a8-c35fded5a07b, runtime jobeen-native-20261123-feed-4425bdf1. Validación física pendiente.

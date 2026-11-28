@@ -1,3 +1,4 @@
+import {useRoyalHiveTypography} from "../theme/ProfileTypographyScope";
 import {jobeenTokens} from "../theme/jobeen";
 import {jobeenModalTokens} from "../theme/modals";
 import {JOBEEN_CONTROL} from "../theme/control-metrics";
@@ -15,7 +16,7 @@ import {JobeenShareSheet} from "./JCardShareSheet";
 import {JobeenNoticeDialog} from "./JobeenNoticeDialog";
 import {SettingsMenuRow} from "./SettingsMenuRow";
 export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClose,onToggleSaved,onSaveContact,savedJCard=false,savingJCard=false,visibleCardSide="personal"}:{user:string;name:string;url:string;menuOpen?:boolean;onMenuClose?:()=>void;onToggleSaved?:()=>void;onSaveContact?:()=>void;savedJCard?:boolean;savingJCard?:boolean;visibleCardSide?:"personal"|"business"}){
- const {s,colors}=useUi();const {theme}=useTheme();const modal=jobeenModalTokens(theme);const insets=useSafeAreaInsets();const {width,height}=useWindowDimensions();const jobeen=jobeenTokens("light");const [shareOpen,setShareOpen]=useState(false);const [confirm,setConfirm]=useState<"remove"|"block"|null>(null);const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
+ const {s,colors}=useUi();const {type:JOBEEN_TYPE,lineHeight:JOBEEN_LINE_HEIGHT,adaptive}=useRoyalHiveTypography();const {theme}=useTheme();const modal=jobeenModalTokens(theme);const insets=useSafeAreaInsets();const {width,height}=useWindowDimensions();const jobeen=jobeenTokens("light");const [shareOpen,setShareOpen]=useState(false);const [confirm,setConfirm]=useState<"remove"|"block"|null>(null);const [followed,setFollowed]=useState(false);const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
  const scopeRef=useRef<MessageScope|null>(null);
  const [contact,setContact]=useState<ContactRequest|null>(null),[viewer,setViewer]=useState("");
  useFocusEffect(useCallback(()=>{
@@ -82,12 +83,12 @@ export function ProfileCommunityActions({user,name,url,menuOpen=false,onMenuClos
  return <View>
   <View style={{flexDirection:"row",gap:8,alignItems:"stretch"}}>
    <Pressable accessibilityRole="button" disabled={busy} onPress={()=>void toggleFollow()} style={{flex:1,minWidth:48,flexDirection:"row",justifyContent:"center",alignItems:"center",gap:5,paddingVertical:10,paddingHorizontal:5,minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:JOBEEN_CONTROL.buttonRadius,backgroundColor:colors.ink}}>
-    <Ionicons name={followed?"checkmark":"heart-outline"} size={18} color={colors.paper}/><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{flexShrink:1,color:colors.paper,fontWeight:"700",fontSize:14}}>{followed?"Siguiendo":"Seguir"}</Text>
+    <Ionicons name={followed?"checkmark":"heart-outline"} size={18} color={colors.paper}/><Text numberOfLines={adaptive?undefined:1} adjustsFontSizeToFit={!adaptive} minimumFontScale={0.85} style={{flexShrink:1,color:colors.paper,fontWeight:adaptive?"500":"700",fontSize:adaptive?JOBEEN_TYPE.action:14,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.action}:{})}}>{followed?"Siguiendo":"Seguir"}</Text>
    </Pressable>
    <Pressable accessibilityRole="button" accessibilityLabel={contactLabel+" · "+name}
     disabled={busy} onPress={()=>void connect()} style={{flex:1,minWidth:48,flexDirection:"row",justifyContent:"center",alignItems:"center",gap:5,paddingVertical:10,paddingHorizontal:5,minHeight:JOBEEN_CONTROL.touchTarget,borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:jobeen.yellow,backgroundColor:jobeen.cream}}>
     <Ionicons name={contact?.status==="accepted"?"people":"person-add-outline"} size={18} color={jobeen.ink}/>
-    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{flexShrink:1,color:jobeen.ink,fontWeight:"700",fontSize:14}}>{contactLabel}</Text>
+    <Text numberOfLines={adaptive?undefined:1} adjustsFontSizeToFit={!adaptive} minimumFontScale={0.75} style={{flexShrink:1,color:jobeen.ink,fontWeight:adaptive?"500":"700",fontSize:adaptive?JOBEEN_TYPE.action:14,...(adaptive?{lineHeight:JOBEEN_LINE_HEIGHT.action}:{})}}>{contactLabel}</Text>
    </Pressable>
    <Pressable accessibilityRole="button" accessibilityLabel={"Enviar mensaje a "+name} onPress={()=>router.push({pathname:"/message",params:{user,name}})} style={{width:JOBEEN_CONTROL.touchTarget,minHeight:JOBEEN_CONTROL.touchTarget,flexDirection:"row",justifyContent:"center",alignItems:"center",borderRadius:JOBEEN_CONTROL.buttonRadius,borderWidth:1,borderColor:jobeen.yellow,backgroundColor:jobeen.cream}}>
     <Ionicons name="paper-plane-outline" size={22} color={jobeen.ink}/>
